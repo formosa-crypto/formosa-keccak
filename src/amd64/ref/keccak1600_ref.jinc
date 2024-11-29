@@ -1,0 +1,39 @@
+require "../common/keccak1600_generic.jinc"
+
+/*
+   STATE INIT
+   ==========
+*/
+inline fn __state_init_ref
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  reg u64 i;
+  reg u64 z64;
+  z64 = 0;
+  i = 0;
+  while (i < 25) {
+    st[(int) i] = z64;
+    i += 1; 
+  }
+  return st;
+}
+
+/*
+   ADD RATE BIT
+   ============
+*/
+
+inline fn __addratebit_ref
+( reg mut ptr u64[25] st
+, inline int RATE8
+) -> reg ptr u64[25]
+{
+  reg u64 t64;
+  t64 = 1;
+  t64 <<= (8*RATE8-1) % 64; // obs: should be 63 for all admissible rates!
+  t64 ^= st[(RATE8-1)/8];
+  st[(RATE8-1)/8] = t64;
+  return st;
+}
+

@@ -1,0 +1,5 @@
+inline fn __ANDN_64(reg u64 a b) -> reg u64 {
+ reg u64 t;
+ t = !a & b;
+ return t;
+}

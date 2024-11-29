@@ -1,0 +1,51 @@
+require "keccakf1600x4_avx2.jinc"
+require "keccak1600x4_imem_avx2.jinc"
+
+
+export fn test_bcast_absorb1234(reg mut ptr u256[25] st, reg u64 in) -> reg ptr u256[25] {
+  st = __state_init_avx2x4(st);
+  st, _, _ = __absorb_bcast_imem_avx2x4(st, 0, in, 1234, R136, SHA3);
+  return st;
+}
+
+export fn test_absorb1234(reg mut ptr u256[25] st, reg u64 in0 in1 in2 in3) -> reg ptr u256[25] {
+  st = __state_init_avx2x4(st);
+  st, _, _, _, _, _ = __absorb_imem_avx2x4(st, 0, in0, in1, in2, in3, 1234, R136, SHA3);
+  return st;
+}
+
+export fn test_squeeze1234(reg mut ptr u256[25] st, reg u64 out0 out1 out2 out3) -> reg ptr u256[25] {
+  out0, out1, out2, out3, st = __squeeze_imem_avx2x4(out0, out1, out2, out3, 1234, st, R136);
+  return st;
+}
+
+
+namespace A1234 {
+  param int ASIZE = 1234;
+  require "keccak1600x4_array_avx2_ASIZE.jinc"
+
+  export fn test_bcast_absorb1234A(reg mut ptr u256[25] st, reg const ptr u8[ASIZE] in) -> reg ptr u256[25] {
+    reg u64 ofs;
+    ofs = 0;
+    st = __state_init_avx2x4(st);
+    st, _, _ = __absorb_bcast_array_avx2x4(st, 0, in, ofs, 1234, R136, SHA3);
+    return st;
+  }
+
+  export fn test_absorb1234A(reg mut ptr u256[25] st, reg const ptr u8[ASIZE] in0 in1 in2 in3) -> reg ptr u256[25] {
+    reg u64 ofs;
+    ofs = 0;
+    st = __state_init_avx2x4(st);
+    st, _, _ = __absorb_array_avx2x4(st, 0, in0, in1, in2, in3, ofs, 1234, R136, SHA3);
+    return st;
+  }
+
+  export fn test_squeeze1234A(reg mut ptr u256[25] st, reg mut ptr u8[ASIZE] out0 out1 out2 out3)
+ -> reg ptr u256[25], reg u8[ASIZE], reg u8[ASIZE], reg u8[ASIZE], reg u8[ASIZE] {
+    reg u64 ofs;
+    ofs = 0;
+    out0, out1, out2, out3, ofs, st = __squeeze_array_avx2x4(out0, out1, out2, out3, ofs, 1234, st, R136);
+    return st, out0, out1, out2, out3;
+  }
+}
+

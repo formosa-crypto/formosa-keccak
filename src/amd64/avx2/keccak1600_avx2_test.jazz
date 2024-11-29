@@ -1,0 +1,78 @@
+require "keccak1600_avx2.jinc"
+require "keccak1600_imem_avx2.jinc"
+
+
+export fn test_absorb1234(reg mut ptr u256[7] state, reg u64 in) -> reg ptr u256[7] {
+  reg u256[7] st;
+  inline int i;
+  st = __state_init_avx2();
+  st, _ = __absorb_imem_avx2(st, in, 1234, R136, SHA3);
+  for i = 0 to 7 { state[i] = st[i]; }
+  return state;
+}
+
+export fn test_pabsorb1234(reg mut ptr u256[7] state, reg u64 in) -> reg ptr u256[7] {
+  reg u256[7] st;
+  stack u64[25] pst_s;
+  reg ptr u64[25] pst;
+  inline int i;
+  pst = pst_s;
+  pst = __pstate_init_avx2(pst);
+  st = __state_init_avx2();
+  pst, _, st, _ = __pabsorb_imem_avx2(pst, 0, st, in, 1234, R136, SHA3);
+  for i = 0 to 7 { state[i] = st[i]; }
+  return state;
+}
+
+export fn test_squeeze1234(reg mut ptr u256[7] state, reg u64 out) -> reg ptr u256[7] {
+  reg u256[7] st;
+  inline int i;
+  for i = 0 to 7 { st[i] = state[i]; }
+  out, st = __squeeze_imem_avx2(out, 1234, st, R136);
+  for i = 0 to 7 { state[i] = st[i]; }
+  return state;
+}
+
+
+namespace A1234 {
+  param int ASIZE = 1234;
+  require "keccak1600_array_avx2_ASIZE.jinc"
+
+  export fn test_absorb1234A(reg mut ptr u256[7] state, reg const ptr u8[ASIZE] in) -> reg ptr u256[7] {
+    reg u256[7] st;
+    reg u64 ofs;
+    inline int i;
+    ofs = 0;
+    st = __state_init_avx2();
+    st, _ = __absorb_array_avx2(st, in, ofs, 1234, R136, SHA3);
+    for i = 0 to 7 { state[i] = st[i]; }
+    return state;
+  }
+  
+  export fn test_pabsorb1234A(reg mut ptr u256[7] state, reg const ptr u8[ASIZE] in) -> reg ptr u256[7] {
+    reg u256[7] st;
+    stack u64[25] pst_s;
+    reg ptr u64[25] pst;
+    reg u64 ofs;
+    inline int i;
+    ofs = 0;
+    pst = pst_s;
+    pst = __pstate_init_avx2(pst);
+    st = __state_init_avx2();
+    pst, _, st, _ = __pabsorb_array_avx2(pst, 0, st, in, ofs, 1234, R136, SHA3);
+    for i = 0 to 7 { state[i] = st[i]; }
+    return state;
+  }
+  
+  export fn test_squeeze1234A(reg mut ptr u256[7] state, reg mut ptr u8[ASIZE] out) -> reg ptr u256[7], reg ptr u8[ASIZE] {
+    reg u256[7] st;
+    reg u64 ofs;
+    inline int i;
+    ofs = 0;
+    for i = 0 to 7 { st[i] = state[i]; }
+    out, st = __squeeze_array_avx2(out, ofs, 1234, st, R136);
+    for i = 0 to 7 { state[i] = st[i]; }
+    return state, out;
+  }
+}
+
