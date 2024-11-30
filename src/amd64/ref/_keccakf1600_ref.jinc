@@ -186,9 +186,9 @@ inline fn _keccakf1600_ref_(reg ptr u64[25] a) -> reg ptr u64[25]
 
 
 
-// /* For testing:
+/* For testing:
 export fn testF(reg mut ptr u64[25] st) -> reg ptr u64[25] {
  st = _keccakf1600_ref(st);
  return st;
 }
-// */
+*/

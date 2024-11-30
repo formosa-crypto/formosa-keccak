@@ -277,7 +277,7 @@ inline fn __stavx2_unpack
   return st;
 }
 
-// /* for testing:
+/* for testing:
 export fn testF(reg ptr u256[7] state) -> reg ptr u256[7] {
  reg u256[7] st;
  inline int i;
@@ -286,4 +286,4 @@ export fn testF(reg ptr u256[7] state) -> reg ptr u256[7] {
  for i = 0 to 7 { state[i] = st[i]; }
  return state;
 }
-// */
+*/

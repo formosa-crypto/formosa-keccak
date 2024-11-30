@@ -339,9 +339,9 @@ inline fn __st4x_unpack
 */
 
 
-// /* For testing:
+/* For testing:
 export fn testF(reg mut ptr u256[25] st) -> reg ptr u256[25] {
  st = _keccakf1600_avx2x4(st);
  return st;
 }
-// */
+*/
