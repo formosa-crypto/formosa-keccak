@@ -1,0 +1,19 @@
+require "keccakf1600_pqm4.jinc"
+
+
+export fn KeccakF1600_StatePermute
+( reg ptr u32[KECCAK_state] state
+) -> reg ptr u32[KECCAK_state] 
+{
+  state = _KeccakF1600_StatePermute(state);
+  return state;
+}
+
+export fn KeccakRounds_export
+( reg ptr u32[KECCAK_state] state
+, reg ptr u32[8] RCWT_line
+) -> reg ptr u32[KECCAK_state]
+{
+  state = KeccakRounds(state, RCWT_line);
+  return state;
+}
