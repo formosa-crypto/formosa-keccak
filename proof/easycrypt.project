@@ -5,5 +5,5 @@ provers = Z3@4.12
 
 rdirs = Jasmin:eclib
 rdirs = CryptoSpecs:crypto-specs
-idirs = bindings
+idirs = common
 

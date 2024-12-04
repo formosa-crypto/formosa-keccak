@@ -1,8 +1,6 @@
 require "keccakf1600_ref.jinc"
 require "keccak1600_imem_ref.jinc"
 
-
-
 export fn test_absorb1234(reg mut ptr u64[25] st, reg u64 in) -> reg ptr u64[25] {
   st = __state_init_ref(st);
   st, _, _ = __absorb_imem_ref(st, 0, in, 1234, R136, SHA3);
@@ -13,5 +11,3 @@ export fn test_squeeze1234(reg mut ptr u64[25] st, reg u64 out) -> reg ptr u64[2
   out, st = __squeeze_imem_ref(out, 1234, st, R136);
   return st;
 }
-
-
