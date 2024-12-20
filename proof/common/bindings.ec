@@ -368,8 +368,9 @@ qed.
 op ror_32 (w1 w2 : W32.t): W32.t =
   w1 `|>>>|` to_uint w2. 
 
+print W32.(`|>>>|`).
 op (`|>>|`) (w1: W32.t, w2: W8.t): W32.t =
- ror_32 w1 (zeroextu32 (w2 `&` (W8.of_int 31))).
+ ror_32 w1 (zeroextu32 w2).
 
 abbrev (\ror) (w1: W32.t, w2: W8.t): W32.t = w1 `|>>|`w2.
 
