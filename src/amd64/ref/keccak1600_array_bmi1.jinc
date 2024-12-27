@@ -1,0 +1,4 @@
+/* obs: NOT FOR GENERAL USE! (for extraction only...) */
+require "keccak1600_bmi1.jinc"
+param int ASIZE=999;
+require "_keccak1600_array_ref_ASIZE.jinc"
