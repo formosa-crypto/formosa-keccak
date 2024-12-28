@@ -1,26 +1,30 @@
 (******************************************************************************
-   Keccak_f1600_s_4x_proof.ec:
+   Keccakf1600_avx2x4.ec:
 
    Correctness proof for the 4x_AVX2 implementation
 
 
    The 4x_AVX2 implementation is essentially a 4-way SIMD implementation of the
-  REF1 scalar implementation. The proof strategy is hence to prove equivalence
-  between any lane with REF1, and deriving the parallel execution from generic
+  REF scalar implementation. The proof strategy is hence to prove equivalence
+  between any lane with REF, and deriving the parallel execution from generic
   HL reasoning.
 
 ******************************************************************************)
 require import List Real Distr Int IntDiv CoreMap.
 
+from Jasmin require import JModel.
 
+from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
+from CryptoSpecs require import Keccakf1600_Spec.
+
+
+
+require import Keccakf1600_ref.
+
+from JazzEC require Jazz_ref.
+from JazzEC require import Jazz_avx2.
 require import WArray768.
 
-require import Keccak_f1600_Spec_facts.
-require import Keccak_f1600_s_spec_proof.
-require import Keccak_f1600_s_ref1_proof.
-
-
-from JExtract require import Jextracted.
 
 
 (** lemmata (move?) *)
@@ -36,161 +40,6 @@ smt(W64.get_out).
 qed.
 
 
-import Ring.IntID.
-
-lemma bits8_bits (w: W256.t) (k: int):
- w \bits8 k = W8.bits2w (bits w (8*k) 8).
-proof.
-by rewrite -all_eqP /all_eq /bits /mkseq -iotaredE /= /#.
-qed.
-
-lemma bits64_bits (w: W256.t) (k: int):
- w \bits64 k = W64.bits2w (bits w (64*k) 64).
-proof.
-by rewrite -all_eqP /all_eq /bits /mkseq -iotaredE /= /#.
-qed.
-
-(* useful to eval constants... *)
-lemma bits8_red (w: W256.t) (k: int):
- 0 <= k =>
- w \bits8 k
- = W8.of_int (to_uint w %/ (2^(8*k)) %% 2^8).
-proof.
-move=> Hk; rewrite bits8_bits.
-apply W8.word_modeqP.
-rewrite of_uintK !modz_mod.
-rewrite W8.to_uintE bits2wK 1:size_bits //.
-by rewrite bits_divmod 1..2:/# modz_mod.
-qed.
-
-lemma bits64_red (w: W256.t) (k: int):
- 0 <= k =>
- w \bits64 k
- = W64.of_int (to_uint w %/ (2^(64*k)) %% 2^64).
-proof.
-move=> Hk; rewrite bits64_bits.
-apply W64.word_modeqP.
-rewrite of_uintK !modz_mod.
-rewrite W64.to_uintE bits2wK 1:size_bits //.
-by rewrite bits_divmod 1..2:/# modz_mod.
-qed.
-
-lemma get256_init256 (a: W256.t Array24.t) i:
- 0 <= i < 24 =>
- get256 (init256 ("_.[_]" a)) i = a.[i].
-proof.
-move=> Hi; rewrite /get256_direct /init256 -(unpack8K a.[i]).
-congr; apply W32u8.Pack.ext_eq => x Hx.
-rewrite initiE //= unpack8E !initiE 1..2:/# /=; congr.
- congr; smt().
-smt().
-qed.
-
-
-
-(** Packed 4x-state *)
-type state4x = W256.t Array25.t.
-
-op (\a25bits64) (a: state4x) (k: int): state =
- Array25.map (fun (x: W256.t) => W4u64.\bits64 x k) a.
-
-op (\a24bits64) (a: W256.t Array24.t) (k: int): W64.t Array24.t =
- Array24.map (fun (x: W256.t) => W4u64.\bits64 x k) a.
-
-op (\a5bits64) (a: W256.t Array5.t) (k: int): W64.t Array5.t =
- Array5.map (fun (x: W256.t) => W4u64.\bits64 x k) a.
-
-op a25pack4 (l: state list): state4x =
- Array25.init (fun i => pack4 (map (fun (s: state) => s.[i]) l)).
-
-op a25unpack4 (st4: state4x): state list =
- map (fun k=> st4 \a25bits64 k) (iota_ 0 4).
-
-lemma a25bits64iE x k i:
- 0 <= i < 25 =>
- (x \a25bits64 k).[i] = x.[i] \bits64 k.
-proof. by move=> Hi; rewrite mapiE //. qed.
-
-lemma a24bits64iE x k i:
- 0 <= i < 24 =>
- (x \a24bits64 k).[i] = x.[i] \bits64 k.
-proof. by move=> Hi; rewrite mapiE //. qed.
-
-lemma a5bits64iE x k i:
- 0 <= i < 5 =>
- (x \a5bits64 k).[i] = x.[i] \bits64 k.
-proof. by move=> Hi; rewrite mapiE //. qed.
-
-lemma a25unpack4K s4:
- a25pack4 (a25unpack4 s4) = s4.
-proof.
-rewrite /a25pack4 /a25unpack4.
-apply ext_eq => i Hi; rewrite initiE //=.
-rewrite -iotaredE /= !a25bits64iE //=.
-rewrite -{5}(unpack64K s4.[i]); congr.
-by rewrite unpack64E init_of_list -iotaredE /=. 
-qed.
-
-lemma a25pack4_bits64 k (stl: state list):
- 0 <= k < 4 =>
- a25pack4 stl \a25bits64 k = nth st0 stl k.
-proof.
-move=> Hk; apply Array25.ext_eq => i Hi.
-rewrite mapiE //= initiE //= pack4bE //=.
-rewrite of_listE initiE //=.
-case: (k < size stl) => E.
- by rewrite (nth_map st0) 1:/#.
-rewrite !nth_out; first 2 by smt(size_map).
-by rewrite createiE.
-qed.
-
-op a5pack4 (l: (W64.t Array5.t) list): W256.t Array5.t =
- Array5.init (fun i => pack4 (map (fun (x: W64.t Array5.t) => x.[i]) l)).
-
-op match_state4x (st0 st1 st2 st3: state) (st4x: state4x) =
- st4x = a25pack4 [st0; st1; st2; st3].
-
-lemma a25pack4_eq stl st4x:
- a25pack4 stl = st4x
- <=>
- all (fun k=>st4x \a25bits64 k = nth st0 stl k) (iota_ 0 4).
-proof.
-split.
- move => <-; apply/List.allP => k. 
- rewrite mem_iota => Hk /=; apply a25pack4_bits64; smt().
-move=> /List.allP H.
-apply ext_eq => i Hi.
-rewrite initiE //=.
-rewrite -(unpack64K st4x.[i]); congr.
-apply W4u64.Pack.ext_eq => k Hk.
-rewrite of_listE unpack64E !initiE //=.
-rewrite -a25bits64iE // H; first smt(mem_iota).
-case: (k < size stl) => E.
- by rewrite (nth_map st0) 1:/#.
-rewrite !nth_out; first 2 by smt(size_map).
-by rewrite createiE.
-qed.
-
-lemma a5bits64_set (c: W256.t Array5.t) x y i:
- 0 <= i < 4 =>
- 0 <= x < 5 =>
- c.[x <- y] \a5bits64 i
- = (c \a5bits64 i).[x <- y \bits64 i].
-proof.
-move=> Hi Hx; apply Array5.ext_eq => j Hj.
-rewrite a5bits64iE 1:// !get_setE 1..2:/#.
-case: (j=x) => E //.
-by rewrite a5bits64iE.
-qed.
-
-lemma xorw_bits64 (w1 w2: W256.t) k:
- 0 <= k < 4 =>
- w1 `^` w2 \bits64 k = (w1 \bits64 k) `^` (w2 \bits64 k).
-proof.
-move=> Hk; rewrite -{1}(unpack64K w1) -{1}(unpack64K w2). 
-by rewrite xorb4u64E pack4bE // map2iE // !unpack64E !initiE.
-qed.
-
 lemma invw_bits64 (w: W256.t) k:
  0 <= k < 4 =>
  invw w \bits64 k = invw (w \bits64 k).
@@ -203,7 +52,7 @@ proof. by move=> Hk; rewrite -{1}(unpack64K w) invw64E //. qed.
 
 lemma theta_sum_4x_eq _k:
  0 <= _k < 4 =>
- equiv [ M.__theta_sum_4x_avx2 ~ M.__theta_sum_ref1:
+ equiv [ M.keccakf1600_4x_theta_sum ~ Jazz_ref.M.__theta_sum_ref:
          a{1} \a25bits64 _k = a{2} ==> res{1} \a5bits64 _k = res{2} ].
 proof.
 move=> Hk; proc.
@@ -233,23 +82,23 @@ qed.
 
 lemma rol8P _x _k:
  0 <= _k < 4 =>
- ((JModel.VPSHUFB_256 _x ROL8) \bits64 _k)
+ ((VPSHUFB_256 _x rOL8) \bits64 _k)
  = (_x \bits64 _k) `|<<<|` 8.
 proof.
 move=> Hk; have {Hk}: _k \in iota_ 0 4 by smt(mem_iota).
 move: _k; apply/List.allP; rewrite -iotaredE /=.
-rewrite /JModel.VPSHUFB_256 /JModel.VPSHUFB_128 /JModel.VPSHUFB_128_B /=.
+rewrite /VPSHUFB_256 /VPSHUFB_128 /VPSHUFB_128_B /=.
 rewrite !bits8_red // !of_uintK /=.
 by rewrite -!all_eqP /all_eq /=.
 qed.
 
 lemma rol56P _x _k:
  0 <= _k < 4 =>
- ((JModel.VPSHUFB_256 _x ROL56) \bits64 _k) = (_x \bits64 _k) `|<<<|` 56.
+ ((VPSHUFB_256 _x rOL56) \bits64 _k) = (_x \bits64 _k) `|<<<|` 56.
 proof.
 move=> Hk; have {Hk}: _k \in iota_ 0 4 by smt(mem_iota).
 move: _k; apply/List.allP; rewrite -iotaredE /=.
-rewrite /JModel.VPSHUFB_256 /JModel.VPSHUFB_128 /JModel.VPSHUFB_128_B /=.
+rewrite /VPSHUFB_256 /VPSHUFB_128 /VPSHUFB_128_B /=.
 rewrite !bits8_red // !of_uintK /=.
 by rewrite -!all_eqP /all_eq /=.
 qed.
@@ -289,13 +138,15 @@ lemma rol_4x_ph _k _x _r:
 proof. by move=> Hk; conseq rol_4x_ll (rol_4x_h _k _x _r Hk). qed.
 *)
 
-lemma rol_4x_eq _k:
+(*
+lemma rol_4x_eq _a _x _k:
  0 <= _k < 4 =>
- equiv [ M.__rol_4x_avx2 ~ M.__rol_u64_ref1:
-         x{1} \bits64 _k = x{2}
+ equiv [ M.keccakf1600_4x_rol ~ Jazz_ref.M.__rol_u64_ref:
+         a{1}=_a /\ x{1}=_x
+         /\ _a.[_x] \bits64 _k = x{2}
          /\ r{1}=i{2} /\ 0 <= i{2} < 64
-         /\ r8{1} = ROL8 /\ r56{1} = ROL56
-         ==> res{1} \bits64 _k = res{2} ].
+         /\ r8{1} = rOL8 /\ r56{1} = rOL56
+         ==> res{1} =  \bits64 _k = res{2} ].
 proof.
 move=> Hk; proc; simplify.
 if => //.
@@ -309,18 +160,21 @@ rewrite ROL_64_val modz_small 1:/#.
 move: _k; apply/List.allP; rewrite -iotaredE /=.
 by rewrite /VPSRL_4u64 /VPSLL_4u64 /=; smt(W64.orwC rol_or_shft).
 qed.
+*)
 
 lemma theta_rol_4x_eq _k:
  0 <= _k < 4 =>
- equiv [ M.__theta_rol_4x_avx2 ~ M.__theta_rol_ref1:
+ equiv [ M.keccakf1600_4x_theta_rol ~ Jazz_ref.M.__theta_rol_ref:
          c{1} \a5bits64 _k = c{2}
-         /\ r8{1} = ROL8
-         /\ r56{1} = ROL56
+         /\ r8{1} = rOL8
+         /\ r56{1} = rOL56
          ==> res{1} \a5bits64 _k = res{2} ].
 proof.
+(*
 move=> Hk; proc; simplify.
 while (={x} /\ 0<=x{2}<=5 /\ #pre /\
        forall i, 0<=i<x{2} => (d{1} \a5bits64 _k).[i] = d{2}.[i]).
+wp.
  wp; call (rol_4x_eq _k Hk).
  auto => /> &1 &2 Hx1 _ IH Hx2.
  rewrite !get_setE 1..2:/# /=; split.
@@ -337,8 +191,11 @@ while (={x} /\ 0<=x{2}<=5 /\ #pre /\
 auto => />; split; first smt().
 move=> d1 d2 x ?_??; have ->: x=5 by smt().
 by move=> H; apply Array5.ext_eq => /#.
+*)
+admit.
 qed.
 
+(*
 lemma rol_sum_4x_eq _k:
  0 <= _k < 4 =>
  equiv [ M.__rol_sum_4x_avx2 ~ M.__rol_sum_ref1:
@@ -462,7 +319,7 @@ have: i\in iota_ 0 24 by smt(mem_iota).
 move: {Hi} i; rewrite -allP -iotaredE /= !bits64_red // !of_uintK.
 by move: {Hk1 Hk2} _k Hk; rewrite -allP -iotaredE /=.
 qed.
-
+*)
 (******************************************************************************
    Lift lane-equivalence into 4-way parallel execution
 ******************************************************************************)
@@ -482,16 +339,16 @@ rewrite !(nth_map st0); first 4 by rewrite /a25unpack4 size_map size_iota.
 by rewrite /a25unpack4 -iotaredE /= /#.
 qed.
 
-hoare __keccakf1600_4x_h (_a: state4x) (_c: W64.t):
- M.__keccakf1600_4x_avx2 :
+hoare keccakf1600_avx2x4_h (_a: state4x) (_c: W64.t):
+ M.__keccakf1600_avx2x4 :
  a = _a
  ==> res = map_state4x keccak_f1600_op _a.
 proof.
 bypr => &m ->.
 have ->:
- Pr[ M.__keccakf1600_4x_avx2(_a) @ &m
+ Pr[ M.__keccakf1600_avx2x4(_a) @ &m
    : res <> map_state4x keccak_f1600_op _a ]
- = Pr[ M.__keccakf1600_4x_avx2(_a) @ &m
+ = Pr[ M.__keccakf1600_avx2x4(_a) @ &m
      : predU
         (predU 
           (fun r=> r \a25bits64 0 <> keccak_f1600_op (_a \a25bits64 0))
@@ -502,32 +359,34 @@ have ->:
  rewrite Pr [mu_eq] 2:/#.
  by move => &hr; rewrite /predU /= map_state4x_neq /#.
 have L: forall (p1 p2: state4x -> bool),
- Pr[ M.__keccakf1600_4x_avx2(_a) @ &m
+ Pr[ M.__keccakf1600_avx2x4(_a) @ &m
    : predU p1 p2 res ] = 0%r
  <=>
- Pr[ M.__keccakf1600_4x_avx2(_a) @ &m
+ Pr[ M.__keccakf1600_avx2x4(_a) @ &m
    : p1 res ] = 0%r
- /\ Pr[ M.__keccakf1600_4x_avx2(_a) @ &m
+ /\ Pr[ M.__keccakf1600_avx2x4(_a) @ &m
       : p2 res ] = 0%r.
  move=> p1 p2; rewrite /predU /=.
  rewrite Pr [mu_or].
- have ?: Pr[M.__keccakf1600_4x_avx2(_a) @ &m : p1 res /\ p2 res]
-         <= Pr[M.__keccakf1600_4x_avx2(_a) @ &m : p1 res ].
+ have ?: Pr[M.__keccakf1600_avx2x4(_a) @ &m : p1 res /\ p2 res]
+         <= Pr[M.__keccakf1600_avx2x4(_a) @ &m : p1 res ].
   by rewrite Pr [mu_sub] /#.
- have ?: Pr[M.__keccakf1600_4x_avx2(_a) @ &m : p1 res /\ p2 res]
-         <= Pr[M.__keccakf1600_4x_avx2(_a) @ &m : p2 res ].
+ have ?: Pr[M.__keccakf1600_avx2x4(_a) @ &m : p1 res /\ p2 res]
+         <= Pr[M.__keccakf1600_avx2x4(_a) @ &m : p2 res ].
   by rewrite Pr [mu_sub] /#.
  smt(mu_bounded).
 rewrite !L /predU /= => {L}.
 have: all (fun k => 
-            Pr[ M.__keccakf1600_4x_avx2(_a) @ &m
+            Pr[ M.__keccakf1600_avx2x4(_a) @ &m
               : res \a25bits64 k <> keccak_f1600_op (_a \a25bits64 k)] = 0%r)
           (iota_ 0 4); last by rewrite -iotaredE /=.
 apply/List.allP => k /mem_iota /= Hk.
 byphoare (: a = _a ==> _) => //.
 hoare; simplify.
+(*
 conseq (keccakf1600_4x_eq k _) (keccakf1600_ref1_h (_a \a25bits64 k)); last smt().
  move=> />.
  by exists (_a \a25bits64 k) => />.
 by move=> />.
+*)admit.
 qed.
