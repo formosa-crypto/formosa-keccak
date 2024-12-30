@@ -1,0 +1,5 @@
+require "keccak1600_avx2.jinc"
+require "keccak1600_avx2x4.jinc"
+param int ASIZE=999;
+require "keccak1600_array_avx2_ASIZE.jinc"
+require "keccak1600_array_avx2x4_ASIZE.jinc"

@@ -1,4 +1,4 @@
-require "keccak1600x4_avx2.jinc"
+require "keccak1600_avx2x4.jinc"
 
 
 /*

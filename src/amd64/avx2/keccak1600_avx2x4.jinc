@@ -1,4 +1,4 @@
-require "keccakf1600x4_avx2.jinc"
+require "keccakf1600_avx2x4.jinc"
 require "../common/keccak1600_generic.jinc"
 require "../common/subreadwrite_imem.jinc"
 

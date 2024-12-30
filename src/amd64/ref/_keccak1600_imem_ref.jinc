@@ -1,13 +1,10 @@
 /** IMPORTANT:
   This file is expected to be loaded with one of the following files
-require "keccakf1600_ref.jinc"		// without BMI1 support
-require "keccakf1600_ref_bmi1.jinc"	// with BMI1 support
+require "keccak1600_ref.jinc"	// without BMI1 support
+require "keccak1600_bmi1.jinc"	// with BMI1 support
 */
 
-require "keccak1600_ref.jinc"
 require "../common/subreadwrite_imem.jinc"
-
-
 
 
 /*

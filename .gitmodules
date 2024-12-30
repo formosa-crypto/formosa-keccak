@@ -1,0 +1,4 @@
+[submodule "submodules/crypto-specs"]
+	path = submodules/crypto-specs
+	url = git@github.com:formosa-crypto/crypto-specs.git
+	branch = bdep

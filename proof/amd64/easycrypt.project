@@ -4,6 +4,7 @@ provers = CVC5@1.0
 provers = Z3@4.12
 
 rdirs = Jasmin:~/src/jasmin/main/eclib
-rdirs = CryptoSpecs:../crypto-specs
+rdirs = CryptoSpecs:../crypto-specs/common
+rdirs = CryptoSpecs:../crypto-specs/fips202
 idirs = ../common
-idirs = JazzEC:extracted
+idirs = JazzEC:../extracted

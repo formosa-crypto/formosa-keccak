@@ -25,9 +25,6 @@ case: (i=0) => [->|E].
  rewrite /stavx2_from_st25 !get_of_list 1..2:// /= /#.
 qed.
 
-op stavx2INV (st: W256.t Array7.t): bool =
- u256_broadcastP st.[0].
-
 lemma stavx2INV_iota st w:
  stavx2INV st =>
  u256_broadcastP w =>
@@ -38,11 +35,6 @@ rewrite /stavx2INV get_setE 1:// /=.
 by apply u256_broadcastP_xor.
 qed.
 
-lemma stavx2INV_from_st25 st:
- stavx2INV (stavx2_from_st25 st).
-proof.
-by rewrite /stavx2INV /u256_broadcastP !initiE 1:// !u256_bits64E 1..4://= /= !u256_pack4E pack4bE //.
-qed.
 
 op stavx2_keccak_pround = stF_avx2 keccak_pround_op.
 

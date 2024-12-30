@@ -24,7 +24,6 @@ inline fn __addstate_array_ref
 {
   inline int DELTA, LO, ALL;
   reg u64 at, t;
-  reg u256 t64;
 
   ALL = AT+LEN; // total bytes to process (excluding trail byte, if !=0)
   LO = AT % 8; // leftover bytes
@@ -62,7 +61,7 @@ inline fn __addstate_array_ref
   // continue processing remaining bytes
   if (8 <= LEN) {
     while ( at < (AT/8)+(LEN/8)) {
-      t = buf0.[u64 offset];
+      t = buf.[u64 offset];
       t ^= st[u64 at];
       st[u64 at] = t;
       at += 1;
@@ -92,7 +91,7 @@ inline fn __absorb_array_ref
 , inline int LEN
 , inline int RATE8
 , inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
-) -> reg ptr u256[25] /* st */
+) -> reg ptr u64[25] /* st */
    , inline int /* AT */
    , reg u64 /* offset */
 {

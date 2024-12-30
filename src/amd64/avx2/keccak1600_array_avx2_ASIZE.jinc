@@ -56,7 +56,7 @@ inline fn __addstate_array_avx2
 
     DELTA, LEN, TRAILB, r6 = __aread_subu256(buf, offset, DELTA, LEN, TRAILB);
 
-    st = __addstate_r3456( st, r3, r4, r5, r6);
+    st = __addstate_r3456_avx2( st, r3, r4, r5, r6);
   }
   offset += DELTA;
   return st, offset;
@@ -208,7 +208,7 @@ inline fn __pabsorb_array_avx2
       i = AT/8 + 1;
       if (AT <= 5*8) { // only st[0..1] is affected
         while (i < 5) { pst[i] = 0; i += 1; }
-        st = __addpst01(st, pst);
+        st = __addpst01_avx2(st, pst);
         st = __addratebit_avx2(st, RATE8);
       } else { // all state is affected
         while (i < RATE8/8) { pst[i] = 0; i += 1; }

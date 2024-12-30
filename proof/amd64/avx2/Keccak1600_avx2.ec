@@ -11,15 +11,16 @@ require import List Real Distr Int IntDiv CoreMap.
 
 from Jasmin require import JModel.
 
-from CryptoSpecs require export Keccakf1600_Spec.
+from CryptoSpecs require import Keccakf1600_Spec.
+from CryptoSpecs require export Keccak1600_Spec.
 
 require import WArray768.
 from JazzEC require import Jazz_avx2.
 
 require import Array4 Array5 Array7 Array24 Array25.
 
-from CryptoSpecs require import FIPS202_Keccakf1600.
-from CryptoSpecs require import Keccakf1600_Spec.
+from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
+from CryptoSpecs require import Keccakf1600_Spec Keccak1600_Spec FIPS202_SHA3_Spec.
 
 (* circuit-friendly state mappings *)
 
@@ -57,6 +58,12 @@ case: (k < 192) => C3.
 by rewrite ifF 1:/# ifF 1:/# ifF 1:/# ifT 1:/#; congr => /#.
 qed.
 
+lemma u256_pack4_zero:
+ u256_pack4 W64.zero W64.zero W64.zero W64.zero = W256.zero.
+proof.
+by apply W256.all_eq_eq; rewrite /all_eq /u256_pack4 /=.
+qed.
+
 op stavx2_from_st25 (st: W64.t Array25.t): W256.t Array7.t =
  Array7.of_list W256.zero
   [ u256_pack4 st.[ 0] st.[ 0] st.[ 0] st.[ 0]
@@ -85,10 +92,61 @@ rewrite !u256_pack4E /=.
 by apply Array25.all_eq_eq; rewrite /all_eq.
 qed.
 
+lemma stavx2_from_st25_inj st1 st2:
+ stavx2_from_st25 st1 = stavx2_from_st25 st2 =>
+ st1 = st2.
+proof.
+move=> E.
+by rewrite -(stavx2_from_st25K st1) -(stavx2_from_st25K st2) E.
+qed.
+
+op stavx2_st0 = stavx2_from_st25 st0.
+
+lemma stavx2_st0P i:
+ 0 <= i < 7 =>
+ stavx2_st0.[i] = W256.zero.
+proof.
+move=> Hi.
+have: i \in iotared 0 7 by smt(mem_iota).
+move: {Hi} i; apply/List.allP => /=.
+by rewrite /stavx2_st0 /stavx2_from_st25 get_of_list 1:// /= /st0 !createiE 1..25:// u256_pack4_zero.
+qed.
+
 op u256_broadcastP w =
  u256_bits64 w 1 = u256_bits64 w 0
  /\ u256_bits64 w 2 = u256_bits64 w 0
  /\ u256_bits64 w 3 = u256_bits64 w 0.
+
+op stavx2INV (st: W256.t Array7.t): bool =
+ u256_broadcastP st.[0].
+
+lemma stavx2INV_from_st25 st:
+ stavx2INV (stavx2_from_st25 st).
+proof.
+by rewrite /stavx2INV /u256_broadcastP !initiE 1:// !u256_bits64E 1..4://= /= !u256_pack4E pack4bE //.
+qed.
+
+lemma stavx2_to_st25K st:
+ stavx2INV st =>
+ stavx2_from_st25 (stavx2_to_st25 st) = st.
+proof.
+rewrite /stavx2INV /stavx2_to_st25 /stavx2_from_st25 !u256_bits64E 1..25:// /=.
+rewrite !u256_pack4E /u256_broadcastP !u256_bits64E 1..4:// => /> ???.
+apply Array7.all_eq_eq; rewrite /all_eq /=.
+do split;
+ rewrite -{5}(unpack64K st.[_]) unpack64E; congr;
+ apply W4u64.Pack.all_eq_eq; rewrite /all_eq /= /#.
+qed.
+
+lemma stavx2_to_st25_inj st1 st2:
+ stavx2INV st1 =>
+ stavx2INV st2 =>
+ stavx2_to_st25 st1 = stavx2_to_st25 st2 =>
+ st1 = st2.
+proof.
+move=> H1 H2 E.
+by rewrite -(stavx2_to_st25K st1 _) 1:// -(stavx2_to_st25K st2 _) 1:// E.
+qed.
 
 lemma u256_broadcastP_VPBROADCAST w:
  u256_broadcastP (VPBROADCAST_4u64 w).
@@ -111,4 +169,238 @@ abbrev stF_avx2 f = fun st => stavx2_from_st25 (f (stavx2_to_st25 st)).
 op stavx2_keccakf1600 = stF_avx2 keccak_f1600_op.
 
 
+op stmatch_avx2 (st: state) (stavx2: W256.t Array7.t): bool =
+ stavx2 = stavx2_from_st25 st.
 
+
+op stavx2bytes (stavx2: W256.t Array7.t): W8.t list.
+(* =
+ state2bytes (stavx2_to_st25 stavx2). *)
+
+op bytes2stavx2 (bs: W8.t list): W256.t Array7.t.
+
+
+(******************************************************************************
+   
+******************************************************************************)
+
+require BitEncoding.
+import BitEncoding.BitChunking.
+
+
+op absorb_spec_avx2 (r8: int) (tb: int) (st: W256.t Array7.t) (l: W8.t list) =
+ st = stavx2_from_st25 (ABSORB1600 (W8.of_int tb) r8 l).
+
+op pabsorb_spec_avx2 (r8: int) st0 l' (st1: W256.t Array7.t) (l: W8.t list): bool =
+ 0 < r8 <= 200 /\
+ st1=stavx2_from_st25 (stateabsorb_iblocks (chunk r8 l) (stavx2_to_st25 st0)) /\
+ l' = chunkremains r8 l.
+
+lemma pabsorb_spec_avx2_nil r8:
+ 0 < r8 <= 200 =>
+ pabsorb_spec_avx2 r8 stavx2_st0 [] stavx2_st0 [].
+proof.
+move=> Hr; rewrite /pabsorb_spec_avx2 => />.
+rewrite chunk0 /= 1:/#.
+rewrite stavx2_from_st25K.
+by rewrite /stateabsorb_iblocks /= /chunkremains.
+qed.
+
+lemma pabsorb_spec_avx2_cat r8 st0 l1 st1 l12 l2 st2 l22:
+ pabsorb_spec_avx2 r8 st0 l12 st1 l1 =>
+ pabsorb_spec_avx2 r8 st1 l22 st2 (l12++l2)=>
+ pabsorb_spec_avx2 r8 st0 l22 st2 (l1++l2).
+proof.
+rewrite /pabsorb_spec_avx2 => /> Hr0 Hr1; split.
+ admit.
+admit.
+qed.
+
+op squeeze_spec_avx2 (r8: int) (st0 st1:W256.t Array7.t) (l: W8.t list) =
+ st1 = stavx2_from_st25 (st_i (stavx2_to_st25 st0) ((size l-1) %% r8 + 1))
+ /\ l = SQUEEZE1600 r8 (size l) (stavx2_to_st25 st0).
+
+
+(******************************************************************************
+   
+******************************************************************************)
+
+(*
+u64_to_u256
+*)
+
+
+(*
+pstate_init_avx2
+*)
+
+lemma state_init_avx2_ll:
+ islossless M.__state_init_avx2.
+proof.
+proc.
+while true (7-i).
+ by move=> z; auto => /> /#.
+auto => /#.
+qed.
+
+hoare state_init_avx2_h:
+ M.__state_init_avx2
+ : true
+ ==> res = stavx2_st0.
+proof.
+proc.
+unroll for ^while; auto => />.
+by apply Array7.all_eq_eq; rewrite /all_eq /= !stavx2_st0P.
+qed.
+
+phoare state_init_avx2_ph:
+ [ M.__state_init_avx2
+ : true
+ ==> res = stavx2_st0
+ ] = 1%r.
+proof. by conseq state_init_avx2_ll state_init_avx2_h. qed.
+
+(*
+perm_reg3456_avx2
+*)
+
+(*
+unperm_reg3456_avx2
+*)
+
+(*
+state_from_pstate_avx2
+*)
+lemma state_from_pstate_avx2_ll: islossless M.__state_from_pstate_avx2
+by islossless.
+
+hoare state_from_pstate_avx2_h _pst:
+ M.__state_from_pstate_avx2
+ : pst=_pst
+ ==> res = stavx2_from_st25 _pst.
+proof.
+admit. (* BDEP *)
+qed.
+
+phoare state_from_pstate_avx2_ph _pst:
+ [ M.__state_from_pstate_avx2
+ : pst=_pst
+ ==> res = stavx2_from_st25 _pst
+ ] = 1%r.
+proof. by conseq state_from_pstate_avx2_ll (state_from_pstate_avx2_h _pst). qed.
+
+(*
+addstate_r3456_avx2
+*)
+
+(*
+addpst01_avx2
+*)
+lemma addpst01_avx2_ll: islossless M.__addpst01_avx2
+ by islossless.
+
+hoare addpst01_avx2_h _pst _stavx2:
+ M.__addpst01_avx2
+ : pst=_pst /\ st=_stavx2
+ ==> res.[0] = _stavx2.[0] `^` u256_pack4 _pst.[0] _pst.[0] _pst.[0] _pst.[0]
+  /\ res.[1] = _stavx2.[1] `^` u256_pack4 _pst.[1] _pst.[2] _pst.[3] _pst.[4]
+  /\ res.[2] = _stavx2.[2]
+  /\ res.[3] = _stavx2.[3]
+  /\ res.[4] = _stavx2.[4]
+  /\ res.[5] = _stavx2.[5]
+  /\ res.[6] = _stavx2.[6].
+proof.
+admit (* bdep *).
+qed.
+
+phoare addpst01_avx2_ph _pst _stavx2:
+ [ M.__addpst01_avx2
+ : pst=_pst /\ st=_stavx2
+ ==> res.[0] = _stavx2.[0] `^` u256_pack4 _pst.[0] _pst.[0] _pst.[0] _pst.[0]
+  /\ res.[1] = _stavx2.[1] `^` u256_pack4 _pst.[1] _pst.[2] _pst.[3] _pst.[4]
+  /\ res.[2] = _stavx2.[2]
+  /\ res.[3] = _stavx2.[3]
+  /\ res.[4] = _stavx2.[4]
+  /\ res.[5] = _stavx2.[5]
+  /\ res.[6] = _stavx2.[6]
+ ] = 1%r.
+proof. by conseq addpst01_avx2_ll (addpst01_avx2_h _pst _stavx2). qed.
+
+(*
+addpst23456_avx2
+*)
+lemma addpst23456_avx2_ll: islossless M.__addpst23456_avx2
+ by islossless.
+
+hoare addpst23456_avx2_h _pst _stavx2:
+ M.__addpst23456_avx2
+ : pst=_pst /\ st=_stavx2
+ ==> res.[0] = _stavx2.[0]
+  /\ res.[1] = _stavx2.[1]
+  /\ res.[2] = _stavx2.[2] `^` u256_pack4 _pst.[10] _pst.[20] _pst.[5]  _pst.[15]
+  /\ res.[3] = _stavx2.[3] `^` u256_pack4 _pst.[16] _pst.[7]  _pst.[23] _pst.[14]
+  /\ res.[4] = _stavx2.[4] `^` u256_pack4 _pst.[11] _pst.[22] _pst.[8]  _pst.[19]
+  /\ res.[5] = _stavx2.[5] `^` u256_pack4 _pst.[21] _pst.[17] _pst.[13] _pst.[9]
+  /\ res.[6] = _stavx2.[6] `^` u256_pack4 _pst.[6]  _pst.[12] _pst.[18] _pst.[24].
+proof.
+admit (* bdep *).
+qed.
+
+phoare addpst23456_avx2_ph _pst _stavx2:
+ [ M.__addpst23456_avx2
+ : pst=_pst /\ st=_stavx2
+ ==> res.[0] = _stavx2.[0]
+  /\ res.[1] = _stavx2.[1]
+  /\ res.[2] = _stavx2.[2] `^` u256_pack4 _pst.[10] _pst.[20] _pst.[5]  _pst.[15]
+  /\ res.[3] = _stavx2.[3] `^` u256_pack4 _pst.[16] _pst.[7]  _pst.[23] _pst.[14]
+  /\ res.[4] = _stavx2.[4] `^` u256_pack4 _pst.[11] _pst.[22] _pst.[8]  _pst.[19]
+  /\ res.[5] = _stavx2.[5] `^` u256_pack4 _pst.[21] _pst.[17] _pst.[13] _pst.[9]
+  /\ res.[6] = _stavx2.[6] `^` u256_pack4 _pst.[6]  _pst.[12] _pst.[18] _pst.[24]
+ ] = 1%r.
+proof. by conseq addpst23456_avx2_ll (addpst23456_avx2_h _pst _stavx2). qed.
+
+(*
+addpstate_avx2
+*)
+lemma addpstate_avx2_ll: islossless M._addpstate_avx2
+by islossless.
+
+hoare addpstate_avx2_h _pst _stavx2:
+ M._addpstate_avx2
+ : pst=_pst /\ st=_stavx2
+ ==> res = stavx2_from_st25 (addstate _pst (stavx2_to_st25 _stavx2)).
+proof.
+admit (* BDEP *).
+qed.
+
+phoare addpstate_avx2_ph _pst _stavx2:
+ [ M._addpstate_avx2
+ : pst=_pst /\ st=_stavx2
+ ==> res = stavx2_from_st25 (addstate _pst (stavx2_to_st25 _stavx2))
+ ] = 1%r.
+proof. by conseq addpstate_avx2_ll (addpstate_avx2_h _pst _stavx2). qed.
+
+(*
+stavx2_pos_avx2
+*)
+
+(*
+addratebit_avx2
+*)
+lemma addratebit_avx2_ll: islossless M.__addratebit_avx2
+ by islossless.
+
+hoare addratebit_avx2_h _r8 _stavx2:
+ M.__addratebit_avx2
+ : st = _stavx2 /\ rATE8=_r8
+ ==> res = stavx2_from_st25 (addratebit _r8 (stavx2_to_st25 _stavx2)).
+proof.
+admit (*BDEP*).
+qed.
+
+phoare addratebit_avx2_ph _r8 _stavx2:
+ [ M.__addratebit_avx2
+ : st = _stavx2 /\ rATE8=_r8
+ ==> res = stavx2_from_st25 (addratebit _r8 (stavx2_to_st25 _stavx2))
+ ] = 1%r.
+proof. by conseq addratebit_avx2_ll (addratebit_avx2_h _r8 _stavx2). qed.
