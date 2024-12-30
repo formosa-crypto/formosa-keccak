@@ -7,4 +7,4 @@ rdirs = Jasmin:~/src/jasmin/main/eclib
 rdirs = CryptoSpecs:../crypto-specs/common
 rdirs = CryptoSpecs:../crypto-specs/fips202
 idirs = ../common
-idirs = JazzEC:../extracted
+idirs = JazzEC:extracted
