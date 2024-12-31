@@ -11,16 +11,18 @@ require import List Real Distr Int IntDiv CoreMap.
 
 from Jasmin require import JModel.
 
-from CryptoSpecs require import Keccakf1600_Spec.
+from CryptoSpecs require import Keccakf1600_Spec FIPS202_SHA3_Spec.
 from CryptoSpecs require export Keccak1600_Spec.
 
-require import WArray768.
 from JazzEC require import Jazz_avx2.
 
-require import Array4 Array5 Array7 Array24 Array25.
+from JazzEC require import WArray768.
+from JazzEC require import Array4 Array5 Array7 Array24 Array25.
 
+(*
 from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec Keccak1600_Spec FIPS202_SHA3_Spec.
+*)
 
 (* circuit-friendly state mappings *)
 

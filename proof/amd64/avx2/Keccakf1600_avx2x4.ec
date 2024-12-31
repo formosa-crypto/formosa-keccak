@@ -18,12 +18,12 @@ from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec.
 
 
-
 require import Keccakf1600_ref.
+require import Keccak1600_avx2x4.
 
 from JazzEC require Jazz_ref.
 from JazzEC require import Jazz_avx2.
-require import WArray768.
+from JazzEC require import WArray768 Array5.
 
 
 

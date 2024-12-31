@@ -18,10 +18,10 @@ from Jasmin require import JArray.
 from CryptoSpecs require import FIPS202_SHA3.
 from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
-from JazzEC require import WArray200.
 from JazzEC require Jazz_avx2.
 
-require import Array4 Array5 Array7 Array24 Array25.
+from JazzEC require import WArray200.
+from JazzEC require import Array4 Array5 Array7 Array24 Array25.
 
 from CryptoSpecs require import FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec.

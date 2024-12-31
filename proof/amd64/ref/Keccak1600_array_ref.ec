@@ -5,8 +5,8 @@ from Jasmin require import JModel_x86.
 import SLH64.
 import IntOrder.
 
-require import Array25 WArray200.
 from Jasmin require import JArray.
+from JazzEC require import Array25 WArray200.
 
 
 from CryptoSpecs require import FIPS202_SHA3.

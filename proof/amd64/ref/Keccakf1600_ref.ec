@@ -6,10 +6,6 @@
 require import List Real Int IntDiv CoreMap.
 
 from Jasmin require import JModel.
-(*
-require import Keccak_f1600_Spec_facts.
-require import Keccak_f1600_s_spec_proof.
-*)
 
 from CryptoSpecs require import FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec.

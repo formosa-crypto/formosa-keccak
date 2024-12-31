@@ -8,7 +8,7 @@ require import Keccak1600_avx2.
 
 from JazzEC require import Jazz_avx2.
 
-require import Array4 Array5 Array7 Array24 Array25.
+from JazzEC require import Array4 Array5 Array7 Array24 Array25.
 
 
 lemma stavx2_from_st25_iota st rc:

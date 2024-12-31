@@ -14,7 +14,7 @@ from Jasmin require import JModel.
 from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec.
 
-require import WArray768.
+from JazzEC require import WArray768.
 from JazzEC require import Jazz_avx2.
 from JazzEC require import Array24 Array5.
 
