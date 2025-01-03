@@ -245,13 +245,12 @@ inline fn __awrite_subu256
       DELTA += 32;
       LEN -= 32;
     } else {
+      t128 = (128u) w;
       if (16 <= LEN) {
-        buf.[u128 offset + DELTA] = (128u) w;
+        buf.[u128 offset + DELTA] = t128;
         DELTA += 16;
         LEN -= 16;
         t128 = #VEXTRACTI128(w, 1);
-      } else {
-        t128 = (128u) w;
       }
       buf, DELTA, LEN = __awrite_subu128(buf, offset, DELTA, LEN, t128);
     }

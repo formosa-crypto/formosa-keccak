@@ -47,18 +47,21 @@ inline fn __state_init_avx2() -> reg u256[7]
 */
 inline fn __pstate_init_avx2
 ( reg mut ptr u64[25] pst
-) -> reg ptr u64[25]
+) -> reg ptr u64[25], reg u256[7]
 {
   inline int i;
   reg u64 z64;
   reg u256 z256;
+  reg u256[7] st;
 
   z256 = #set0_256();
   for i=0 to 25/4 { pst[u256 i] = z256; }
   z64 = 0;
   pst[24] = z64;
 
-  return pst;
+  st = __state_init_avx2();
+
+  return pst, st;
 }
 
 inline fn __perm_reg3456_avx2
