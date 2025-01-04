@@ -1,7 +1,7 @@
 (******************************************************************************
    Keccak1600_imem_ref.ec:
 
-   Correctness proof for the Keccak (fixed-sized) memory absorb/squeeze
+   Correctness proof for the Keccak (fixed-sized) array based absorb/squeeze
   REF implementation
 
 
@@ -27,7 +27,7 @@ from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec.
 require import Keccakf1600_ref Keccak1600_ref Keccak1600_imem_ref.
 
 
-abstract theory Keccak1600_Array_ref.
+abstract theory KeccakArrayRef.
 
 op aSIZE: int.
 axiom aSIZE_ge0: 0 <= aSIZE.
@@ -730,4 +730,4 @@ proof.
 by conseq squeeze_array_ref_ll (squeeze_array_ref_h _buf _off _len _st _r8).
 qed.
 
-end Keccak1600_Array_ref.
+end KeccakArrayRef.

@@ -117,7 +117,7 @@ pstate_imem_avx2
 *)
 phoare pstate_imem_avx2_ll: 
  [ M.__pstate_imem_avx2
- : 0 <= aT <= aT + lEN + b2i (tRAILB<>0) <= 200
+ : 0 <= aT <= aT + lEN <= 200 - b2i (tRAILB<>0) 
  ==> true
  ] = 1%r.
 proof.
@@ -132,7 +132,7 @@ qed.
 hoare pstate_imem_avx2_h _mem _pst _at _buf _len _tb:
  M.__pstate_imem_avx2
  : Glob.mem=_mem /\ pst=_pst /\ aT=_at /\ buf=_buf /\ lEN=_len /\ tRAILB=_tb
- /\ 0 <= aT <= aT + lEN + b2i (_tb<>0) <= 200
+ /\ 0 <= aT <= aT + lEN <= 200 - b2i (_tb<>0)
  /\ to_uint buf + lEN < W64.modulus
  ==> Glob.mem = _mem
   /\ res.`1 = fillpst_at _pst _at (memread _mem (to_uint _buf) _len ++ if _tb<>0 then [W8.of_int _tb] else [])
@@ -145,7 +145,7 @@ admitted.
 phoare pstate_imem_avx2_ph _mem _pst _at _buf _len _tb:
  [ M.__pstate_imem_avx2
  : Glob.mem=_mem /\ pst=_pst /\ aT=_at /\ buf=_buf /\ lEN=_len /\ tRAILB=_tb
- /\ 0 <= aT <= aT + lEN + b2i (_tb<>0) <= 200
+ /\ 0 <= aT <= aT + lEN <= 200 - b2i (_tb<>0)
  /\ to_uint buf + lEN < W64.modulus
  ==> Glob.mem = _mem
   /\ res.`1 = fillpst_at _pst _at (memread _mem (to_uint _buf) _len ++ if _tb<>0 then [W8.of_int _tb] else [])
@@ -177,34 +177,34 @@ qed.
 
 hoare pabsorb_imem_avx2_h _mem _l _buf _len _r8 _tb:
  M.__pabsorb_imem_avx2
- : Glob.mem=_mem /\ aT = size _l %% _r8 /\ buf=_buf /\ lEN=_len /\ tRAILB=_tb
- /\ pabsorb_spec_avx2 _r8 _l1 pst st
+ : Glob.mem=_mem /\ aT = size _l %% _r8 /\ buf=_buf /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ pabsorb_spec_avx2 _r8 _l pst st
  /\ 0 <= _len
  /\ to_uint _buf + _len < W64.modulus
  ==> if _tb <> 0
-     then absorb_spec_avx2 _r8 _tb (_l1 ++ memread _mem (to_uint _buf) _len) res.`3
-     else pabsorb_spec_avx2 _r8 (_l1 ++ memread _mem (to_uint _buf) _len) res.`1 res.`3
-          /\ res.`2 = (size _l1 + _len) %% _r8
-          /\ res.`4 = _buf + W64.of_int _len).
+     then absorb_spec_avx2 _r8 _tb (_l ++ memread _mem (to_uint _buf) _len) res.`3
+     else pabsorb_spec_avx2 _r8 (_l ++ memread _mem (to_uint _buf) _len) res.`1 res.`3
+          /\ res.`2 = (size _l + _len) %% _r8
+          /\ res.`4 = _buf + W64.of_int _len.
 proof.
 proc => /=.
 admitted.
 
-phoare pabsorb_imem_avx2_ph _mem _l1 _l2 _buf _len _r8 _tb:
+phoare pabsorb_imem_avx2_ph _mem _l _buf _len _r8 _tb:
  [ M.__pabsorb_imem_avx2
- : Glob.mem=_mem /\ aT = size _l %% _r8 /\ buf=_buf /\ lEN=_len /\ tRAILB=_tb
- /\ pabsorb_spec_avx2 _r8 _l1 pst st
+ : Glob.mem=_mem /\ aT = size _l %% _r8 /\ buf=_buf /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ pabsorb_spec_avx2 _r8 _l pst st
  /\ 0 <= _len
  /\ to_uint _buf + _len < W64.modulus
  ==> if _tb <> 0
-     then absorb_spec_avx2 _r8 _tb (_l1 ++ memread _mem (to_uint _buf) _len) res.`3
-     else pabsorb_spec_avx2 _r8 (_l1 ++ memread _mem (to_uint _buf) _len) res.`1 res.`3
-          /\ res.`2 = (size _l1 + _len) %% _r8
-          /\ res.`4 = _buf + W64.of_int _len)
+     then absorb_spec_avx2 _r8 _tb (_l ++ memread _mem (to_uint _buf) _len) res.`3
+     else pabsorb_spec_avx2 _r8 (_l ++ memread _mem (to_uint _buf) _len) res.`1 res.`3
+          /\ res.`2 = (size _l + _len) %% _r8
+          /\ res.`4 = _buf + W64.of_int _len
  ] = 1%r.
 proof.
-conseq pabsorb_imem_avx2_ll (pabsorb_imem_avx2_h _mem _l1 _l2 _buf _len _r8 _tb) => |> &m ->.
-by rewrite /pabsorb_spec_avx2 => [#] /#.
+conseq pabsorb_imem_avx2_ll (pabsorb_imem_avx2_h _mem _l _buf _len _r8 _tb) => |> &m ->.
+by rewrite /pabsorb_spec_avx2 => /#.
 qed.
 
 (*
