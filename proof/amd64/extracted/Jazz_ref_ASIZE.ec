@@ -516,17 +516,18 @@ module M = {
         dELTA <- (dELTA + 32);
         lEN <- (lEN - 32);
       } else {
+        t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
           buf <-
           (Array999.init
           (WArray999.get8
           (WArray999.set128_direct (WArray999.init8 (fun i => buf.[i]))
-          (W64.to_uint (offset + (W64.of_int dELTA))) (truncateu128 w))));
+          (W64.to_uint (offset + (W64.of_int dELTA))) t128)));
           dELTA <- (dELTA + 16);
           lEN <- (lEN - 16);
           t128 <- (VEXTRACTI128 w (W8.of_int 1));
         } else {
-          t128 <- (truncateu128 w);
+          
         }
         (buf, dELTA, lEN) <@ __awrite_subu128 (buf, offset, dELTA, lEN,
         t128);

@@ -224,7 +224,7 @@ import BitEncoding.BitChunking.
 abbrev keccak_double_round A i =
  keccak_round_op rc_spec.[2*i+1] (keccak_round_op rc_spec.[2*i] A).
 
-hoare keccakf1600_ref_h _a:
+hoare __keccakf1600_ref_h _a:
  M.__keccakf1600_ref :
   a = _a ==> res = keccak_f1600_op _a.
 proof.
@@ -249,7 +249,8 @@ have ->/=: to_uint c = 24 by smt().
 by rewrite range_geq /=.
 qed.
 
-lemma keccakf1600_ref_ll: islossless M.__keccakf1600_ref.
+lemma __keccakf1600_ref_ll: islossless M.__keccakf1600_ref.
+proof.
 proc.
 have Hll:= round_ref_ll.
 wp; while (0 <= to_uint c <= 24) (23 - to_uint c).
@@ -265,10 +266,24 @@ auto => /> c ???.
 by rewrite ultE of_uintK /= /#.
 qed.
 
-phoare keccakf1600_ref_ph _a:
+phoare __keccakf1600_ref_ph _a:
  [ M.__keccakf1600_ref
  : a = _a
  ==> res = keccak_f1600_op _a
  ] = 1%r.
-proof. by conseq keccakf1600_ref_ll (keccakf1600_ref_h _a). qed.
+proof. by conseq __keccakf1600_ref_ll (__keccakf1600_ref_h _a). qed.
+
+lemma keccakf1600_ref_ll: islossless M._keccakf1600_ref.
+proof.
+proc; inline _keccakf1600_ref.
+by call __keccakf1600_ref_ll.
+qed.
+
+hoare keccakf1600_ref_h _a:
+ M._keccakf1600_ref :
+  a = _a ==> res = keccak_f1600_op _a.
+proof.
+proc; inline _keccakf1600_ref.
+by call (__keccakf1600_ref_h _a).
+qed.
 

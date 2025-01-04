@@ -145,7 +145,7 @@ inline fn __dumpstate_imem_ref
 {
   reg u64 i, t;
   i = 0;
-  while (i <s (LEN/8)) {
+  while (i < (LEN/8)) {
     t = st[(int) i];
     i += 1;
     (u64)[buf] = t;
@@ -172,7 +172,7 @@ inline fn __squeeze_imem_ref
   inline int ITERS, LO;
   ITERS = LEN/RATE8;
   LO = LEN%RATE8;
-  if (0 <s LEN) {
+  if (0 < LEN) {
     if (0 < ITERS) {
       i = 0;
       while (i < ITERS) {

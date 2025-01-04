@@ -8,16 +8,20 @@
 ******************************************************************************)
 
 require import List Real Distr Int IntDiv CoreMap.
+require BitEncoding.
+import BitEncoding.BitChunking.
+
 
 from Jasmin require import JModel.
 
+from CryptoSpecs require import JWordList.
 from CryptoSpecs require import Keccakf1600_Spec FIPS202_SHA3_Spec.
 from CryptoSpecs require export Keccak1600_Spec.
 
 from JazzEC require import Jazz_avx2.
 
-from JazzEC require import WArray768.
-from JazzEC require import Array4 Array5 Array7 Array24 Array25.
+from JazzEC require import WArray200.
+from JazzEC require import Array25 Array7.
 
 (*
 from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
@@ -170,46 +174,35 @@ abbrev stF_avx2 f = fun st => stavx2_from_st25 (f (stavx2_to_st25 st)).
 
 op stavx2_keccakf1600 = stF_avx2 keccak_f1600_op.
 
-
-op stmatch_avx2 (st: state) (stavx2: W256.t Array7.t): bool =
- stavx2 = stavx2_from_st25 st.
-
-
-op stavx2bytes (stavx2: W256.t Array7.t): W8.t list.
-(* =
- state2bytes (stavx2_to_st25 stavx2). *)
-
-op bytes2stavx2 (bs: W8.t list): W256.t Array7.t.
-
-
 (******************************************************************************
    
 ******************************************************************************)
 
-require BitEncoding.
-import BitEncoding.BitChunking.
 
-
-op absorb_spec_avx2 (r8: int) (tb: int) (st: W256.t Array7.t) (l: W8.t list) =
+op absorb_spec_avx2 (r8: int) (tb: int) (l: W8.t list) st =
  st = stavx2_from_st25 (ABSORB1600 (W8.of_int tb) r8 l).
 
-op pabsorb_spec_avx2 (r8: int) st0 l' (st1: W256.t Array7.t) (l: W8.t list): bool =
+op pabsorb_spec_avx2 r8 l (pst: W64.t Array25.t) (st: W256.t Array7.t): bool =
  0 < r8 <= 200 /\
- st1=stavx2_from_st25 (stateabsorb_iblocks (chunk r8 l) (stavx2_to_st25 st0)) /\
- l' = chunkremains r8 l.
+ st=stavx2_from_st25 (stateabsorb_iblocks (chunk r8 l) st0) /\
+ sub (stbytes pst) 0 (size l %% r8) = chunkremains r8 l
+ /\
+ sub (stbytes pst) r8 (200-r8) = nseq (200-r8) W8.zero.
 
 lemma pabsorb_spec_avx2_nil r8:
  0 < r8 <= 200 =>
- pabsorb_spec_avx2 r8 stavx2_st0 [] stavx2_st0 [].
+ pabsorb_spec_avx2 r8 [] st0 stavx2_st0.
 proof.
-move=> Hr; rewrite /pabsorb_spec_avx2 => />.
+move=> Hr; rewrite /stavx2_st0 /pabsorb_spec_avx2 => />.
 rewrite chunk0 /= 1:/#.
-rewrite stavx2_from_st25K.
-by rewrite /stateabsorb_iblocks /= /chunkremains.
+rewrite /stateabsorb_iblocks /= /chunkremains /= /sub mkseq0 -mkseq_nseq /=.
+apply eq_in_mkseq => i Hi /=.
+by rewrite initiE 1:/# /= /st0 createiE 1:/# W8u8.get_zero.
 qed.
 
-lemma pabsorb_spec_avx2_cat r8 st0 l1 st1 l12 l2 st2 l22:
- pabsorb_spec_avx2 r8 st0 l12 st1 l1 =>
+(*
+lemma pabsorb_spec_avx2_cat r8 l1 l2 pst1 st1 pst2 st2:
+ pabsorb_spec_avx2 r8 l1 pst1 st1 =>
  pabsorb_spec_avx2 r8 st1 l22 st2 (l12++l2)=>
  pabsorb_spec_avx2 r8 st0 l22 st2 (l1++l2).
 proof.
@@ -217,11 +210,21 @@ rewrite /pabsorb_spec_avx2 => /> Hr0 Hr1; split.
  admit.
 admit.
 qed.
+*)
 
-op squeeze_spec_avx2 (r8: int) (st0 st1:W256.t Array7.t) (l: W8.t list) =
- st1 = stavx2_from_st25 (st_i (stavx2_to_st25 st0) ((size l-1) %% r8 + 1))
- /\ l = SQUEEZE1600 r8 (size l) (stavx2_to_st25 st0).
+op fillpst_at (st: W64.t Array25.t) (at:int) (l: W8.t list) =
+ stwords
+  (WArray200.fill 
+   (fun i => nth W8.zero l (i-at)) at (size l) (stbytes st)).
 
+(*
+op squeeze_spec_avx2 r8 st l =
+ l = SQUEEZE1600 r8 (size l) (stavx2_to_st25 st).
+
+op squeezeblocks_spec_avx2 n r8 st l st1 =
+ st1 = stavx2_from_st25 (st_i (stavx2_to_st25 st) n)
+ /\ l = SQUEEZE1600 r8 (size l) (stavx2_to_st25 st).
+*)
 
 (******************************************************************************
    
@@ -231,10 +234,6 @@ op squeeze_spec_avx2 (r8: int) (st0 st1:W256.t Array7.t) (l: W8.t list) =
 u64_to_u256
 *)
 
-
-(*
-pstate_init_avx2
-*)
 
 lemma state_init_avx2_ll:
  islossless M.__state_init_avx2.
@@ -261,6 +260,35 @@ phoare state_init_avx2_ph:
  ==> res = stavx2_st0
  ] = 1%r.
 proof. by conseq state_init_avx2_ll state_init_avx2_h. qed.
+
+lemma pstate_init_avx2_ll:
+ islossless M.__pstate_init_avx2.
+proof.
+proc.
+call state_init_avx2_ll.
+wp; while true (aux-i).
+ by move=> z; auto => /> /#.
+by auto => /#.
+qed.
+
+hoare pstate_init_avx2_h _r8:
+ M.__pstate_init_avx2
+ : 0 < _r8 <= 200
+ ==> pabsorb_spec_avx2 _r8 [] res.`1 res.`2.
+proof.
+proc.
+seq 7: (#pre /\ pst=st0).
+ admit.
+call state_init_avx2_h; auto => |> *.
+by apply pabsorb_spec_avx2_nil.
+qed.
+
+phoare pstate_init_avx2_ph _r8:
+ [ M.__pstate_init_avx2
+ : 0 < _r8 <= 200
+ ==> pabsorb_spec_avx2 _r8 [] res.`1 res.`2
+ ] = 1%r.
+proof. by conseq pstate_init_avx2_ll (pstate_init_avx2_h _r8). qed.
 
 (*
 perm_reg3456_avx2

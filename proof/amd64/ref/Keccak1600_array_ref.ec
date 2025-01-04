@@ -1,32 +1,37 @@
-require import AllCore IntDiv StdOrder CoreMap List.
+(******************************************************************************
+   Keccak1600_imem_ref.ec:
 
-from Jasmin require import JModel_x86.
+   Correctness proof for the Keccak (fixed-sized) memory absorb/squeeze
+  REF implementation
 
-import SLH64.
+
+
+******************************************************************************)
+
+require import List Real Distr Int IntDiv StdOrder.
 import IntOrder.
 
-from Jasmin require import JArray.
-from JazzEC require import Array25 WArray200.
+from Jasmin require import JModel.
+
+from CryptoSpecs require export Keccakf1600_Spec.
+
+from JazzEC require import Jazz_ref.
+
+from JazzEC require import WArray200.
+from JazzEC require import Array25.
+
+from CryptoSpecs require import JWordList.
+from CryptoSpecs require import FIPS202_Keccakf1600.
+from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec.
+
+require import Keccakf1600_ref Keccak1600_ref Keccak1600_imem_ref.
 
 
-from CryptoSpecs require import FIPS202_SHA3.
-from CryptoSpecs require export Keccakf1600_Spec Keccak1600_Spec.
-
-
-op addst_at (st: W64.t Array25.t) at l =
- let st200 = stbytes st in
- stwords
-  (WArray200.fill 
-   (fun i => st200.[i] `^` (nth W8.zero l (i-at))) at (size l) st200).
-
-
-
-
-
-abstract theory Keccak1600_array_ref.
+abstract theory Keccak1600_Array_ref.
 
 op aSIZE: int.
 axiom aSIZE_ge0: 0 <= aSIZE.
+axiom aSIZE_u64: aSIZE < W64.modulus.
 
 module type MParam = {
   proc keccakf1600_ref (a:W64.t Array25.t) : W64.t Array25.t
@@ -35,11 +40,11 @@ module type MParam = {
 }.
 
 clone import PolyArray as A
- with op size <= aSIZE
+ with op size <- aSIZE
       proof ge0_size by exact aSIZE_ge0.
 
 clone import WArray as WA
- with op size <= aSIZE.
+ with op size <- aSIZE.
 
 module M(P: MParam) = {
   proc __aread_subu64 (buf:W8.t A.t, offset:W64.t, dELTA:int, lEN:int,
@@ -177,7 +182,6 @@ module M(P: MParam) = {
     var  _4:int;
     var  _5:int;
     aLL <- (aT + lEN);
-(*if (0 <= aT /\ aLL+b2i(tRAILB<>0) <= 200) {*)
 
     lO <- (aT %% 8);
     at <- (W64.of_int (aT %/ 8));
@@ -249,7 +253,7 @@ module M(P: MParam) = {
     } else {
       
     }
-(*}*)
+
     return (st, aLL, offset);
   }
   proc __absorb_array_ref (st:W64.t Array25.t, aT:int, buf:W8.t A.t,
@@ -358,13 +362,20 @@ module M(P: MParam) = {
 }.
 
 
+(*
+   PARAMETER MODULE
+*)
+module P: MParam = {
+  proc keccakf1600_ref = Jazz_ref.M._keccakf1600_ref
+  proc state_init_ref = Jazz_ref.M.__state_init_ref
+  proc addratebit_ref = Jazz_ref.M.__addratebit_ref
+}.
+
+
 (****************************************************************************
                       
 ****************************************************************************)
 
-section.
-
-declare module P <: MParam.
 
 hoare aread_subu64_h _buf _off _dlt _len _trail:
  M(P).__aread_subu64
@@ -478,22 +489,11 @@ proof.
 by conseq awrite_subu64_ll (awrite_subu64_h _buf _off _dlt _len _w).
 qed.
 
-hoare addstate_array_ref_h _st _at _buf _off _len _tb:
- M(P).__addstate_array_ref
- : st=_st /\ aT=_at /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
- /\ 0 <= aT <= aT + lEN <= 200 - b2i (tRAILB<>0)
- ==> let l = sub _buf (to_uint _off) _len ++ if _tb <> 0 then [W8.of_int _tb] else []
-     in res.`1 = addst_at _st _at l
-     /\ res.`2 = _at + size l
-     /\ res.`3 = _off + (W64.of_int _len).
-proof.
-proc => /=.
-admitted.
-
-lemma addstate_array_ref_ll:
- phoare [ M(P).__addstate_array_ref
-        : 0 <= aT <= aT + lEN <= 200 - b2i (tRAILB<>0)
-        ==> true ] = 1%r.
+phoare addstate_array_ref_ll:
+ [ M(P).__addstate_array_ref
+ : 0 <= aT <= aT + lEN <= 200 - b2i (tRAILB<>0)
+ ==> true
+ ] = 1%r.
 proof.
 proc => /=.
 seq 7: (#pre) => //=.
@@ -525,39 +525,123 @@ sp; if.
 by auto => /#.
 qed.
 
+hoare addstate_array_ref_h _st _at _buf _off _len _tb:
+ M(P).__addstate_array_ref
+ : st=_st /\ aT=_at /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
+ /\ 0 <= _at <= 200
+ /\ 0 <= _len
+ /\ _at + _len <= 200 - b2i (_tb<>0)
+ /\ to_uint offset + _len <= aSIZE
+ ==> let l = sub _buf (to_uint _off) _len ++ if _tb <> 0 then [W8.of_int _tb] else []
+     in res.`1 = addstate_at _st _at l
+     /\ res.`2 = _at + size l
+     /\ res.`3 = _off + (W64.of_int _len).
+proof.
+proc => /=.
+admitted.
+
 phoare addstate_array_ref_ph _st _at _buf _off _len _tb:
  [ M(P).__addstate_array_ref
  : st=_st /\ aT=_at /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
- /\ 0 <= aT <= aT + lEN <= 200 - b2i (tRAILB<>0)
+ /\ 0 <= _at <= 200
+ /\ 0 <= _len
+ /\ _at + _len <= 200 - b2i (_tb<>0)
+ /\ to_uint offset + _len <= aSIZE
  ==> let l = sub _buf (to_uint _off) _len ++ if _tb <> 0 then [W8.of_int _tb] else []
-     in res.`1 = addst_at _st _at l
+     in res.`1 = addstate_at _st _at l
      /\ res.`2 = _at + size l
      /\ res.`3 = _off + (W64.of_int _len)
  ] = 1%r.
 proof.
-by conseq addstate_array_ref_ll (addstate_array_ref_h _st _at _buf _off _len _tb).
+by conseq addstate_array_ref_ll (addstate_array_ref_h _st _at _buf _off _len _tb) => /#.
 qed.
 
-hoare dumpstate_array_ref_h _buf _off _len _st:
- M(P).__dumpstate_array_ref
- : buf=_buf /\ offset=_off /\ lEN=_len /\ st=_st
- /\ 0 <= _len <= 200
- /\ to_uint _off + _len <= aSIZE
- ==> res.`1 = A.fill (fun i=>(stbytes _st).[i-to_uint _off]) (to_uint _off) _len _buf
-  /\ res.`2 = _off + W64.of_int _len.
+phoare absorb_array_ref_ll:
+ [ M(P).__absorb_array_ref
+ : 0 < rATE8 <= 200
+ /\ 0 <= aT <= rATE8
+ /\ 0 <= lEN
+ ==> true
+ ] = 1%r.
+proof.
 proc.
-admitted.
+sp; if => //=.
+ case: (tRAILB<>0).
+  rcondt 2; first by call (: true) => //.
+  call addratebit_ref_ll.
+  by call addstate_array_ref_ll; auto => /> &m * /#.
+ rcondf 2; first by call (: true) => //.
+ by call addstate_array_ref_ll; auto => /> &m * /#.
+seq 1: #[/:-2]{~aLL}pre => //.
+ if => //.
+  wp; call keccakf1600_ref_ll.
+  wp; call addstate_array_ref_ll; auto => /> &m *; split; first smt().
+  by move=> ?? /#.
+ seq 5: true => //.
+  call addstate_array_ref_ll => /=.
+  wp; while #pre (iTERS - to_uint i).
+   move=> z.
+   wp; call keccakf1600_ref_ll.
+   call addstate_array_ref_ll; auto => /> &m Hr1 Hr2 Hat1 Hat2 Hlen0; rewrite ultE of_uintK.
+   move=> /= Hi; split; first smt().
+   by move=> ?; rewrite to_uintD_small /=; smt(W64.to_uint_cmp).
+  by auto => /> &m ????? i; rewrite ultE of_uintK /=; smt(W64.to_uint_cmp).
+ by islossless.
+hoare => /=.
+if => //.
+wp; call (: true) => //.
+wp; call (: true) => //.
+by auto => /> /#.
+qed.
 
-lemma dumpstate_array_ref_ll _off _len:
- phoare [ M(P).__dumpstate_array_ref
-        : offset=_off /\ lEN=_len
-        /\ 0 <= _len <= 200
-        /\ to_uint _off + _len <= aSIZE
-        ==> true ] = 1%r.
+hoare absorb_array_ref_h _l _buf _off _len _r8 _tb:
+ M(P).__absorb_array_ref
+ : aT=size _l %% _r8 /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ pabsorb_spec_ref _r8 _l st
+ /\ 0 <= _len
+ /\ to_uint _off + _len < aSIZE
+ ==> if _tb <> 0
+     then res.`1 = ABSORB1600 (W8.of_int _tb) _r8 (_l ++ sub _buf (to_uint _off) _len)
+       /\ res.`3 = _off + W64.of_int (max 0 _len)
+     else pabsorb_spec_ref _r8 (_l ++ sub _buf (to_uint _off) _len) res.`1
+       /\ res.`2 = (size _l + _len) %% _r8
+       /\ res.`3 = _off + W64.of_int _len.
+proof.
+proc.
+admit.
+qed.
+
+phoare absorb_array_ref_ph _l _buf _off _len _r8 _tb:
+ [ M(P).__absorb_array_ref
+ : aT=size _l %% _r8 /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ pabsorb_spec_ref _r8 _l st
+ /\ 0 <= _len
+ /\ to_uint _off + _len < aSIZE
+ ==> if _tb <> 0
+     then res.`1 = ABSORB1600 (W8.of_int _tb) _r8 (_l ++ sub _buf (to_uint _off) _len)
+       /\ res.`3 = _off + W64.of_int (max 0 _len)
+     else pabsorb_spec_ref _r8 (_l ++ sub _buf (to_uint _off) _len) res.`1
+       /\ res.`2 = (size _l + _len) %% _r8
+       /\ res.`3 = _off + W64.of_int _len
+ ] = 1%r.
+proof.
+by conseq absorb_array_ref_ll (absorb_array_ref_h _l _buf _off _len _r8 _tb) => /> /#.
+qed.
+
+(*
+   ONE-SHOT (FIXED-SIZE) MEMORY SQUEEZE
+   ====================================
+*)
+
+phoare dumpstate_array_ref_ll: 
+ [ M(P).__dumpstate_array_ref
+ : 0 <= lEN <= 200
+ ==> true
+ ] = 1%r.
 proof.
 proc => /=.
 seq 2: true => //.
- while (#{~_off}pre /\ 0 <= to_sint i <= _len%/8) (_len %/ 8 - to_sint i).
+ while (#pre /\ 0 <= to_sint i <= lEN%/8) (lEN %/ 8 - to_sint i).
   move=> z; auto => /> &m; rewrite sltE /= => Hlen0 Hlen1 Hi0 _.
   rewrite of_sintK /smod ifF 1:/# modz_small 1:/# => Hi1.
   have E: to_sint W64.one = 1 by rewrite to_sintE /smod.
@@ -572,6 +656,16 @@ seq 2: true => //.
 by islossless.
 qed.
 
+hoare dumpstate_array_ref_h _buf _off _len _st:
+ M(P).__dumpstate_array_ref
+ : buf=_buf /\ offset=_off /\ lEN=_len /\ st=_st
+ /\ 0 <= _len <= 200
+ /\ to_uint _off + _len <= aSIZE
+ ==> res.`1 = A.fill (fun i=>(stbytes _st).[i-to_uint _off]) (to_uint _off) _len _buf
+  /\ res.`2 = _off + W64.of_int _len.
+proc.
+admitted.
+
 phoare dumpstate_array_ref_ph _buf _off _len _st:
  [ M(P).__dumpstate_array_ref
  : buf=_buf /\ offset=_off /\ lEN=_len /\ st=_st
@@ -581,139 +675,59 @@ phoare dumpstate_array_ref_ph _buf _off _len _st:
   /\ res.`2 = _off + W64.of_int _len
  ] = 1%r.
 proof.
-by conseq (dumpstate_array_ref_ll _off _len) (dumpstate_array_ref_h _buf _off _len _st).
+by conseq dumpstate_array_ref_ll (dumpstate_array_ref_h _buf _off _len _st).
 qed.
 
-declare axiom P_ok:
- islossless P.keccakf1600_ref
- /\ islossless P.state_init_ref
- /\ islossless P.addratebit_ref
- /\ (forall _st,
-     hoare [ P.keccakf1600_ref
-           : a = _st
-           ==> res = keccak_f1600_op _st
-           ])
- /\ hoare [ P.state_init_ref
-          : true
-          ==> res = st0
-          ]
- /\ (forall _st _rate8,
-     hoare [ P.addratebit_ref
-           : st=_st /\ rATE8=_rate8
-           /\ 0 < _rate8 <= 200
-           ==> res = addratebit _rate8 _st
-           ]).
 
-lemma absorb_array_ref_ll:
- phoare [ M(P).__absorb_array_ref
-        : 0 <= aT < 200
-        /\ 0 <= lEN
-        /\ 0 < rATE8 <= 200
-        ==> true ] = 1%r.
-proof.
-move: P_ok => [# F_ll init_ll addrb_ll F_h init_h addrb_h].
-proc => /=.
-sp; if.
- case: (tRAILB=0) => //=.
-  rcondf 2.
-   ecall (addstate_array_ref_h st aT buf offset lEN tRAILB).
-   by auto => /> &m /#.
-  call addstate_array_ref_ll.
-  by auto => /> &m /#.
- rcondt 2.
-  ecall (addstate_array_ref_h st aT buf offset lEN tRAILB).
-  by auto => /> &m /#.
- call addrb_ll.
- call addstate_array_ref_ll.
- by auto => /> &m /#.
-if.
- admit.
-sp; exlim iTERS => n.
-seq 3: true => //=.
- call addstate_array_ref_ll => /=.
- wp; while (#post) (n-to_uint i).
-  move=> z.
-  wp; call F_ll.
- call addstate_array_ref_ll => /=.
- auto => /> &m *.
- rewrite to_uintD_small of_uintK /=.
-  admit.
- split.
-  admit.
- smt().
- auto => /> *.
- admit.
-islossless.
-qed.
-
-lemma squeeze_array_ref_ll _off _len _rate8:
- phoare [ M(P).__squeeze_array_ref
-        : offset=_off /\ lEN=_len /\ rATE8=_rate8
-        /\ 0 <= _len
-        /\ to_uint _off + _len <= aSIZE
-        /\ 0 < _rate8 <= 200
-        ==> true
-        ] = 1%r.
-proof.
-move: P_ok => [# F_ll init_ll addrb_ll F_h init_h addrb_h].
-proc => /=.
-sp; if => //=.
-seq 1: #[/:]{~offset}pre => //=.
-  admit.
- if => //=.
- exlim lO => lo.
- exlim offset => off.
- call (dumpstate_array_ref_ll off lo).
- call F_ll; auto => /> *.
- split; first smt().
- admit (* adjust *).
-hoare => /=.
-if => //=.
-while (#post).
- wp; ecall (dumpstate_array_ref_h buf offset rATE8 st).
- call (:true); auto => /> *.
- admit.
-by auto => /=.
-qed.
-
-hoare squeeze_array_ref_h _buf _off _len _st _rate8:
- M(P).__squeeze_array_ref
- : buf=_buf /\ offset=_off /\ lEN=_len
- /\ st=_st /\ rATE8=_rate8
- /\ 0 <= _len
- /\ to_uint _off + _len <= aSIZE
- /\ 0 < _rate8 <= 200
- ==> res.`1 = A.fill (fun i => (SQUEEZE1600 _rate8 _len _st).[i-to_uint _off]) (to_uint _off) _len _buf
-  /\ res.`2 = _off + W64.of_int _len.
-proof.
-move: P_ok => [# F_ll init_ll addrb_ll F_h init_h addrb_h].
-proc => /=.
-admitted.
-
-phoare squeeze_array_ref_ph _buf _off _len _st _rate8:
+phoare squeeze_array_ref_ll: 
  [ M(P).__squeeze_array_ref
- : buf=_buf /\ offset=_off /\ lEN=_len
- /\ st=_st /\ rATE8=_rate8
- /\ 0 <= _len
- /\ to_uint _off + _len <= aSIZE
- /\ 0 < _rate8 <= 200
- ==> res.`1 = A.fill (fun i => (SQUEEZE1600 _rate8 _len _st).[i-to_uint _off]) (to_uint _off) _len _buf
-  /\ res.`2 = _off + W64.of_int _len
+ : 0 < rATE8 <= 200
+ ==> true
  ] = 1%r.
 proof.
-by conseq (squeeze_array_ref_ll _off _len _rate8) 
-     (squeeze_array_ref_h _buf _off _len _st _rate8).
+proc; sp; if=> //=.
+seq 1: #pre => //.
+  if => //.
+  while #pre (iTERS - to_uint i).
+   move => z.
+   wp; call dumpstate_array_ref_ll.
+   call keccakf1600_ref_ll; auto => /> &m ????.
+   by rewrite ultE of_uintK => /= Hi; rewrite to_uintD_small /= /#.
+  by auto => /> &m ???? i Hi; rewrite ultE of_uintK /#.
+ if => //.
+ call dumpstate_array_ref_ll.
+ call keccakf1600_ref_ll.
+ by auto => /#.
+hoare => /=.
+if => //.
+by while true; auto.
 qed.
 
-hoare absorb_array_ref_h _st _buf _off _len _rate8 _tb:
- M(P).__absorb_array_ref
- : st = _st /\ buf=_buf /\ rATE8=_rate8
- /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
- /\ to_uint _off + _len <= aSIZE
- ==> res.`1 = ABSORB1600 (W8.of_int _tb) _rate8 (sub _buf (to_uint _off) _len).
+hoare squeeze_array_ref_h _buf _off _len _st _r8:
+ M(P).__squeeze_array_ref
+ : buf=_buf /\ offset=_off /\ lEN=_len /\ st=_st /\ rATE8=_r8
+ /\ 0 <= _len
+ /\ 0 < _r8 <= 200
+ /\ to_uint _off + _len < aSIZE
+ ==> res.`1 = A.fill (fun i => (SQUEEZE1600 _r8 _len _st).[i-to_uint _off]) (to_uint _off) _len _buf
+  /\ res.`2 = _off + W64.of_int _len
+  /\ res.`3 = st_i _st ((_len-1) %/ _r8 + 1).
 proof.
-move: P_ok => [# F_ll init_ll addrb_ll F_h init_h addrb_h].
-proc => /=.
+proc.
 admitted.
 
-end section.
+phoare squeeze_array_ref_ph _buf _off _len _st _r8:
+ [ M(P).__squeeze_array_ref
+ : buf=_buf /\ offset=_off /\ lEN=_len /\ st=_st /\ rATE8=_r8
+ /\ 0 <= _len
+ /\ 0 < _r8 <= 200
+ /\ to_uint _off + _len < aSIZE
+ ==> res.`1 = A.fill (fun i => (SQUEEZE1600 _r8 _len _st).[i-to_uint _off]) (to_uint _off) _len _buf
+  /\ res.`2 = _off + W64.of_int _len
+  /\ res.`3 = st_i _st ((_len-1) %/ _r8 + 1)
+ ] = 1%r.
+proof.
+by conseq squeeze_array_ref_ll (squeeze_array_ref_h _buf _off _len _st _r8).
+qed.
+
+end Keccak1600_Array_ref.

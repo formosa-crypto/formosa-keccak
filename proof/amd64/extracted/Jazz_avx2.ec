@@ -1365,11 +1365,14 @@ module M = {
     }
     return st;
   }
-  proc __pstate_init_avx2 (pst:W64.t Array25.t) : W64.t Array25.t = {
+  proc __pstate_init_avx2 (pst:W64.t Array25.t) : W64.t Array25.t *
+                                                  W256.t Array7.t = {
     var aux:int;
+    var st:W256.t Array7.t;
     var z256:W256.t;
     var i:int;
     var z64:W64.t;
+    st <- witness;
     z256 <- (set0_256);
     aux <- (25 %/ 4);
     i <- 0;
@@ -1382,7 +1385,8 @@ module M = {
     }
     z64 <- (W64.of_int 0);
     pst.[24] <- z64;
-    return pst;
+    st <@ __state_init_avx2 ();
+    return (pst, st);
   }
   proc __perm_reg3456_avx2 (r3:W256.t, r4:W256.t, r5:W256.t, r6:W256.t) : 
   W256.t * W256.t * W256.t * W256.t = {
