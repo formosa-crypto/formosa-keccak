@@ -259,7 +259,7 @@ module M = {
     var t8:W64.t;
     iLEN <- lEN;
     if ((lEN <= 0)) {
-      w <- (W64.of_int tRAIL);
+      w <- (W64.of_int (tRAIL %% 256));
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
@@ -285,20 +285,20 @@ module M = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (loadW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             buf <- (buf + (W64.of_int 1));
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int tRAIL);
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -317,7 +317,7 @@ module M = {
     var w:W256.t;
     var t64:W64.t;
     var t128:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((8 <= lEN)) {
@@ -338,7 +338,7 @@ module M = {
                                                          W128.t = {
     var w:W128.t;
     var t64:W64.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
@@ -366,7 +366,7 @@ module M = {
     var w:W256.t;
     var t128_1:W128.t;
     var t128_0:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
@@ -475,15 +475,15 @@ module M = {
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
+        t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
           Glob.mem <-
-          (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu128 w));
+          (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) t128);
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           t128 <- (VEXTRACTI128 w (W8.of_int 1));
         } else {
-          t128 <- (truncateu128 w);
+          
         }
         (buf, lEN) <@ __mwrite_subu128 (buf, lEN, t128);
       }
@@ -618,7 +618,7 @@ module M = {
     var t:W64.t;
     var  _0:int;
     i <- (W64.of_int 0);
-    while ((i \slt (W64.of_int (lEN %/ 8)))) {
+    while ((i \ult (W64.of_int (lEN %/ 8)))) {
       t <- st.[(W64.to_uint i)];
       i <- (i + (W64.of_int 1));
       Glob.mem <- (storeW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) t);

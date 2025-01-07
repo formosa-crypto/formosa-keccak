@@ -324,9 +324,6 @@ qed.
    Lift lane-equivalence into 4-way parallel execution
 ******************************************************************************)
 
-op map_state4x (f:state->state) (st:state4x): state4x =
- a25pack4 (map f (a25unpack4 st)).
-
 lemma map_state4x_neq r a:
  r <> map_state4x keccak_f1600_op a
  <=> (r \a25bits64 0) <> keccak_f1600_op (a \a25bits64 0) \/
@@ -338,6 +335,11 @@ rewrite /map_state4x eq_sym a25pack4_eq -iotaredE /=.
 rewrite !(nth_map st0); first 4 by rewrite /a25unpack4 size_map size_iota.
 by rewrite /a25unpack4 -iotaredE /= /#.
 qed.
+
+lemma keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
+proof.
+proc; inline __keccakf1600_avx2x4.
+admitted.
 
 hoare keccakf1600_avx2x4_h (_a: state4x) (_c: W64.t):
  M.__keccakf1600_avx2x4 :

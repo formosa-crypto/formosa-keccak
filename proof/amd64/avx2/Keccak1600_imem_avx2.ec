@@ -26,6 +26,160 @@ from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec.
 
 require import Keccak1600_avx2 Keccakf1600_avx2.
 
+(* subuX *)
+lemma  mread_subu64_ll: islossless M.__mread_subu64
+ by islossless.
+
+(*
+hoare aread_subu64_h _buf _off _dlt _len _trail:
+ M(P).__aread_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 8
+  /\ res.`2 = _len - min (max 0 _len) 8
+  /\ res.`3 = (if _len < 8 then 0 else _trail)
+  /\ res.`4 = W8u8.pack8 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]).
+admitted.
+
+phoare aread_subu64_ph _buf _off _dlt _len _trail:
+ [ M(P).__aread_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 8
+  /\ res.`2 = _len - min (max 0 _len) 8
+  /\ res.`3 = (if _len < 8 then 0 else _trail)
+  /\ res.`4 = W8u8.pack8 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail])
+ ] = 1%r.
+proof.
+by conseq aread_subu64_ll (aread_subu64_h _buf _off _dlt _len _trail).
+qed.
+*)
+
+lemma  mread_subu128_ll: islossless M.__mread_subu128
+ by islossless.
+
+(*
+hoare aread_subu128_h _buf _off _dlt _len _trail:
+ M(P).__aread_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 16
+  /\ res.`2 = _len - min (max 0 _len) 16
+  /\ res.`3 = (if _len < 16 then 0 else _trail)
+  /\ res.`4 = W16u8.pack16 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail]).
+admitted.
+
+phoare aread_subu128_ph _buf _off _dlt _len _trail:
+ [ M(P).__aread_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 16
+  /\ res.`2 = _len - min (max 0 _len) 16
+  /\ res.`3 = (if _len < 16 then 0 else _trail)
+  /\ res.`4 = W16u8.pack16 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail])
+ ] = 1%r.
+proof.
+by conseq aread_subu128_ll (aread_subu128_h _buf _off _dlt _len _trail).
+qed.
+*)
+
+lemma  mread_subu256_ll: islossless M.__mread_subu256
+ by islossless.
+
+(*
+hoare aread_subu256_h _buf _off _dlt _len _trail:
+ M(P).__aread_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 32
+  /\ res.`2 = _len - min (max 0 _len) 32
+  /\ res.`3 = (if _len < 32 then 0 else _trail)
+  /\ res.`4 = W32u8.pack32 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail]).
+admitted.
+
+phoare aread_subu256_ph _buf _off _dlt _len _trail:
+ [ M(P).__aread_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 32
+  /\ res.`2 = _len - min (max 0 _len) 32
+  /\ res.`3 = (if _len < 32 then 0 else _trail)
+  /\ res.`4 = W32u8.pack32 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail])
+ ] = 1%r.
+proof.
+by conseq aread_subu256_ll (aread_subu256_h _buf _off _dlt _len _trail).
+qed.
+*)
+
+lemma mwrite_subu64_ll: islossless M.__mwrite_subu64
+ by islossless.
+
+(*
+hoare awrite_subu64_h _buf _off _dlt _len _w:
+ M(P).__awrite_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W8u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 8) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 8
+  /\ res.`3 = _len - min (max 0 _len) 8.
+proof.
+admitted.
+
+phoare awrite_subu64_ph _buf _off _dlt _len _w:
+ [ M(P).__awrite_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W8u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 8) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 8
+  /\ res.`3 = _len - min (max 0 _len) 8
+ ] = 1%r.
+proof.
+by conseq awrite_subu64_ll (awrite_subu64_h _buf _off _dlt _len _w).
+qed.
+*)
+
+lemma mwrite_subu128_ll: islossless M.__mwrite_subu128
+ by islossless.
+
+(*
+hoare awrite_subu128_h _buf _off _dlt _len _w:
+ M(P).__awrite_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W16u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 16) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 16
+  /\ res.`3 = _len - min (max 0 _len) 16.
+proof.
+admitted.
+
+phoare awrite_subu128_ph _buf _off _dlt _len _w:
+ [ M(P).__awrite_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W16u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 16) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 16
+  /\ res.`3 = _len - min (max 0 _len) 16
+ ] = 1%r.
+proof.
+by conseq awrite_subu128_ll (awrite_subu128_h _buf _off _dlt _len _w).
+qed.
+*)
+
+lemma mwrite_subu256_ll: islossless M.__mwrite_subu256
+ by islossless.
+
+(*
+hoare awrite_subu256_h _buf _off _dlt _len _w:
+ M(P).__awrite_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W32u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 32) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 32
+  /\ res.`3 = _len - min (max 0 _len) 32.
+proof.
+admitted.
+
+phoare awrite_subu256_ph _buf _off _dlt _len _w:
+ [ M(P).__awrite_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W32u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 32) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 32
+  /\ res.`3 = _len - min (max 0 _len) 32
+ ] = 1%r.
+proof.
+by conseq awrite_subu256_ll (awrite_subu256_h _buf _off _dlt _len _w).
+qed.
+*)
+
 
 (*
    ONE-SHOT (FIXED-SIZE) MEMORY ABSORB

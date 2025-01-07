@@ -332,6 +332,8 @@ module M(P: MParam) = {
           dELTA <- (dELTA + 16);
           lEN <- (lEN - 16);
           t128 <- (VEXTRACTI128 w (W8.of_int 1));
+        } else {
+          
         }
         (buf, dELTA, lEN) <@ __awrite_subu128 (buf, offset, dELTA, lEN,
         t128);
@@ -1261,6 +1263,7 @@ hoare squeeze_array_avx2_h _buf _off _len _st _r8:
   /\ res.`2 = stavx2_from_st25 (st_i (stavx2_to_st25 _st) ((_len-1) %/ _r8 + 1)).
 proof.
 admitted.
+
 
 phoare squeeze_array_avx2_ph _buf _off _len _st _r8:
  [ M(P).__squeeze_array_avx2

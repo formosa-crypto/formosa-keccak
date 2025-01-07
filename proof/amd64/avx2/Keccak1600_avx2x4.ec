@@ -1,7 +1,7 @@
 (******************************************************************************
    Keccak1600_avx2x4.ec:
 
-   Correctness proof for the 4x_AVX2 implementation
+   Correctness proof for the 4-way AVX2 implementation
 
 
 
@@ -180,9 +180,65 @@ by rewrite xorb4u64E pack4bE // map2iE // !unpack64E !initiE.
 qed.
 
 
+op map_state4x (f:state->state) (st:state4x): state4x =
+ a25pack4 (map f (a25unpack4 st)).
+
 
 
 (******************)
 
 
+(******************************************************************************
+   
+******************************************************************************)
+
+from CryptoSpecs require import Keccak1600_Spec.
+import BitEncoding BitChunking.
+
+op avx2x4_st0 = Array25.create W256.zero.
+
+lemma avx2x4_st0P:
+ match_state4x st0 st0 st0 st0 avx2x4_st0.
+admitted.
+
+op absorb_spec_avx2x4 (r8: int) (tb: int) (l0 l1 l2 l3: W8.t list) stx4 =
+ match_state4x
+  (ABSORB1600 (W8.of_int tb) r8 l0)
+  (ABSORB1600 (W8.of_int tb) r8 l1)
+  (ABSORB1600 (W8.of_int tb) r8 l2)
+  (ABSORB1600 (W8.of_int tb) r8 l3)
+  stx4.
+
+op pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 stx4: bool =
+ 0 < r8 <= 200 /\
+ match_state4x
+  (addstate (stateabsorb_iblocks (chunk r8 l0) st0) (bytes2state (chunkremains r8 l0)))
+  (addstate (stateabsorb_iblocks (chunk r8 l1) st0) (bytes2state (chunkremains r8 l1)))
+  (addstate (stateabsorb_iblocks (chunk r8 l2) st0) (bytes2state (chunkremains r8 l2)))
+  (addstate (stateabsorb_iblocks (chunk r8 l3) st0) (bytes2state (chunkremains r8 l3)))
+  stx4.
+
+lemma pabsorb_spec_avx2x4_nil r8:
+ 0 < r8 <= 200 =>
+ pabsorb_spec_avx2x4 r8 [] [] [] [] avx2x4_st0.
+proof.
+admitted.
+
+(******************************************************************************
+   
+******************************************************************************)
+
+
+lemma state_init_avx2x4_ll:
+ islossless M.__state_init_avx2x4.
+proof.
+proc.
+while true (32*25-to_uint i).
+ move=> z; auto => /> &m; rewrite ultE of_uintK /= => Hi.
+ by rewrite to_uintD_small /#.
+by auto => /> i Hi; rewrite ultE of_uintK /#.
+qed.
+
+lemma addratebit_avx2x4_ll: islossless M.__addratebit_avx2x4
+ by islossless.
 
