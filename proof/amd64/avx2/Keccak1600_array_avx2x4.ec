@@ -15,7 +15,8 @@ import IntID IntOrder.
 from Jasmin require import JModel.
 from Jasmin require import JArray.
 
-from CryptoSpecs require import FIPS202_SHA3 FIPS202_SHA3_Spec.
+from CryptoSpecs require import JWordList.
+from CryptoSpecs require import FIPS202_Keccakf1600 FIPS202_SHA3 FIPS202_SHA3_Spec.
 from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
 from JazzEC require Jazz_avx2.
@@ -23,9 +24,6 @@ from JazzEC require Jazz_avx2.
 from JazzEC require import WArray800.
 from JazzEC require import Array25.
 
-from CryptoSpecs require import JWordList.
-from CryptoSpecs require import FIPS202_Keccakf1600.
-from CryptoSpecs require import Keccakf1600_Spec.
 
 require import Keccakf1600_avx2x4 Keccak1600_avx2x4 Keccak1600_imem_avx2x4.
 
