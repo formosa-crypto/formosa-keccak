@@ -24,11 +24,7 @@ from JazzEC require Jazz_avx2.
 from JazzEC require import WArray800.
 from JazzEC require import Array25.
 
-
 require import Keccakf1600_avx2x4 Keccak1600_avx2x4 Keccak1600_imem_avx2x4.
-
-op addstate_avx2x4 (st: W256.t Array25.t, l0 l1 l2 l3: W8.t list): W256.t Array25.t.
-
 
 abstract theory KeccakArrayAvx2x4.
 
@@ -36,7 +32,6 @@ op aSIZE: int.
 axiom aSIZE_ge0: 0 <= aSIZE.
 axiom aSIZE_u64: aSIZE < W64.modulus.
 
-print Jazz_avx2.M.
 module type MParam = {
   proc keccakf1600_avx2x4 (st:W256.t Array25.t) : W256.t Array25.t
   proc state_init_avx2x4 (st: W256.t Array25.t) : W256.t Array25.t
@@ -1237,6 +1232,31 @@ proc.
 have L: forall x, x <= aSIZE => x < W64.modulus.
  by move=> *; apply (ler_lt_trans aSIZE) => //; exact aSIZE_u64.
 admitted.
+
+hoare absorb_array_avx2x4_h _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _off _len _r8 _tb:
+ M(P).__absorb_array_avx2x4
+ : st=_st /\ buf0=_buf0 /\ buf1=_buf1 /\ buf2=_buf2 /\ buf3=_buf3
+ /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ aT = size _l0 %% _r8
+ /\ pabsorb_spec_avx2x4 _r8 _l0 _l1 _l2 _l3 _st
+ /\ 0 <= _len /\ to_uint _off + _len <= aSIZE
+ ==> if _tb <> 0
+     then absorb_spec_avx2x4 _r8 _tb
+            (_l0 ++ sub _buf0 (to_uint _off) _len)
+            (_l1 ++ sub _buf1 (to_uint _off) _len)
+            (_l2 ++ sub _buf2 (to_uint _off) _len)
+            (_l3 ++ sub _buf3 (to_uint _off) _len)
+            res.`1
+     else pabsorb_spec_avx2x4 _r8
+            (_l0 ++ sub _buf0 (to_uint _off) _len)
+            (_l1 ++ sub _buf1 (to_uint _off) _len)
+            (_l2 ++ sub _buf2 (to_uint _off) _len)
+            (_l3 ++ sub _buf3 (to_uint _off) _len)
+            res.`1
+           /\ res.`2 = (size _l0 + _len) %% _r8
+           /\ res.`3 = _off + W64.of_int _len.
+admitted.
+
 (*
 hoare absorb_array_avx2x4_h _l0 _l1 _l2 _l3 _buf _off _len _r8 _tb:
  M(P).__absorb_array_avx2x4
@@ -1264,6 +1284,30 @@ proof.
 proc.
 have L: forall x, x <= aSIZE => x < W64.modulus.
  by move=> *; apply (ler_lt_trans aSIZE) => //; exact aSIZE_u64.
+admitted.
+
+hoare absorb_bcast_array_avx2x4_h _l0 _l1 _l2 _l3 _st _buf _off _len _r8 _tb:
+ M(P).__absorb_bcast_array_avx2x4
+ : st=_st /\ buf=_buf
+ /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ aT = size _l0 %% _r8
+ /\ pabsorb_spec_avx2x4 _r8 _l0 _l1 _l2 _l3 _st
+ /\ 0 <= _len /\ to_uint _off + _len <= aSIZE
+ ==> if _tb <> 0
+     then absorb_spec_avx2x4 _r8 _tb
+            (_l0 ++ sub _buf (to_uint _off) _len)
+            (_l1 ++ sub _buf (to_uint _off) _len)
+            (_l2 ++ sub _buf (to_uint _off) _len)
+            (_l3 ++ sub _buf (to_uint _off) _len)
+            res.`1
+     else pabsorb_spec_avx2x4 _r8
+            (_l0 ++ sub _buf (to_uint _off) _len)
+            (_l1 ++ sub _buf (to_uint _off) _len)
+            (_l2 ++ sub _buf (to_uint _off) _len)
+            (_l3 ++ sub _buf (to_uint _off) _len)
+            res.`1
+           /\ res.`2 = (size _l0 + _len) %% _r8
+           /\ res.`3 = _off + W64.of_int _len.
 admitted.
 
 
@@ -1325,6 +1369,29 @@ phoare squeeze_array_avx2x4_ll:
  : 0 < rATE8 <= 200
  ==> true
  ] = 1%r.
+admitted.
+
+hoare squeeze_array_avx2x4_h _buf0 _buf1 _buf2 _buf3 _off _len _st _r8:
+ M(P).__squeeze_array_avx2x4
+ : buf0=_buf0 /\ buf1=_buf1 /\ buf2=_buf2 /\ buf3=_buf3
+ /\ offset=_off /\ lEN=_len /\ st=_st /\ rATE8=_r8
+ /\ 0 <= _len
+ /\ 0 < _r8 <= 200
+ /\ to_uint _off + _len <= aSIZE
+ ==>
+    res.`1 =
+     fill (fun i => (SQUEEZE1600 _r8 _len (_st \a25bits64 0)).[i-to_uint _off])
+          (to_uint _off) _len _buf0
+ /\ res.`2 =
+     fill (fun i => (SQUEEZE1600 _r8 _len (_st \a25bits64 1)).[i-to_uint _off])
+          (to_uint _off) _len _buf1
+ /\ res.`3 =
+     fill (fun i => (SQUEEZE1600 _r8 _len (_st \a25bits64 2)).[i-to_uint _off])
+          (to_uint _off) _len _buf2
+ /\ res.`4 =
+     fill (fun i => (SQUEEZE1600 _r8 _len (_st \a25bits64 3)).[i-to_uint _off])
+          (to_uint _off) _len _buf3
+ /\ res.`6 = iter ((_len - 1) %/ _r8 + 1) keccak_f1600_x4 _st.
 admitted.
 
 (*

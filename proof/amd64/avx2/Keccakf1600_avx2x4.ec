@@ -23,7 +23,7 @@ require import Keccak1600_avx2x4.
 
 from JazzEC require Jazz_ref.
 from JazzEC require import Jazz_avx2.
-from JazzEC require import WArray768 Array5.
+from JazzEC require import WArray768 Array5 Array25.
 
 
 

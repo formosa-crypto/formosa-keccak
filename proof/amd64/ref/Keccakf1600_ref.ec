@@ -7,12 +7,10 @@ require import List Real Int IntDiv CoreMap.
 
 from Jasmin require import JModel.
 
-from CryptoSpecs require import FIPS202_Keccakf1600.
-from CryptoSpecs require import Keccakf1600_Spec.
-from CryptoSpecs require import Bindings.
+from CryptoSpecs require import FIPS202_Keccakf1600 Keccakf1600_Spec.
 
 from JazzEC require import Jazz_ref.
-from JazzEC require import Array5 Array24.
+from JazzEC require import Array5 Array24 Array25.
 
 (** lemmata (move?) *)
 

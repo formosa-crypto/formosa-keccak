@@ -14,11 +14,11 @@ from Jasmin require import JModel.
 from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec.
 
-from JazzEC require import WArray768.
 from JazzEC require import Jazz_avx2.
+
+
+from JazzEC require import WArray768.
 from JazzEC require import Array24 Array5.
-
-
 
 
 (** lemmata (move?) *)
@@ -184,7 +184,6 @@ op map_state4x (f:state->state) (st:state4x): state4x =
  a25pack4 (map f (a25unpack4 st)).
 
 
-
 (******************)
 
 
@@ -194,11 +193,16 @@ op map_state4x (f:state->state) (st:state4x): state4x =
 
 from CryptoSpecs require import Keccak1600_Spec.
 import BitEncoding BitChunking.
+from JazzEC require import Array25.
 
-op avx2x4_st0 = Array25.create W256.zero.
+op keccak_f1600_x4 = map_state4x keccak_f1600_op.
+
+op st0_avx2x4 = Array25.create W256.zero.
+
+op addstate_avx2x4 (st: W256.t Array25.t, l0 l1 l2 l3: W8.t list): W256.t Array25.t.
 
 lemma avx2x4_st0P:
- match_state4x st0 st0 st0 st0 avx2x4_st0.
+ match_state4x st0 st0 st0 st0 st0_avx2x4.
 admitted.
 
 op absorb_spec_avx2x4 (r8: int) (tb: int) (l0 l1 l2 l3: W8.t list) stx4 =
@@ -211,6 +215,7 @@ op absorb_spec_avx2x4 (r8: int) (tb: int) (l0 l1 l2 l3: W8.t list) stx4 =
 
 op pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 stx4: bool =
  0 < r8 <= 200 /\
+ size l1 = size l0 /\ size l2 = size l0 /\ size l3 = size l0 /\
  match_state4x
   (addstate (stateabsorb_iblocks (chunk r8 l0) st0) (bytes2state (chunkremains r8 l0)))
   (addstate (stateabsorb_iblocks (chunk r8 l1) st0) (bytes2state (chunkremains r8 l1)))
@@ -220,7 +225,7 @@ op pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 stx4: bool =
 
 lemma pabsorb_spec_avx2x4_nil r8:
  0 < r8 <= 200 =>
- pabsorb_spec_avx2x4 r8 [] [] [] [] avx2x4_st0.
+ pabsorb_spec_avx2x4 r8 [] [] [] [] st0_avx2x4.
 proof.
 admitted.
 
