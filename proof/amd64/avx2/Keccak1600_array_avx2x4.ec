@@ -22,7 +22,7 @@ from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 from JazzEC require Jazz_avx2.
 
 from JazzEC require import WArray800.
-from JazzEC require import Array25.
+from JazzEC require import Array25 WArray200.
 
 require import Keccakf1600_avx2x4 Keccak1600_avx2x4 Keccak1600_imem_avx2x4.
 

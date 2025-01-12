@@ -336,12 +336,12 @@ rewrite !(nth_map st0); first 4 by rewrite /a25unpack4 size_map size_iota.
 by rewrite /a25unpack4 -iotaredE /= /#.
 qed.
 
-lemma keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
+lemma _keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
 proof.
 proc; inline __keccakf1600_avx2x4.
 admitted.
 
-hoare keccakf1600_avx2x4_h (_a: state4x) (_c: W64.t):
+hoare _keccakf1600_avx2x4_h (_a: state4x) (_c: W64.t):
  M.__keccakf1600_avx2x4 :
  a = _a
  ==> res = map_state4x keccak_f1600_op _a.
