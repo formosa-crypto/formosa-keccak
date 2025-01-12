@@ -24,7 +24,7 @@ from JazzEC require Jazz_avx2.
 from JazzEC require import WArray800.
 from JazzEC require import Array25 WArray200.
 
-require import Keccakf1600_avx2x4 Keccak1600_avx2x4 Keccak1600_imem_avx2x4.
+require export Keccakf1600_avx2x4 Keccak1600_avx2x4.
 
 abstract theory KeccakArrayAvx2x4.
 
@@ -1347,9 +1347,9 @@ hoare dumpstate_array_avx2x4_h _buf0 _buf1 _buf2 _buf3 _off _len _st:
  /\ 0 <= _len <= 200
  /\ to_uint _off + _len <= aSIZE
  ==> res.`1 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf0
-  /\ res.`2 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf1
-  /\ res.`3 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf2
-  /\ res.`4 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf3
+  /\ res.`2 = A.fill (fun i=> (stbytes (_st \a25bits64 1)).[i-to_uint _off]) (to_uint _off) _len _buf1
+  /\ res.`3 = A.fill (fun i=> (stbytes (_st \a25bits64 2)).[i-to_uint _off]) (to_uint _off) _len _buf2
+  /\ res.`4 = A.fill (fun i=> (stbytes (_st \a25bits64 3)).[i-to_uint _off]) (to_uint _off) _len _buf3
   /\ res.`5 = _off + W64.of_int _len.
 admitted.
 

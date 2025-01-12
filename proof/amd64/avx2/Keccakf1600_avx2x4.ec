@@ -392,6 +392,10 @@ by move=> />.
 *)admit.
 qed.
 
+lemma keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
+proof.
+admitted.
+
 hoare keccakf1600_avx2x4_h (_a: state4x):
  M._keccakf1600_avx2x4 :
  a = _a

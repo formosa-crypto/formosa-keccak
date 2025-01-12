@@ -12,16 +12,34 @@ require import List Real Distr Int IntDiv CoreMap.
 from Jasmin require import JModel.
 
 from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
-from CryptoSpecs require import Keccakf1600_Spec.
+from CryptoSpecs require import Keccakf1600_Spec Keccak1600_Spec FIPS202_SHA3_Spec.
 
 from JazzEC require import Jazz_avx2.
 
 
-from JazzEC require import WArray768.
+from JazzEC require import WArray200.
 from JazzEC require import Array24 Array5.
 
 
 (** lemmata (move?) *)
+lemma nth_SQUEEZE1600 r8 len st i:
+ 0 < r8 <= 200 =>
+ 0 <= i < len =>
+ (SQUEEZE1600 r8 len st).[i]
+ = (stbytes (st_i st (i %/ r8 + 1))).[i %% r8].
+proof.
+move=> Hr8 Hi; rewrite /SQUEEZE1600 nth_take 1..2:/# /squeezeblocks.
+rewrite (BitEncoding.BitChunking.nth_flatten W8.zero r8).
+ apply/List.allP => x /mapP [y [Hy ->]] /=.
+ by rewrite size_squeezestate_i /#.
+search nth map.
+rewrite (nth_map 0).
+ by rewrite size_iota /#.
+rewrite /squeezestate_i /squeezestate nth_take 1..2:/# state2bytesE; congr; congr; congr; congr.
+by rewrite nth_iota 1:/#.
+qed.
+
+
 
 
 import Ring.IntID.
@@ -182,6 +200,21 @@ qed.
 
 op map_state4x (f:state->state) (st:state4x): state4x =
  a25pack4 (map f (a25unpack4 st)).
+
+equiv shake128x4_squeeze3blocks_eq:
+  M(Syscall)._shake128x4_squeeze3blocks ~ K._shake128x4_squeeze3blocks
+ : ={arg} ==> ={res}
+by sim.
+
+lemma map_state4x_a25bits64 f st k:
+ 0 <= k < 4 =>
+ (map_state4x f st) \a25bits64 k = f (st \a25bits64 k).
+proof.
+move=> Hk.
+rewrite /map_state4x /a25unpack4 -map_comp /(\o) /= a25pack4_bits64 1:// -iotaredE.
+have: k \in iotared 0 4 by smt(mem_iota).
+by move: {Hk} k ; apply/List.allP.
+qed.
 
 
 (******************)
