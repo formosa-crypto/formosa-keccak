@@ -26,7 +26,6 @@ from JazzEC require import Jazz_avx2.
 from JazzEC require import WArray768 Array5 Array25.
 
 
-
 (** lemmata (move?) *)
 
 (* add this to JWord, and relax the hyp. in rol_xor_shft accordingly *)
@@ -341,7 +340,7 @@ proof.
 proc; inline __keccakf1600_avx2x4.
 admitted.
 
-hoare keccakf1600_avx2x4_h (_a: state4x) (_c: W64.t):
+hoare _keccakf1600_avx2x4_h (_a: state4x):
  M.__keccakf1600_avx2x4 :
  a = _a
  ==> res = map_state4x keccak_f1600_op _a.
@@ -392,3 +391,9 @@ conseq (keccakf1600_4x_eq k _) (keccakf1600_ref1_h (_a \a25bits64 k)); last smt(
 by move=> />.
 *)admit.
 qed.
+
+hoare keccakf1600_avx2x4_h (_a: state4x):
+ M._keccakf1600_avx2x4 :
+ a = _a
+ ==> res = map_state4x keccak_f1600_op _a.
+admitted.
