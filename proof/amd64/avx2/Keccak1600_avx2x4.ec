@@ -193,7 +193,20 @@ op map_state4x (f:state->state) (st:state4x): state4x =
 
 from CryptoSpecs require import Keccak1600_Spec.
 import BitEncoding BitChunking.
-from JazzEC require import Array25.
+from JazzEC require import Array25 WArray200.
+
+
+lemma state2bytesE st i:
+ (state2bytes st).[i] = (stbytes st).[i].
+admitted.
+
+lemma bytes2state0: bytes2state [] = st0.
+admitted.
+
+lemma addstate_st0 st: addstate st0 st = st.
+admitted.
+
+
 
 op keccak_f1600_x4 = map_state4x keccak_f1600_op.
 
@@ -204,6 +217,7 @@ op addstate_avx2x4 (st: W256.t Array25.t, l0 l1 l2 l3: W8.t list): W256.t Array2
 lemma avx2x4_st0P:
  match_state4x st0 st0 st0 st0 st0_avx2x4.
 admitted.
+
 
 op absorb_spec_avx2x4 (r8: int) (tb: int) (l0 l1 l2 l3: W8.t list) stx4 =
  match_state4x
@@ -233,6 +247,12 @@ admitted.
    
 ******************************************************************************)
 
+hoare state_init_avx2x4_h:
+ Jazz_avx2.M.__state_init_avx2x4
+ : true
+ ==> match_state4x st0 st0 st0 st0 res.
+admitted.
+
 
 lemma state_init_avx2x4_ll:
  islossless M.__state_init_avx2x4.
@@ -243,6 +263,14 @@ while true (32*25-to_uint i).
  by rewrite to_uintD_small /#.
 by auto => /> i Hi; rewrite ultE of_uintK /#.
 qed.
+
+phoare state_init_avx2x4_ph:
+ [ Jazz_avx2.M.__state_init_avx2x4
+ : true
+ ==> match_state4x st0 st0 st0 st0 res
+ ] = 1%r.
+admitted.
+
 
 lemma addratebit_avx2x4_ll: islossless M.__addratebit_avx2x4
  by islossless.

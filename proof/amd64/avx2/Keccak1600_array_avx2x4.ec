@@ -1322,7 +1322,7 @@ phoare dumpstate_array_avx2x4_ll:
  ==> true
  ] = 1%r.
 proof.
-proc => /=.
+proc => //.
 admit(*
 seq 2: true => //.
  while (#pre /\ 0 <= to_sint i <= lEN%/8) (lEN %/ 8 - to_sint i).
@@ -1340,6 +1340,18 @@ seq 2: true => //.
 by islossless.
 *).
 qed.
+
+hoare dumpstate_array_avx2x4_h _buf0 _buf1 _buf2 _buf3 _off _len _st:
+ M(P).__dumpstate_array_avx2x4
+ : buf0=_buf0 /\ buf1=_buf1 /\ buf2=_buf2 /\ buf3=_buf3 /\ offset=_off /\ lEN=_len /\ st=_st
+ /\ 0 <= _len <= 200
+ /\ to_uint _off + _len <= aSIZE
+ ==> res.`1 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf0
+  /\ res.`2 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf1
+  /\ res.`3 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf2
+  /\ res.`4 = A.fill (fun i=> (stbytes (_st \a25bits64 0)).[i-to_uint _off]) (to_uint _off) _len _buf3
+  /\ res.`5 = _off + W64.of_int _len.
+admitted.
 
 (*
 hoare dumpstate_array_avx2_h _buf _off _len _st:

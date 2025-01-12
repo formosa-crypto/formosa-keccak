@@ -24,7 +24,7 @@ from CryptoSpecs require import FIPS202_Keccakf1600.
 from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec.
 
 
-require import Keccak1600_avx2x4 Keccakf1600_avx2x4.
+require export Keccak1600_avx2x4 Keccakf1600_avx2x4.
 
 (* TODO: Move this to a new file *)
 lemma  mread_subu64_ll: islossless M.__mread_subu64

@@ -27,7 +27,7 @@ from CryptoSpecs require import JWordList.
 from CryptoSpecs require import FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec.
 
-require import Keccakf1600_avx2 Keccak1600_avx2 Keccak1600_imem_avx2.
+require export Keccakf1600_avx2 Keccak1600_avx2.
 
 
 op addstate_avx2 (st: W256.t Array7.t, l: W8.t list): W256.t Array7.t =
