@@ -17,11 +17,31 @@ from CryptoSpecs require import Keccakf1600_Spec Keccak1600_Spec FIPS202_SHA3_Sp
 from JazzEC require import Jazz_avx2.
 
 
-from JazzEC require import WArray200.
+from JazzEC require import WArray768 WArray200.
 from JazzEC require import Array24 Array5.
 
 
 (** lemmata (move?) *)
+lemma state2bytesE st i:
+ (state2bytes st).[i] = (stbytes st).[i].
+proof.
+case: (0 <= i < 200) => C.
+ admit.
+rewrite nth_out.
+ by rewrite size_state2bytes.
+by rewrite get_out.
+qed.
+
+
+lemma bytes2state0: bytes2state [] = st0.
+admitted.
+
+lemma addstate_st0 st: addstate st0 st = st.
+admitted.
+
+require import StdOrder.
+import IntOrder.
+
 lemma nth_SQUEEZE1600 r8 len st i:
  0 < r8 <= 200 =>
  0 <= i < len =>
@@ -34,11 +54,15 @@ rewrite (BitEncoding.BitChunking.nth_flatten W8.zero r8).
  by rewrite size_squeezestate_i /#.
 search nth map.
 rewrite (nth_map 0).
- by rewrite size_iota /#.
-rewrite /squeezestate_i /squeezestate nth_take 1..2:/# state2bytesE; congr; congr; congr; congr.
-by rewrite nth_iota 1:/#.
+ rewrite size_iota; split; first smt().
+ move=> _; rewrite ltzE lez_maxr 1:/#.
+ rewrite StdOrder.IntOrder.ler_add2r.
+ smt(leq_div2r).
+rewrite /squeezestate_i /squeezestate nth_take 1..2:/#
+ state2bytesE; congr; congr; congr; congr.
+rewrite nth_iota; split; first smt().
+move=> _; rewrite ltzE; smt(leq_div2r).
 qed.
-
 
 
 
@@ -83,7 +107,7 @@ qed.
 
 lemma get256_init256 (a: W256.t Array24.t) i:
  0 <= i < 24 =>
- get256 (init256 ("_.[_]" a)) i = a.[i].
+ get256 (WArray768.init256 ("_.[_]" a)) i = a.[i].
 proof.
 move=> Hi; rewrite /get256_direct /init256 -(unpack8K a.[i]).
 congr; apply W32u8.Pack.ext_eq => x Hx.
@@ -201,11 +225,6 @@ qed.
 op map_state4x (f:state->state) (st:state4x): state4x =
  a25pack4 (map f (a25unpack4 st)).
 
-equiv shake128x4_squeeze3blocks_eq:
-  M(Syscall)._shake128x4_squeeze3blocks ~ K._shake128x4_squeeze3blocks
- : ={arg} ==> ={res}
-by sim.
-
 lemma map_state4x_a25bits64 f st k:
  0 <= k < 4 =>
  (map_state4x f st) \a25bits64 k = f (st \a25bits64 k).
@@ -227,17 +246,6 @@ qed.
 from CryptoSpecs require import Keccak1600_Spec.
 import BitEncoding BitChunking.
 from JazzEC require import Array25 WArray200.
-
-
-lemma state2bytesE st i:
- (state2bytes st).[i] = (stbytes st).[i].
-admitted.
-
-lemma bytes2state0: bytes2state [] = st0.
-admitted.
-
-lemma addstate_st0 st: addstate st0 st = st.
-admitted.
 
 
 
