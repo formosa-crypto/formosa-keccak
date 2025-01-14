@@ -55,11 +55,11 @@ inline fn __addstate_bcast_array_avx2x4
       st.[u256 (int) at] = t256;
       at += 32;
     }
+    offset += DELTA;
+    DELTA = 0;
   }
 
-  offset += DELTA;
-  DELTA = 0;
-  // continue processing remaining bytes
+  // continue processing remaining words
   if (8 <= LEN) {
     while ( at < 32*(AT/8)+32*(LEN/8)) {
       t256 = #VPBROADCAST_4u64(buf.[u64 offset]);
