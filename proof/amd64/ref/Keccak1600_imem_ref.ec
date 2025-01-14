@@ -66,10 +66,11 @@ phoare addstate_imem_ref_ph _mem _st _at _buf _len _tb:
  /\ 0 <= _len
  /\ _at+_len <= 200 - b2i (_tb<>0)
  /\ to_uint _buf + _len < W64.modulus
- ==> Glob.mem = _mem
-  /\ res.`1 = addstate_at _st _at (memread _mem (to_uint _buf) _len)
-  /\ res.`2 = _at + _len + b2i (_tb<>0)
-  /\ res.`3 = _buf + W64.of_int (max 0 _len)
+ ==> let l = memread _mem (to_uint _buf) _len ++ if _tb<>0 then [W8.of_int _tb] else []
+  in Glob.mem=_mem
+  /\ res.`1 = addstate_at _st _at l
+  /\ res.`2 = _at + size l
+  /\ res.`3 = _buf + W64.of_int _len
  ] = 1%r.
 proof.
 by conseq addstate_imem_ref_ll (addstate_imem_ref_h _mem _st _at _buf _len _tb).
@@ -162,18 +163,12 @@ phoare dumpstate_imem_ref_ll:
 proof.
 proc => /=.
 seq 2: true => //.
- while (#pre /\ 0 <= to_sint i <= lEN%/8) (lEN %/ 8 - to_sint i).
-  move=> z; auto => /> &m; rewrite sltE /= => Hlen0 Hlen1 Hi0 _.
-  rewrite of_sintK /smod ifF 1:/# modz_small 1:/# => Hi1.
-  have E: to_sint W64.one = 1 by rewrite to_sintE /smod.
-  do split. 
-  + by rewrite to_sintD_small E /#.
-  + by rewrite to_sintD_small E /#.
-  + by rewrite to_sintD_small E /#.
- auto => /> &m; rewrite to_sintE /= => *.
- split.
-  by rewrite /smod /= /#.
- by move=> i ???; rewrite sltE of_sintK /smod ifF 1:/# modz_small 1:/# /#.
+ while (#pre /\ 0 <= to_uint i <= lEN%/8) (lEN %/ 8 - to_uint i).
+  move=> z; auto => /> &m; rewrite ultE /= => Hlen0 Hlen1 Hi0 _.
+  rewrite of_uintK modz_small 1:/# => Hi1.
+  by rewrite to_uintD of_uintK /= /#.
+ auto => /> &m Hi1 Hi2; split; first smt().
+ by move=> i ???; rewrite ultE of_uintK /#.
 by islossless.
 qed.
 

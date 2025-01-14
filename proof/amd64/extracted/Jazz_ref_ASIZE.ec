@@ -550,7 +550,6 @@ module M = {
     var  _2:int;
     var  _3:int;
     var  _4:int;
-    var  _5:int;
     aLL <- (aT + lEN);
     lO <- (aT %% 8);
     at <- (W64.of_int (aT %/ 8));
@@ -576,7 +575,7 @@ module M = {
           t <-
           (get64_direct (WArray999.init8 (fun i => buf.[i]))
           (W64.to_uint (offset + (W64.of_int dELTA))));
-          offset <- (offset + (W64.of_int (8 - lO)));
+          dELTA <- (dELTA + (8 - lO));
         } else {
           (dELTA,  _0,  _1, t) <@ __aread_subu64 (buf, offset, dELTA,
           (8 - lO), tRAILB);
@@ -588,16 +587,17 @@ module M = {
         st.[(W64.to_uint at)] <- t;
         at <- (at + (W64.of_int 1));
       }
+      offset <- (offset + (W64.of_int dELTA));
+      dELTA <- 0;
     } else {
       
     }
-    offset <- (offset + (W64.of_int dELTA));
-    dELTA <- 0;
     if ((8 <= lEN)) {
       while ((at \ult (W64.of_int ((aT %/ 8) + (lEN %/ 8))))) {
         t <-
         (get64_direct (WArray999.init8 (fun i => buf.[i]))
         (W64.to_uint offset));
+        offset <- (offset + (W64.of_int 8));
         t <- (t `^` st.[(W64.to_uint at)]);
         st.[(W64.to_uint at)] <- t;
         at <- (at + (W64.of_int 1));
@@ -608,15 +608,14 @@ module M = {
     }
     lO <- ((aT + lEN) %% 8);
     if (((0 < lO) \/ (tRAILB <> 0))) {
-      (dELTA,  _4,  _5, t) <@ __aread_subu64 (buf, offset, dELTA, lO,
-      tRAILB);
-      offset <- (offset + (W64.of_int dELTA));
       if ((tRAILB <> 0)) {
         aLL <- (aLL + 1);
-        tRAILB <- 0;
       } else {
         
       }
+      (dELTA,  _4, tRAILB, t) <@ __aread_subu64 (buf, offset, dELTA, 
+      lO, tRAILB);
+      offset <- (offset + (W64.of_int dELTA));
       t <- (t `^` st.[(W64.to_uint at)]);
       st.[(W64.to_uint at)] <- t;
     } else {
@@ -646,7 +645,9 @@ module M = {
         (st,  _0, offset) <@ __addstate_array_ref (st, aT, buf, offset,
         (rATE8 - aT), 0);
         lEN <- (lEN - (rATE8 - aT));
+        (* Erased call to spill *)
         st <@ _keccakf1600_ref (st);
+        (* Erased call to unspill *)
         aT <- 0;
       } else {
         
@@ -656,7 +657,9 @@ module M = {
       while ((i \ult (W64.of_int iTERS))) {
         (st,  _1, offset) <@ __addstate_array_ref (st, 0, buf, offset, 
         rATE8, 0);
+        (* Erased call to spill *)
         st <@ _keccakf1600_ref (st);
+        (* Erased call to unspill *)
         i <- (i + (W64.of_int 1));
       }
       lEN <- (aLL %% rATE8);
@@ -709,7 +712,9 @@ module M = {
       if ((0 < iTERS)) {
         i <- (W64.of_int 0);
         while ((i \ult (W64.of_int iTERS))) {
+          (* Erased call to spill *)
           st <@ _keccakf1600_ref (st);
+          (* Erased call to unspill *)
           (buf, offset) <@ __dumpstate_array_ref (buf, offset, rATE8, st);
           i <- (i + (W64.of_int 1));
         }
@@ -717,7 +722,9 @@ module M = {
         
       }
       if ((0 < lO)) {
+        (* Erased call to spill *)
         st <@ _keccakf1600_ref (st);
+        (* Erased call to unspill *)
         (buf, offset) <@ __dumpstate_array_ref (buf, offset, lO, st);
       } else {
         
