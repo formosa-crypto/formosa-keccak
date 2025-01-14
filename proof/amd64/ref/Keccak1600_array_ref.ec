@@ -8,8 +8,8 @@
 
 ******************************************************************************)
 
-require import List Real Distr Int IntDiv StdOrder.
-import IntOrder.
+require import List Real Distr Int IntDiv Ring StdOrder.
+import IntOrder IntID.
 
 from Jasmin require import JModel.
 
@@ -85,21 +85,21 @@ module M(P: MParam) = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (get8_direct (WA.init8 (fun i => buf.[i]))
             (W64.to_uint (offset + (W64.of_int dELTA)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL%%256))));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             dELTA <- (dELTA + 1);
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int (tRAIL%%256));
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -109,6 +109,103 @@ module M(P: MParam) = {
         }
         t16 <- (t16 `<<` (W8.of_int (8 * (4 * ((iLEN %/ 4) %% 2)))));
         w <- (w `|` t16);
+      }
+    }
+    return (dELTA, lEN, tRAIL, w);
+  }
+  proc __aread_bcast_4subu64 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+                              lEN:int, tRAIL:int) : int * int * int * W256.t = {
+    var w:W256.t;
+    var t64:W64.t;
+    var t128:W128.t;
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
+      w <- (set0_256);
+    } else {
+      if ((8 <= lEN)) {
+        w <-
+        (VPBROADCAST_4u64
+        (get64_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        lEN <- (lEN - 8);
+      } else {
+        (dELTA, lEN, tRAIL, t64) <@ __aread_subu64 (buf, offset, dELTA, 
+        lEN, tRAIL);
+        t128 <- (zeroextu128 t64);
+        w <- (VPBROADCAST_4u64 (truncateu64 t128));
+      }
+    }
+    return (dELTA, lEN, tRAIL, w);
+  }
+  proc __aread_subu128 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+                        lEN:int, tRAIL:int) : int * int * int * W128.t = {
+    var w:W128.t;
+    var t64:W64.t;
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
+      w <- (set0_128);
+    } else {
+      if ((16 <= lEN)) {
+        w <-
+        (get128_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA))));
+        dELTA <- (dELTA + 16);
+        lEN <- (lEN - 16);
+      } else {
+        if ((8 <= lEN)) {
+          w <-
+          (VMOV_64
+          (get64_direct (WA.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA)))));
+          dELTA <- (dELTA + 8);
+          lEN <- (lEN - 8);
+          (dELTA, lEN, tRAIL, t64) <@ __aread_subu64 (buf, offset, dELTA,
+          lEN, tRAIL);
+          w <- (VPINSR_2u64 w t64 (W8.of_int 1));
+        } else {
+          (dELTA, lEN, tRAIL, t64) <@ __aread_subu64 (buf, offset, dELTA,
+          lEN, tRAIL);
+          w <- (zeroextu128 t64);
+        }
+      }
+    }
+    return (dELTA, lEN, tRAIL, w);
+  }
+  proc __aread_subu256 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+                        lEN:int, tRAIL:int) : int * int * int * W256.t = {
+    var w:W256.t;
+    var t128_1:W128.t;
+    var t128_0:W128.t;
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
+      w <- (set0_256);
+    } else {
+      if ((32 <= lEN)) {
+        w <-
+        (get256_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA))));
+        dELTA <- (dELTA + 32);
+        lEN <- (lEN - 32);
+      } else {
+        if ((16 <= lEN)) {
+          t128_0 <-
+          (get128_direct (WA.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA))));
+          dELTA <- (dELTA + 16);
+          lEN <- (lEN - 16);
+          (dELTA, lEN, tRAIL, t128_1) <@ __aread_subu128 (buf, offset, 
+          dELTA, lEN, tRAIL);
+          w <-
+          (W256.of_int
+          (((W128.to_uint t128_0) %% (2 ^ 128)) +
+          ((2 ^ 128) * (W128.to_uint t128_1))));
+        } else {
+          t128_1 <- (set0_128);
+          (dELTA, lEN, tRAIL, t128_0) <@ __aread_subu128 (buf, offset, 
+          dELTA, lEN, tRAIL);
+          w <-
+          (W256.of_int
+          (((W128.to_uint t128_0) %% (2 ^ 128)) +
+          ((2 ^ 128) * (W128.to_uint t128_1))));
+        }
       }
     }
     return (dELTA, lEN, tRAIL, w);
@@ -167,6 +264,74 @@ module M(P: MParam) = {
     }
     return (buf, dELTA, lEN);
   }
+  proc __awrite_subu128 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+                         lEN:int, w:W128.t) : W8.t A.t * int * int = {
+    var t64:W64.t;
+    if ((0 < lEN)) {
+      if ((16 <= lEN)) {
+        buf <-
+        (A.init
+        (WA.get8
+        (WA.set128_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA))) w)));
+        dELTA <- (dELTA + 16);
+        lEN <- (lEN - 16);
+      } else {
+        if ((8 <= lEN)) {
+          buf <-
+          (A.init
+          (WA.get8
+          (WA.set64_direct (WA.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA)))
+          (MOVV_64 (truncateu64 w)))));
+          dELTA <- (dELTA + 8);
+          lEN <- (lEN - 8);
+          w <- (VPUNPCKH_2u64 w w);
+        } else {
+          
+        }
+        t64 <- (truncateu64 w);
+        (buf, dELTA, lEN) <@ __awrite_subu64 (buf, offset, dELTA, lEN, t64);
+      }
+    } else {
+      
+    }
+    return (buf, dELTA, lEN);
+  }
+  proc __awrite_subu256 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+                         lEN:int, w:W256.t) : W8.t A.t * int * int = {
+    var t128:W128.t;
+    if ((0 < lEN)) {
+      if ((32 <= lEN)) {
+        buf <-
+        (A.init
+        (WA.get8
+        (WA.set256_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA))) w)));
+        dELTA <- (dELTA + 32);
+        lEN <- (lEN - 32);
+      } else {
+        t128 <- (truncateu128 w);
+        if ((16 <= lEN)) {
+          buf <-
+          (A.init
+          (WA.get8
+          (WA.set128_direct (WA.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA))) t128)));
+          dELTA <- (dELTA + 16);
+          lEN <- (lEN - 16);
+          t128 <- (VEXTRACTI128 w (W8.of_int 1));
+        } else {
+          
+        }
+        (buf, dELTA, lEN) <@ __awrite_subu128 (buf, offset, dELTA, lEN,
+        t128);
+      }
+    } else {
+      
+    }
+    return (buf, dELTA, lEN);
+  }
   proc __addstate_array_ref (st:W64.t Array25.t, aT:int, buf:W8.t A.t,
                              offset:W64.t, lEN:int, tRAILB:int) : W64.t Array25.t *
                                                                   int * W64.t = {
@@ -180,9 +345,7 @@ module M(P: MParam) = {
     var  _2:int;
     var  _3:int;
     var  _4:int;
-    var  _5:int;
     aLL <- (aT + lEN);
-
     lO <- (aT %% 8);
     at <- (W64.of_int (aT %/ 8));
     dELTA <- 0;
@@ -207,7 +370,7 @@ module M(P: MParam) = {
           t <-
           (get64_direct (WA.init8 (fun i => buf.[i]))
           (W64.to_uint (offset + (W64.of_int dELTA))));
-          offset <- (offset + (W64.of_int (8 - lO)));
+          dELTA <- (dELTA + (8 - lO));
         } else {
           (dELTA,  _0,  _1, t) <@ __aread_subu64 (buf, offset, dELTA,
           (8 - lO), tRAILB);
@@ -219,16 +382,17 @@ module M(P: MParam) = {
         st.[(W64.to_uint at)] <- t;
         at <- (at + (W64.of_int 1));
       }
+      offset <- (offset + (W64.of_int dELTA));
+      dELTA <- 0;
     } else {
       
     }
-    offset <- (offset + (W64.of_int dELTA));
-    dELTA <- 0;
     if ((8 <= lEN)) {
       while ((at \ult (W64.of_int ((aT %/ 8) + (lEN %/ 8))))) {
         t <-
         (get64_direct (WA.init8 (fun i => buf.[i]))
         (W64.to_uint offset));
+        offset <- (offset + (W64.of_int 8));
         t <- (t `^` st.[(W64.to_uint at)]);
         st.[(W64.to_uint at)] <- t;
         at <- (at + (W64.of_int 1));
@@ -239,21 +403,19 @@ module M(P: MParam) = {
     }
     lO <- ((aT + lEN) %% 8);
     if (((0 < lO) \/ (tRAILB <> 0))) {
-      (dELTA,  _4,  _5, t) <@ __aread_subu64 (buf, offset, dELTA, lO,
-      tRAILB);
-      offset <- (offset + (W64.of_int dELTA));
       if ((tRAILB <> 0)) {
         aLL <- (aLL + 1);
-        tRAILB <- 0;
       } else {
         
       }
+      (dELTA,  _4, tRAILB, t) <@ __aread_subu64 (buf, offset, dELTA, 
+      lO, tRAILB);
+      offset <- (offset + (W64.of_int dELTA));
       t <- (t `^` st.[(W64.to_uint at)]);
       st.[(W64.to_uint at)] <- t;
     } else {
       
     }
-
     return (st, aLL, offset);
   }
   proc __absorb_array_ref (st:W64.t Array25.t, aT:int, buf:W8.t A.t,
@@ -278,7 +440,9 @@ module M(P: MParam) = {
         (st,  _0, offset) <@ __addstate_array_ref (st, aT, buf, offset,
         (rATE8 - aT), 0);
         lEN <- (lEN - (rATE8 - aT));
+        (* Erased call to spill *)
         st <@ P.keccakf1600_ref (st);
+        (* Erased call to unspill *)
         aT <- 0;
       } else {
         
@@ -288,7 +452,9 @@ module M(P: MParam) = {
       while ((i \ult (W64.of_int iTERS))) {
         (st,  _1, offset) <@ __addstate_array_ref (st, 0, buf, offset, 
         rATE8, 0);
+        (* Erased call to spill *)
         st <@ P.keccakf1600_ref (st);
+        (* Erased call to unspill *)
         i <- (i + (W64.of_int 1));
       }
       lEN <- (aLL %% rATE8);
@@ -341,7 +507,9 @@ module M(P: MParam) = {
       if ((0 < iTERS)) {
         i <- (W64.of_int 0);
         while ((i \ult (W64.of_int iTERS))) {
+          (* Erased call to spill *)
           st <@ P.keccakf1600_ref (st);
+          (* Erased call to unspill *)
           (buf, offset) <@ __dumpstate_array_ref (buf, offset, rATE8, st);
           i <- (i + (W64.of_int 1));
         }
@@ -349,7 +517,9 @@ module M(P: MParam) = {
         
       }
       if ((0 < lO)) {
+        (* Erased call to spill *)
         st <@ P.keccakf1600_ref (st);
+        (* Erased call to unspill *)
         (buf, offset) <@ __dumpstate_array_ref (buf, offset, lO, st);
       } else {
         
@@ -496,7 +666,7 @@ phoare addstate_array_ref_ll:
  ] = 1%r.
 proof.
 proc => /=.
-seq 7: (#pre) => //=.
+seq 5: (#pre) => //=.
   sp; if => //>.
    if => //=.
     by wp; call aread_subu64_ll; auto => />.
