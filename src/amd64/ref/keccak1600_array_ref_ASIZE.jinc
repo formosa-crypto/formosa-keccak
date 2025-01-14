@@ -44,26 +44,28 @@ inline fn __addstate_array_ref
     } else { // process first word
       if ( 8 <= LEN ) {
 	t = buf.[u64 offset + DELTA];
-	offset += 8-LO;
+	DELTA += 8-LO;
       } else {
         DELTA, _, _, t = __aread_subu64(buf, offset, DELTA, 8-LO, TRAILB);
       }
       LEN -= 8-LO;
       AT += 8-LO;
       t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[u64 (int) at];
+      st[u64 (int) at] = t;
       at += 1;
     }
+    offset += DELTA;
+    DELTA = 0;
   }
-  offset += DELTA;
-  DELTA = 0;
-  // continue processing remaining bytes
+
+  // continue processing remaining words
   if (8 <= LEN) {
     while ( at < (AT/8)+(LEN/8)) {
       t = buf.[u64 offset];
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      offset += 8;
+      t ^= st[u64 (int) at];
+      st[u64 (int) at] = t;
       at += 1;
     }
     LEN = (AT+LEN) % 8;
@@ -72,11 +74,11 @@ inline fn __addstate_array_ref
   // process last word (possibly closing the state)
   LO = (AT+LEN) % 8;
   if ( 0 < LO || TRAILB != 0 ) {
-    DELTA, _, _, t = __aread_subu64(buf, offset, DELTA, LO, TRAILB);
+    if ( TRAILB != 0 ) { ALL += 1; }
+    DELTA, _, TRAILB, t = __aread_subu64(buf, offset, DELTA, LO, TRAILB);
     offset += DELTA;
-    if ( TRAILB != 0 ) { ALL += 1; TRAILB = 0; }
-    t ^= st[u64 at];
-    st[u64 at] = t;
+    t ^= st[u64 (int) at];
+    st[u64 (int) at] = t;
   }
     
   return st, ALL, offset;
@@ -100,8 +102,7 @@ inline fn __absorb_array_ref
 
   ALL = AT + LEN;
   if ( (AT+LEN) < RATE8 ) { // not enough to fill a block!
-    st, AT, offset
-      = __addstate_array_ref(st, AT, buf, offset, LEN, TRAILB);
+    st, AT, offset = __addstate_array_ref(st, AT, buf, offset, LEN, TRAILB);
     if (TRAILB != 0) { // add pstate and closes the state
       st = __addratebit_ref(st, RATE8);
     }
@@ -109,7 +110,9 @@ inline fn __absorb_array_ref
     if ( AT != 0 ) { // start by filling the first block
       st, _, offset = __addstate_array_ref(st, AT, buf, offset, RATE8-AT, 0);
       LEN = LEN - (RATE8-AT);
+      () = #spill(buf,offset);
       st = _keccakf1600_ref(st);
+      () = #unspill(buf,offset);
       AT = 0;
     }
 
@@ -118,7 +121,9 @@ inline fn __absorb_array_ref
     i = 0;
     while ( i < ITERS ) {
       st, _, offset = __addstate_array_ref(st, 0, buf, offset, RATE8, 0);
+      () = #spill(buf,offset,i);
       st = _keccakf1600_ref(st);
+      () = #unspill(buf,offset,i);
       i += 1;
     }
 
@@ -179,13 +184,17 @@ inline fn __squeeze_array_ref
     if (0 < ITERS) {
       i = 0;
       while (i < ITERS) {
+	() = #spill(buf,offset);
         st = _keccakf1600_ref(st);
+	() = #unspill(buf,offset);
         buf, offset = __dumpstate_array_ref(buf, offset, RATE8, st);
         i += 1;
       }
     }
     if (0 < LO) {
+	() = #spill(buf,offset);
         st = _keccakf1600_ref(st);
+	() = #unspill(buf,offset);
         buf, offset = __dumpstate_array_ref(buf, offset, LO, st);
     }
   }

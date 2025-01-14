@@ -98,8 +98,7 @@ inline fn __absorb_imem_ref
 
   ALL = AT + LEN;
   if ( (AT+LEN) < RATE8 ) { // not enough to fill a block!
-    st, AT, buf
-      = __addstate_imem_ref(st, AT, buf, LEN, TRAILB);
+    st, AT, buf = __addstate_imem_ref(st, AT, buf, LEN, TRAILB);
     if (TRAILB != 0) { // add pstate and closes the state
       st = __addratebit_ref(st, RATE8);
     }

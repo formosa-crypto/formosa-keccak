@@ -98,7 +98,9 @@ inline fn __absorb_bcast_imem_avx2x4
     if ( AT != 0 ) { // start by filling the first block
       st, _, buf = __addstate_bcast_imem_avx2x4(st, AT, buf, RATE8-AT, 0);
       LEN = LEN - (RATE8-AT);
+      //() = #spill(buf);
       st = _keccakf1600_avx2x4(st);
+      //() = #unspill(buf);
       AT = 0;
     }
 
@@ -107,7 +109,9 @@ inline fn __absorb_bcast_imem_avx2x4
     i = 0;
     while ( i < ITERS ) {
       st, _, buf = __addstate_bcast_imem_avx2x4(st, 0, buf, RATE8, 0);
+      //() = #spill(buf,i);
       st = _keccakf1600_avx2x4(st);
+      //() = #unspill(buf,i);
       i += 1;
     }
 
@@ -402,14 +406,18 @@ inline fn __squeeze_imem_avx2x4
     if (0 < ITERS) {
       i = 0;
       while (i < ITERS) {
+	//() = #spill(buf,i);
         st = _keccakf1600_avx2x4(st);
+	//() = #unspill(buf,i);
         buf0, buf1, buf2, buf3
           = __dumpstate_imem_avx2x4(buf0, buf1, buf2, buf3, RATE8, st);
         i += 1;
       }
     }
     if (0 < LO) {
+	//() = #spill(buf);
         st = _keccakf1600_avx2x4(st);
+	//() = #unspill(buf);
         buf0, buf1, buf2, buf3
           = __dumpstate_imem_avx2x4(buf0, buf1, buf2, buf3, LO, st);
     }
