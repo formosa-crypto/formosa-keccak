@@ -769,7 +769,7 @@ hoare absorb_array_ref_h _l _buf _off _len _r8 _tb:
  : aT=size _l %% _r8 /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
  /\ 0 <= _len
- /\ to_uint _off + _len < aSIZE
+ /\ to_uint _off + _len <= aSIZE
  ==> if _tb <> 0
      then res.`1 = ABSORB1600 (W8.of_int _tb) _r8 (_l ++ sub _buf (to_uint _off) _len)
        /\ res.`3 = _off + W64.of_int (max 0 _len)
@@ -786,7 +786,7 @@ phoare absorb_array_ref_ph _l _buf _off _len _r8 _tb:
  : aT=size _l %% _r8 /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
  /\ 0 <= _len
- /\ to_uint _off + _len < aSIZE
+ /\ to_uint _off + _len <= aSIZE
  ==> if _tb <> 0
      then res.`1 = ABSORB1600 (W8.of_int _tb) _r8 (_l ++ sub _buf (to_uint _off) _len)
        /\ res.`3 = _off + W64.of_int (max 0 _len)
@@ -878,7 +878,7 @@ hoare squeeze_array_ref_h _buf _off _len _st _r8:
  : buf=_buf /\ offset=_off /\ lEN=_len /\ st=_st /\ rATE8=_r8
  /\ 0 <= _len
  /\ 0 < _r8 <= 200
- /\ to_uint _off + _len < aSIZE
+ /\ to_uint _off + _len <= aSIZE
  ==> res.`1 = A.fill (fun i => (SQUEEZE1600 _r8 _len _st).[i-to_uint _off]) (to_uint _off) _len _buf
   /\ res.`2 = _off + W64.of_int _len
   /\ res.`3 = st_i _st ((_len-1) %/ _r8 + 1).
@@ -891,7 +891,7 @@ phoare squeeze_array_ref_ph _buf _off _len _st _r8:
  : buf=_buf /\ offset=_off /\ lEN=_len /\ st=_st /\ rATE8=_r8
  /\ 0 <= _len
  /\ 0 < _r8 <= 200
- /\ to_uint _off + _len < aSIZE
+ /\ to_uint _off + _len <= aSIZE
  ==> res.`1 = A.fill (fun i => (SQUEEZE1600 _r8 _len _st).[i-to_uint _off]) (to_uint _off) _len _buf
   /\ res.`2 = _off + W64.of_int _len
   /\ res.`3 = st_i _st ((_len-1) %/ _r8 + 1)

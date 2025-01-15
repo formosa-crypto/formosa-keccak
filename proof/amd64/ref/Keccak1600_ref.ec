@@ -26,6 +26,17 @@ from JazzEC require import Array25.
 ******************************************************************************)
 
 (* MOVE TO CryptoSpecs *)
+lemma state2bytesE st i:
+ (state2bytes st).[i] = (stbytes st).[i].
+proof.
+case: (0 <= i < 200) => C.
+ admit.
+rewrite nth_out.
+ by rewrite size_state2bytes.
+by rewrite get_out.
+qed.
+
+
 op fillstate_at (st: W64.t Array25.t) (at:int) (l: W8.t list) =
  stwords
   (WArray200.fill 
