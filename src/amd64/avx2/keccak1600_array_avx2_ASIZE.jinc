@@ -16,7 +16,7 @@ inline fn __addstate_array_avx2
 , reg u64 offset
 , inline int LEN
 , inline int TRAILB
-) -> reg ptr u256[7] /* st */
+) -> reg u256[7] /* st */
    , reg u64 /* offset */
 {
   reg u64 t64;

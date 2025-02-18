@@ -10,7 +10,7 @@ inline fn __addstate_imem_avx2
 , reg u64 buf
 , inline int LEN
 , inline int TRAILB
-) -> reg ptr u256[7] /* st */
+) -> reg u256[7] /* st */
    , reg u64 /* buf */
 {
   reg u64 t64;

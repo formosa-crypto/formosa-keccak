@@ -302,7 +302,7 @@ inline fn __stavx2_pos_avx2(inline int POS) -> inline int, inline int {
 inline fn __addratebit_avx2
 ( reg u256[7] st
 , inline int RATE8
-) -> reg ptr u256[7]
+) -> reg u256[7]
 {
   inline int R, L;
   reg u256 t256;
