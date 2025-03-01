@@ -19,7 +19,7 @@ abbrev rOL56 =
 ).
 
 abbrev kECCAK_RHOTATES_RIGHT =
-(Array6.of_list witness
+((Array6.of_list witness)
 [(W256.of_int 144373339913893657577751063007562604548177214458152943091773);
 (W256.of_int 232252764209307188274174373867837442080505530800860351692863);
 (W256.of_int 156927543384667019098616994515559168111335794127330162507795);
@@ -28,7 +28,7 @@ abbrev kECCAK_RHOTATES_RIGHT =
 (W256.of_int 313855086769334038206421612937983674734430261968315659321364)]).
 
 abbrev kECCAK_RHOTATES_LEFT =
-(Array6.of_list witness
+((Array6.of_list witness)
 [(W256.of_int 257361171150853911329517531560668107745210100483895842570243);
 (W256.of_int 169481746855440380633094220700393270212881784141188433969153);
 (W256.of_int 244806967680080549808651600052671544182051520814718623154221);
@@ -37,7 +37,7 @@ abbrev kECCAK_RHOTATES_LEFT =
 (W256.of_int 87879424295413530700846981630247037558957052973733126340652)]).
 
 abbrev kECCAK1600_RC =
-(Array24.of_list witness
+((Array24.of_list witness)
 [(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
 (W64.of_int (-9223372034707259392)); (W64.of_int 32907);
 (W64.of_int 2147483649); (W64.of_int (-9223372034707259263));
@@ -57,7 +57,6 @@ module M = {
     return r;
   }
   proc keccakf1600_rho_offsets (i:int) : int = {
-    var aux:int;
     var r:int;
     var x:int;
     var y:int;
@@ -1354,7 +1353,6 @@ module M = {
     return t256;
   }
   proc __state_init_avx2 () : W256.t Array7.t = {
-    var aux:int;
     var st:W256.t Array7.t;
     var i:int;
     st <- witness;
@@ -1367,16 +1365,16 @@ module M = {
   }
   proc __pstate_init_avx2 (pst:W64.t Array25.t) : W64.t Array25.t *
                                                   W256.t Array7.t = {
-    var aux:int;
+    var inc:int;
     var st:W256.t Array7.t;
     var z256:W256.t;
     var i:int;
     var z64:W64.t;
     st <- witness;
     z256 <- (set0_256);
-    aux <- (25 %/ 4);
+    inc <- (25 %/ 4);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       pst <-
       (Array25.init
       (WArray200.get64
@@ -1652,10 +1650,10 @@ module M = {
     return (r3, r4, r5, r6);
   }
   proc __state_from_pstate_avx2 (pst:W64.t Array25.t) : W256.t Array7.t = {
-    var aux_2:W256.t;
-    var aux_1:W256.t;
-    var aux_0:W256.t;
     var aux:W256.t;
+    var aux_0:W256.t;
+    var aux_1:W256.t;
+    var aux_2:W256.t;
     var st:W256.t Array7.t;
     var t128_0:W128.t;
     var t128_1:W128.t;
@@ -1680,12 +1678,12 @@ module M = {
     (((W128.to_uint t128_1) %% (2 ^ 128)) +
     ((2 ^ 128) * (W128.to_uint t128_0))));
     st.[6] <- (get256_direct (WArray200.init64 (fun i => pst.[i])) (21 * 8));
-    (aux_2, aux_1, aux_0, aux) <@ __perm_reg3456_avx2 (st.[3], st.[4],
+    (aux, aux_0, aux_1, aux_2) <@ __perm_reg3456_avx2 (st.[3], st.[4],
     st.[5], st.[6]);
-    st.[3] <- aux_2;
-    st.[4] <- aux_1;
-    st.[5] <- aux_0;
-    st.[6] <- aux;
+    st.[3] <- aux;
+    st.[4] <- aux_0;
+    st.[5] <- aux_1;
+    st.[6] <- aux_2;
     return st;
   }
   proc __addstate_r3456_avx2 (st:W256.t Array7.t, r3:W256.t, r4:W256.t,
@@ -2331,7 +2329,6 @@ module M = {
     return (buf, st);
   }
   proc keccakf1600_4x_theta_sum (a:W256.t Array25.t) : W256.t Array5.t = {
-    var aux:int;
     var c:W256.t Array5.t;
     var x:int;
     var y:int;
@@ -2370,7 +2367,6 @@ module M = {
   }
   proc keccakf1600_4x_theta_rol (c:W256.t Array5.t, r8:W256.t, r56:W256.t) : 
   W256.t Array5.t = {
-    var aux:int;
     var d:W256.t Array5.t;
     var x:int;
     d <- witness;
@@ -2385,7 +2381,6 @@ module M = {
   }
   proc keccakf1600_4x_rol_sum (a:W256.t Array25.t, d:W256.t Array5.t, y:int,
                                r8:W256.t, r56:W256.t) : W256.t Array5.t = {
-    var aux:int;
     var b:W256.t Array5.t;
     var x:int;
     var x_:int;
@@ -2410,7 +2405,6 @@ module M = {
   }
   proc keccakf1600_4x_set_row (e:W256.t Array25.t, b:W256.t Array5.t, y:int,
                                rc:W256.t) : W256.t Array25.t = {
-    var aux:int;
     var x:int;
     var x1:int;
     var x2:int;
@@ -2433,7 +2427,6 @@ module M = {
   }
   proc _keccakf1600_4x_round (e:W256.t Array25.t, a:W256.t Array25.t,
                               rc:W256.t, r8:W256.t, r56:W256.t) : W256.t Array25.t = {
-    var aux:int;
     var c:W256.t Array5.t;
     var d:W256.t Array5.t;
     var y:int;

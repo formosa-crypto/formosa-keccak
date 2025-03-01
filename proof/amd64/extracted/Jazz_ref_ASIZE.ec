@@ -8,7 +8,7 @@ require import
 Array5 Array24 Array25 Array999 WArray40 WArray192 WArray200 WArray999.
 
 abbrev kECCAK1600_RC =
-(Array24.of_list witness
+((Array24.of_list witness)
 [(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
 (W64.of_int (-9223372034707259392)); (W64.of_int 32907);
 (W64.of_int 2147483649); (W64.of_int (-9223372034707259263));
@@ -35,7 +35,6 @@ module M = {
     return r;
   }
   proc keccakf1600_rho_offsets (i:int) : int = {
-    var aux:int;
     var r:int;
     var x:int;
     var y:int;
@@ -76,7 +75,6 @@ module M = {
     return x;
   }
   proc __theta_sum_ref (a:W64.t Array25.t) : W64.t Array5.t = {
-    var aux:int;
     var c:W64.t Array5.t;
     var x:int;
     var y:int;
@@ -98,24 +96,22 @@ module M = {
     return c;
   }
   proc __theta_rol_ref (c:W64.t Array5.t) : W64.t Array5.t = {
-    var aux:int;
-    var aux_0:W64.t;
+    var aux:W64.t;
     var d:W64.t Array5.t;
     var x:int;
     d <- witness;
     x <- 0;
     while ((x < 5)) {
       d.[x] <- c.[((x + 1) %% 5)];
-      aux_0 <@ __rol_u64_ref (d.[x], 1);
-      d.[x] <- aux_0;
+      aux <@ __rol_u64_ref (d.[x], 1);
+      d.[x] <- aux;
       d.[x] <- (d.[x] `^` c.[(((x - 1) + 5) %% 5)]);
       x <- (x + 1);
     }
     return d;
   }
   proc __rol_sum_ref (a:W64.t Array25.t, d:W64.t Array5.t, y:int) : W64.t Array5.t = {
-    var aux:int;
-    var aux_0:W64.t;
+    var aux:W64.t;
     var b:W64.t Array5.t;
     var x:int;
     var x_:int;
@@ -129,15 +125,14 @@ module M = {
       r <@ keccakf1600_rhotates (x_, y_);
       b.[x] <- a.[(x_ + (y_ * 5))];
       b.[x] <- (b.[x] `^` d.[x_]);
-      aux_0 <@ __rol_u64_ref (b.[x], r);
-      b.[x] <- aux_0;
+      aux <@ __rol_u64_ref (b.[x], r);
+      b.[x] <- aux;
       x <- (x + 1);
     }
     return b;
   }
   proc __set_row_ref (e:W64.t Array25.t, b:W64.t Array5.t, y:int, s_rc:W64.t) : 
   W64.t Array25.t = {
-    var aux:int;
     var x:int;
     var x1:int;
     var x2:int;
@@ -160,7 +155,6 @@ module M = {
   }
   proc __round_ref (e:W64.t Array25.t, a:W64.t Array25.t, s_rc:W64.t) : 
   W64.t Array25.t = {
-    var aux:int;
     var c:W64.t Array5.t;
     var d:W64.t Array5.t;
     var y:int;

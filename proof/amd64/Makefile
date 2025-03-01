@@ -1,5 +1,5 @@
 
-JASMINC2EC ?= jasmin2ec --arch x86 --array-old
+JASMINC2EC ?= jasmin2ec --arch x86 --array-model=old
 
 SRCDIR = ../../src/amd64
 OUTDIR = extracted
