@@ -1,7 +1,6 @@
-/* DEPENDENCIES
-require "keccak1600_avx2.jinc"
-param int ASIZE = 1002;
-*/
+// DEPENDENCIES
+// require "keccak1600_avx2.jinc"
+// param int ASIZE = 1002;
 
 require "../common/subreadwrite_array_ASIZE.jinc"
 
