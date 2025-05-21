@@ -13,7 +13,7 @@ inline fn __state_init_ref
   z64 = 0;
   i = 0;
   while (i < 25) {
-    st[(int) i] = z64;
+    st[i] = z64;
     i += 1; 
   }
   return st;

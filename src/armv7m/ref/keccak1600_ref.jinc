@@ -7,7 +7,7 @@ inline fn __keccak_init_ref(reg ptr u32[25*2] state) -> reg ptr u32[25*2]
   i = 0;
   t = 0;
   while(i < 25*2)
-  { state[(int)i] = t;
+  { state[i] = t;
     i += 1;
   }
 
@@ -30,9 +30,9 @@ inline fn __add_full_block_ref(
   while( i < rate32)
   {
     t0 = [in + 4*i];
-    t1 = state[(int)i];
+    t1 = state[i];
     t0 ^= t1;
-    state[(int)i] = t0;
+    state[i] = t0;
     i+=1;
   }
 
@@ -59,9 +59,9 @@ inline fn __add_final_block_ref(
   while ( i < inlen4 )
   {
     t0 = [in + 4*i];
-    t1 = state[(int)i];
+    t1 = state[i];
     t0 ^= t1;
-    state[(int)i] = t0;
+    state[i] = t0;
     i += 1;
   }
 
@@ -69,23 +69,23 @@ inline fn __add_final_block_ref(
   while ( i < inlen )
   {
     t0 = (32u)(u8)[in + i];
-    t1 = (32u) state[u8 (int)i];
+    t1 = (32u) state[u8 i];
     t0 ^= t1;
-    state[u8 (int)i] = (8u) t0;
+    state[u8 i] = (8u) t0;
     i += 1;
   }
 
-  t0 = (32u) state[u8 (int)i];
+  t0 = (32u) state[u8 i];
   t0 ^= trail_byte;
-  state[u8 (int)i] = (8u) t0;
+  state[u8 i] = (8u) t0;
 
   i = rate;
   i -= 1;
 
-  t0 = (32u) state[u8 (int)i];
+  t0 = (32u) state[u8 i];
   t1 = 0x80;
   t0 ^= t1;
-  state[u8 (int)i] = (8u) t0;
+  state[u8 i] = (8u) t0;
 
   return state;
 }
@@ -139,7 +139,7 @@ inline fn __xtr_full_block_ref(
   i = 0;
   while ( i < rate32 )
   {
-    t = state[(int)i];
+    t = state[i];
     [out + 4*i] = t;
     i += 1;
   }
@@ -163,7 +163,7 @@ inline fn __xtr_bytes_ref(
   i = 0;
   while ( i < outlen4 )
   {
-    t = state[(int)i];
+    t = state[i];
     [out + 4*i] = t;
     i += 1;
   }
@@ -171,7 +171,7 @@ inline fn __xtr_bytes_ref(
   i <<= 2;
   while ( i < outlen )
   {
-    t = (32u) state[u8 (int)i];
+    t = (32u) state[u8 i];
     (u8)[out + i] = (8u) t;
     i += 1;
   }

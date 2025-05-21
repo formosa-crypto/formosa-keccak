@@ -113,7 +113,7 @@ inline fn __pstate_imem_avx2
       if ( TRAILB != 0 ) { ALL += 1; }
       buf, _, TRAILB, t64 = __mread_subu64(buf, LEN, TRAILB);
       t64 <<= 8*LO;
-      pst[(int) at] ^= t64;
+      pst[at] ^= t64;
       LO = 0;
       AT = 0;
       LEN = 0;
@@ -127,7 +127,7 @@ inline fn __pstate_imem_avx2
       LEN -= 8-LO;
       AT += 8-LO;
       t64 <<= 8*LO;
-      pst[(int) at] ^= t64;
+      pst[at] ^= t64;
       at += 1;
     }
   }

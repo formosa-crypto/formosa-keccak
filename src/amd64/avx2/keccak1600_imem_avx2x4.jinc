@@ -29,8 +29,8 @@ inline fn __addstate_bcast_imem_avx2x4
       if ( TRAILB != 0 ) { ALL += 1; }
       buf, _, TRAILB, t256 = __mread_bcast_4subu64(buf, LEN, TRAILB);
       t256 = #VPSLL_4u64(t256, 8*LO);
-      t256 ^= st.[u256 (int) at];
-      st.[u256 (int) at] = t256;
+      t256 ^= st.[u256 at];
+      st.[u256 at] = t256;
       LO = 0;
       AT = 0;
       LEN = 0;
@@ -44,8 +44,8 @@ inline fn __addstate_bcast_imem_avx2x4
       LEN -= 8-LO;
       AT += 8-LO;
       t256 = #VPSLL_4u64(t256, 8*LO);
-      t256 ^= st.[u256 (int) at];
-      st.[u256 (int) at] = t256;
+      t256 ^= st.[u256 at];
+      st.[u256 at] = t256;
       at += 32;
     }
   }

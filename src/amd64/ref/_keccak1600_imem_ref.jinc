@@ -145,14 +145,14 @@ inline fn __dumpstate_imem_ref
   reg u64 i, t;
   i = 0;
   while (i < (LEN/8)) {
-    t = st[(int) i];
+    t = st[i];
     i += 1;
     (u64)[buf] = t;
     buf += 8;
   }
 
   if (0 < LEN%8) {
-    t = st[(int) i];
+    t = st[i];
     buf, _ = __mwrite_subu64( buf, LEN%8, t);
   }
 
