@@ -306,9 +306,9 @@ inline fn __get_RC(
 
   RC = s_RC;
 
-  rc0 = RC[(int) c];
+  rc0 = RC[c];
   c += 1;
-  rc1 = RC[(int) c];
+  rc1 = RC[c];
   c += 1;
 
   return rc1, rc0, c;

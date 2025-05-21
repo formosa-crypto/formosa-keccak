@@ -192,8 +192,8 @@ inline fn __keccakf1600_avx2x4(reg ptr u256[25] a) -> reg ptr u256[25]
   c = 0;
   while(c < KECCAK_ROUNDS)
   {
-    //rc = RC.[(int) c];
-    rc = #VPBROADCAST_4u64(RC[(int) c]);
+    //rc = RC.[c];
+    rc = #VPBROADCAST_4u64(RC[c]);
 
     e = _keccakf1600_4x_round(e, a, rc, r8, r56);
 
