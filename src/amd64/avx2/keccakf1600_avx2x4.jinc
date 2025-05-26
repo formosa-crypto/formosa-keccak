@@ -174,8 +174,6 @@ fn _keccakf1600_4x_round(reg ptr u256[25] e a, reg u256 rc r8 r56) -> reg ptr u2
 
 inline fn __keccakf1600_avx2x4(reg ptr u256[25] a) -> reg ptr u256[25]
 {
-  #mmx reg ptr u256[25] a_s;
-
   reg ptr u64[24] RC;
 
   stack u256[25] s_e;
@@ -197,19 +195,14 @@ inline fn __keccakf1600_avx2x4(reg ptr u256[25] a) -> reg ptr u256[25]
 
     e = _keccakf1600_4x_round(e, a, rc, r8, r56);
 
-    // just an expensive pointer swap (#todo request feature)
-    a_s = a; s_e = e;
-    a = a_s; e = s_e;
+    a, e = #swap(e, a);
 
     //rc = RC.[(int) c + 32];
     rc = #VPBROADCAST_4u64(RC[(int) c+1]);
     a = _keccakf1600_4x_round(a, e, rc, r8, r56);
 
-    // just an expensive pointer swap (#todo request feature)
-    a_s = a; s_e = e;
-    a = a_s; e = s_e;
+    a, e = #swap(e, a);
 
-    //c += 64;
     c += 2;
   } 
 
