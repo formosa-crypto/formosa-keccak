@@ -35,15 +35,15 @@ inline fn __addstate_imem_ref
       if ( TRAILB != 0 ) { ALL += 1; }
       buf, _, _, t = __mread_subu64(buf, LEN, TRAILB);
       t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[:u64 at];
+      st[:u64 at] = t;
       LO = 0;
       AT = 0;
       LEN = 0;
       TRAILB = 0;
     } else { // process first word
       if ( 8 <= LEN ) {
-	t = (u64)[buf];
+	t = [:u64 buf];
 	buf += 8-LO;
       } else {
         buf, _, _, t = __mread_subu64(buf, 8-LO, TRAILB);
@@ -51,8 +51,8 @@ inline fn __addstate_imem_ref
       LEN -= 8-LO;
       AT += 8-LO;
       t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[:u64 at];
+      st[:u64 at] = t;
       at += 1;
     }
   }
@@ -60,10 +60,10 @@ inline fn __addstate_imem_ref
   // continue processing remaining bytes
   if (8 <= LEN) {
     while ( at < (AT/8)+(LEN/8)) {
-      t = (u64)[buf];
+      t = [:u64 buf];
       buf += 8;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[:u64 at];
+      st[:u64 at] = t;
       at += 1;
     }
     LEN = (AT+LEN) % 8;
@@ -74,8 +74,8 @@ inline fn __addstate_imem_ref
   if ( 0 < LO || TRAILB != 0 ) {
     buf, _, _, t = __mread_subu64(buf, LO, TRAILB);
     if ( TRAILB != 0 ) { ALL += 1; TRAILB = 0; }
-    t ^= st[u64 at];
-    st[u64 at] = t;
+    t ^= st[:u64 at];
+    st[:u64 at] = t;
   }
     
   return st, ALL, buf;
@@ -147,7 +147,7 @@ inline fn __dumpstate_imem_ref
   while (i < (LEN/8)) {
     t = st[i];
     i += 1;
-    (u64)[buf] = t;
+    [:u64 buf] = t;
     buf += 8;
   }
 

@@ -68,24 +68,24 @@ inline fn __add_final_block_ref(
   i <<= 2;
   while ( i < inlen )
   {
-    t0 = (32u)(u8)[in + i];
-    t1 = (32u) state[u8 i];
+    t0 = (32u)[:u8 in + i];
+    t1 = (32u) state[:u8 i];
     t0 ^= t1;
-    state[u8 i] = (8u) t0;
+    state[:u8 i] = (8u) t0;
     i += 1;
   }
 
-  t0 = (32u) state[u8 i];
+  t0 = (32u) state[:u8 i];
   t0 ^= trail_byte;
-  state[u8 i] = (8u) t0;
+  state[:u8 i] = (8u) t0;
 
   i = rate;
   i -= 1;
 
-  t0 = (32u) state[u8 i];
+  t0 = (32u) state[:u8 i];
   t1 = 0x80;
   t0 ^= t1;
-  state[u8 i] = (8u) t0;
+  state[:u8 i] = (8u) t0;
 
   return state;
 }
@@ -171,8 +171,8 @@ inline fn __xtr_bytes_ref(
   i <<= 2;
   while ( i < outlen )
   {
-    t = (32u) state[u8 i];
-    (u8)[out + i] = (8u) t;
+    t = (32u) state[:u8 i];
+    [:u8 out + i] = (8u) t;
     i += 1;
   }
 
