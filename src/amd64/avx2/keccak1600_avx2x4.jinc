@@ -15,7 +15,7 @@ inline fn __state_init_avx2x4
   z256 = #set0_256();
   i = 0;
   while (i < 32*25) {
-    st.[u256 i] = z256;
+    st.[:u256 i] = z256;
     i += 32; 
   }
   return st;

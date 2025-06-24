@@ -132,7 +132,7 @@ inline fn __pstate_array_avx2
       LEN = 0;
     } else { // process first word
       if ( 8 <= LEN ) {
-        t64 = buf.[u64 offset + DELTA];
+        t64 = buf.[:u64 offset + DELTA];
         DELTA += (8-LO);
       } else {
         DELTA, _, _, t64 = __aread_subu64(buf, offset, DELTA, 8-LO, 0);
@@ -150,24 +150,24 @@ inline fn __pstate_array_avx2
     offset += DELTA;
     DELTA = 0;
     while ( at < AT/8+4*(LEN/32)) {
-      t256 = buf.[u256 offset];
+      t256 = buf.[:u256 offset];
       offset += 32;
-      pst.[u256 8*at] = t256;
+      pst.[:u256 8*at] = t256;
       at += 4;
     }
     LEN = LEN % 32;
   }
   if (16 <= LEN) {
-    t128 = buf.[u128 offset + DELTA];
+    t128 = buf.[:u128 offset + DELTA];
     DELTA += 16;
-    pst.[u128 8*at] = t128;
+    pst.[:u128 8*at] = t128;
     at += 2;
     LEN -= 16;
   }
   if (8 <= LEN) {
-    t64 = buf.[u64 offset + DELTA];
+    t64 = buf.[:u64 offset + DELTA];
     DELTA += 8;
-    pst.[u64 8*at] = t64;
+    pst.[:u64 8*at] = t64;
     at += 1;
     LEN -= 8;
   }
@@ -177,7 +177,7 @@ inline fn __pstate_array_avx2
   if ( 0 < LO || TRAILB != 0 ) {
     if ( TRAILB != 0 ) { ALL += 1; }
     DELTA, _, TRAILB, t64 = __aread_subu64(buf, offset, DELTA, LO, TRAILB);
-    pst[u64 (ALL/8)] = t64;
+    pst[:u64 (ALL/8)] = t64;
   }
   offset += DELTA;
   return pst, ALL, offset;
@@ -211,7 +211,7 @@ inline fn __pabsorb_array_avx2
         st = __addratebit_avx2(st, RATE8);
       } else { // all state is affected
         while (i < RATE8/8) { pst[i] = 0; i += 1; }
-        pst[u8 RATE8-1] ^= 0x80;
+        pst[:u8 RATE8-1] ^= 0x80;
         st = _addpstate_avx2(st, pst);
       }
     }
@@ -249,7 +249,7 @@ inline fn __pabsorb_array_avx2
           st = __addratebit_avx2(st, RATE8);
         } else { // all state is affected
           while (i < RATE8/8) { pst[i] = 0; i += 1; }
-          pst[u8 RATE8-1] ^= 0x80;
+          pst[:u8 RATE8-1] ^= 0x80;
           st = _addpstate_avx2(st, pst);
         }
       }
