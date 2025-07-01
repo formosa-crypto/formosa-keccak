@@ -156,7 +156,7 @@ inline fn __keccakf1600_ref(reg ptr u64[25] a) -> reg ptr u64[25]
     e = __round_ref(e, a, s_rc);
 
     RC = s_RC;
-    rc = RC[(int) c + 1];
+    rc = RC[(uint) c + 1];
     s_rc = rc;
     a = __round_ref(a, e, s_rc);
 
