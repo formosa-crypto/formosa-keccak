@@ -35,15 +35,15 @@ inline fn __addstate_array_ref
       if ( TRAILB != 0 ) { ALL += 1; }
       DELTA, _, _, t = __aread_subu64(buf, offset, DELTA, LEN, TRAILB);
       t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[:u64 at];
+      st[:u64 at] = t;
       LO = 0;
       AT = 0;
       LEN = 0;
       TRAILB = 0;
     } else { // process first word
       if ( 8 <= LEN ) {
-	t = buf.[u64 offset + DELTA];
+	t = buf.[:u64 offset + DELTA];
 	DELTA += 8-LO;
       } else {
         DELTA, _, _, t = __aread_subu64(buf, offset, DELTA, 8-LO, TRAILB);
@@ -51,8 +51,8 @@ inline fn __addstate_array_ref
       LEN -= 8-LO;
       AT += 8-LO;
       t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[:u64 at];
+      st[:u64 at] = t;
       at += 1;
     }
     offset += DELTA;
@@ -62,10 +62,10 @@ inline fn __addstate_array_ref
   // continue processing remaining words
   if (8 <= LEN) {
     while ( at < (AT/8)+(LEN/8)) {
-      t = buf.[u64 offset];
+      t = buf.[:u64 offset];
       offset += 8;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[:u64 at];
+      st[:u64 at] = t;
       at += 1;
     }
     LEN = (AT+LEN) % 8;
@@ -77,8 +77,8 @@ inline fn __addstate_array_ref
     if ( TRAILB != 0 ) { ALL += 1; }
     DELTA, _, TRAILB, t = __aread_subu64(buf, offset, DELTA, LO, TRAILB);
     offset += DELTA;
-    t ^= st[u64 at];
-    st[u64 at] = t;
+    t ^= st[:u64 at];
+    st[:u64 at] = t;
   }
     
   return st, ALL, offset;
@@ -152,7 +152,7 @@ inline fn __dumpstate_array_ref
   i = 0;
   while (i <s (LEN/8)) {
     t = st[i];
-    buf.[u64 offset] = t;
+    buf.[:u64 offset] = t;
     i += 1;
     offset += 8;
   }
