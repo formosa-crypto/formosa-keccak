@@ -339,9 +339,10 @@ inline fn __dumpstate_imem_avx2x4
    , reg u64 /* buf3 */
 {
   reg u256 x0, x1, x2, x3;
-  reg u64 i, t0, t1, t2, t3;
+  reg int i;
+  reg u64 t0, t1, t2, t3;
   i = 0;
-  while (i <s 32*(LEN/32)) {
+  while (i < 32*(LEN/32)) {
     x0 = st.[:u256 4*i+0*32];
     x1 = st.[:u256 4*i+1*32];
     x2 = st.[:u256 4*i+2*32];
@@ -357,7 +358,7 @@ inline fn __dumpstate_imem_avx2x4
     [:u256 buf3] = x3;
     buf3 +=32;
   } // 0 32 (64) 
-  while (i <s 8*(LEN/8)) {
+  while (i < 8*(LEN/8)) {
     t0 = st.[:u64 4*i+0*8];
     t1 = st.[:u64 4*i+1*8];
     t2 = st.[:u64 4*i+2*8];
@@ -398,7 +399,7 @@ inline fn __squeeze_imem_avx2x4
    , reg u64 /* buf3 */
    , reg ptr u256[25] /* st */
 {
-  reg u64 i;
+  reg int i;
   inline int ITERS, LO;
   ITERS = LEN/RATE8;
   LO = LEN%RATE8;
