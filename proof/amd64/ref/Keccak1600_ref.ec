@@ -7,7 +7,7 @@
 
 ******************************************************************************)
 
-require import List Real Int IntDiv CoreMap.
+require import List Real Int IntDiv CoreMap List.
 require BitEncoding.
 import BitEncoding.BitChunking.
 
@@ -30,11 +30,31 @@ lemma state2bytesE st i:
  (state2bytes st).[i] = (stbytes st).[i].
 proof.
 case: (0 <= i < 200) => C.
- admit.
+ rewrite /state2bytes.
+ have ?: 8*size (to_list st) = 200 by smt(Array25.size_to_list).
+ rewrite nth_w64L_to_bytes 1:/# W8u8.nth_to_list.
+ rewrite initiE 1:// /=.
+ by rewrite (nth_change_dfl witness) 1:/# get_to_list.
 rewrite nth_out.
  by rewrite size_state2bytes.
 by rewrite get_out.
 qed.
+
+lemma addstate_st0 st:
+ addstate st0 st = st.
+proof.
+rewrite tP => i Hi.
+rewrite /addstate /st0 /map2.
+by rewrite initiE //= createiE //=.
+qed.
+
+lemma bytes2state0: bytes2state [] = st0.
+proof.
+rewrite /bytes2state /st0 tP => i Hi.
+rewrite get_of_list 1:// createiE //.
+by rewrite w64L_from_bytes_nil.
+qed.
+(* end: MOVE TO CryptoSpecs *)
 
 
 op fillstate_at (st: W64.t Array25.t) (at:int) (l: W8.t list) =
@@ -61,7 +81,7 @@ proof.
 move=> Hr; rewrite /pabsorb_spec_ref => />.
 rewrite chunk0 /= 1:/#.
 rewrite /stateabsorb_iblocks /= /chunkremains /=.
-admit (* should we add lemmas to the spec? *).
+by rewrite addstate_st0 bytes2state0.
 qed.
 
 

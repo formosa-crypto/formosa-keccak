@@ -44,6 +44,7 @@ inline fn __addratebit_avx2x4
 }
 
 /*
+/*
     State25 to/from State4x25
     =========================
 */
@@ -90,3 +91,4 @@ inline fn __4u64x4_u256x4
 
   return y0, y1, y2, y3;
 }
+*/

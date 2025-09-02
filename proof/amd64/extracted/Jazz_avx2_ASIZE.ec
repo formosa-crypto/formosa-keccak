@@ -1106,23 +1106,19 @@ module M = {
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
-        w <- (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW64 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
         if ((4 <= lEN)) {
-          w <-
-          (zeroextu64 (loadW32 Glob.mem (W64.to_uint (buf + (W64.of_int 0))))
-          );
+          w <- (zeroextu64 (loadW32 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 4));
           lEN <- (lEN - 4);
         } else {
           w <- (W64.of_int 0);
         }
         if ((2 <= lEN)) {
-          t16 <-
-          (zeroextu64 (loadW16 Glob.mem (W64.to_uint (buf + (W64.of_int 0))))
-          );
+          t16 <- (zeroextu64 (loadW16 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 2));
           lEN <- (lEN - 2);
         } else {
@@ -1130,9 +1126,7 @@ module M = {
         }
         if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
-            t8 <-
-            (zeroextu64
-            (loadW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+            t8 <- (zeroextu64 (loadW8 Glob.mem (W64.to_uint buf)));
             if (((tRAIL %% 256) <> 0)) {
               t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
@@ -1164,9 +1158,7 @@ module M = {
       w <- (set0_256);
     } else {
       if ((8 <= lEN)) {
-        w <-
-        (VPBROADCAST_4u64
-        (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+        w <- (VPBROADCAST_4u64 (loadW64 Glob.mem (W64.to_uint buf)));
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
@@ -1185,13 +1177,12 @@ module M = {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
-        w <- (loadW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW128 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 16));
         lEN <- (lEN - 16);
       } else {
         if ((8 <= lEN)) {
-          w <-
-          (VMOV_64 (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+          w <- (VMOV_64 (loadW64 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 8));
           lEN <- (lEN - 8);
           (buf, lEN, tRAIL, t64) <@ __mread_subu64 (buf, lEN, tRAIL);
@@ -1213,12 +1204,12 @@ module M = {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
-        w <- (loadW256 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW256 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
         if ((16 <= lEN)) {
-          t128_0 <- (loadW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+          t128_0 <- (loadW128 Glob.mem (W64.to_uint buf));
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           (buf, lEN, tRAIL, t128_1) <@ __mread_subu128 (buf, lEN, tRAIL);
@@ -1242,15 +1233,12 @@ module M = {
     
     if ((0 < lEN)) {
       if ((8 <= lEN)) {
-        Glob.mem <-
-        (storeW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW64 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
         if ((4 <= lEN)) {
-          Glob.mem <-
-          (storeW32 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu32 w));
+          Glob.mem <- (storeW32 Glob.mem (W64.to_uint buf) (truncateu32 w));
           w <- (w `>>` (W8.of_int 32));
           buf <- (buf + (W64.of_int 4));
           lEN <- (lEN - 4);
@@ -1258,9 +1246,7 @@ module M = {
           
         }
         if ((2 <= lEN)) {
-          Glob.mem <-
-          (storeW16 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu16 w));
+          Glob.mem <- (storeW16 Glob.mem (W64.to_uint buf) (truncateu16 w));
           w <- (w `>>` (W8.of_int 16));
           buf <- (buf + (W64.of_int 2));
           lEN <- (lEN - 2);
@@ -1268,9 +1254,7 @@ module M = {
           
         }
         if ((1 <= lEN)) {
-          Glob.mem <-
-          (storeW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu8 w));
+          Glob.mem <- (storeW8 Glob.mem (W64.to_uint buf) (truncateu8 w));
           buf <- (buf + (W64.of_int 1));
           lEN <- (lEN - 1);
         } else {
@@ -1286,15 +1270,13 @@ module M = {
     var t64:W64.t;
     if ((0 < lEN)) {
       if ((16 <= lEN)) {
-        Glob.mem <-
-        (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW128 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 16));
         lEN <- (lEN - 16);
       } else {
         if ((8 <= lEN)) {
           Glob.mem <-
-          (storeW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (MOVV_64 (truncateu64 w)));
+          (storeW64 Glob.mem (W64.to_uint buf) (MOVV_64 (truncateu64 w)));
           buf <- (buf + (W64.of_int 8));
           lEN <- (lEN - 8);
           w <- (VPUNPCKH_2u64 w w);
@@ -1313,15 +1295,13 @@ module M = {
     var t128:W128.t;
     if ((0 < lEN)) {
       if ((32 <= lEN)) {
-        Glob.mem <-
-        (storeW256 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW256 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
         t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
-          Glob.mem <-
-          (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) t128);
+          Glob.mem <- (storeW128 Glob.mem (W64.to_uint buf) t128);
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           t128 <- (VEXTRACTI128 w (W8.of_int 1));
@@ -1874,121 +1854,344 @@ module M = {
     st.[r] <- (st.[r] `^` t256);
     return st;
   }
-  proc keccakf1600_4x_theta_sum (a:W256.t Array25.t) : W256.t Array5.t = {
-    var c:W256.t Array5.t;
-    var x:int;
-    var y:int;
-    c <- witness;
-    x <- 0;
-    while ((x < 5)) {
-      c.[x] <- a.[(x + 0)];
-      x <- (x + 1);
-    }
-    y <- 1;
-    while ((y < 5)) {
-      x <- 0;
-      while ((x < 5)) {
-        c.[x] <- (c.[x] `^` a.[(x + (y * 5))]);
-        x <- (x + 1);
-      }
-      y <- (y + 1);
-    }
-    return c;
-  }
-  proc keccakf1600_4x_rol (a:W256.t Array5.t, x:int, r:int, r8:W256.t,
-                           r56:W256.t) : W256.t Array5.t = {
-    var t:W256.t;
-    if ((r = 8)) {
-      a.[x] <- (VPSHUFB_256 a.[x] r8);
-    } else {
-      if ((r = 56)) {
-        a.[x] <- (VPSHUFB_256 a.[x] r56);
-      } else {
-        t <- (VPSLL_4u64 a.[x] (W128.of_int r));
-        a.[x] <- (VPSRL_4u64 a.[x] (W128.of_int (64 - r)));
-        a.[x] <- (a.[x] `|` t);
-      }
-    }
-    return a;
-  }
-  proc keccakf1600_4x_theta_rol (c:W256.t Array5.t, r8:W256.t, r56:W256.t) : 
-  W256.t Array5.t = {
-    var d:W256.t Array5.t;
-    var x:int;
-    d <- witness;
-    x <- 0;
-    while ((x < 5)) {
-      d.[x] <- c.[((x + 1) %% 5)];
-      d <@ keccakf1600_4x_rol (d, x, 1, r8, r56);
-      d.[x] <- (d.[x] `^` c.[(((x - 1) + 5) %% 5)]);
-      x <- (x + 1);
-    }
-    return d;
-  }
-  proc keccakf1600_4x_rol_sum (a:W256.t Array25.t, d:W256.t Array5.t, y:int,
-                               r8:W256.t, r56:W256.t) : W256.t Array5.t = {
-    var b:W256.t Array5.t;
-    var x:int;
-    var x_:int;
-    var y_:int;
-    var r:int;
-    b <- witness;
-    x <- 0;
-    while ((x < 5)) {
-      x_ <- ((x + (3 * y)) %% 5);
-      y_ <- x;
-      r <@ keccakf1600_rhotates (x_, y_);
-      b.[x] <- a.[(x_ + (y_ * 5))];
-      b.[x] <- (b.[x] `^` d.[x_]);
-      if ((r <> 0)) {
-        b <@ keccakf1600_4x_rol (b, x, r, r8, r56);
-      } else {
-        
-      }
-      x <- (x + 1);
-    }
-    return b;
-  }
-  proc keccakf1600_4x_set_row (e:W256.t Array25.t, b:W256.t Array5.t, y:int,
-                               rc:W256.t) : W256.t Array25.t = {
-    var x:int;
-    var x1:int;
-    var x2:int;
-    var t:W256.t;
-    x <- 0;
-    while ((x < 5)) {
-      x1 <- ((x + 1) %% 5);
-      x2 <- ((x + 2) %% 5);
-      t <- (VPANDN_256 b.[x1] b.[x2]);
-      t <- (t `^` b.[x]);
-      if (((x = 0) /\ (y = 0))) {
-        t <- (t `^` rc);
-      } else {
-        
-      }
-      e.[(x + (y * 5))] <- t;
-      x <- (x + 1);
-    }
-    return e;
-  }
-  proc _keccakf1600_4x_round (e:W256.t Array25.t, a:W256.t Array25.t,
-                              rc:W256.t, r8:W256.t, r56:W256.t) : W256.t Array25.t = {
-    var c:W256.t Array5.t;
-    var d:W256.t Array5.t;
-    var y:int;
-    var b:W256.t Array5.t;
-    b <- witness;
-    c <- witness;
-    d <- witness;
-    c <@ keccakf1600_4x_theta_sum (a);
-    d <@ keccakf1600_4x_theta_rol (c, r8, r56);
-    y <- 0;
-    while ((y < 5)) {
-      b <@ keccakf1600_4x_rol_sum (a, d, y, r8, r56);
-      e <@ keccakf1600_4x_set_row (e, b, y, rc);
-      y <- (y + 1);
-    }
-    return e;
+  proc __keccakf1600_4x_pround (e_356:W256.t Array25.t,
+                                a_357:W256.t Array25.t, r8_358:W256.t,
+                                r56_359:W256.t) : W256.t Array25.t = {
+    var c_571:W256.t Array5.t;
+    var d_619:W256.t Array5.t;
+    var t_574:W256.t;
+    var t_577:W256.t;
+    var t_580:W256.t;
+    var t_583:W256.t;
+    var t_586:W256.t;
+    var b_606:W256.t Array5.t;
+    var t_593:W256.t;
+    var t_596:W256.t;
+    var t_599:W256.t;
+    var t_602:W256.t;
+    var t_607:W256.t;
+    var t_608:W256.t;
+    var t_609:W256.t;
+    var t_610:W256.t;
+    var t_611:W256.t;
+    var t_612:W256.t;
+    var t_613:W256.t;
+    var t_614:W256.t;
+    var t_615:W256.t;
+    var t_616:W256.t;
+    var b_638:W256.t Array5.t;
+    var t_622:W256.t;
+    var t_625:W256.t;
+    var t_628:W256.t;
+    var t_631:W256.t;
+    var t_634:W256.t;
+    var t_639:W256.t;
+    var t_640:W256.t;
+    var t_641:W256.t;
+    var t_642:W256.t;
+    var t_643:W256.t;
+    var t_644:W256.t;
+    var t_645:W256.t;
+    var t_646:W256.t;
+    var t_647:W256.t;
+    var t_648:W256.t;
+    var b_671:W256.t Array5.t;
+    var t_655:W256.t;
+    var t_658:W256.t;
+    var t_661:W256.t;
+    var t_667:W256.t;
+    var t_672:W256.t;
+    var t_673:W256.t;
+    var t_674:W256.t;
+    var t_675:W256.t;
+    var t_676:W256.t;
+    var t_677:W256.t;
+    var t_678:W256.t;
+    var t_679:W256.t;
+    var t_680:W256.t;
+    var t_681:W256.t;
+    var b_704:W256.t Array5.t;
+    var t_688:W256.t;
+    var t_691:W256.t;
+    var t_694:W256.t;
+    var t_697:W256.t;
+    var t_705:W256.t;
+    var t_706:W256.t;
+    var t_707:W256.t;
+    var t_708:W256.t;
+    var t_709:W256.t;
+    var t_710:W256.t;
+    var t_711:W256.t;
+    var t_712:W256.t;
+    var t_713:W256.t;
+    var t_714:W256.t;
+    var b_736:W256.t Array5.t;
+    var t_720:W256.t;
+    var t_723:W256.t;
+    var t_726:W256.t;
+    var t_729:W256.t;
+    var t_732:W256.t;
+    var t_737:W256.t;
+    var t_738:W256.t;
+    var t_739:W256.t;
+    var t_740:W256.t;
+    var t_741:W256.t;
+    var t_742:W256.t;
+    var t_743:W256.t;
+    var t_744:W256.t;
+    var t_745:W256.t;
+    var t_746:W256.t;
+    b_606 <- witness;
+    b_638 <- witness;
+    b_671 <- witness;
+    b_704 <- witness;
+    b_736 <- witness;
+    c_571 <- witness;
+    d_619 <- witness;
+    c_571.[0] <- a_357.[0];
+    c_571.[1] <- a_357.[1];
+    c_571.[2] <- a_357.[2];
+    c_571.[3] <- a_357.[3];
+    c_571.[4] <- a_357.[4];
+    c_571.[0] <- (c_571.[0] `^` a_357.[5]);
+    c_571.[1] <- (c_571.[1] `^` a_357.[6]);
+    c_571.[2] <- (c_571.[2] `^` a_357.[7]);
+    c_571.[3] <- (c_571.[3] `^` a_357.[8]);
+    c_571.[4] <- (c_571.[4] `^` a_357.[9]);
+    c_571.[0] <- (c_571.[0] `^` a_357.[10]);
+    c_571.[1] <- (c_571.[1] `^` a_357.[11]);
+    c_571.[2] <- (c_571.[2] `^` a_357.[12]);
+    c_571.[3] <- (c_571.[3] `^` a_357.[13]);
+    c_571.[4] <- (c_571.[4] `^` a_357.[14]);
+    c_571.[0] <- (c_571.[0] `^` a_357.[15]);
+    c_571.[1] <- (c_571.[1] `^` a_357.[16]);
+    c_571.[2] <- (c_571.[2] `^` a_357.[17]);
+    c_571.[3] <- (c_571.[3] `^` a_357.[18]);
+    c_571.[4] <- (c_571.[4] `^` a_357.[19]);
+    c_571.[0] <- (c_571.[0] `^` a_357.[20]);
+    c_571.[1] <- (c_571.[1] `^` a_357.[21]);
+    c_571.[2] <- (c_571.[2] `^` a_357.[22]);
+    c_571.[3] <- (c_571.[3] `^` a_357.[23]);
+    c_571.[4] <- (c_571.[4] `^` a_357.[24]);
+    d_619.[0] <- c_571.[1];
+    t_574 <- (VPSLL_4u64 d_619.[0] (W128.of_int 1));
+    d_619.[0] <- (VPSRL_4u64 d_619.[0] (W128.of_int 63));
+    d_619.[0] <- (d_619.[0] `|` t_574);
+    d_619.[0] <- (d_619.[0] `^` c_571.[4]);
+    d_619.[1] <- c_571.[2];
+    t_577 <- (VPSLL_4u64 d_619.[1] (W128.of_int 1));
+    d_619.[1] <- (VPSRL_4u64 d_619.[1] (W128.of_int 63));
+    d_619.[1] <- (d_619.[1] `|` t_577);
+    d_619.[1] <- (d_619.[1] `^` c_571.[0]);
+    d_619.[2] <- c_571.[3];
+    t_580 <- (VPSLL_4u64 d_619.[2] (W128.of_int 1));
+    d_619.[2] <- (VPSRL_4u64 d_619.[2] (W128.of_int 63));
+    d_619.[2] <- (d_619.[2] `|` t_580);
+    d_619.[2] <- (d_619.[2] `^` c_571.[1]);
+    d_619.[3] <- c_571.[4];
+    t_583 <- (VPSLL_4u64 d_619.[3] (W128.of_int 1));
+    d_619.[3] <- (VPSRL_4u64 d_619.[3] (W128.of_int 63));
+    d_619.[3] <- (d_619.[3] `|` t_583);
+    d_619.[3] <- (d_619.[3] `^` c_571.[2]);
+    d_619.[4] <- c_571.[0];
+    t_586 <- (VPSLL_4u64 d_619.[4] (W128.of_int 1));
+    d_619.[4] <- (VPSRL_4u64 d_619.[4] (W128.of_int 63));
+    d_619.[4] <- (d_619.[4] `|` t_586);
+    d_619.[4] <- (d_619.[4] `^` c_571.[3]);
+    b_606.[0] <- a_357.[0];
+    b_606.[0] <- (b_606.[0] `^` d_619.[0]);
+    b_606.[1] <- a_357.[6];
+    b_606.[1] <- (b_606.[1] `^` d_619.[1]);
+    t_593 <- (VPSLL_4u64 b_606.[1] (W128.of_int 44));
+    b_606.[1] <- (VPSRL_4u64 b_606.[1] (W128.of_int 20));
+    b_606.[1] <- (b_606.[1] `|` t_593);
+    b_606.[2] <- a_357.[12];
+    b_606.[2] <- (b_606.[2] `^` d_619.[2]);
+    t_596 <- (VPSLL_4u64 b_606.[2] (W128.of_int 43));
+    b_606.[2] <- (VPSRL_4u64 b_606.[2] (W128.of_int 21));
+    b_606.[2] <- (b_606.[2] `|` t_596);
+    b_606.[3] <- a_357.[18];
+    b_606.[3] <- (b_606.[3] `^` d_619.[3]);
+    t_599 <- (VPSLL_4u64 b_606.[3] (W128.of_int 21));
+    b_606.[3] <- (VPSRL_4u64 b_606.[3] (W128.of_int 43));
+    b_606.[3] <- (b_606.[3] `|` t_599);
+    b_606.[4] <- a_357.[24];
+    b_606.[4] <- (b_606.[4] `^` d_619.[4]);
+    t_602 <- (VPSLL_4u64 b_606.[4] (W128.of_int 14));
+    b_606.[4] <- (VPSRL_4u64 b_606.[4] (W128.of_int 50));
+    b_606.[4] <- (b_606.[4] `|` t_602);
+    t_607 <- (VPANDN_256 b_606.[1] b_606.[2]);
+    t_608 <- (t_607 `^` b_606.[0]);
+    e_356.[0] <- t_608;
+    t_609 <- (VPANDN_256 b_606.[2] b_606.[3]);
+    t_610 <- (t_609 `^` b_606.[1]);
+    e_356.[1] <- t_610;
+    t_611 <- (VPANDN_256 b_606.[3] b_606.[4]);
+    t_612 <- (t_611 `^` b_606.[2]);
+    e_356.[2] <- t_612;
+    t_613 <- (VPANDN_256 b_606.[4] b_606.[0]);
+    t_614 <- (t_613 `^` b_606.[3]);
+    e_356.[3] <- t_614;
+    t_615 <- (VPANDN_256 b_606.[0] b_606.[1]);
+    t_616 <- (t_615 `^` b_606.[4]);
+    e_356.[4] <- t_616;
+    b_638.[0] <- a_357.[3];
+    b_638.[0] <- (b_638.[0] `^` d_619.[3]);
+    t_622 <- (VPSLL_4u64 b_638.[0] (W128.of_int 28));
+    b_638.[0] <- (VPSRL_4u64 b_638.[0] (W128.of_int 36));
+    b_638.[0] <- (b_638.[0] `|` t_622);
+    b_638.[1] <- a_357.[9];
+    b_638.[1] <- (b_638.[1] `^` d_619.[4]);
+    t_625 <- (VPSLL_4u64 b_638.[1] (W128.of_int 20));
+    b_638.[1] <- (VPSRL_4u64 b_638.[1] (W128.of_int 44));
+    b_638.[1] <- (b_638.[1] `|` t_625);
+    b_638.[2] <- a_357.[10];
+    b_638.[2] <- (b_638.[2] `^` d_619.[0]);
+    t_628 <- (VPSLL_4u64 b_638.[2] (W128.of_int 3));
+    b_638.[2] <- (VPSRL_4u64 b_638.[2] (W128.of_int 61));
+    b_638.[2] <- (b_638.[2] `|` t_628);
+    b_638.[3] <- a_357.[16];
+    b_638.[3] <- (b_638.[3] `^` d_619.[1]);
+    t_631 <- (VPSLL_4u64 b_638.[3] (W128.of_int 45));
+    b_638.[3] <- (VPSRL_4u64 b_638.[3] (W128.of_int 19));
+    b_638.[3] <- (b_638.[3] `|` t_631);
+    b_638.[4] <- a_357.[22];
+    b_638.[4] <- (b_638.[4] `^` d_619.[2]);
+    t_634 <- (VPSLL_4u64 b_638.[4] (W128.of_int 61));
+    b_638.[4] <- (VPSRL_4u64 b_638.[4] (W128.of_int 3));
+    b_638.[4] <- (b_638.[4] `|` t_634);
+    t_639 <- (VPANDN_256 b_638.[1] b_638.[2]);
+    t_640 <- (t_639 `^` b_638.[0]);
+    e_356.[5] <- t_640;
+    t_641 <- (VPANDN_256 b_638.[2] b_638.[3]);
+    t_642 <- (t_641 `^` b_638.[1]);
+    e_356.[6] <- t_642;
+    t_643 <- (VPANDN_256 b_638.[3] b_638.[4]);
+    t_644 <- (t_643 `^` b_638.[2]);
+    e_356.[7] <- t_644;
+    t_645 <- (VPANDN_256 b_638.[4] b_638.[0]);
+    t_646 <- (t_645 `^` b_638.[3]);
+    e_356.[8] <- t_646;
+    t_647 <- (VPANDN_256 b_638.[0] b_638.[1]);
+    t_648 <- (t_647 `^` b_638.[4]);
+    e_356.[9] <- t_648;
+    b_671.[0] <- a_357.[1];
+    b_671.[0] <- (b_671.[0] `^` d_619.[1]);
+    t_655 <- (VPSLL_4u64 b_671.[0] (W128.of_int 1));
+    b_671.[0] <- (VPSRL_4u64 b_671.[0] (W128.of_int 63));
+    b_671.[0] <- (b_671.[0] `|` t_655);
+    b_671.[1] <- a_357.[7];
+    b_671.[1] <- (b_671.[1] `^` d_619.[2]);
+    t_658 <- (VPSLL_4u64 b_671.[1] (W128.of_int 6));
+    b_671.[1] <- (VPSRL_4u64 b_671.[1] (W128.of_int 58));
+    b_671.[1] <- (b_671.[1] `|` t_658);
+    b_671.[2] <- a_357.[13];
+    b_671.[2] <- (b_671.[2] `^` d_619.[3]);
+    t_661 <- (VPSLL_4u64 b_671.[2] (W128.of_int 25));
+    b_671.[2] <- (VPSRL_4u64 b_671.[2] (W128.of_int 39));
+    b_671.[2] <- (b_671.[2] `|` t_661);
+    b_671.[3] <- a_357.[19];
+    b_671.[3] <- (b_671.[3] `^` d_619.[4]);
+    b_671.[3] <- (VPSHUFB_256 b_671.[3] r8_358);
+    b_671.[4] <- a_357.[20];
+    b_671.[4] <- (b_671.[4] `^` d_619.[0]);
+    t_667 <- (VPSLL_4u64 b_671.[4] (W128.of_int 18));
+    b_671.[4] <- (VPSRL_4u64 b_671.[4] (W128.of_int 46));
+    b_671.[4] <- (b_671.[4] `|` t_667);
+    t_672 <- (VPANDN_256 b_671.[1] b_671.[2]);
+    t_673 <- (t_672 `^` b_671.[0]);
+    e_356.[10] <- t_673;
+    t_674 <- (VPANDN_256 b_671.[2] b_671.[3]);
+    t_675 <- (t_674 `^` b_671.[1]);
+    e_356.[11] <- t_675;
+    t_676 <- (VPANDN_256 b_671.[3] b_671.[4]);
+    t_677 <- (t_676 `^` b_671.[2]);
+    e_356.[12] <- t_677;
+    t_678 <- (VPANDN_256 b_671.[4] b_671.[0]);
+    t_679 <- (t_678 `^` b_671.[3]);
+    e_356.[13] <- t_679;
+    t_680 <- (VPANDN_256 b_671.[0] b_671.[1]);
+    t_681 <- (t_680 `^` b_671.[4]);
+    e_356.[14] <- t_681;
+    b_704.[0] <- a_357.[4];
+    b_704.[0] <- (b_704.[0] `^` d_619.[4]);
+    t_688 <- (VPSLL_4u64 b_704.[0] (W128.of_int 27));
+    b_704.[0] <- (VPSRL_4u64 b_704.[0] (W128.of_int 37));
+    b_704.[0] <- (b_704.[0] `|` t_688);
+    b_704.[1] <- a_357.[5];
+    b_704.[1] <- (b_704.[1] `^` d_619.[0]);
+    t_691 <- (VPSLL_4u64 b_704.[1] (W128.of_int 36));
+    b_704.[1] <- (VPSRL_4u64 b_704.[1] (W128.of_int 28));
+    b_704.[1] <- (b_704.[1] `|` t_691);
+    b_704.[2] <- a_357.[11];
+    b_704.[2] <- (b_704.[2] `^` d_619.[1]);
+    t_694 <- (VPSLL_4u64 b_704.[2] (W128.of_int 10));
+    b_704.[2] <- (VPSRL_4u64 b_704.[2] (W128.of_int 54));
+    b_704.[2] <- (b_704.[2] `|` t_694);
+    b_704.[3] <- a_357.[17];
+    b_704.[3] <- (b_704.[3] `^` d_619.[2]);
+    t_697 <- (VPSLL_4u64 b_704.[3] (W128.of_int 15));
+    b_704.[3] <- (VPSRL_4u64 b_704.[3] (W128.of_int 49));
+    b_704.[3] <- (b_704.[3] `|` t_697);
+    b_704.[4] <- a_357.[23];
+    b_704.[4] <- (b_704.[4] `^` d_619.[3]);
+    b_704.[4] <- (VPSHUFB_256 b_704.[4] r56_359);
+    t_705 <- (VPANDN_256 b_704.[1] b_704.[2]);
+    t_706 <- (t_705 `^` b_704.[0]);
+    e_356.[15] <- t_706;
+    t_707 <- (VPANDN_256 b_704.[2] b_704.[3]);
+    t_708 <- (t_707 `^` b_704.[1]);
+    e_356.[16] <- t_708;
+    t_709 <- (VPANDN_256 b_704.[3] b_704.[4]);
+    t_710 <- (t_709 `^` b_704.[2]);
+    e_356.[17] <- t_710;
+    t_711 <- (VPANDN_256 b_704.[4] b_704.[0]);
+    t_712 <- (t_711 `^` b_704.[3]);
+    e_356.[18] <- t_712;
+    t_713 <- (VPANDN_256 b_704.[0] b_704.[1]);
+    t_714 <- (t_713 `^` b_704.[4]);
+    e_356.[19] <- t_714;
+    b_736.[0] <- a_357.[2];
+    b_736.[0] <- (b_736.[0] `^` d_619.[2]);
+    t_720 <- (VPSLL_4u64 b_736.[0] (W128.of_int 62));
+    b_736.[0] <- (VPSRL_4u64 b_736.[0] (W128.of_int 2));
+    b_736.[0] <- (b_736.[0] `|` t_720);
+    b_736.[1] <- a_357.[8];
+    b_736.[1] <- (b_736.[1] `^` d_619.[3]);
+    t_723 <- (VPSLL_4u64 b_736.[1] (W128.of_int 55));
+    b_736.[1] <- (VPSRL_4u64 b_736.[1] (W128.of_int 9));
+    b_736.[1] <- (b_736.[1] `|` t_723);
+    b_736.[2] <- a_357.[14];
+    b_736.[2] <- (b_736.[2] `^` d_619.[4]);
+    t_726 <- (VPSLL_4u64 b_736.[2] (W128.of_int 39));
+    b_736.[2] <- (VPSRL_4u64 b_736.[2] (W128.of_int 25));
+    b_736.[2] <- (b_736.[2] `|` t_726);
+    b_736.[3] <- a_357.[15];
+    b_736.[3] <- (b_736.[3] `^` d_619.[0]);
+    t_729 <- (VPSLL_4u64 b_736.[3] (W128.of_int 41));
+    b_736.[3] <- (VPSRL_4u64 b_736.[3] (W128.of_int 23));
+    b_736.[3] <- (b_736.[3] `|` t_729);
+    b_736.[4] <- a_357.[21];
+    b_736.[4] <- (b_736.[4] `^` d_619.[1]);
+    t_732 <- (VPSLL_4u64 b_736.[4] (W128.of_int 2));
+    b_736.[4] <- (VPSRL_4u64 b_736.[4] (W128.of_int 62));
+    b_736.[4] <- (b_736.[4] `|` t_732);
+    t_737 <- (VPANDN_256 b_736.[1] b_736.[2]);
+    t_738 <- (t_737 `^` b_736.[0]);
+    e_356.[20] <- t_738;
+    t_739 <- (VPANDN_256 b_736.[2] b_736.[3]);
+    t_740 <- (t_739 `^` b_736.[1]);
+    e_356.[21] <- t_740;
+    t_741 <- (VPANDN_256 b_736.[3] b_736.[4]);
+    t_742 <- (t_741 `^` b_736.[2]);
+    e_356.[22] <- t_742;
+    t_743 <- (VPANDN_256 b_736.[4] b_736.[0]);
+    t_744 <- (t_743 `^` b_736.[3]);
+    e_356.[23] <- t_744;
+    t_745 <- (VPANDN_256 b_736.[0] b_736.[1]);
+    t_746 <- (t_745 `^` b_736.[4]);
+    e_356.[24] <- t_746;
+    return e_356;
   }
   proc __keccakf1600_avx2x4 (a:W256.t Array25.t) : W256.t Array25.t = {
     var rC:W64.t Array24.t;
@@ -2010,13 +2213,15 @@ module M = {
     c <- (W64.of_int 0);
     while ((c \ult (W64.of_int 24))) {
       rc <- (VPBROADCAST_4u64 rC.[(W64.to_uint c)]);
-      e <@ _keccakf1600_4x_round (e, a, rc, r8, r56);
+      e <@ __keccakf1600_4x_pround (e, a, r8, r56);
+      e.[0] <- (e.[0] `^` rc);
       a_s <- a;
       s_e <- e;
       a <- a_s;
       e <- s_e;
-      rc <- (VPBROADCAST_4u64 rC.[((W64.to_uint c) + 1)]);
-      a <@ _keccakf1600_4x_round (a, e, rc, r8, r56);
+      rc <- (VPBROADCAST_4u64 rC.[(W64.to_uint (c + (W64.of_int 1)))]);
+      a <@ __keccakf1600_4x_pround (a, e, r8, r56);
+      a.[0] <- (a.[0] `^` rc);
       a_s <- a;
       s_e <- e;
       a <- a_s;
@@ -2036,6 +2241,195 @@ module M = {
     a <@ _keccakf1600_avx2x4 (a);
     a <- a;
     return a;
+  }
+  proc __u256x4_4u64x4 (x0:W256.t, x1:W256.t, x2:W256.t, x3:W256.t) : 
+  W256.t * W256.t * W256.t * W256.t = {
+    var y0:W256.t;
+    var y1:W256.t;
+    var y2:W256.t;
+    var y3:W256.t;
+    y0 <- (VPUNPCKL_4u64 x0 x1);
+    y1 <- (VPUNPCKH_4u64 x0 x1);
+    y2 <- (VPUNPCKL_4u64 x2 x3);
+    y3 <- (VPUNPCKH_4u64 x2 x3);
+    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
+    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
+    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
+    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
+    return (x0, x1, x2, x3);
+  }
+  proc __st4x_pack (st4x:W256.t Array25.t, st0:W64.t Array25.t,
+                    st1:W64.t Array25.t, st2:W64.t Array25.t,
+                    st3:W64.t Array25.t) : W256.t Array25.t = {
+    var i:int;
+    var x0:W256.t;
+    var x1:W256.t;
+    var x2:W256.t;
+    var x3:W256.t;
+    var t0:W64.t;
+    var t1:W64.t;
+    var t2:W64.t;
+    var t3:W64.t;
+    i <- 0;
+    while ((i < 6)) {
+      x0 <- (get256 (WArray200.init64 (fun i_0 => st0.[i_0])) i);
+      x1 <- (get256 (WArray200.init64 (fun i_0 => st1.[i_0])) i);
+      x2 <- (get256 (WArray200.init64 (fun i_0 => st2.[i_0])) i);
+      x3 <- (get256 (WArray200.init64 (fun i_0 => st3.[i_0])) i);
+      (x0, x1, x2, x3) <@ __u256x4_4u64x4 (x0, x1, x2, x3);
+      st4x.[((4 * i) + 0)] <- x0;
+      st4x.[((4 * i) + 1)] <- x1;
+      st4x.[((4 * i) + 2)] <- x2;
+      st4x.[((4 * i) + 3)] <- x3;
+      i <- (i + 1);
+    }
+    t0 <- st0.[24];
+    t1 <- st1.[24];
+    t2 <- st2.[24];
+    t3 <- st3.[24];
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 0) t0)));
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 1) t1)));
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 2) t2)));
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 3) t3)));
+    return st4x;
+  }
+  proc __4u64x4_u256x4 (y0:W256.t, y1:W256.t, y2:W256.t, y3:W256.t) : 
+  W256.t * W256.t * W256.t * W256.t = {
+    var x0:W256.t;
+    var x1:W256.t;
+    var x2:W256.t;
+    var x3:W256.t;
+    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
+    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
+    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
+    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
+    y0 <- (VPUNPCKL_4u64 x0 x1);
+    y1 <- (VPUNPCKH_4u64 x0 x1);
+    y2 <- (VPUNPCKL_4u64 x2 x3);
+    y3 <- (VPUNPCKH_4u64 x2 x3);
+    return (y0, y1, y2, y3);
+  }
+  proc __st4x_unpack (st0:W64.t Array25.t, st1:W64.t Array25.t,
+                      st2:W64.t Array25.t, st3:W64.t Array25.t,
+                      st4x:W256.t Array25.t) : W64.t Array25.t *
+                                               W64.t Array25.t *
+                                               W64.t Array25.t *
+                                               W64.t Array25.t = {
+    var i:int;
+    var x0:W256.t;
+    var x1:W256.t;
+    var x2:W256.t;
+    var x3:W256.t;
+    var t0:W64.t;
+    var t1:W64.t;
+    var t2:W64.t;
+    var t3:W64.t;
+    i <- 0;
+    while ((i < 6)) {
+      x0 <- st4x.[((4 * i) + 0)];
+      x1 <- st4x.[((4 * i) + 1)];
+      x2 <- st4x.[((4 * i) + 2)];
+      x3 <- st4x.[((4 * i) + 3)];
+      (x0, x1, x2, x3) <@ __4u64x4_u256x4 (x0, x1, x2, x3);
+      st0 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st0.[i_0]))
+      ((4 * 8) * i) x0)));
+      st1 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st1.[i_0]))
+      ((4 * 8) * i) x1)));
+      st2 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st2.[i_0]))
+      ((4 * 8) * i) x2)));
+      st3 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st3.[i_0]))
+      ((4 * 8) * i) x3)));
+      i <- (i + 1);
+    }
+    t0 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 0));
+    t1 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 1));
+    t2 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 2));
+    t3 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 3));
+    st0 <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set64_direct (WArray200.init64 (fun i_0 => st0.[i_0]))
+    (8 * 24) t0)));
+    st1 <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set64_direct (WArray200.init64 (fun i_0 => st1.[i_0]))
+    (8 * 24) t1)));
+    st2 <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set64_direct (WArray200.init64 (fun i_0 => st2.[i_0]))
+    (8 * 24) t2)));
+    st3 <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set64_direct (WArray200.init64 (fun i_0 => st3.[i_0]))
+    (8 * 24) t3)));
+    return (st0, st1, st2, st3);
+  }
+  proc __keccakf1600_pround_unpacked (st0:W64.t Array25.t,
+                                      st1:W64.t Array25.t,
+                                      st2:W64.t Array25.t,
+                                      st3:W64.t Array25.t) : W64.t Array25.t *
+                                                             W64.t Array25.t *
+                                                             W64.t Array25.t *
+                                                             W64.t Array25.t = {
+    var r8:W256.t;
+    var r56:W256.t;
+    var st4x1:W256.t Array25.t;
+    var st4x2:W256.t Array25.t;
+    st4x1 <- witness;
+    st4x2 <- witness;
+    r8 <- rOL8;
+    r56 <- rOL56;
+    st4x1 <@ __st4x_pack (st4x1, st0, st1, st2, st3);
+    st4x2 <@ __keccakf1600_4x_pround (st4x2, st4x1, r8, r56);
+    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, st4x2);
+    return (st0, st1, st2, st3);
+  }
+  proc __keccakf1600_pround_equiv (e:W256.t Array25.t, a:W256.t Array25.t) : 
+  W256.t Array25.t = {
+    var st0:W64.t Array25.t;
+    var st1:W64.t Array25.t;
+    var st2:W64.t Array25.t;
+    var st3:W64.t Array25.t;
+    st0 <- witness;
+    st1 <- witness;
+    st2 <- witness;
+    st3 <- witness;
+    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, a);
+    (st0, st1, st2, st3) <@ __keccakf1600_pround_unpacked (st0, st1, 
+    st2, st3);
+    e <@ __st4x_pack (e, st0, st1, st2, st3);
+    return e;
   }
   proc __state_init_avx2x4 (st:W256.t Array25.t) : W256.t Array25.t = {
     var z256:W256.t;
@@ -2063,38 +2457,6 @@ module M = {
     t256 <- (t256 `^` st.[((rATE8 - 1) %/ 8)]);
     st.[((rATE8 - 1) %/ 8)] <- t256;
     return st;
-  }
-  proc __u256x4_4u64x4 (x0:W256.t, x1:W256.t, x2:W256.t, x3:W256.t) : 
-  W256.t * W256.t * W256.t * W256.t = {
-    var y0:W256.t;
-    var y1:W256.t;
-    var y2:W256.t;
-    var y3:W256.t;
-    y0 <- (VPUNPCKL_4u64 x0 x1);
-    y1 <- (VPUNPCKH_4u64 x0 x1);
-    y2 <- (VPUNPCKL_4u64 x2 x3);
-    y3 <- (VPUNPCKH_4u64 x2 x3);
-    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
-    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
-    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
-    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
-    return (x0, x1, x2, x3);
-  }
-  proc __4u64x4_u256x4 (y0:W256.t, y1:W256.t, y2:W256.t, y3:W256.t) : 
-  W256.t * W256.t * W256.t * W256.t = {
-    var x0:W256.t;
-    var x1:W256.t;
-    var x2:W256.t;
-    var x3:W256.t;
-    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
-    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
-    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
-    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
-    y0 <- (VPUNPCKL_4u64 x0 x1);
-    y1 <- (VPUNPCKH_4u64 x0 x1);
-    y2 <- (VPUNPCKL_4u64 x2 x3);
-    y3 <- (VPUNPCKH_4u64 x2 x3);
-    return (y0, y1, y2, y3);
   }
   proc __aread_subu64 (buf:W8.t Array999.t, offset:W64.t, dELTA:int, lEN:int,
                        tRAIL:int) : int * int * int * W64.t = {

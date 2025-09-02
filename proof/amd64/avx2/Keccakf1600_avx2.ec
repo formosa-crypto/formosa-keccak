@@ -10,6 +10,7 @@ from JazzEC require import Jazz_avx2.
 
 from JazzEC require import Array4 Array5 Array7 Array24 Array25.
 
+require import Avx2_extra.
 
 lemma stavx2_from_st25_iota st rc:
  (stavx2_from_st25 st).[0 <- (stavx2_from_st25 st).[0] `^` VPBROADCAST_4u64 rc]
@@ -70,6 +71,7 @@ hoare keccak_pround_avx2_h _a:
  state = _a /\ stavx2INV _a ==> res = stavx2_keccak_pround _a.
 proof.
 proc.
+time
 bdep 1792 1792 [_a] [state] [state] stavx2_keccak_pround stavx2INV.
 + move=> |> Hinv.
   rewrite stavx2_bvP allP => l.

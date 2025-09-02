@@ -1,0 +1,19 @@
+require "keccakf1600_avx2x4.jinc"
+
+fn _keccakf1600_4x_pround(reg mut ptr u256[25] e, reg const ptr u256[25] a, reg u256 /*rc*/ r8 r56) -> reg ptr u256[25] {
+  e = __keccakf1600_4x_pround(e, a, r8, r56);
+  return e;
+}
+
+export fn test(reg ptr u256[25] a, reg u256 r8 r56) {
+  stack u256[25] s_e;
+  reg ptr u256[25] e;
+  reg u256 r8 r56;
+  e = s_e;
+  r8 = ROL8;
+  r56 = ROL56;
+  e = _keccakf1600_4x_pround(e, a, r8, r56);
+//  s_e = e;
+//  a = s_e;
+//  return a;
+}

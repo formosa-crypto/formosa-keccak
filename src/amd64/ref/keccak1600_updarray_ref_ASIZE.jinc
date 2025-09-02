@@ -1,0 +1,171 @@
+/* DEPENDENCIES:
+require "keccak1600_ref.jinc"
+param int ASIZE = XXXXX;
+*/
+
+require "../common/subreadwrite_array_ASIZE.jinc"
+
+
+/*
+   INCREMENTAL ARRAY ABSORB
+   ========================
+*/
+
+type u64[25] keccak1600_state;
+type u64[26] keccak1600_updstate;
+
+
+
+inline fn __init_updarray_ref
+( reg mut ptr keccak1600_state st
+, inline int R64 // 9 <= R64 <= 25 
+) -> reg ptr keccak1600_state /* st */
+{
+ return st;
+}
+
+inline fn __r8_at
+( reg const ptr keccak1600_state st
+) -> reg u64 /* r64 ; 0 < r64 <= 25  */
+   , reg u64 /* at  ; 0 <= at <= r64 */
+/* ensures:
+    r8 |% 8
+    0 < r8 < 200
+    0 <= at <= r8  */
+{
+ reg u64 r8 at t;
+ reg bool cf;
+ at = (u64) st[u16 0];
+ r8 = at;
+ r8 |= 16;
+ r8 += 25;
+ r8 &= 31;
+ t <<= 3;
+ t = r8;
+ cf, t -= at;
+ t = 0;
+ t -= cf;
+ at = at & !t;
+ 
+ return r8, at;
+}
+
+inline fn __addstate
+( reg mut ptr keccak1600_state st
+, reg ui64 at // 0 <= at <= 200 (ou at<200 ??)
+, reg const ptr u8[LEN] buf
+, reg ui64 off len // at+len <= LEN && at+len <= 200
+) -> reg ptr keccak1600_state /* st */
+{
+  while (#TEST(at,7)!=0) {
+    st.[u8 at] = buf[off];
+    at +=1;
+    off += 1;
+  }
+
+  // at |% 8
+  newat = at;
+  while 
+    { newat += 8; }
+  ( newat <= len)
+    {
+      st.[u64 at] = buf.[u64 off];
+      off += 8;
+      at = newat;
+    }
+
+  // leftovers
+  while (at < len) {
+    st.[u8 at] = buf[off];
+    at += 1;
+    off += 1;
+  }
+  return st;
+}
+
+inline fn __update_updarray_ref
+( reg mut ptr keccak1600_state st
+, reg const ptr u8[LEN] buf
+) -> reg ptr keccak1600_state /* st */
+{
+  reg u64 r8 at;
+  reg ui64 len r8at off;
+  r8, at = __r8_at(st); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  off = 0;
+  r8at = r8;
+  r8at -= at; // >= 0
+  
+  while (r8at <= len) {
+    at, st = addstate(st, at, buf, off, r8at);
+    st[0:25] = keccakF(st[0:25]);
+    len -= r8at;
+    off += r8at;
+    at = 0;
+    r8at = r8;
+  }
+  at, st = addstate(st, at, buf, off, len);
+  st = state_at(st, at);
+  return st;
+}
+
+inline fn __finish_updarray_ref
+( reg mut ptr keccak1600_state st
+, reg u8 trailb
+) -> reg ptr keccak1600_state /* st */
+{
+  reg u64 r64 at;
+  r64, at = __r64_at(st);
+  return st;
+}
+
+inline fn __squeeze_updarray_ref
+( reg mut ptr u8[LEN] buf
+, reg mut ptr keccak1600_state st
+) -> reg ptr keccak1600_state /* st */
+   , reg ptr u8[LEN] /* buf ( 0 < LEN ) */
+{
+  reg u64 r8 at;
+  reg ui64 len r8at off;
+  r8, at = __r8_at(st); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  off = 0;
+  r8at = r8;
+  r8at -= at; // >= 0
+
+  if ( at == 0 ) { st[0:25] = keccakF(st[0:25]); }
+  
+  while (r8at < len) {
+    at, st = dumpstate(st, at, buf, off, r8at);
+    st[0:25] = keccakF(st[0:25]);
+    len -= r8at;
+    off += r8at;
+    at = 0;
+    r8at = r8;
+  }
+  at, st = dumpstate(st, at, buf, off, len);
+  if ( at == r8 ) at = 0; // avoidable if r8_at() returns 0<=at<200
+  st = state_at(st, at);
+  return st;
+
+/*
+if at==0: keccakF
+offset = 0;
+while (r8 - at <= len) { // r8-at <= len
+ dump_upto r8 at offset
+ keccakF
+ len -= r8
+ at=0
+}
+dump_upto len
+update st with at
+
+
+finish
+
+at=0? keccakF
+r8at = r8-at
+while
+{ newat = r8at
+*/
+
+  return st, buf;
+}
