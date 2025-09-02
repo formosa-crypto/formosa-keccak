@@ -30,6 +30,6 @@ Jazz_ref_ASIZE.ec : $(SRCDIR)/ref/toEC_ASIZE.jazz
 Jazz_avx2_ASIZE.ec : $(SRCDIR)/avx2/toEC_ASIZE.jazz
 	$(JASMINC2EC) -o $(OUTDIR)/$@ $^
 
-Jazz_avx2x4_ASIZE.ec : $(SRCDIR)/avx2/toEC_ASIZE.jazz
-	$(JASMINC2EC) -o $(OUTDIR)/$@ $^
+#Jazz_avx2x4_ASIZE.ec : $(SRCDIR)/avx2/toEC_ASIZE.jazz
+#	$(JASMINC2EC) -o $(OUTDIR)/$@ $^
 
