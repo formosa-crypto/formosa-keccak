@@ -1987,7 +1987,7 @@ bind circuit VPMOVMSKB_u256u32 "VPMOVMSKB_u256u32".
 
 bind circuit VPSLL_16u16 "VPSLL_16u16".
 bind circuit VPSLL_8u32  "VPSLL_8u32".
-bind circuit VPSLL_4u64  "VPSRL_4u64".
+bind circuit VPSLL_4u64  "VPSLL_4u64".
 bind circuit VPSLLV_8u32 "VPSLLV_8u32".
 bind circuit VPSLLV_4u64 "VPSLLV_4u64".
 bind circuit VPSRA_16u16 "VPSRA_16u16".
