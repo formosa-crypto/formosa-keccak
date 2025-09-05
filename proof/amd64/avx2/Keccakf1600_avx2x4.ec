@@ -531,10 +531,26 @@ module Maux = {
   st4x2 <- st4x_from_4st (st4x_unpack st4x2);
   return st4x2;
  }
+ proc p1_(st4x2 st4x1: state4x): state4x = {
+  var r8, r56;
+  st4x1 <- st4x_pack_spec st4x1;
+  r8 <- rOL8;
+  r56 <- rOL56;
+  st4x2 <@ M.__keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
+  st4x2 <- st4x_from_4st (st4x_unpack st4x2);
+  return st4x2;
+ }
  proc p2(st4x2 st4x1: state4x): state4x = {
   st4x1 <- st4x_unpack_spec st4x1;
   st4x2 <@ p1(st4x2,st4x1);
   st4x2 <- st4x_pack (st4x_to_4st st4x2);
+  return st4x2;
+ }
+ proc p2_(st4x2 st4x1: state4x): state4x = {
+  var r8, r56;
+  r8 <- rOL8;
+  r56 <- rOL56;
+  st4x2 <@ M.__keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
   return st4x2;
  }
 }.
@@ -589,7 +605,7 @@ equiv keccak_pround_avx2x4_eq:
    /\ r8{1} = rOL8 /\ r56{1} = rOL56
  ==> ={res}.
 proof.
-(* ...não consigo usar o bdepeq!!!
+(* ...não consigo usar o bdepeq!!! (obs: deverá ser da inicialização de (r8,r56){1}...)
 proc; inline*; simplify.
 bdepeq 6400 [a] [st4x1] {6400: [e ~ st4x2]} st4x_inv.
 *)
@@ -601,6 +617,19 @@ conseq (_: _ ==> e{1}=e{2}).
 sim; auto => /> &m.
 by rewrite /st4x_pack_spec /st4x_unpack_spec st4x_from_4stK st4x_unpackK.
 qed.
+
+(* para testar se o problema é a inicialização... *)
+equiv keccak_pround_avx2x4_eq_:
+ Maux.p2_
+ ~ Maux.p2
+ : ={st4x1,st4x2}
+ ==> ={res}.
+proof.
+proc; inline*; simplify.
+(* mas agora surge um erro mais característico... :-)
+bdepeq 6400 [st4x1] [st4x1] {6400: [st4x2 ~ st4x2]} st4x_inv.
+*)
+abort.
 
 op st4x_keccak_pround =
  st4x_map keccak_pround_op.
@@ -667,6 +696,67 @@ from JazzEC require import Array24.
 abbrev keccak_round_i i st =
  foldl (fun s i => keccak_round_op rc_spec.[i] s) st (iota_ 0 i).
 
+(*u256_pack4
+  (keccak_round_op rc_spec.[to_uint c{m} + 1]
+     (keccak_round_op rc_spec.[to_uint c{m}]
+        (keccak_round_i (to_uint c{m}) st0))).[i]
+  (keccak_round_op rc_spec.[to_uint c{m} + 1]
+     (keccak_round_op rc_spec.[to_uint c{m}]
+        (keccak_round_i (to_uint c{m}) st1))).[i]
+  (keccak_round_op rc_spec.[to_uint c{m} + 1]
+     (keccak_round_op rc_spec.[to_uint c{m}]
+        (keccak_round_i (to_uint c{m}) st2))).[i]
+  (keccak_round_op rc_spec.[to_uint c{m} + 1]
+     (keccak_round_op rc_spec.[to_uint c{m}]
+        (keccak_round_i (to_uint c{m}) st3))).[i] =
+(st4x_keccak_pround
+   (st4x_keccak_pround st4x1).[0 <-
+     (st4x_keccak_pround st4x1).[0] `^`
+     VPBROADCAST_4u64 rc_spec.[to_uint c{m}]]).[0 <-
+  (st4x_keccak_pround
+     (st4x_keccak_pround st4x1).[0 <-
+       (st4x_keccak_pround st4x1).[0] `^`
+       VPBROADCAST_4u64 rc_spec.[to_uint c{m}]]).[0] `^`
+  VPBROADCAST_4u64 rc_spec.[to_uint c{m} + 1]].[i]
+*)
+
+abbrev st4x_keccak_iota rc (st4x:state4x) =
+ st4x.[0 <- st4x.[0] `^` VPBROADCAST_4u64 rc].
+
+lemma st4x_keccak_roundP rc st4x i:
+ 0 <= i < 25 =>
+ (st4x_keccak_pround st4x).[0 <- (st4x_keccak_pround st4x).[0] `^` VPBROADCAST_4u64 rc].[i]
+ = u256_pack4
+    (keccak_round_op rc (st4x_get st4x 0)).[i]
+    (keccak_round_op rc (st4x_get st4x 1)).[i]
+    (keccak_round_op rc (st4x_get st4x 2)).[i]
+    (keccak_round_op rc (st4x_get st4x 3)).[i].
+admitted.
+
+lemma st4x_keccak_roundP2 rc1 rc2 st4x i:
+ 0 <= i < 25 =>
+ u256_pack4
+  (keccak_round_op rc2
+     (keccak_round_op rc1
+        (st4x_get st4x 0))).[i]
+  (keccak_round_op rc2
+     (keccak_round_op rc1
+        (st4x_get st4x 1))).[i]
+  (keccak_round_op rc2
+     (keccak_round_op rc1
+        (st4x_get st4x 2))).[i]
+  (keccak_round_op rc2
+     (keccak_round_op rc1
+        (st4x_get st4x 3))).[i]
+ =  (st4x_keccak_iota rc2
+     (st4x_keccak_pround
+      (st4x_keccak_iota rc1
+       (st4x_keccak_pround st4x)))).[i].
+proof.
+move=> Hi.
+admit.
+qed.
+
 hoare keccakf1600_avx2x4_h _a:
  M.__keccakf1600_avx2x4 :
  a = _a
@@ -679,7 +769,7 @@ while (to_uint c <= 24 /\ to_uint c %% 2 = 0 /\
        r56 = rOL56 /\
        a = st4x_map (keccak_round_i (to_uint c)) _a).
  wp; ecall (keccak_pround_avx2x4_h e).
- wp; ecall (keccak_pround_avx2x4_h a); auto => |> &m _.
+ wp; ecall (keccak_pround_avx2x4_h a); auto => &m /> _.
  rewrite ultE of_uintK /= => Hc2 Hc; split.
   by rewrite to_uintD_small /= /#.
  split.
@@ -689,29 +779,26 @@ while (to_uint c <= 24 /\ to_uint c %% 2 = 0 /\
  rewrite iotaSr /=. smt(W64.to_uint_cmp).
  rewrite iotaSr /=. smt(W64.to_uint_cmp).
  rewrite !foldl_rcons /=.
- admit. 
-(*
- rewrite -andaE; split.
-  rewrite stavx2INV_iota.
-   by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
-  by rewrite u256_broadcastP_VPBROADCAST.
- move=> Hinv; rewrite to_uintD_small /= 1:/# iotaSr /=.
-  smt(W64.to_uint_cmp).
- rewrite foldl_rcons /stavx2_keccak_pround /=. 
- pose st:= foldl _ _ _.
- rewrite !stavx2_from_st25K stavx2_from_st25_iota; congr.
- by rewrite/keccak_round_op /keccak_iota_op.
-wp; ecall (keccak_pround_avx2_h state); auto => |>.
-rewrite !stavx2INV_from_st25 /=; split.
- rewrite stavx2INV_iota.
-   by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
-  by rewrite u256_broadcastP_VPBROADCAST.
- rewrite /=.
- rewrite /stavx2_keccak_pround !stavx2_from_st25K /keccak_round_op /keccak_iota_op iota1 /=.
- by rewrite stavx2_from_st25_iota get_of_list //.
-move => r; rewrite ultE /= => ??; have ->:to_uint r = 24 by smt().
-smt().
-*)
+ pose st0:= (init_25_64 _).
+ pose st1:= (init_25_64 _).
+ pose st2:= (init_25_64 _).
+ pose st3:= (init_25_64 _).
+ pose st4x1 := (init_25_256 _).
+ rewrite tP => i Hi.
+ rewrite eq_sym Array25.initiE //=.
+ pose sts:= ( keccak_round_i (to_uint c{m}) st0
+            , keccak_round_i (to_uint c{m}) st1
+            , keccak_round_i (to_uint c{m}) st2
+            , keccak_round_i (to_uint c{m}) st3 ).
+ rewrite -st4x_keccak_roundP2 //=; congr.
+ + congr; congr; congr.
+   by rewrite /st4x1 (st4x_get_pack0 sts) /#.
+ + congr; congr; congr. 
+   by rewrite /st4x1 (st4x_get_pack1 sts) /#.
+ + congr; congr; congr. 
+   by rewrite /st4x1 (st4x_get_pack2 sts) /#.
+ + congr; congr; congr. 
+   by rewrite /st4x1 (st4x_get_pack3 sts) /#.
 auto => |>; split.
  rewrite iota0 //= tP => i Hi.
  rewrite initiE //= (st4x_getiE _ 0) // !st4x_getiE //.
