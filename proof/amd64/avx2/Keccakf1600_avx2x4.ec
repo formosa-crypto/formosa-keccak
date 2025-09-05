@@ -219,6 +219,7 @@ rewrite /st4x_unpack /st4x_pack.
 by rewrite st4x_get_pack0 st4x_get_pack1 st4x_get_pack2 st4x_get_pack3.
 qed.
 
+(*
 lemma st4x_pack_inj sts1 sts2:
  st4x_pack sts1 = st4x_pack sts2
  => sts1 = sts2.
@@ -226,6 +227,7 @@ proof.
 move=> H.
 by rewrite -{1}st4x_packK H st4x_packK.
 qed.
+*)
 
 lemma st4x_unpackK st4x:
  st4x_pack (st4x_unpack st4x) = st4x.
@@ -252,6 +254,7 @@ by rewrite ifF 1:/# ifT 1:/# bits64iE /#.
 *)
 qed.
 
+(*
 lemma st4x_unpack_inj st4x1 st4x2:
  st4x_unpack st4x1 = st4x_unpack st4x2
  => st4x1 = st4x2.
@@ -259,6 +262,7 @@ proof.
 move=> H.
 by rewrite -{1}st4x_unpackK H st4x_unpackK.
 qed.
+*)
 
 import BitEncoding BitChunking.
 lemma chunk1 ['a] n (l: 'a list):
@@ -627,12 +631,24 @@ hoare keccak_pround_avx2x4_h _st4x:
  /\ r8 = rOL8 /\ r56 = rOL56
  ==> res = st4x_keccak_pround _st4x.
 proof.
-admit.
+bypr => &m /> -> ->.
+have ->:
+ Pr[M.__keccakf1600_4x_pround(e{m}, a{m}, rOL8, rOL56) @ &m :
+   res <> st4x_keccak_pround a{m}]
+ = Pr[Maux.p2(e{m}, a{m}) @ &m :
+   res <> st4x_keccak_pround a{m}].
+byequiv keccak_pround_avx2x4_eq => /#.
+byphoare (_: st4x1=a{m} ==> _) => //.
+hoare.
+proc; simplify.
+wp; ecall (keccak_pround_unpacked_h st4x1).
+auto => /> st4x; rewrite /st4x_unpack_spec !st4x_from_4stK /st4x_keccak_pround.
+by move=> <- <- <- <- /#.
 qed.
 
 (* Mas o que gostava mesmo era de 
  provar o último lema directamente! *)
-hoare keccak_pround_avx2x4_h2 _st4x:
+hoare keccak_pround_avx2x4_h' _st4x:
  Jazz_avx2.M.__keccakf1600_4x_pround:
  a = _st4x
  /\ r8 = rOL8 /\ r56 = rOL56
@@ -657,16 +673,24 @@ hoare keccakf1600_avx2x4_h _a:
  ==> res = st4x_map keccak_f1600_op _a.
 proof.
 proc.
-while (to_uint c <= 24 /\
+while (to_uint c <= 24 /\ to_uint c %% 2 = 0 /\
        rC = rc_spec /\
        r8 = rOL8 /\
        r56 = rOL56 /\
        a = st4x_map (keccak_round_i (to_uint c)) _a).
  wp; ecall (keccak_pround_avx2x4_h e).
  wp; ecall (keccak_pround_avx2x4_h a); auto => |> &m _.
-admit(*
- rewrite ultE !stavx2INV_from_st25 /= => Hr; split.
+ rewrite ultE of_uintK /= => Hc2 Hc; split.
   by rewrite to_uintD_small /= /#.
+ split.
+  by rewrite to_uintD_small /#.
+ rewrite !to_uintD_small !of_uintK 1..2:/# /=.
+ rewrite (:to_uint c{m}+2=to_uint c{m}+1+1) 1:/#.
+ rewrite iotaSr /=. smt(W64.to_uint_cmp).
+ rewrite iotaSr /=. smt(W64.to_uint_cmp).
+ rewrite !foldl_rcons /=.
+ admit. 
+(*
  rewrite -andaE; split.
   rewrite stavx2INV_iota.
    by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
@@ -687,8 +711,17 @@ rewrite !stavx2INV_from_st25 /=; split.
  by rewrite stavx2_from_st25_iota get_of_list //.
 move => r; rewrite ultE /= => ??; have ->:to_uint r = 24 by smt().
 smt().
-*).
-admit.
+*)
+auto => |>; split.
+ rewrite iota0 //= tP => i Hi.
+ rewrite initiE //= (st4x_getiE _ 0) // !st4x_getiE //.
+ rewrite u256_pack4E.
+search pack4_t.
+ rewrite !bits64E.
+ apply W256.ext_eq => k Hk.
+ rewrite pack4wE // get_of_list 1:/#.
+ smt(W64.initiE).
+by move=> c; rewrite ultE /= => ??; have ->: to_uint c = 24; smt().
 qed.
 
 lemma keccakf1600_avx2x4_ll: islossless M.__keccakf1600_avx2x4.
