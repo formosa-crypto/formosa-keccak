@@ -4,7 +4,7 @@
 
 inline fn __aread_subu64
 ( reg const ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , inline int TRAIL
@@ -12,6 +12,12 @@ inline fn __aread_subu64
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u64 /* w */
+requires{(0 < LEN) ? is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA &&
+                      0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= ASIZE
+                    : true}
+requires{ 0 <= TRAIL && TRAIL < 256 }
+ensures{ result.0 == DELTA + max(0,min(LEN,8)) && result.1 == LEN - max(0,min(LEN,8)) &&
+         result.2 == (8 <=s LEN ? TRAIL : 0)}
 {
   reg u64 w, t16, t8;
   inline int ILEN;
@@ -20,19 +26,19 @@ inline fn __aread_subu64
     w = TRAIL % 256;
     TRAIL = 0;
   } else if (8 <=s LEN) {
-    w = buf.[u64 offset + DELTA];
+    w = buf.[:u64 offset + DELTA];
     DELTA += 8;
     LEN -= 8;
   } else {
     if (4 <=s LEN) {
-      w = (64u) buf.[u32 offset + DELTA];
+      w = (64u) buf.[:u32 offset + DELTA];
       DELTA += 4;
       LEN -= 4;
     } else {
       w = 0;
     }
     if (2 <=s LEN) {
-      t16 = (64u) buf.[u16 offset + DELTA];
+      t16 = (64u) buf.[:u16 offset + DELTA];
       DELTA += 2;
       LEN -= 2;
     } else {
@@ -40,7 +46,7 @@ inline fn __aread_subu64
     }
     if (1 <=s LEN || TRAIL%256 != 0) {
       if (1 <=s LEN) {
-        t8 = (64u) buf.[u8 offset + DELTA];
+        t8 = (64u) buf.[:u8 offset + DELTA];
         if (TRAIL%256 != 0) { t8 |= 256*(TRAIL%256); }
         DELTA += 1;
         LEN -= 1;
@@ -59,7 +65,7 @@ inline fn __aread_subu64
 
 inline fn __aread_bcast_4subu64
 ( reg const ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , inline int TRAIL
@@ -67,6 +73,12 @@ inline fn __aread_bcast_4subu64
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u256 /* w */
+requires{(0 < LEN) ? is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA &&
+                      0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= ASIZE
+         : true}
+requires{ 0 <= TRAIL && TRAIL < 256 }
+ensures{ result.0 == DELTA + max(0,min(LEN,8)) && result.1 == LEN - max(0,min(LEN,8)) &&
+         result.2 == (8 <=s LEN ? TRAIL : 0)}
 {
   reg u64 t64;
   reg u128 t128;
@@ -75,7 +87,7 @@ inline fn __aread_bcast_4subu64
     w = #set0_256();
   } else {
     if (8 <= LEN) {
-      w = #VPBROADCAST_4u64(buf.[u64 offset + DELTA]);
+      w = #VPBROADCAST_4u64(buf.[:u64 offset + DELTA]);
       DELTA += 8;
       LEN -= 8;
     } else {
@@ -89,7 +101,7 @@ inline fn __aread_bcast_4subu64
 
 inline fn __aread_subu128
 ( reg const ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , inline int TRAIL
@@ -97,18 +109,24 @@ inline fn __aread_subu128
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u128 /* w */
+requires{(0 < LEN) ? is_arr_init(buf,offset+DELTA,min(LEN,16)) && 0 <= DELTA &&
+                      0 <= offset + DELTA && offset + DELTA + min(LEN,16) <= ASIZE
+         : true}
+requires{ 0 <= TRAIL && TRAIL < 256 }
+ensures{ result.0 == DELTA + max(0,min(LEN,16)) && result.1 == LEN - max(0,min(LEN,16)) &&
+         result.2 == (16 <=s LEN ? TRAIL : 0)}
 {
   reg u128 w;
   reg u64 t64;
   if (LEN <=s 0 && TRAIL%256==0) {
     w = #set0_128();
   } else if (16 <=s LEN) {
-    w = buf.[u128 offset + DELTA];
+    w = buf.[:u128 offset + DELTA];
     DELTA += 16;
     LEN -= 16;
   } else {
     if (8 <=s LEN) {
-      w = #VMOV(buf.[u64 offset + DELTA]);
+      w = #VMOV(buf.[:u64 offset + DELTA]);
       DELTA += 8;
       LEN -= 8;
       DELTA, LEN, TRAIL, t64 = __aread_subu64(buf, offset, DELTA, LEN, TRAIL);
@@ -123,7 +141,7 @@ inline fn __aread_subu128
 
 inline fn __aread_subu256
 ( reg const ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , inline int TRAIL
@@ -131,18 +149,24 @@ inline fn __aread_subu256
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u256 /* w */
+requires{(0 < LEN) ? is_arr_init(buf,offset+DELTA,min(LEN,32)) && 0 <= DELTA &&
+                      0 <= offset + DELTA && offset + DELTA + min(LEN,32) <= ASIZE
+         : true}
+requires{ 0 <= TRAIL && TRAIL < 256 }         
+ensures{ result.0 == DELTA + max(0,min(LEN,32)) && result.1 == LEN - max(0,min(LEN,32)) &&
+         result.2 == (32 <=s LEN ? TRAIL : 0)}
 {
   reg u256 w;
   reg u128 t128_0, t128_1;
   if (LEN <=s 0 && TRAIL%256==0) {
     w = #set0_256();
   } else if (32 <=s LEN) {
-    w = buf.[u256 offset + DELTA];
+    w = buf.[:u256 offset + DELTA];
     DELTA += 32;
     LEN -= 32;
   } else {
     if (16 <=s LEN) {
-      t128_0 = buf.[u128 offset + DELTA];
+      t128_0 = buf.[:u128 offset + DELTA];
       DELTA += 16;
       LEN -= 16;
       DELTA, LEN, TRAIL, t128_1 = __aread_subu128(buf, offset, DELTA, LEN, TRAIL);
@@ -162,34 +186,38 @@ inline fn __aread_subu256
 **/
 inline fn __awrite_subu64
 ( reg mut ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , reg u64 w
 ) -> reg ptr u8[ASIZE] /* buf */
    , inline int /* DELTA */
    , inline int /* LEN */
+requires{(0 < LEN) ? 0 <= offset + DELTA && 0 <= DELTA &&
+ offset + DELTA + min(LEN,8) <= ASIZE : true}
+ensures{ result.1 == DELTA + max(0,min(LEN,8)) && result.2 == LEN - max(0,min(LEN,8)) }
+ensures{ \all (k \in 0:ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || offset + DELTA <= k && k < offset + DELTA + max(0,min(LEN,8))))}
 {
-  if (0 <s LEN) {
+  if (0 < LEN) {
     if (8 <=s LEN) {
-      buf.[u64 offset + DELTA] = w;
+      buf.[:u64 offset + DELTA] = w;
       DELTA += 8;
       LEN -= 8;
     } else {
       if (4 <=s LEN) {
-        buf.[u32 offset + DELTA] = (32u) w;
+        buf.[:u32 offset + DELTA] = (32u) w;
 	w >>= 32;
         DELTA += 4;
         LEN -= 4;
       }
       if (2 <=s LEN) {
-        buf.[u16 offset + DELTA] = (16u) w;
+        buf.[:u16 offset + DELTA] = (16u) w;
 	w >>= 16;
         DELTA += 2;
         LEN -= 2;
       }
       if (1 <=s LEN) {
-        buf.[u8 offset + DELTA] = (8u) w;
+        buf.[:u8 offset + DELTA] = (8u) w;
         DELTA += 1;
         LEN -= 1;
       }
@@ -200,23 +228,27 @@ inline fn __awrite_subu64
 
 inline fn __awrite_subu128
 ( reg mut ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , reg u128 w
 ) -> reg ptr u8[ASIZE] /* buf */
    , inline int /* DELTA */
    , inline int /* LEN */
+requires{(0 < LEN) ? 0 <= offset + DELTA && 0 <= DELTA && offset + DELTA + min(LEN,16) <= ASIZE
+         : true}
+ensures{ result.1 == DELTA + max(0,min(LEN,16)) && result.2 == LEN - max(0,min(LEN,16)) }
+ensures{ \all (k \in 0:ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset + DELTA <= k && k < offset + DELTA + max(0,min(LEN,16)))))}
 {
   reg u64 t64;
-  if (0 <s LEN) {
+  if (0 < LEN) {
     if (16 <=s LEN) {
-      buf.[u128 offset + DELTA] = w;
+      buf.[:u128 offset + DELTA] = w;
       DELTA += 16;
       LEN -= 16;
     } else {
       if (8 <=s LEN) {
-        buf.[u64 offset + DELTA] = #MOVV(w);
+        buf.[:u64 offset + DELTA] = #MOVV(w);
         DELTA += 8;
         LEN -= 8;
         w = #VPUNPCKH_2u64(w, w);
@@ -230,24 +262,28 @@ inline fn __awrite_subu128
 
 inline fn __awrite_subu256
 ( reg mut ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , reg u256 w
 ) -> reg ptr u8[ASIZE] /* buf */
    , inline int /* DELTA */
    , inline int /* LEN */
+requires{(0 < LEN) ? 0 <= offset + DELTA && 0 <= DELTA && offset + DELTA + min(LEN,32) <= ASIZE
+         : true}
+ensures{ result.1 == DELTA + max(0,min(LEN,32)) && result.2 == LEN - max(0,min(LEN,32)) }
+ensures{ \all (k \in 0:ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset + DELTA <= k && k < offset + DELTA + max(0,min(LEN,32)))))}
 {
   reg u128 t128;
-  if (0 <s LEN) {
+  if (0 < LEN) {
     if (32 <= LEN) {
-      buf.[u256 offset + DELTA] = w;
+      buf.[:u256 offset + DELTA] = w;
       DELTA += 32;
       LEN -= 32;
     } else {
       t128 = (128u) w;
       if (16 <= LEN) {
-        buf.[u128 offset + DELTA] = t128;
+        buf.[:u128 offset + DELTA] = t128;
         DELTA += 16;
         LEN -= 16;
         t128 = #VEXTRACTI128(w, 1);

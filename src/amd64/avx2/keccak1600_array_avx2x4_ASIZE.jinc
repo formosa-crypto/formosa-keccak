@@ -1,7 +1,6 @@
-/* DEPENDENCIES:
-require "keccak1600x4_avx2.jinc"
-param int ASIZE = 1001;
-*/
+// DEPENDENCIES:
+// require "keccak1600x4_avx2.jinc"
+// param int ASIZE = 1001;
 
 require "../common/subreadwrite_array_ASIZE.jinc"
 
@@ -15,15 +14,19 @@ inline fn __addstate_bcast_array_avx2x4
 ( reg mut ptr u256[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
 , reg const ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int LEN
 , inline int TRAILB
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
-   , reg u64 /* offset */
+   , reg ui64 /* offset */
+requires{0 <= offset && 0 <= LEN &&  0<=AT  && AT < 200 && offset + LEN <= ASIZE && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 
+      && is_arr_init(buf,offset,LEN) && is_arr_init(st,0,25*32)}
+requires{0 <= TRAILB && TRAILB < 256}
+ensures{is_arr_init(result.0,0,25*32) && result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0) && result.2 == offset + LEN}
 {
   inline int DELTA, LO, ALL;
-  reg u64 at;
+  reg ui64 at;
   reg u256 t256;
 
   ALL = AT+LEN; // total bytes to process (excluding trail byte, if !=0)
@@ -36,14 +39,14 @@ inline fn __addstate_bcast_array_avx2x4
       if ( TRAILB != 0 ) { ALL += 1; }
       DELTA, _, TRAILB, t256 = __aread_bcast_4subu64(buf, offset, DELTA, LEN, TRAILB);
       t256 = #VPSLL_4u64(t256, 8*LO);
-      t256 ^= st.[u256 (int) at];
-      st.[u256 (int) at] = t256;
+      t256 ^= st.[:u256 at];
+      st.[:u256 at] = t256;
       LO = 0;
       AT = 0;
       LEN = 0;
     } else { // process first word
       if ( 8 <= LEN ) {
-        t256 = #VPBROADCAST_4u64(buf.[u64 offset + DELTA]);
+        t256 = #VPBROADCAST_4u64(buf.[:u64 offset + DELTA]);
         DELTA += (8-LO);
       } else {
         DELTA, _, _, t256 = __aread_bcast_4subu64(buf, offset, DELTA, 8-LO, 0);
@@ -51,8 +54,8 @@ inline fn __addstate_bcast_array_avx2x4
       LEN -= 8-LO;
       AT += 8-LO;
       t256 = #VPSLL_4u64(t256, 8*LO);
-      t256 ^= st.[u256 (int) at];
-      st.[u256 (int) at] = t256;
+      t256 ^= st.[:u256 at];
+      st.[:u256 at] = t256;
       at += 32;
     }
     offset += DELTA;
@@ -62,10 +65,10 @@ inline fn __addstate_bcast_array_avx2x4
   // continue processing remaining words
   if (8 <= LEN) {
     while ( at < 32*(AT/8)+32*(LEN/8)) {
-      t256 = #VPBROADCAST_4u64(buf.[u64 offset]);
+      t256 = #VPBROADCAST_4u64(buf.[:u64 offset]);
       offset += 8;
-      t256 ^= st.[u256 at];
-      st.[u256 at] = t256;
+      t256 ^= st.[:u256 at];
+      st.[:u256 at] = t256;
       at += 32;
     }
     LEN = (AT+LEN) % 8;
@@ -77,8 +80,8 @@ inline fn __addstate_bcast_array_avx2x4
     if ( TRAILB != 0 ) { ALL += 1; }
     DELTA, _, TRAILB, t256 = __aread_bcast_4subu64(buf, offset, DELTA, LO, TRAILB);
     offset += DELTA;
-    t256 ^= st.[u256 at];
-    st.[u256 at] = t256;
+    t256 ^= st.[:u256 at];
+    st.[:u256 at] = t256;
   }
   return st, ALL, offset;
 } 
@@ -87,15 +90,19 @@ inline fn __absorb_bcast_array_avx2x4
 ( reg mut ptr u256[25] st
 , inline int AT
 , reg const ptr u8[ASIZE] buf
-, reg u64 offset
+, reg ui64 offset
 , inline int LEN
 , inline int RATE8
 , inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
-   , reg u64 /* offset */
+   , reg ui64 /* offset */
+requires{0 <= offset && 0 <= LEN &&  0<=AT  && AT < RATE8 && offset + LEN <= ASIZE && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 
+     && 0 < RATE8 && RATE8 < 200 && is_arr_init(buf,offset,LEN) && is_arr_init(st,0,25*32)}
+requires{0 <= TRAILB && TRAILB < 256}
+ensures{is_arr_init(result.0,0,25*32) && result.1 == (AT + LEN) % RATE8 + (TRAILB != 0 ? 1 : 0)}
 {
-  reg u64 i;
+  reg ui64 i;
   inline int ALL, ITERS;
 
   ALL = AT + LEN;
@@ -138,15 +145,25 @@ inline fn __addstate_array_avx2x4
 ( reg mut ptr u256[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
 , reg const ptr u8[ASIZE] buf0 buf1 buf2 buf3
-, reg u64 offset
+, reg ui64 offset
 , inline int LEN
 , inline int TRAILB
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
-   , reg u64 /* offset */
+   , reg ui64 /* offset */
+requires{0 <= offset && 0 <= LEN && 0<=AT && AT < 200 && 
+         offset + LEN <= ASIZE && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 &&
+         is_arr_init(buf0,offset,LEN) && is_arr_init(buf1,offset,LEN) && 
+         is_arr_init(buf2,offset,LEN) && is_arr_init(buf3,offset,LEN) && 
+         is_arr_init(st,0,25*32)}
+requires{0 <= TRAILB && TRAILB < 256}
+ensures{is_arr_init(result.0,0,25*32) && 
+          result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0) &&
+          result.2 == offset + LEN}
 {
   inline int DELTA, LO, ALL;
-  reg u64 at, t0, t1, t2, t3;
+  reg ui64 at;
+  reg u64 t0, t1, t2, t3;
   reg u256 t256_0, t256_1, t256_2, t256_3;
 
   ALL = AT+LEN; // total bytes to process (excluding trail byte, if !=0)
@@ -163,27 +180,27 @@ inline fn __addstate_array_avx2x4
       _, _, _, t2 = __aread_subu64(buf2, offset, DELTA, LEN, TRAILB);
       DELTA, _, _, t3 = __aread_subu64(buf3, offset, DELTA, LEN, TRAILB);
       t0 <<= 8*LO;
-      t0 ^= st[u64 at + 0];
-      st[u64 at + 0] = t0;
+      t0 ^= st[:u64 at + 0];
+      st[:u64 at + 0] = t0;
       t1 <<= 8*LO;
-      t1 ^= st[u64 at + 1];
-      st[u64 at + 1] = t1;
+      t1 ^= st[:u64 at + 1];
+      st[:u64 at + 1] = t1;
       t2 <<= 8*LO;
-      t2 ^= st[u64 at + 2];
-      st[u64 at + 2] = t2;
+      t2 ^= st[:u64 at + 2];
+      st[:u64 at + 2] = t2;
       t3 <<= 8*LO;
-      t3 ^= st[u64 at + 3];
-      st[u64 at + 3] = t3;
+      t3 ^= st[:u64 at + 3];
+      st[:u64 at + 3] = t3;
       LO = 0;
       AT = 0;
       LEN = 0;
       TRAILB = 0;
     } else { // process first word
       if ( 8 <= LEN ) {
-	t0 = buf0.[u64 offset + DELTA];
-	t1 = buf1.[u64 offset + DELTA];
-	t2 = buf2.[u64 offset + DELTA];
-	t3 = buf3.[u64 offset + DELTA];
+	t0 = buf0.[:u64 offset + DELTA];
+	t1 = buf1.[:u64 offset + DELTA];
+	t2 = buf2.[:u64 offset + DELTA];
+	t3 = buf3.[:u64 offset + DELTA];
 	offset += 8-LO;
       } else {
         _, _, _, t0 = __aread_subu64(buf0, offset, DELTA, 8-LO, TRAILB);
@@ -194,17 +211,17 @@ inline fn __addstate_array_avx2x4
       LEN -= 8-LO;
       AT += 8-LO;
       t0 <<= 8*LO;
-      t0 ^= st[u64 at + 0];
-      st[u64 at + 0] = t0;
+      t0 ^= st[:u64 at + 0];
+      st[:u64 at + 0] = t0;
       t1 <<= 8*LO;
-      t1 ^= st[u64 at + 1];
-      st[u64 at + 1] = t1;
+      t1 ^= st[:u64 at + 1];
+      st[:u64 at + 1] = t1;
       t2 <<= 8*LO;
-      t2 ^= st[u64 at + 2];
-      st[u64 at + 2] = t2;
+      t2 ^= st[:u64 at + 2];
+      st[:u64 at + 2] = t2;
       t3 <<= 8*LO;
-      t3 ^= st[u64 at + 3];
-      st[u64 at + 3] = t3;
+      t3 ^= st[:u64 at + 3];
+      st[:u64 at + 3] = t3;
       at += 4;
     }
   }
@@ -213,36 +230,36 @@ inline fn __addstate_array_avx2x4
   // continue processing remaining bytes
   if (8 <= LEN) {
     while ( at < 4*(AT/8)+16*(LEN/32) ) {
-      t256_0 = buf0.[u256 offset];
-      t256_1 = buf1.[u256 offset];
-      t256_2 = buf2.[u256 offset];
-      t256_3 = buf3.[u256 offset];
+      t256_0 = buf0.[:u256 offset];
+      t256_1 = buf1.[:u256 offset];
+      t256_2 = buf2.[:u256 offset];
+      t256_3 = buf3.[:u256 offset];
       offset += 32;
       t256_0, t256_1, t256_2, t256_3 = __4u64x4_u256x4(t256_0, t256_1, t256_2, t256_3);
-      t256_0 ^= st.[u256 8*at];
-      st.[u256 8*at] = t256_0;
-      t256_1 ^= st.[u256 8*at + 32];
-      st.[u256 8*at+32] = t256_1;
-      t256_2 ^= st.[u256 8*at + 64];
-      st.[u256 8*at+64] = t256_2;
-      t256_3 ^= st.[u256 8*at + 96];
-      st.[u256 8*at+96] = t256_3;
+      t256_0 ^= st.[:u256 8*at];
+      st.[:u256 8*at] = t256_0;
+      t256_1 ^= st.[:u256 8*at + 32];
+      st.[:u256 8*at+32] = t256_1;
+      t256_2 ^= st.[:u256 8*at + 64];
+      st.[:u256 8*at+64] = t256_2;
+      t256_3 ^= st.[:u256 8*at + 96];
+      st.[:u256 8*at+96] = t256_3;
       at += 16;
     }
     while ( at < 4*(AT/8)+4*(LEN/8)) {
-      t0 = buf0.[u64 offset];
-      t0 ^= st[u64 at + 0];
-      st[u64 at + 0] = t0;
-      t1 = buf1.[u64 offset];
-      t1 ^= st[u64 at + 1];
-      st[u64 at + 1] = t1;
-      t2 = buf2.[u64 offset];
-      t2 ^= st[u64 at + 2];
-      st[u64 at + 2] = t2;
-      t3 = buf3.[u64 offset];
+      t0 = buf0.[:u64 offset];
+      t0 ^= st[:u64 at + 0];
+      st[:u64 at + 0] = t0;
+      t1 = buf1.[:u64 offset];
+      t1 ^= st[:u64 at + 1];
+      st[:u64 at + 1] = t1;
+      t2 = buf2.[:u64 offset];
+      t2 ^= st[:u64 at + 2];
+      st[:u64 at + 2] = t2;
+      t3 = buf3.[:u64 offset];
       offset += 8;
-      t3 ^= st[u64 at + 3];
-      st[u64 at + 3] = t3;
+      t3 ^= st[:u64 at + 3];
+      st[:u64 at + 3] = t3;
       at += 4;
     }
     LEN = (AT+LEN) % 8;
@@ -257,14 +274,14 @@ inline fn __addstate_array_avx2x4
     DELTA, _, _, t3 = __aread_subu64(buf3, offset, DELTA, LO, TRAILB);
     offset += DELTA;
     if ( TRAILB != 0 ) { ALL += 1; TRAILB = 0; }
-    t0 ^= st[u64 at + 0];
-    st[u64 at + 0] = t0;
-    t1 ^= st[u64 at + 1];
-    st[u64 at + 1] = t1;
-    t2 ^= st[u64 at + 2];
-    st[u64 at + 2] = t2;
-    t3 ^= st[u64 at + 3];
-    st[u64 at + 3] = t3;
+    t0 ^= st[:u64 at + 0];
+    st[:u64 at + 0] = t0;
+    t1 ^= st[:u64 at + 1];
+    st[:u64 at + 1] = t1;
+    t2 ^= st[:u64 at + 2];
+    st[:u64 at + 2] = t2;
+    t3 ^= st[:u64 at + 3];
+    st[:u64 at + 3] = t3;
   }
     
   return st, ALL, offset;
@@ -275,15 +292,22 @@ inline fn __absorb_array_avx2x4
 ( reg mut ptr u256[25] st
 , inline int AT
 , reg const ptr u8[ASIZE] buf0 buf1 buf2 buf3
-, reg u64 offset
+, reg ui64 offset
 , inline int LEN
 , inline int RATE8
 , inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
-   , reg u64 /* offset */
+   , reg ui64 /* offset */
+requires{0 <= offset && 0 <= LEN && 0<=AT && AT < RATE8 && 0 < RATE8 && RATE8 < 200 &&
+         offset + LEN <= ASIZE && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 &&
+         is_arr_init(buf0,offset,LEN) && is_arr_init(buf1,offset,LEN) && 
+         is_arr_init(buf2,offset,LEN) && is_arr_init(buf3,offset,LEN) && 
+         is_arr_init(st,0,25*32)}
+requires{0 <= TRAILB && TRAILB < 256}
+ensures{is_arr_init(result.0,0,25*32)}
 {
-  reg u64 i;
+  reg ui64 i;
   inline int ALL, ITERS;
 
   ALL = AT + LEN;
@@ -328,51 +352,58 @@ inline fn __absorb_array_avx2x4
 */
 inline fn __dumpstate_array_avx2x4
 ( reg mut ptr u8[ASIZE] buf0 buf1 buf2 buf3
-, reg u64 offset
+, reg ui64 offset
 , inline int LEN
 , reg const ptr u256[25] st
 ) -> reg ptr u8[ASIZE] /* buf0 */
    , reg ptr u8[ASIZE] /* buf1 */
    , reg ptr u8[ASIZE] /* buf2 */
    , reg ptr u8[ASIZE] /* buf3 */
-   , reg u64 /* offset */
+   , reg ui64 /* offset */
+requires{0 <= offset && 0 <= LEN && is_arr_init(st,0,25*32) && offset + LEN <= ASIZE && LEN <= 200}
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf0,k,1) || (offset <= k && k< offset + LEN)))}
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.1,k,1) == (is_arr_init(buf1,k,1) || (offset <= k && k< offset + LEN)))}
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.2,k,1) == (is_arr_init(buf2,k,1) || (offset <= k && k< offset + LEN)))}
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.3,k,1) == (is_arr_init(buf3,k,1) || (offset <= k && k< offset + LEN)))}
+ensures{ result.4 == offset + LEN}
 { 
   reg u256 x0, x1, x2, x3;
-  reg u64 i, t0, t1, t2, t3;
+  reg ui64 i;
+  reg u64 t0, t1, t2, t3;
   i = 0;
-  while (i <s 32*(LEN/32)) {
-    x0 = st.[u256 4*i+0*32];
-    x1 = st.[u256 4*i+1*32];
-    x2 = st.[u256 4*i+2*32];
-    x3 = st.[u256 4*i+3*32];
+  while (i < 32*(LEN/32)) {
+    x0 = st.[:u256 4*i+0*32];
+    x1 = st.[:u256 4*i+1*32];
+    x2 = st.[:u256 4*i+2*32];
+    x3 = st.[:u256 4*i+3*32];
     i += 32;
     x0, x1, x2, x3 = __4u64x4_u256x4(x0, x1, x2, x3);
-    buf0.[u256 offset] = x0;
-    buf1.[u256 offset] = x1;
-    buf2.[u256 offset] = x2;
-    buf3.[u256 offset] = x3;
+    buf0.[:u256 offset] = x0;
+    buf1.[:u256 offset] = x1;
+    buf2.[:u256 offset] = x2;
+    buf3.[:u256 offset] = x3;
     offset +=32;
   } // 0 32 (64) 
-  while (i <s 8*(LEN/8)) {
-    t0 = st.[u64 4*i+0*8];
-    buf0.[u64 offset] = t0;
-    t1 = st.[u64 4*i+1*8];
-    buf1.[u64 offset] = t1;
-    t2 = st.[u64 4*i+2*8];
-    buf2.[u64 offset] = t2;
-    t3 = st.[u64 4*i+3*8];
-    buf3.[u64 offset] = t3;
+  while ( i < 8*(LEN/8)) {
+    t0 = st.[:u64 4*i+0*8];
+    buf0.[:u64 offset] = t0;
+    t1 = st.[:u64 4*i+1*8];
+    buf1.[:u64 offset] = t1;
+    t2 = st.[:u64 4*i+2*8];
+    buf2.[:u64 offset] = t2;
+    t3 = st.[:u64 4*i+3*8];
+    buf3.[:u64 offset] = t3;
     i += 8;
     offset += 8;
   }
   if (0 < LEN%8) {
-    t0 = st.[u64 4*i+0*8];
+    t0 = st.[:u64 4*i+0*8];
     buf0, _, _ = __awrite_subu64( buf0, offset, 0, LEN%8, t0);
-    t1 = st.[u64 4*i+1*8];
+    t1 = st.[:u64 4*i+1*8];
     buf1, _, _ = __awrite_subu64( buf1, offset, 0, LEN%8, t1);
-    t2 = st.[u64 4*i+2*8];
+    t2 = st.[:u64 4*i+2*8];
     buf2, _, _ = __awrite_subu64( buf2, offset, 0, LEN%8, t2);
-    t3 = st.[u64 4*i+3*8];
+    t3 = st.[:u64 4*i+3*8];
     buf3, _, _ = __awrite_subu64( buf3, offset, 0, LEN%8, t3);
     offset += LEN%8;
   }
@@ -382,7 +413,7 @@ inline fn __dumpstate_array_avx2x4
 
 inline fn __squeeze_array_avx2x4
 ( reg mut ptr u8[ASIZE] buf0 buf1 buf2 buf3
-, reg u64 offset
+, reg ui64 offset
 , inline int LEN
 , reg mut ptr u256[25] st
 , inline int RATE8
@@ -390,15 +421,21 @@ inline fn __squeeze_array_avx2x4
    , reg ptr u8[ASIZE] /* buf1 */
    , reg ptr u8[ASIZE] /* buf2 */
    , reg ptr u8[ASIZE] /* buf3 */
-   , reg u64           /* offset */
+   , reg ui64           /* offset */
    , reg ptr u256[25] /* st */
+requires{0 <= offset && 0 <= LEN && is_arr_init(st,0,25*32) && offset + LEN <= ASIZE && 0 < RATE8 && RATE8 < 200 }
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf0,k,1) || (offset <= k && k< offset + LEN)))}
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.1,k,1) == (is_arr_init(buf1,k,1) || (offset <= k && k< offset + LEN)))}
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.2,k,1) == (is_arr_init(buf2,k,1) || (offset <= k && k< offset + LEN)))}
+ensures { \all (k \in 0:ASIZE) (is_arr_init(result.3,k,1) == (is_arr_init(buf3,k,1) || (offset <= k && k< offset + LEN)))}
+ensures{ is_arr_init(result.5,0,25*32)}
 {
-  reg u64 i;
+  reg ui64 i;
   inline int ITERS, LO;
   ITERS = LEN/RATE8;
   LO = LEN%RATE8;
 
-  if (0 <s LEN) {
+  if (0 < LEN) {
     if (0 < ITERS) {
       i = 0;
       while (i < ITERS) {

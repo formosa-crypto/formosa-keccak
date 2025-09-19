@@ -8,7 +8,7 @@ inline fn __state_init_ref
 ( reg mut ptr u64[25] st
 ) -> reg ptr u64[25]
 {
-  reg u64 i;
+  reg ui64 i;
   reg u64 z64;
   z64 = 0;
   i = 0;

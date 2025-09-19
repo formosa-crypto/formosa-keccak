@@ -1,8 +1,7 @@
 /* -------------------------------------------------------------------- */
 /* After add assignments before and after call to ensure that arguments and results are ref ptr */
 
-inline 
-fn __keccakf1600_4x_pround
+fn _keccakf1600_4x_pround
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25] a
 , reg u256 r8, reg u256 r56

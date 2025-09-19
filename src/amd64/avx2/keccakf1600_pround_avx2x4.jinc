@@ -1,7 +1,9 @@
 require "../common/keccakf1600_generic.jinc"
 
 // C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
-inline fn keccakf1600_4x_theta_sum(reg ptr u256[25] a) -> reg u256[5]
+inline fn keccakf1600_4x_theta_sum
+( reg ptr u256[25] a
+) -> reg u256[5]
 {
   inline int x y;
   reg u256[5] c;
@@ -19,25 +21,38 @@ inline fn keccakf1600_4x_theta_sum(reg ptr u256[25] a) -> reg u256[5]
   return c;
 }
 
-inline fn keccakf1600_4x_rol(reg u256[5] a, inline int x r, reg u256 r8 r56) -> reg u256[5]
+inline fn keccakf1600_4x_rol
+( reg u256[5] a
+, inline int x r
+, reg u256 r8 r56
+) -> reg u256[5]
+/*safety*/ requires
+  { is_arr_init(a,x*32,32) && 0<=x && x<5 }
+/*safety*/ ensures
+  { \all (k \in 0:160) (is_arr_init(result.0,k,1) == is_arr_init(a,k,1)) }
 {
-	reg u256 t;
+  reg u256 t;
 
   if(r == 8)
-  {	a[x] = #VPSHUFB_256(a[x], r8); }
-  else { if(r == 56)
-  { a[x] = #VPSHUFB_256(a[x], r56); }
-  else
-  { t     = #VPSLL_4u64(a[x], r);
-	  a[x]  = #VPSRL_4u64(a[x], 64 - r);
-	  a[x] |= t; }
+    { a[x] = #VPSHUFB_256(a[x], r8); }
+  else {
+    if(r == 56)
+      { a[x] = #VPSHUFB_256(a[x], r56); }
+    else
+      { t     = #VPSLL_4u64(a[x], r);
+	a[x]  = #VPSRL_4u64(a[x], 64 - r);
+	a[x] |= t;
+      }
   }
 
-	return a; 
+  return a; 
 }
 
 // D[x] = C[x-1] ^ ROT(C[x+1], 1) 
-inline fn keccakf1600_4x_theta_rol(reg u256[5] c, reg u256 r8 r56) -> reg u256[5]
+inline fn keccakf1600_4x_theta_rol
+( reg u256[5] c
+, reg u256 r8 r56
+) -> reg u256[5]
 {
   inline int x;
   reg u256[5] d;
@@ -62,12 +77,16 @@ inline fn keccakf1600_4x_theta_rol(reg u256[5] c, reg u256 r8 r56) -> reg u256[5
 // M = (0 1)  M^-1 = (1 3)  x' = 1x + 3y
 //     (2 3)         (1 0)  y' = 1x + 0y
 //
-inline fn keccakf1600_4x_rol_sum(
-  reg ptr u256[25] a,
-  reg u256[5] d,
-  inline int y,
-  reg u256 r8 r56
+inline fn keccakf1600_4x_rol_sum
+( reg ptr u256[25] a
+, reg u256[5] d
+, inline int y
+, reg u256 r8 r56
 ) -> reg u256[5]
+/*safety*/ requires
+ { is_arr_init(a,0,800) && is_arr_init(d,0,160) && 0<=y && y<5 }
+/*safety*/ ensures
+ { is_arr_init(a,0,800) && is_arr_init(d,0,160) && 0<=y && y<5 }
 {
   inline int r x x_ y_;
   reg u256[5] b;
@@ -86,7 +105,7 @@ inline fn keccakf1600_4x_rol_sum(
 
     // B[x] = ROT( B[x], r[x',y'] );
     if(r != 0)
-    { b = keccakf1600_4x_rol(b, x, r, r8, r56); }
+      { b = keccakf1600_4x_rol(b, x, r, r8, r56); }
   }
 
   return b;
@@ -95,12 +114,18 @@ inline fn keccakf1600_4x_rol_sum(
 
 // E[x, y] = B[x] ^ ( (!B[x+1]) & B[x+2] )
 // -- when x and y are 0: E[0,0] ^= RC[i];
-inline fn keccakf1600_4x_set_row(
-  reg ptr u256[25] e,
-  reg u256[5] b,
-  inline int y
-//  , reg u256 rc
+inline fn keccakf1600_4x_set_row
+( reg ptr u256[25] e
+, reg u256[5] b
+, inline int y
 ) -> reg ptr u256[25]
+/*safety*/ requires
+ { is_arr_init(b,0,160) && 0 <= y && y<5 }
+/*safety*/ ensures
+ { \all (k \in 0:800)
+  (is_arr_init(result.0,k,1)
+  == (is_arr_init(e,k,1) || (y*5*32 <=k && k < (y + 1)*5*32)))
+ }
 {
   inline int x x1 x2;
   reg u256 t;
@@ -113,7 +138,6 @@ inline fn keccakf1600_4x_set_row(
     t = #VPANDN_256(b[x1], b[x2]);
 
     t ^= b[x];
-//    if( x==0 && y==0 ){ t ^= rc; }
     e[x + y*5] = t;
   }
 
@@ -125,6 +149,10 @@ inline fn __keccakf1600_4x_pround
 , reg const ptr u256[25]a
 , reg u256 r8 r56
 ) -> reg ptr u256[25]
+/*safety*/ requires
+ { is_arr_init(a,0,800) }
+/*safety*/ ensures
+ { is_arr_init(result.0,0,800) }
 {
   inline int y;
   reg u256[5] b c d;
@@ -134,7 +162,7 @@ inline fn __keccakf1600_4x_pround
 
   for y = 0 to 5
   { b = keccakf1600_4x_rol_sum(a, d, y, r8, r56);
-    e = keccakf1600_4x_set_row(e, b, y/*, rc*/);
+    e = keccakf1600_4x_set_row(e, b, y);
   }
 
   return e;

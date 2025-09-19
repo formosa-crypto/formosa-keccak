@@ -16,15 +16,24 @@ require "../common/subreadwrite_imem.jinc"
 inline fn __addstate_imem_ref
 ( reg mut ptr u64[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
-, reg u64 buf
+, reg ui64 buf
 , inline int LEN
 , inline int TRAILB
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
-   , reg u64 /* buf */
+   , reg ui64 /* buf */
+/* safety */ requires
+ { 0 <= LEN &&  0<=AT  && AT < 200 && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 
+   && is_mem_init((64u) buf,LEN) && is_arr_init(st,0,25*8)
+   && 0 <= TRAILB && TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8) && result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0) && result.2 == buf + LEN
+ }
 {
   inline int LO, ALL;
-  reg u64 at, t;
+  reg ui64 at;
+  reg u64 t;
 
   ALL = AT+LEN; // total bytes to process (excluding trail byte, if !=0)
   LO = AT % 8; // leftover bytes
@@ -35,15 +44,15 @@ inline fn __addstate_imem_ref
       if ( TRAILB != 0 ) { ALL += 1; }
       buf, _, _, t = __mread_subu64(buf, LEN, TRAILB);
       t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[at];
+      st[at] = t;
       LO = 0;
       AT = 0;
       LEN = 0;
       TRAILB = 0;
     } else { // process first word
       if ( 8 <= LEN ) {
-	t = (u64)[buf];
+	t = (u64)[(64u)buf];
 	buf += 8-LO;
       } else {
         buf, _, _, t = __mread_subu64(buf, 8-LO, TRAILB);
@@ -51,8 +60,8 @@ inline fn __addstate_imem_ref
       LEN -= 8-LO;
       AT += 8-LO;
       t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[at];
+      st[at] = t;
       at += 1;
     }
   }
@@ -60,10 +69,10 @@ inline fn __addstate_imem_ref
   // continue processing remaining bytes
   if (8 <= LEN) {
     while ( at < (AT/8)+(LEN/8)) {
-      t = (u64)[buf];
+      t = (u64)[(64u)buf];
       buf += 8;
-      t ^= st[u64 at];
-      st[u64 at] = t;
+      t ^= st[at];
+      st[at] = t;
       at += 1;
     }
     LEN = (AT+LEN) % 8;
@@ -74,26 +83,33 @@ inline fn __addstate_imem_ref
   if ( 0 < LO || TRAILB != 0 ) {
     buf, _, _, t = __mread_subu64(buf, LO, TRAILB);
     if ( TRAILB != 0 ) { ALL += 1; TRAILB = 0; }
-    t ^= st[u64 at];
-    st[u64 at] = t;
+    t ^= st[at];
+    st[at] = t;
   }
     
   return st, ALL, buf;
 } 
 
-
 inline fn __absorb_imem_ref
 ( reg mut ptr u64[25] st
 , inline int AT
-, reg u64 buf
+, reg ui64 buf
 , inline int LEN
 , inline int RATE8
 , inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
-   , reg u64 /* buf */
+   , reg ui64 /* buf */
+/* safety */ requires
+ { 0 <= LEN &&  0<=AT  && AT < RATE8 && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 && 0 < RATE8 && RATE8 < 200 
+   && is_mem_init((64u) buf,LEN) && is_arr_init(st,0,25*8)
+   && 0 <= TRAILB && TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8) && result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0)
+ }
 {
-  reg u64 i;
+  reg ui64 i;
   inline int ALL, ITERS;
 
   ALL = AT + LEN;
@@ -129,30 +145,37 @@ inline fn __absorb_imem_ref
     if (TRAILB!=0) { st = __addratebit_ref(st, RATE8); }
   }
   return st, AT, buf;
-} 
-
+}
 
 /*
    ONE-SHOT (FIXED-SIZE) MEMORY SQUEEZE
    ====================================
 */
 inline fn __dumpstate_imem_ref
-( reg u64 buf
+( reg ui64 buf
 , inline int LEN
 , reg const ptr u64[25] st
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
+/* safety */ requires
+ { 0 <= LEN &&  is_mem_init((64u) buf,LEN)
+   && is_arr_init(st,0,25*32)
+ }
+/* safety */ ensures
+ { result.0 == buf + LEN }
 {
-  reg u64 i, t;
+  reg ui64 i;
+  reg u64 t;
+
   i = 0;
   while (i < (LEN/8)) {
-    t = st[(int) i];
+    t = st[i];
     i += 1;
-    (u64)[buf] = t;
+    (u64)[(64u)buf] = t;
     buf += 8;
   }
 
   if (0 < LEN%8) {
-    t = st[(int) i];
+    t = st[i];
     buf, _ = __mwrite_subu64( buf, LEN%8, t);
   }
 
@@ -160,15 +183,22 @@ inline fn __dumpstate_imem_ref
 }
 
 inline fn __squeeze_imem_ref
-( reg u64 buf
+( reg ui64 buf
 , inline int LEN
 , reg mut ptr u64[25] st
 , inline int RATE8
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
    , reg ptr u64[25] /* st */
+/* safety */ requires
+ { 0 <= LEN && 0 < RATE8 && RATE8 < 200
+   && is_mem_init((64u) buf,LEN) && is_arr_init(st,0,25*8)
+ }
+/* safety */ ensures
+ { is_arr_init(result.1,0,25*8) && result.0 == buf + LEN }
 {
-  reg u64 i;
+  reg ui64 i;
   inline int ITERS, LO;
+
   ITERS = LEN/RATE8;
   LO = LEN%RATE8;
   if (0 < LEN) {
@@ -191,4 +221,3 @@ inline fn __squeeze_imem_ref
   }
   return buf, st;
 }
-

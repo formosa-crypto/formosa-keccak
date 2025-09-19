@@ -21,9 +21,20 @@ inline fn __addstate_array_ref
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
    , reg u64 /* offset */
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN &&  0<=AT  && AT < 200 && offset + LEN <= ASIZE
+   && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 
+   && is_arr_init(buf,offset,LEN) && is_arr_init(st,0,25*8)
+   && 0 <= TRAILB && TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8) && result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0)
+   && result.2 == offset + LEN
+ }
 {
   inline int DELTA, LO, ALL;
-  reg u64 at, t;
+  reg ui64 at;
+  reg u64 t;
 
   ALL = AT+LEN; // total bytes to process (excluding trail byte, if !=0)
   LO = AT % 8; // leftover bytes
@@ -96,8 +107,18 @@ inline fn __absorb_array_ref
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
    , reg u64 /* offset */
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN &&  0<=AT  && AT < RATE8 && offset + LEN <= ASIZE
+   && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 && 0 < RATE8 && RATE8 < 200
+   && is_arr_init(buf,offset,LEN) && is_arr_init(st,0,25*8)
+   && 0 <= TRAILB && TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*32)
+   && result.1 == (AT + LEN) % RATE8 + (TRAILB != 0 ? 1 : 0)
+ }
 {
-  reg u64 i;
+  reg ui64 i;
   inline int ALL, ITERS;
 
   ALL = AT + LEN;
@@ -147,17 +168,27 @@ inline fn __dumpstate_array_ref
 , reg const ptr u64[25] st
 ) -> reg ptr u8[ASIZE] /* buf */
    , reg u64 /* offset */
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN && is_arr_init(st,0,25*8) && offset + LEN <= ASIZE && LEN <= 200
+ }
+/* safety */ ensures
+ { (\all (k \in 0:ASIZE)
+       (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + LEN))))
+   && result.1 == offset + LEN
+ }
 { 
-  reg u64 i, t;
+  reg ui64 i;
+  reg u64 t;
+
   i = 0;
   while (i <s (LEN/8)) {
-    t = st[(int) i];
+    t = st[i];
     buf.[u64 offset] = t;
     i += 1;
     offset += 8;
   }
   if (0 < LEN%8) {
-    t = st[(int) i];
+    t = st[i];
     buf, _, _ = __awrite_subu64( buf, offset, 0, LEN%8, t);
     offset += LEN%8;
   }
@@ -174,9 +205,19 @@ inline fn __squeeze_array_ref
 ) -> reg ptr u8[ASIZE] /* buf */
    , reg u64           /* offset */
    , reg ptr u64[25] /* st */
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN && is_arr_init(st,0,25*8) && offset + LEN <= ASIZE
+   && 0 < RATE8 && RATE8 < 200
+ }
+/* safety */ ensures
+ { (\all (k \in 0:ASIZE)
+    (is_arr_init(result.0,k,1) == (is_arr_init(buf0,k,1) || (offset <= k && k< offset + LEN))))
+   && is_arr_init(result.5,0,25*8)
+ }
 {
-  reg u64 i;
+  reg ui64 i;
   inline int ITERS, LO;
+
   ITERS = LEN/RATE8;
   LO = LEN%RATE8;
 
