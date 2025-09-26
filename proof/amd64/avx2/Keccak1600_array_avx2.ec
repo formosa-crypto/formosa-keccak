@@ -58,7 +58,7 @@ clone import WArray as WA
  with op size <- aSIZE.
 
 module M(P: MParam) = {
-  proc __aread_subu64 (buf:W8.t A.t, offset:W64.t, dELTA:int, lEN:int,
+  proc __aread_subu64 (buf:W8.t A.t, offset:int, dELTA:int, lEN:int,
                        tRAIL:int) : int * int * int * W64.t = {
     var w:W64.t;
     var iLEN:int;
@@ -72,7 +72,7 @@ module M(P: MParam) = {
       if ((8 <= lEN)) {
         w <-
         (get64_direct (WA.init8 (fun i => buf.[i]))
-        (W64.to_uint (offset + (W64.of_int dELTA))));
+        (offset + dELTA));
         dELTA <- (dELTA + 8);
         lEN <- (lEN - 8);
       } else {
@@ -80,7 +80,7 @@ module M(P: MParam) = {
           w <-
           (zeroextu64
           (get32_direct (WA.init8 (fun i => buf.[i]))
-          (W64.to_uint (offset + (W64.of_int dELTA)))));
+          (offset + dELTA)));
           dELTA <- (dELTA + 4);
           lEN <- (lEN - 4);
         } else {
@@ -90,7 +90,7 @@ module M(P: MParam) = {
           t16 <-
           (zeroextu64
           (get16_direct (WA.init8 (fun i => buf.[i]))
-          (W64.to_uint (offset + (W64.of_int dELTA)))));
+          (offset + dELTA)));
           dELTA <- (dELTA + 2);
           lEN <- (lEN - 2);
         } else {
@@ -101,7 +101,7 @@ module M(P: MParam) = {
             t8 <-
             (zeroextu64
             (get8_direct (WA.init8 (fun i => buf.[i]))
-            (W64.to_uint (offset + (W64.of_int dELTA)))));
+            (offset + dELTA)));
             if (((tRAIL %% 256) <> 0)) {
               t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
@@ -124,7 +124,7 @@ module M(P: MParam) = {
     }
     return (dELTA, lEN, tRAIL, w);
   }
-  proc __aread_bcast_4subu64 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+  proc __aread_bcast_4subu64 (buf:W8.t A.t, offset:int, dELTA:int,
                               lEN:int, tRAIL:int) : int * int * int * W256.t = {
     var w:W256.t;
     var t64:W64.t;
@@ -136,7 +136,7 @@ module M(P: MParam) = {
         w <-
         (VPBROADCAST_4u64
         (get64_direct (WA.init8 (fun i => buf.[i]))
-        (W64.to_uint (offset + (W64.of_int dELTA)))));
+        (offset + dELTA)));
         dELTA <- (dELTA + 8);
         lEN <- (lEN - 8);
       } else {
@@ -148,7 +148,7 @@ module M(P: MParam) = {
     }
     return (dELTA, lEN, tRAIL, w);
   }
-  proc __aread_subu128 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+  proc __aread_subu128 (buf:W8.t A.t, offset:int, dELTA:int,
                         lEN:int, tRAIL:int) : int * int * int * W128.t = {
     var w:W128.t;
     var t64:W64.t;
@@ -158,7 +158,7 @@ module M(P: MParam) = {
       if ((16 <= lEN)) {
         w <-
         (get128_direct (WA.init8 (fun i => buf.[i]))
-        (W64.to_uint (offset + (W64.of_int dELTA))));
+        (offset + dELTA));
         dELTA <- (dELTA + 16);
         lEN <- (lEN - 16);
       } else {
@@ -166,7 +166,7 @@ module M(P: MParam) = {
           w <-
           (VMOV_64
           (get64_direct (WA.init8 (fun i => buf.[i]))
-          (W64.to_uint (offset + (W64.of_int dELTA)))));
+          (offset + dELTA)));
           dELTA <- (dELTA + 8);
           lEN <- (lEN - 8);
           (dELTA, lEN, tRAIL, t64) <@ __aread_subu64 (buf, offset, dELTA,
@@ -181,7 +181,7 @@ module M(P: MParam) = {
     }
     return (dELTA, lEN, tRAIL, w);
   }
-  proc __aread_subu256 (buf:W8.t A.t, offset:W64.t, dELTA:int,
+  proc __aread_subu256 (buf:W8.t A.t, offset:int, dELTA:int,
                         lEN:int, tRAIL:int) : int * int * int * W256.t = {
     var w:W256.t;
     var t128_1:W128.t;
@@ -192,14 +192,14 @@ module M(P: MParam) = {
       if ((32 <= lEN)) {
         w <-
         (get256_direct (WA.init8 (fun i => buf.[i]))
-        (W64.to_uint (offset + (W64.of_int dELTA))));
+        (offset + dELTA));
         dELTA <- (dELTA + 32);
         lEN <- (lEN - 32);
       } else {
         if ((16 <= lEN)) {
           t128_0 <-
           (get128_direct (WA.init8 (fun i => buf.[i]))
-          (W64.to_uint (offset + (W64.of_int dELTA))));
+          (offset + dELTA));
           dELTA <- (dELTA + 16);
           lEN <- (lEN - 16);
           (dELTA, lEN, tRAIL, t128_1) <@ __aread_subu128 (buf, offset, 
@@ -344,8 +344,8 @@ module M(P: MParam) = {
     return (buf, dELTA, lEN);
   }
   proc __addstate_array_avx2 (st:W256.t Array7.t, buf:W8.t A.t,
-                              offset:W64.t, lEN:int, tRAILB:int) : W256.t Array7.t *
-                                                                   W64.t = {
+                              offset:int, lEN:int, tRAILB:int) : W256.t Array7.t *
+                                                                   int = {
     var dELTA:int;
     var t64:W64.t;
     var t128_0:W128.t;
@@ -396,23 +396,23 @@ module M(P: MParam) = {
     } else {
       
     }
-    offset <- (offset + (W64.of_int dELTA));
+    offset <- (offset + dELTA);
     return (st, offset);
   }
   proc __absorb_array_avx2 (st:W256.t Array7.t, buf:W8.t A.t,
-                            offset:W64.t, lEN:int, rATE8:int, tRAILB:int) : 
-  W256.t Array7.t * W64.t = {
+                            offset:int, lEN:int, rATE8:int, tRAILB:int) : 
+  W256.t Array7.t * int = {
     var aLL:int;
     var iTERS:int;
-    var i:W64.t;
+    var i:int;
     aLL <- (lEN + ((tRAILB <> 0) ? 1 : 0));
     iTERS <- (lEN %/ rATE8);
     if ((0 < iTERS)) {
-      i <- (W64.of_int 0);
-      while ((i \ult (W64.of_int iTERS))) {
+      i <-0;
+      while ((i < iTERS)) {
         (st, offset) <@ __addstate_array_avx2 (st, buf, offset, rATE8, 0);
         st <@ P.keccakf1600_avx2 (st);
-        i <- (i + (W64.of_int 1));
+        i <- i + 1;
       }
     } else {
       
@@ -427,8 +427,8 @@ module M(P: MParam) = {
     return (st, offset);
   }
   proc __pstate_array_avx2 (pst:W64.t Array25.t, aT:int, buf:W8.t A.t,
-                            offset:W64.t, lEN:int, tRAILB:int) : W64.t Array25.t *
-                                                                 int * W64.t = {
+                            offset:int, lEN:int, tRAILB:int) : W64.t Array25.t *
+                                                                 int * int = {
     var aLL:int;
     var dELTA:int;
     var lO:int;
@@ -462,7 +462,7 @@ module M(P: MParam) = {
         if ((8 <= lEN)) {
           t64 <-
           (get64_direct (WA.init8 (fun i => buf.[i]))
-          (W64.to_uint (offset + (W64.of_int dELTA))));
+          (offset + dELTA));
           dELTA <- (dELTA + (8 - lO));
         } else {
           (dELTA,  _0,  _1, t64) <@ __aread_subu64 (buf, offset, dELTA,
@@ -478,13 +478,13 @@ module M(P: MParam) = {
       
     }
     if ((32 <= lEN)) {
-      offset <- (offset + (W64.of_int dELTA));
+      offset <- (offset + dELTA);
       dELTA <- 0;
       while ((at \ult (W64.of_int ((aT %/ 8) + (4 * (lEN %/ 32)))))) {
         t256 <-
         (get256_direct (WA.init8 (fun i => buf.[i]))
-        (W64.to_uint offset));
-        offset <- (offset + (W64.of_int 32));
+        offset);
+        offset <- offset + 32;
         pst <-
         (Array25.init
         (WArray200.get64
@@ -499,7 +499,7 @@ module M(P: MParam) = {
     if ((16 <= lEN)) {
       t128 <-
       (get128_direct (WA.init8 (fun i => buf.[i]))
-      (W64.to_uint (offset + (W64.of_int dELTA))));
+      (offset + dELTA));
       dELTA <- (dELTA + 16);
       pst <-
       (Array25.init
@@ -514,7 +514,7 @@ module M(P: MParam) = {
     if ((8 <= lEN)) {
       t64 <-
       (get64_direct (WA.init8 (fun i => buf.[i]))
-      (W64.to_uint (offset + (W64.of_int dELTA))));
+      (offset + dELTA));
       dELTA <- (dELTA + 8);
       pst <-
       (Array25.init
@@ -539,34 +539,34 @@ module M(P: MParam) = {
     } else {
       
     }
-    offset <- (offset + (W64.of_int dELTA));
+    offset <- offset + dELTA;
     return (pst, aLL, offset);
   }
   proc __pabsorb_array_avx2 (pst:W64.t Array25.t, aT:int, st:W256.t Array7.t,
-                             buf:W8.t A.t, offset:W64.t, lEN:int,
+                             buf:W8.t A.t, offset:int, lEN:int,
                              rATE8:int, tRAILB:int) : W64.t Array25.t * int *
-                                                      W256.t Array7.t * W64.t = {
+                                                      W256.t Array7.t * int = {
     var aLL:int;
     var iTERS:int;
-    var i:W64.t;
+    var i:int;
     var  _0:int;
     aLL <- (aT + lEN);
     if (((aT + lEN) < rATE8)) {
       (pst, aT, offset) <@ __pstate_array_avx2 (pst, aT, buf, offset, 
       lEN, tRAILB);
       if ((tRAILB <> 0)) {
-        i <- (W64.of_int ((aT %/ 8) + 1));
+        i <- (aT %/ 8) + 1;
         if ((aT <= (5 * 8))) {
-          while ((i \ult (W64.of_int 5))) {
-            pst.[(W64.to_uint i)] <- (W64.of_int 0);
-            i <- (i + (W64.of_int 1));
+          while (i <  5) {
+            pst.[i] <- (W64.of_int 0);
+            i <- (i + 1);
           }
           st <@ P.addpst01_avx2 (st, pst);
           st <@ P.addratebit_avx2 (st, rATE8);
         } else {
-          while ((i \ult (W64.of_int (rATE8 %/ 8)))) {
-            pst.[(W64.to_uint i)] <- (W64.of_int 0);
-            i <- (i + (W64.of_int 1));
+          while ((i < rATE8 %/ 8)) {
+            pst.[i] <- (W64.of_int 0);
+            i <- i + 1;
           }
           pst <-
           (Array25.init
@@ -592,11 +592,11 @@ module M(P: MParam) = {
         
       }
       iTERS <- (lEN %/ rATE8);
-      i <- (W64.of_int 0);
-      while ((i \ult (W64.of_int iTERS))) {
+      i <- 0;
+      while ((i < iTERS)) {
         (st, offset) <@ __addstate_array_avx2 (st, buf, offset, rATE8, 0);
         st <@ P.keccakf1600_avx2 (st);
-        i <- (i + (W64.of_int 1));
+        i <- (i + 1);
       }
       lEN <- (aLL %% rATE8);
       if ((tRAILB <> 0)) {
@@ -815,16 +815,16 @@ module M(P: MParam) = {
                                                               W256.t Array7.t = {
     var iTERS:int;
     var lO:int;
-    var i:W64.t;
+    var i:int;
     iTERS <- (lEN %/ rATE8);
     lO <- (lEN %% rATE8);
     if ((0 < lEN)) {
       if ((0 < iTERS)) {
-        i <- (W64.of_int 0);
-        while ((i \ult (W64.of_int iTERS))) {
+        i <- 0;
+        while (i < iTERS) {
           st <@ P.keccakf1600_avx2 (st);
           (buf, offset) <@ __dumpstate_array_avx2 (buf, offset, rATE8, st);
-          i <- (i + (W64.of_int 1));
+          i <- i + 1;
         }
       } else {
         
@@ -862,20 +862,370 @@ lemma  aread_subu64_ll: islossless M(P).__aread_subu64
 
 hoare aread_subu64_h _buf _off _dlt _len _trail:
  M(P).__aread_subu64
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
+    0 <= _off + _dlt /\ _off + _dlt + 8 <= aSIZE /\ _trail %/ 256 = 0 
  ==> res.`1 = _dlt + min (max 0 _len) 8
   /\ res.`2 = _len - min (max 0 _len) 8
   /\ res.`3 = (if _len < 8 then 0 else _trail)
-  /\ res.`4 = W8u8.pack8 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]).
-admitted.
+  /\ res.`4 = W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]).
+pose ll := min (max 0 _len) 8.
+proc => /=.
+case (lEN <= 0).
++ rcondt ^if; 1: by auto.
+  auto => /> [#]????;do split; 1..3:smt().
+  rewrite W8u8.of_uint_pack8.
+  congr; apply W8u8.Pack.ext_eq => i ib.
+  rewrite !get_of_list // (nth_map witness) /=; 1:smt(size_iota).
+  rewrite nth_cat size_sub 1:/# /= ifF 1:/# /= nth_iota //=.
+  case (i = 0) => Hi;
+     1: by rewrite Hi /max /min /= ifT 1:/# to_uint_eq /= !modz_mod.
+  rewrite ifF 1:/#; congr; have : 2^8 <= 2^(8*i); last by  simplify; smt(). 
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+  
+rcondf ^if; 1: by auto.
+case (8 <= lEN).
++ rcondt ^if;1: by auto.
+   auto => /> [#] ?????; do split;1..3:smt().
+  rewrite /get64_direct;congr; apply W8u8.Pack.ext_eq => i ib.
+  rewrite initiE 1:/# /=  get_of_list //. 
+  rewrite nth_cat size_sub 1:/# /= ifT 1:/# /=.
+  by rewrite nth_sub 1:/# /= initiE /#.
+
+rcondf ^if; 1: by auto.
+
+(* We have ll = lEN *)
+
+auto => /> ?????.
+
+have H : _len \in iota_ 0 8 by smt(mem_iota).
+rewrite -iotaredE /= in H.
+
+elim H => />.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+
+(* _len = 7 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /= (: 0 <= i-32 < 64) 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# initiE 1:/# /= initiE 1:/# /=.
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite /get8 initiE 1:/# /= nth_sub 1:/# get_to_uint /= of_uintK /= modz_small 1:/# (modz_small _ 18446744073709551616)  1:/#. 
+    suff : 256 * (_trail %% 256) %/ 2 ^ (i - 48) %% 2 = 0 by smt().
+    rewrite mulrC -pow2_8 divMr; 1: by apply dvdz_exp2l;smt().
+    rewrite expz_div 1,2:/# (: 8 - (i - 48) = (8 - (i - 48) - 1) + 1) 1:/#.
+    rewrite exprS 1:/# (Ring.IntID.mulrC 2 _) /#.
+
+  rewrite ifF 1:/# zerowE /=  ifF 1:/# /= ifT 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 48 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  have -> : 2 ^ (i - 48) = 2^((i-48-8) + 8) by auto.
+  rewrite exprD_nneg 1,2:/#mulrC -pow2_8 divzMpr //=.  
+  by have -> : i-56 = i%%8 by smt().
+
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /= (: 0 <= i-32 < 64) 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  get_out 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /=.
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    by rewrite /get8 initiE 1:/# /= nth_sub /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/# /= ifT 1:/#.
+  rewrite !get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  by have -> /= : _trail %% 256 = 0 by smt().
+
+(* _len = 6 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /= (: 0 <= i-32 < 64) 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 48 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/# !of_uintK /=.
+    by have -> : i-48 = i%%8 by smt().
+  rewrite ifF 1:/# /=.
+  suff /= : 2^8 <= 2 ^ (i - 48)  by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ split; 1: smt().
+  apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# get_out 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# zerowE. 
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/#.
+    rewrite !get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=.
+     by have -> /= : _trail %% 256 = 0 by smt().
+  by rewrite ifF 1:/# zerowE /=.
+
+(* _len = 5 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 32 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /= (:0 <= (i - 32) %% 8 < 8) 1:/# /=.
+    rewrite nth_sub 1:/#.
+    have -> : (i - 32) %% 8 = i %% 8 by smt().
+    have ? : 256 * (_trail %% 256) %/ 2 ^ (i - 32) %% 2 = 0; last by smt().
+    have /={1}-> : 2 ^ 8 = 2^(8 - (i-32) + (i-32)) by congr;smt().
+    rewrite exprD_nneg 1,2:/# mulrC mulrA mulzK;1:smt(expr_gt0).
+    have ->: 2 ^ (8 - (i - 32)) = 2 ^ ((8 - (i - 32) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 32 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  rewrite mulrC -{2}pow2_8 (:2^(i-32) = 2^((i-32-8)+8));1: by congr;smt().
+  rewrite exprD_nneg /= 1,2:/# divzMpr //=.
+  case (40 <= i < 48) => ibbbb.
+  + rewrite ifT 1:/# !of_uintK /=;1:do congr;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-40) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# get_out 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite nth_sub /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  case (40 <= i < 48) => ibbbb.
+  + rewrite ifT 1:/# get_to_uint !of_uintK /= (:0 <= i %% 8 < 8) 1:/# /=.
+    by have -> /= : _trail %% 256 = 0;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-40) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
+
+(* _len = 4 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# get_to_uint (: 0 <= i - 32 < 64) 1:/# /= of_uintK /=  (modz_small _ 18446744073709551616)  1:/#.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifT 1:/# get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=.
+    by have -> : (i - 32) = i %% 8 by smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-32) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ split;1:smt().
+  apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /=. 
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifF 1:/# ifT 1:/# get_to_uint !of_uintK /= (:0 <= i %% 8 < 8) 1:/# /=. 
+    by have -> /= : _trail %% 256 = 0;smt().
+  case (40 <= i < 48) => ibbbb.
+  + by rewrite ifF 1:/# ifF 1:/# get_to_uint (:0 <= i %% 8 < 8) 1:/# /=.
+  by rewrite ifF 1:/# /= ifF 1:/# /=.
+
+ (* _len = 3 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 16 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /= (:0 <= (i - 16) %% 8 < 8) 1:/# /=.
+    rewrite nth_sub 1:/#.
+    have -> : (i - 16) %% 8 = i %% 8 by smt().
+    have ? : 256 * (_trail %% 256) %/ 2 ^ (i - 16) %% 2 = 0; last by have -> : i %/8 = 2; smt().
+    have /={1}-> : 2 ^ 8 = 2^(8 - (i-16) + (i-16)) by congr;smt().
+    rewrite exprD_nneg 1,2:/# mulrC mulrA mulzK;1:smt(expr_gt0).
+    have ->: 2 ^ (8 - (i - 16)) = 2 ^ ((8 - (i - 16) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 16 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  rewrite mulrC -{2}pow2_8 (:2^(i-16) = 2^((i-16-8)+8));1: by congr;smt().
+  rewrite exprD_nneg /= 1,2:/# divzMpr //=.
+  case (24 <= i < 32) => ibbbb.
+  + rewrite ifT 1:/# !of_uintK /=;1:do congr;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-24) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# /= W16.initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= W64.get_out 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=. 
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite !get_to_uint /= (:(0 <= (i - 16) %% 8 < 8)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+    rewrite nth_sub 1:/#.
+    have -> : (i - 16) %% 8 = i %% 8 by smt().
+    have ? : 256 * (_trail %% 256) %/ 2 ^ (i - 16) %% 2 = 0; last by have -> : i %/8 = 2; smt().
+    have /={1}-> : 2 ^ 8 = 2^(8 - (i-16) + (i-16)) by congr;smt().
+    rewrite exprD_nneg 1,2:/# mulrC mulrA mulzK;1:smt(expr_gt0).
+    have ->: 2 ^ (8 - (i - 16)) = 2 ^ ((8 - (i - 16) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# /#.
+  case (24 <= i < 32) => ibbbb.
+  + rewrite ifF 1:/# ifF 1:/# ifT 1:/# get_to_uint (:0 <= (i-16) %% 8 < 8) 1:/# /= get_to_uint (: 0 <= i %% 8 < 8) 1:/# /= (: _trail %% 256 = 0) /#.
+   by rewrite ifF 1:/# /= ifF 1:/# /= ifF 1:/# get_to_uint (:0 <= i %% 8 < 8) 1:/# /=.
+
+ (* _len = 2 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# get_to_uint (:  0 <= i - 16 < 64) 1:/# /= of_uintK /= (modz_small _ 18446744073709551616)  1:/# /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifT 1:/#.
+    rewrite !get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=;do congr;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-16) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
+  + split;1:smt().
+  apply W64.wordP => i ib.
+  rewrite  /(`<<`) /= ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /=. 
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifF 1:/# ifT 1:/# get_to_uint !of_uintK /= (:0 <= i %% 8 < 8) 1:/# /=. 
+    by have -> /= : _trail %% 256 = 0;smt().
+  case (24 <= i < 32) => ibbbb.
+  + by rewrite ifF 1:/# ifF 1:/# get_to_uint (:0 <= i %% 8 < 8) 1:/# /=.
+  by rewrite ifF 1:/# /= ifF 1:/# /=.
+
+(* _len = 1 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# ib /=.
+  rewrite !zeroextu64E /get8 !pack8E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 8) => ibb.
+  + rewrite ifT 1:/# ifT 1:/# get_to_uint !of_uintK /= ib /= (modz_small _ 18446744073709551616)  1:/#.
+    rewrite mulrC -{2}pow2_8 (:2^8 = 2^((8 - i) + i));1: by congr;smt().
+    rewrite exprD_nneg /= 1,2:/# mulrA mulzK;1:smt(expr_gt0).
+     have ->: 2 ^ (8 - i) = 2 ^ (((8 - i) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# mulrA mulrC mulrA modzMl.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# zerowE /= get_to_uint ib /= of_uintK /= (modz_small _ 18446744073709551616)  1:/#.
+  case (8 <= i < 16) => ibbb.
+  + rewrite ifT 1:/# get_to_uint (: 0 <= i %% 8 < 8) 1:/# /=.
+    rewrite mulrC -{2}pow2_8 (:2^(i) = 2^((i-8)+8));1: by congr;smt().
+    rewrite exprD_nneg /= 1,2:/# divzMpr //=.
+    by have -> : i - 8 = i %% 8;smt().
+  rewrite ifF 1:/# /=.
+  have ? : 256 * (_trail %% 256) %/ 2 ^ (i) %% 2 = 0; last by smt().
+  suff /= : 2^16 <= 2^(i) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ apply W64.wordP => i ib.
+  rewrite  /(`<<`) /= ib /=.
+  rewrite !zeroextu64E  !pack8E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /=.
+  case (0<=i<8) => ibb.
+  + rewrite ifT 1:/# /get8 initiE 1:/# /=.
+  rewrite   nth_cat size_sub 1:/# /= ifT 1:/# nth_sub /#.
+  rewrite ifF 1:/#.
+  rewrite   nth_cat size_sub 1:/# /= ifF 1:/#.
+  case (8 <= i < 16) => ibbb.
+  + rewrite ifT 1:/# get_to_uint !of_uintK /= (: 0 <= i %% 8 < 8) 1:/# /=.
+    have -> : _trail %% 256 = 0 by smt().
+  by smt().
+  by rewrite ifF 1:/# /=.
+qed.
 
 phoare aread_subu64_ph _buf _off _dlt _len _trail:
  [ M(P).__aread_subu64
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
+    0 <= _off + _dlt /\ _off + _dlt + 8 <= aSIZE /\ _trail %/ 256 = 0 
  ==> res.`1 = _dlt + min (max 0 _len) 8
   /\ res.`2 = _len - min (max 0 _len) 8
   /\ res.`3 = (if _len < 8 then 0 else _trail)
-  /\ res.`4 = W8u8.pack8 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail])
+  /\ res.`4 = W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail])
  ] = 1%r.
 proof.
 by conseq aread_subu64_ll (aread_subu64_h _buf _off _dlt _len _trail).
