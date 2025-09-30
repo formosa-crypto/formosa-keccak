@@ -1240,7 +1240,8 @@ hoare aread_subu128_h _buf _off _dlt _len _trail:
  ==> res.`1 = _dlt + min (max 0 _len) 16
   /\ res.`2 = _len - min (max 0 _len) 16
   /\ res.`3 = (if _len < 16 then 0 else _trail)
-  /\ res.`4 = W16u8.pack16 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail]).
+  /\ res.`4 = W16u8.pack16 (sub _buf (_off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail]).
+  
 admitted.
 
 phoare aread_subu128_ph _buf _off _dlt _len _trail:
@@ -1249,7 +1250,7 @@ phoare aread_subu128_ph _buf _off _dlt _len _trail:
  ==> res.`1 = _dlt + min (max 0 _len) 16
   /\ res.`2 = _len - min (max 0 _len) 16
   /\ res.`3 = (if _len < 16 then 0 else _trail)
-  /\ res.`4 = W16u8.pack16 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail])
+  /\ res.`4 = W16u8.pack16 (sub _buf (_off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail])
  ] = 1%r.
 proof.
 by conseq aread_subu128_ll (aread_subu128_h _buf _off _dlt _len _trail).
@@ -1264,7 +1265,7 @@ hoare aread_subu256_h _buf _off _dlt _len _trail:
  ==> res.`1 = _dlt + min (max 0 _len) 32
   /\ res.`2 = _len - min (max 0 _len) 32
   /\ res.`3 = (if _len < 32 then 0 else _trail)
-  /\ res.`4 = W32u8.pack32 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail]).
+  /\ res.`4 = W32u8.pack32 (sub _buf (_off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail]).
 admitted.
 
 phoare aread_subu256_ph _buf _off _dlt _len _trail:
@@ -1273,7 +1274,7 @@ phoare aread_subu256_ph _buf _off _dlt _len _trail:
  ==> res.`1 = _dlt + min (max 0 _len) 32
   /\ res.`2 = _len - min (max 0 _len) 32
   /\ res.`3 = (if _len < 32 then 0 else _trail)
-  /\ res.`4 = W32u8.pack32 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail])
+  /\ res.`4 = W32u8.pack32 (sub _buf (_off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail])
  ] = 1%r.
 proof.
 by conseq aread_subu256_ll (aread_subu256_h _buf _off _dlt _len _trail).
@@ -1364,10 +1365,10 @@ hoare addstate_array_avx2_h _st _buf _off _len _tb:
  M(P).__addstate_array_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
    /\ 0 <= _len <= 200 - b2i (_tb<>0)
-   /\ to_uint offset + _len <= aSIZE
- ==> let l = sub _buf (to_uint _off) _len ++ if _tb <> 0 then [W8.of_int _tb] else []
+   /\ offset + _len <= aSIZE
+ ==> let l = sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []
      in res.`1 = addstate_avx2 _st l
-     /\ res.`2 = _off + (W64.of_int _len).
+     /\ res.`2 = _off + _len.
 proof.
 proc.
 admit.
@@ -1377,10 +1378,10 @@ phoare addstate_array_avx2_ph _st _buf _off _len _tb:
  [ M(P).__addstate_array_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
    /\ 0 <= _len <= 200 - b2i (_tb<>0)
-   /\ to_uint offset + _len <= aSIZE
- ==> let l = sub _buf (to_uint _off) _len ++ if _tb <> 0 then [W8.of_int _tb] else []
+   /\ offset + _len <= aSIZE
+ ==> let l = sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []
      in res.`1 = addstate_avx2 _st l
-     /\ res.`2 = _off + (W64.of_int _len)
+     /\ res.`2 = _off + _len
  ] = 1%r.
 proof.
 by conseq addstate_array_avx2_ll (addstate_array_avx2_h _st _buf _off _len _tb).
@@ -1388,7 +1389,7 @@ qed.
 
 phoare absorb_array_avx2_ll:
  [ M(P).__absorb_array_avx2
- : 0 < rATE8 <= 200 /\ 0 <= lEN /\ to_uint offset + lEN <= aSIZE
+ : 0 < rATE8 <= 200 /\ 0 <= lEN /\ 0<= offset /\ offset + lEN <= aSIZE
  ==> true
  ] = 1%r.
 proof.
@@ -1397,17 +1398,12 @@ have L: forall x, x <= aSIZE => x < W64.modulus.
  by move=> *; apply (ler_lt_trans aSIZE) => //; exact aSIZE_u64.
 seq 3: (0 < rATE8 <=200 /\ iTERS < W64.modulus) => //=.
   sp; if => //=.
-   while (iTERS=lEN %/ rATE8 /\ to_uint i <= iTERS < W64.modulus) (iTERS-to_uint i).
+   while (iTERS=lEN %/ rATE8 /\ i <= iTERS < W64.modulus) (iTERS-i).
     move=> z; wp.
     call keccakf1600_avx2_ll.
     call addstate_array_avx2_ll.
-    auto => /> &m ??; rewrite ultE of_uintK modz_small. 
-     smt(W64.to_uint_cmp).
-    by move => H; rewrite to_uintD_small /= /#. 
-   auto => /> &m *.
-   split. 
-    by move: (L lEN{m}); smt(W64.to_uint_cmp).
-   by move=> i *; rewrite ultE of_uintK modz_small; smt(W64.to_uint_cmp).
+    auto => /> &m ?? /#. 
+   auto => /> &m *;split;smt(pow2_64).
   auto => /> /#.
  by islossless.
 hoare => /=.
@@ -1423,9 +1419,9 @@ qed.
 hoare absorb_array_avx2_h _st _buf _off _len _r8 _tb:
  M(P).__absorb_array_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
- /\ 0 < rATE8 <= 200 /\ 0 <= lEN /\ to_uint offset + lEN <= aSIZE
- ==> res.`1 = stavx2_from_st25 (ABSORB1600 (W8.of_int _tb) _r8 (sub _buf (to_uint _off) _len))
-  /\ res.`2 = _off + W64.of_int _len.
+ /\ 0 < rATE8 <= 200 /\ 0 <= lEN /\  offset + lEN <= aSIZE
+ ==> res.`1 = stavx2_from_st25 (ABSORB1600 (W8.of_int _tb) _r8 (sub _buf _off _len))
+  /\ res.`2 = _off + _len.
 proof.
 admit.
 qed.
@@ -1433,9 +1429,9 @@ qed.
 phoare absorb_array_avx2_ph _st _buf _off _len _r8 _tb:
  [ M(P).__absorb_array_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
- /\ 0 < rATE8 <= 200 /\ 0 <= lEN /\ to_uint offset + lEN <= aSIZE
- ==> res.`1 = stavx2_from_st25 (ABSORB1600 (W8.of_int _tb) _r8 (sub _buf (to_uint _off) _len))
-  /\ res.`2 = _off + W64.of_int _len
+ /\ 0 < rATE8 <= 200 /\ 0 <= lEN /\  0<= offset /\ offset + lEN <= aSIZE
+ ==> res.`1 = stavx2_from_st25 (ABSORB1600 (W8.of_int _tb) _r8 (sub _buf _off _len))
+  /\ res.`2 = _off + _len
  ] = 1%r.
 proof.
 by conseq absorb_array_avx2_ll (absorb_array_avx2_h _st _buf _off _len _r8 _tb).
@@ -1460,7 +1456,7 @@ op addstate_at (st: W64.t Array25.t) (at:int) (l: W8.t list) =
 phoare pstate_array_avx2_ll: 
  [ M(P).__pstate_array_avx2
  : 0 <= aT <= aT + lEN <= 200 - b2i (tRAILB<>0)
- /\ to_uint offset + lEN <= aSIZE
+ /\ offset + lEN <= aSIZE
  ==> true
  ] = 1%r.
 proof.
@@ -1491,22 +1487,22 @@ hoare pstate_array_avx2_h _pst _at _buf _off _len _tb:
  M(P).__pstate_array_avx2
  : pst=_pst /\ aT=_at /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
  /\ 0 <= _at <= _at + _len <= 200 - b2i (_tb<>0)
- /\ to_uint _off + _len <= aSIZE
- ==> let l = sub _buf (to_uint _off) _len ++ if _tb <> 0 then [W8.of_int _tb] else []
+ /\ _off + _len <= aSIZE
+ ==> let l = sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []
      in res.`1 = fillpst_at _pst _at l
      /\ res.`2 = _at + size l
-     /\ res.`3 = _off + (W64.of_int _len).
+     /\ res.`3 = _off + _len.
 admitted.
 
 phoare pstate_array_avx2_ph _pst _at _buf _off _len _tb:
  [ M(P).__pstate_array_avx2
  : pst=_pst /\ aT=_at /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
  /\ 0 <= _at <= _at + _len <= 200 - b2i (_tb<>0)
- /\ to_uint _off + _len <= aSIZE
- ==> let l = sub _buf (to_uint _off) _len ++ if _tb <> 0 then [W8.of_int _tb] else []
+ /\ _off + _len <= aSIZE
+ ==> let l = sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []
      in res.`1 = fillpst_at _pst _at l
      /\ res.`2 = _at + size l
-     /\ res.`3 = _off + (W64.of_int _len)
+     /\ res.`3 = _off + _len
  ] = 1%r.
 proof.
 by conseq pstate_array_avx2_ll (pstate_array_avx2_h _pst _at _buf _off _len _tb).
@@ -1519,7 +1515,7 @@ phoare pabsorb_array_avx2_ll:
  [ M(P).__pabsorb_array_avx2
  : 0 <= aT < 200
  /\ 0 < rATE8 <= 200
- /\ to_uint offset + lEN <= aSIZE
+ /\ offset + lEN <= aSIZE
  ==> true
  ] = 1%r.
 proof.
@@ -1530,12 +1526,12 @@ hoare pabsorb_array_avx2_h _l _buf _off _len _r8 _tb:
  : aT = size _l %% _r8 /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
  /\ pabsorb_spec_avx2 _r8 _l pst st
  /\ 0 <= _len
- /\ to_uint _off + _len <= aSIZE
+ /\ _off + _len <= aSIZE
  ==> if _tb <> 0
-     then absorb_spec_avx2 _r8 _tb (_l ++ sub _buf (to_uint _off) _len) res.`3
-     else pabsorb_spec_avx2 _r8 (_l ++ sub _buf (to_uint _off) _len) res.`1 res.`3
+     then absorb_spec_avx2 _r8 _tb (_l ++ sub _buf _off _len) res.`3
+     else pabsorb_spec_avx2 _r8 (_l ++ sub _buf _off _len) res.`1 res.`3
           /\ res.`2 = (size _l + _len) %% _r8
-          /\ res.`4 = _off + W64.of_int _len.
+          /\ res.`4 = _off + _len.
 admitted.
 
 phoare pabsorb_array_avx2_ph _l _buf _off _len _r8 _tb:
@@ -1543,12 +1539,12 @@ phoare pabsorb_array_avx2_ph _l _buf _off _len _r8 _tb:
  : aT = size _l %% _r8 /\ buf=_buf /\ offset=_off /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
  /\ pabsorb_spec_avx2 _r8 _l pst st
  /\ 0 <= _len
- /\ to_uint _off + _len <= aSIZE
+ /\ _off + _len <= aSIZE
  ==> if _tb <> 0
-     then absorb_spec_avx2 _r8 _tb (_l ++ sub _buf (to_uint _off) _len) res.`3
-     else pabsorb_spec_avx2 _r8 (_l ++ sub _buf (to_uint _off) _len) res.`1 res.`3
+     then absorb_spec_avx2 _r8 _tb (_l ++ sub _buf _off _len) res.`3
+     else pabsorb_spec_avx2 _r8 (_l ++ sub _buf _off _len) res.`1 res.`3
           /\ res.`2 = (size _l + _len) %% _r8
-          /\ res.`4 = _off + W64.of_int _len
+          /\ res.`4 = _off + _len
  ] = 1%r.
 proof.
 by conseq pabsorb_array_avx2_ll (pabsorb_array_avx2_h _l _buf _off _len _r8 _tb) => /> /#.
@@ -1590,13 +1586,12 @@ proof.
 proc; sp; if=> //.
 seq 1: true => //.
  if => //.
- while (0 < iTERS) (iTERS-to_uint i).
+ while (0 < iTERS) (iTERS-i).
   move=> z.
   wp; call dumpstate_array_avx2_ll.
   call keccakf1600_avx2_ll.
-  auto => /> &m; rewrite ultE of_uintK => /= *.
-  by rewrite to_uintD_small /= /#.
- auto => /> &m i ?H; rewrite ultE of_uintK /#.
+  auto => /> &m /#. 
+ auto => /> &m i ?H /#. 
 if => //.
 call  dumpstate_array_avx2_ll.
 call keccakf1600_avx2_ll.
