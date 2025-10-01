@@ -863,7 +863,7 @@ lemma  aread_subu64_ll: islossless M(P).__aread_subu64
 hoare aread_subu64_h _buf _off _dlt _len _trail:
  M(P).__aread_subu64
  : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
-    0 <= _off + _dlt /\ _off + _dlt + 8 <= aSIZE /\ _trail %/ 256 = 0 
+    0 <= _off + _dlt /\ _off + _dlt + 8 <= aSIZE /\ 0 <= _trail < 256
  ==> res.`1 = _dlt + min (max 0 _len) 8
   /\ res.`2 = _len - min (max 0 _len) 8
   /\ res.`3 = (if _len < 8 then 0 else _trail)
@@ -872,7 +872,7 @@ pose ll := min (max 0 _len) 8.
 proc => /=.
 case (lEN <= 0).
 + rcondt ^if; 1: by auto.
-  auto => /> [#]????;do split; 1..3:smt().
+  auto => /> [#]?????;do split; 1..3:smt().
   rewrite W8u8.of_uint_pack8.
   congr; apply W8u8.Pack.ext_eq => i ib.
   rewrite !get_of_list // (nth_map witness) /=; 1:smt(size_iota).
@@ -885,7 +885,7 @@ case (lEN <= 0).
 rcondf ^if; 1: by auto.
 case (8 <= lEN).
 + rcondt ^if;1: by auto.
-   auto => /> [#] ?????; do split;1..3:smt().
+   auto => /> [#] ??????; do split;1..3:smt().
   rewrite /get64_direct;congr; apply W8u8.Pack.ext_eq => i ib.
   rewrite initiE 1:/# /=  get_of_list //. 
   rewrite nth_cat size_sub 1:/# /= ifT 1:/# /=.
@@ -895,7 +895,7 @@ rcondf ^if; 1: by auto.
 
 (* We have ll = lEN *)
 
-auto => /> ?????.
+auto => /> ??????.
 
 have H : _len \in iota_ 0 8 by smt(mem_iota).
 rewrite -iotaredE /= in H.
@@ -1021,7 +1021,8 @@ split => *.
     rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 32 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /= (:0 <= (i - 32) %% 8 < 8) 1:/# /=.
     rewrite nth_sub 1:/#.
     have -> : (i - 32) %% 8 = i %% 8 by smt().
-    have ? : 256 * (_trail %% 256) %/ 2 ^ (i - 32) %% 2 = 0; last by smt().
+    have ->/= : 256 * (_trail %% 256) %/ 2 ^ (i - 32) %% 2 = 0;
+       last by smt().
     have /={1}-> : 2 ^ 8 = 2^(8 - (i-32) + (i-32)) by congr;smt().
     rewrite exprD_nneg 1,2:/# mulrC mulrA mulzK;1:smt(expr_gt0).
     have ->: 2 ^ (8 - (i - 32)) = 2 ^ ((8 - (i - 32) - 1) + 1); 1: by congr;auto.
@@ -1221,7 +1222,7 @@ qed.
 phoare aread_subu64_ph _buf _off _dlt _len _trail:
  [ M(P).__aread_subu64
  : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
-    0 <= _off + _dlt /\ _off + _dlt + 8 <= aSIZE /\ _trail %/ 256 = 0 
+    0 <= _off + _dlt /\ _off + _dlt + 8 <= aSIZE /\ 0 <= _trail<256 
  ==> res.`1 = _dlt + min (max 0 _len) 8
   /\ res.`2 = _len - min (max 0 _len) 8
   /\ res.`3 = (if _len < 8 then 0 else _trail)
@@ -1236,17 +1237,68 @@ lemma  aread_subu128_ll: islossless M(P).__aread_subu128
 
 hoare aread_subu128_h _buf _off _dlt _len _trail:
  M(P).__aread_subu128
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
+    0 <= _off + _dlt /\ _off + _dlt + 16 <= aSIZE /\ 0 <= _trail < 256 
  ==> res.`1 = _dlt + min (max 0 _len) 16
   /\ res.`2 = _len - min (max 0 _len) 16
   /\ res.`3 = (if _len < 16 then 0 else _trail)
   /\ res.`4 = W16u8.pack16 (sub _buf (_off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail]).
-  
-admitted.
+  proc.
+  case (lEN <= 0 /\ tRAIL %% 256 = 0).
+  + rcondt 1; 1: by auto.
+    auto => /> *;do split;1..3: smt().
+    rewrite pack16E wordP => i ib.
+    rewrite initiE  1:/# /= get_of_list 1:/# nth_cat size_sub 1:/# ifF 1:/# /=.
+    case (i %/ 8 - min (max 0 _len) 16 = 0) => ?.
+    + rewrite of_intwE /= /int_bit /= (: _trail %% 256 = 0) /= /#.
+    by rewrite zerowE.
 
-phoare aread_subu128_ph _buf _off _dlt _len _trail:
+  rcondf  1; 1: by auto.
+
+  case (16 <= lEN).
+  + rcondt 1; 1: by auto.
+    auto => /> *;do split; 1..3 :smt().
+    rewrite get128E /of_list;congr; apply W16u8.Pack.ext_eq => i ob.
+    rewrite !initiE 1,2:/# /= nth_cat nth_sub 1:/# size_sub 1:/# /= ifT 1:/#.
+    by rewrite /init8 initiE 1:/#.
+
+  rcondf 1;1: by auto.
+  case (8<=lEN); last first.
+  + rcondf 1; 1: by auto.
+    wp; call (aread_subu64_h _buf _off _dlt _len _trail).
+    auto => /> *; do split;1:smt().
+    move => ? [r1 r2 r3 r4] />;do split; 1..3:smt().
+    rewrite wordP => i ib; rewrite pack16E  zeroextu128_bit initiE 1:/# /= get_of_list 1:/#.
+    case (0 <= i < 64) => ? /=.
+    + rewrite pack8E initiE 1:/# /= get_of_list 1:/# !nth_cat !size_sub /#.
+    rewrite nth_default; 1: by rewrite size_cat size_sub /#.
+    by rewrite zerowE.
+
+  rcondt 1;1: by auto.
+  wp; call (aread_subu64_h _buf _off (_dlt+8) (_len-8) _trail).
+  auto => /> *; do split;1,2: smt().
+  move => ?? [r1 r2 r3 r4] />;do split; 1..3:smt().
+  rewrite /VPINSR_2u64 /VMOV_64.
+  rewrite pack2E pack16E wordP => i ib; rewrite W128.initiE 1:/# initiE 1:/# /=.
+  rewrite initiE 1:/# get_of_list 1:/# /= pack2E.
+  case (0 <= i < 64) => ? /=; last first.
+  + rewrite ifT 1:/# /= pack8E initiE 1:/# /= get_of_list 1: /# /=.
+    case (min (max 0 (_len - 8)) 8 + 1 <= i %% 64 %/ 8) => ?.
+    + by rewrite !nth_default;1,2: by rewrite size_cat size_sub /= /#.
+    rewrite !nth_cat !size_sub 1,2:/#;congr;last by smt().
+    congr;1,3:smt().
+    case (i %% 64 %/ 8 < _len - 8) => ?.
+    + rewrite !nth_sub /#.
+    by rewrite !nth_default;1,2: by rewrite size_sub /#.
+  rewrite ifF 1:/# bits64E initiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /= ifT 1:/# get64E.
+  rewrite pack8E /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite nth_cat size_sub 1:/# ifT 1:/# nth_sub /#.
+qed.
+
+ phoare aread_subu128_ph _buf _off _dlt _len _trail:
  [ M(P).__aread_subu128
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
+   0 <= _off + _dlt /\ _off + _dlt + 16 <= aSIZE /\ 0 <= _trail < 256 
  ==> res.`1 = _dlt + min (max 0 _len) 16
   /\ res.`2 = _len - min (max 0 _len) 16
   /\ res.`3 = (if _len < 16 then 0 else _trail)
