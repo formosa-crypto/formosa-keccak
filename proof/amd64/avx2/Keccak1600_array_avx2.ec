@@ -1313,16 +1313,71 @@ lemma  aread_subu256_ll: islossless M(P).__aread_subu256
 
 hoare aread_subu256_h _buf _off _dlt _len _trail:
  M(P).__aread_subu256
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
+   0 <= _off + _dlt /\ _off + _dlt + 32 <= aSIZE /\ 0 <= _trail < 256 
  ==> res.`1 = _dlt + min (max 0 _len) 32
   /\ res.`2 = _len - min (max 0 _len) 32
   /\ res.`3 = (if _len < 32 then 0 else _trail)
   /\ res.`4 = W32u8.pack32 (sub _buf (_off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail]).
-admitted.
+proof.
+proc. 
+  case (lEN <= 0 /\ tRAIL %% 256 = 0).
+  + rcondt 1; 1: by auto.
+    auto => /> *;do split;1..3: smt().
+    rewrite pack32E wordP => i ib.
+    rewrite initiE  1:/# /= get_of_list 1:/# nth_cat size_sub 1:/# ifF 1:/# /=.
+    case (i %/ 8 - min (max 0 _len) 32 = 0) => ?.
+    + rewrite of_intwE /= /int_bit /= (: _trail %% 256 = 0) /= /#.
+    by rewrite zerowE.
+
+  rcondf  1; 1: by auto.
+
+  case (32 <= lEN).
+  + rcondt 1; 1: by auto.
+    auto => /> *;do split; 1..3 :smt().
+    rewrite get256E /of_list;congr; apply W32u8.Pack.ext_eq => i ob.
+    rewrite !initiE 1,2:/# /= nth_cat nth_sub 1:/# size_sub 1:/# /= ifT 1:/#.
+    by rewrite /init8 initiE 1:/#.
+
+  rcondf 1;1: by auto.
+  case (16<=lEN); last first.
+  + rcondf 1; 1: by auto.
+    wp; call (aread_subu128_h _buf _off _dlt _len _trail).
+    auto => /> *; do split;1:smt().
+    move => ? [r1 r2 r3 r4] />;do split; 1..3:smt().
+    rewrite wordP => i ib.
+    pose x:= W128.to_uint _; rewrite modz_small; 1:by smt(pow2_128 W128.to_uint_cmp).
+    rewrite -/(W2u128.zeroextu256 (pack16 _)) zeroextu256_bit pack32E initiE 1:/# /= get_of_list 1:/#.
+    case (0 <= i < 128) => ? /=.
+    + rewrite pack16E initiE 1:/# /= get_of_list 1:/# !nth_cat !size_sub /#.
+    rewrite nth_default; 1: by rewrite size_cat size_sub /#.
+    by rewrite zerowE.
+
+  rcondt 1;1: by auto.
+  wp; call (aread_subu128_h _buf _off (_dlt+16) (_len-16) _trail).
+  auto => /> *; do split;1,2: smt().
+  move => ?? [r1 r2 r3 r4] />;do split; 1..3:smt().
+  rewrite of_uint_pack2 -iotaredE /=. search ((_ + _ * _) %% _).
+  rewrite (Ring.IntID.mulrC 340282366920938463463374607431768211456 _) modzMDr modz_mod.
+  rewrite divzMDr // divz_small 1:/# !modz_small /=;1,2:by smt(W128.to_uint_cmp pow2_128).
+  rewrite pack2E pack32E wordP => i ib.
+  rewrite initiE 1:/# initiE 1:/# /= get_of_list 1:/# /= get_of_list 1:/# /=.
+  case (0 <= i < 128) => ? /=.
+  + rewrite ifT 1:/# /= get128E pack16E initiE 1:/# /= initiE 1:/# /= /init8 initiE 1:/#.
+    rewrite nth_cat size_sub 1:/# ifT 1:/# nth_sub /#.
+  rewrite ifF 1:/# ifT 1:/# pack16E initiE 1:/# /= get_of_list 1:/# /=.
+  rewrite nth_cat size_sub 1:/#.
+  case (i %% 128 %/ 8 < min (max 0 (_len - 16)) 16) => ?.
+  + by rewrite nth_sub 1:/#  nth_cat size_sub 1:/# ifT 1:/# nth_sub /#.
+  case (i %% 128 %/ 8 - min (max 0 (_len - 16)) 16 = 0) => ?; last first.
+  + by rewrite  nth_default;1: by rewrite size_cat size_sub /#.
+  rewrite nth_cat size_sub 1:/# ifF 1:/# /#. 
+qed.
 
 phoare aread_subu256_ph _buf _off _dlt _len _trail:
  [ M(P).__aread_subu256
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
+   0 <= _off + _dlt /\ _off + _dlt + 32 <= aSIZE /\ 0 <= _trail < 256 
  ==> res.`1 = _dlt + min (max 0 _len) 32
   /\ res.`2 = _len - min (max 0 _len) 32
   /\ res.`3 = (if _len < 32 then 0 else _trail)
