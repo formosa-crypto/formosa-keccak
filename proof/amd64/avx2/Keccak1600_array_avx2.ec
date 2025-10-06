@@ -345,7 +345,7 @@ module M(P: MParam) = {
                               offset:int, lEN:int, tRAILB:int) : W256.t Array7.t *
                                                                    int = {
     var dELTA:int;
-    var t64:W64.t;
+    var t64_1, t64_2, t64_3, t64_4, t64_5:W64.t;
     var t128_0:W128.t;
     var r0:W256.t;
     var r1:W256.t;
@@ -356,33 +356,33 @@ module M(P: MParam) = {
     var r2:W256.t;
     var r6:W256.t;
     dELTA <- 0;
-    (dELTA, lEN, tRAILB, t64) <@ __aread_subu64 (buf, offset, dELTA, 
+    (dELTA, lEN, tRAILB, t64_1) <@ __aread_subu64 (buf, offset, dELTA, 
     lEN, tRAILB);
-    t128_0 <- (zeroextu128 t64);
+    t128_0 <- (zeroextu128 t64_1);
     r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
     st.[0] <- (st.[0] `^` r0);
     (dELTA, lEN, tRAILB, r1) <@ __aread_subu256 (buf, offset, dELTA, 
     lEN, tRAILB);
     st.[1] <- (st.[1] `^` r1);
     if ((0 < lEN)) {
-      (dELTA, lEN, tRAILB, t64) <@ __aread_subu64 (buf, offset, dELTA, 
+      (dELTA, lEN, tRAILB, t64_2) <@ __aread_subu64 (buf, offset, dELTA, 
       lEN, tRAILB);
-      t128_1 <- (zeroextu128 t64);
+      t128_1 <- (zeroextu128 t64_2);
       (dELTA, lEN, tRAILB, r3) <@ __aread_subu256 (buf, offset, dELTA, 
       lEN, tRAILB);
-      (dELTA, lEN, tRAILB, t64) <@ __aread_subu64 (buf, offset, dELTA, 
+      (dELTA, lEN, tRAILB, t64_3) <@ __aread_subu64 (buf, offset, dELTA, 
       lEN, tRAILB);
-      t128_0 <- (zeroextu128 t64);
+      t128_0 <- (zeroextu128 t64_3);
       (dELTA, lEN, tRAILB, r4) <@ __aread_subu256 (buf, offset, dELTA, 
       lEN, tRAILB);
-      (dELTA, lEN, tRAILB, t64) <@ __aread_subu64 (buf, offset, dELTA, 
+      (dELTA, lEN, tRAILB, t64_4) <@ __aread_subu64 (buf, offset, dELTA, 
       lEN, tRAILB);
-      t128_1 <- (VPINSR_2u64 t128_1 t64 (W8.of_int 1));
+      t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
       (dELTA, lEN, tRAILB, r5) <@ __aread_subu256 (buf, offset, dELTA, 
       lEN, tRAILB);
-      (dELTA, lEN, tRAILB, t64) <@ __aread_subu64 (buf, offset, dELTA, 
+      (dELTA, lEN, tRAILB, t64_5) <@ __aread_subu64 (buf, offset, dELTA, 
       lEN, tRAILB);
-      t128_0 <- (VPINSR_2u64 t128_0 t64 (W8.of_int 1));
+      t128_0 <- (VPINSR_2u64 t128_0 t64_5 (W8.of_int 1));
       r2 <-
       (W256.of_int
       (((W128.to_uint t128_0) %% (2 ^ 128)) +
@@ -1569,6 +1569,8 @@ hoare awrite_subu128_h _buf _off _dlt _len _w:
   /\ res.`2 = _dlt + min (max 0 _len) 16
   /\ res.`3 = _len - min (max 0 _len) 16.
 proof.
+proc => /=.
+
 admitted.
 
 phoare awrite_subu128_ph _buf _off _dlt _len _w:
@@ -1633,9 +1635,13 @@ case (32+8 < _len).
 + rcondt 8.
   + wp; call (aread_subu256_h _buf _off (min (max 0 _len) 8) (_len - (min (max 0 _len) 8)) (if _len < 8 then 0 else _tb)).
     by wp;call (aread_subu64_h _buf _off 0 _len _tb);auto => /> /#.
-  admit.
-  
-+ rcondf 8.
+   swap 21 -3.
+   swap 15 4.
+   swap 12 5.
+   swap 9 7.
+   swap [3..5] 1.
+
+   + rcondf 8.
   + wp; call (aread_subu256_h _buf _off (min (max 0 _len) 8) (_len - (min (max 0 _len) 8)) (if _len < 8 then 0 else _tb)).
     wp;call (aread_subu64_h _buf _off 0 _len _tb);auto => /> /#. 
   admit.
