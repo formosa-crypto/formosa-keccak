@@ -6,33 +6,35 @@ require "keccak1600_bmi1.jinc"
 
 /**
  Last u64 word of keccak1600_updstate is filled with:
-  - byte[0] - at_position (0 <= at <= 200)
-  - byte[1] - (256-c8), where c8 is capacity in bytes ( 0 < c8 <= 128 )
+  - byte[0] - at_position (pre: 0 <= at <= 200)
+  - byte[1] - r64-1, where r64 = 8*r8 (rate in bytes) -- (pre: 0 < r64 <= 25)
   - byte[2] - Trail Byte
 */
 
+type keccak1600_state = u64[25];
 type keccak1600_incstate = u64[26];
 
-fn _init_incstate_ref
+inline fn __init_incstate_ref
 ( reg mut ptr keccak1600_incstate st
-, reg u8 r64 // 9 <= r64 < 25 
+, reg ui8 r64 // 9 <= r64 < 25 
 , reg u8 trailb // 0 <= trailb < 256
 ) -> reg ptr keccak1600_incstate /* st */
 {
   reg ui64 i;
-  reg u64 c, t;
-  r64 <<= 3;
-  r64 -= 200;
-  c = (64u) r64;
-  t = (64u) trailb;
-  t <<= 8;
-  t += c;
-  t <<= 8;
+  reg u64 t, status;
+
+  status = (64u) trailb;
+  status <<= 8;
+  r64 = (8ui) ((8u)r64 - 1);
+  t = (64u) (8u) r64;
+  status += t;
+  status <<= 8;
   i = 0;
   while (i < 25) { st[i] = 0; i += 1; }
-  st[25] = t;
+  st[25] = status;
   return st;
 }
+
 
 /**
  When we read the update-data from the state (r8 and at-position), we guarantee
@@ -41,33 +43,38 @@ fn _init_incstate_ref
   - at-position (at):  0 <= at < r8
  This would allow to establish safety independently of the given state.
 */
-inline fn __r8_at
+inline fn __ststatus_data
 ( reg u64 ststatus
-) -> reg ui8 /* r8 ; 72 <= r8 <= 200  */
-   , reg ui8 /* at  ; 0 <= at < r8 */
+) -> reg u8    /* trailb */
+   , reg ui64  /* r8 ; 8 %| r8 /\ 0 < r8 <= 200  */
+   , reg ui64  /* at  ; 0 <= at < r8 */
 /* ensures:
-    r8 |% 8
-    0 < r8 < 200
+    8 |% r8
+    0 < r8 <= 200
     0 <= at < r8  */
 {
- reg u64 r8, at, t;
- reg ui8 r8_ui8 at_ui8;
+ reg u64 r8, at, c_0, c_200;
+ reg ui64 r8_ui, at_ui;
+ reg u8 trailb;
+
  at = ststatus;
- r8 = at;
- r8 >>= 8;
- r8 |= 128; // ensures c8 is negative
- at &= 255; // 0 <= at < 256
- r8 += 200;
- r8 &= 0b11111000; // ensures r8 %| 8 & r8 < 200
+ at &= 0xFF;
+ ststatus >>= 8;
+ r8 = ststatus;
+ r8 &= 255; // 0 <= r8 <= 255
+ r8 += 1;   // 0 < r8 <= 256
+ r8 <<= 3;  // 8 %| r8  /\  0 < r8 <= 2048
+ c_200 = 200;
+ r8 = c_200 if r8 > 200;  // 8 %| r8  /\  0 < r8 <= 200
+ c_0 = 0;
+ at = c_0 if r8 <= at;  // 0 <= at < r8
+ ststatus >>= 8;
+ trailb = (8u) ststatus;
 
- t = 0;
- r8 = t if r8 <= at; // if ( r8 <= at ) { at=0; }
-
- r8_ui8 = (8ui) (8u) r8;
- at_ui8 = (8ui) (8u) at;
- return r8_ui8, at_ui8;
+ r8_ui = (64ui)r8;
+ at_ui = (64ui)at;
+ return trailb, r8_ui, at_ui;
 }
-
 inline fn __trailbyte
 ( reg u64 ststatus
 ) -> reg u8
@@ -84,7 +91,7 @@ param int LEN = 1000;
 inline fn aread_subu64
 ( reg const ptr u8[LEN] a
 , reg ui64 off 
-, reg ui8 len // off + len <= LEN
+, reg ui64 len // off + len <= LEN
 ) -> reg ui64 /* off */
    , reg u64  /* data */
 {
@@ -96,7 +103,7 @@ inline fn aread_subu64
     w = a.[:u64 off];
     off += 8;
   } else {
-    _, _, _, _, zf = #TEST_8((8u)len, 4);
+    _, _, _, _, zf = #TEST((64u)len, 4);
     if (!zf) {
       w = (64u) a.[:u32 off];
       off += 4;
@@ -105,7 +112,7 @@ inline fn aread_subu64
       w = 0;
       sh = 0;
     }
-    _, _, _, _, zf = #TEST_8((8u)len, 2);
+    _, _, _, _, zf = #TEST((64u)len, 2);
     if (!zf) {
       x = (64u) a.[:u16 off];
       x <<= (sh & 63);
@@ -113,7 +120,7 @@ inline fn aread_subu64
       off += 2;
       sh += 16;
     }
-    _, _, _, _, zf = #TEST_8((8u)len, 1);
+    _, _, _, _, zf = #TEST((64u)len, 1);
     if (!zf) {
       x = (64u) a.[:u8 off];
       x <<= (sh & 63);
@@ -128,7 +135,7 @@ inline fn awrite_subu64
 ( reg mut ptr u8[LEN] buf
 , reg ui64 off
 , reg u64 data
-, reg ui8 len // off + len <= LEN
+, reg ui64 len // off + len <= LEN
 ) -> reg ui64        /* off */
    , reg ptr u8[LEN] /* buf */
 {
@@ -138,19 +145,19 @@ inline fn awrite_subu64
     buf.[:u64 off] = data;
     off += 8;
   } else {
-    _, _, _, _, zf = #TEST_8((8u)len, 4);
+    _, _, _, _, zf = #TEST((64u)len, 4);
     if (!zf) {
       buf.[:u32 off] = (32u) data;
       off += 4;
       data >>= 32;
     }
-    _, _, _, _, zf = #TEST_8((8u)len, 2);
+    _, _, _, _, zf = #TEST((64u)len, 2);
     if (!zf) {
       buf.[:u16 off] = (16u) data;
       off += 2;
       data >>= 16;
     }
-    _, _, _, _, zf = #TEST_8((8u)len, 1);
+    _, _, _, _, zf = #TEST((64u)len, 1);
     if (!zf) {
       buf.[:u8 off] = (8u) data;
       off += 1;
@@ -160,42 +167,40 @@ inline fn awrite_subu64
 }
 
 inline fn _add_incarray
-( reg mut ptr keccak1600_incstate st
-, reg ui8 at
-, reg const ptr u8[LEN] buf // at+LEN <= r8
+( reg mut ptr keccak1600_state st
+, reg ui64 at               // 0 <= at < 200
+, reg const ptr u8[LEN] buf // at+LEN <= 200 (in fact, r8...)
 , reg ui64 off    // off + upto - at <= LEN
-, reg ui8 upto    // at <= upto <= r8
-) -> reg ui8  /* at */
-   , reg ui64 /* off */
-   , reg ptr keccak1600_incstate /* st */
+, reg ui64 upto    // at <= upto <= 200 (in fact, r8...)
+) -> reg ui64                 /* at */
+   , reg ui64                 /* off */
+   , reg ptr keccak1600_state /* st */
 {
-  reg ui8 at8, newat, len, upto8;
-  reg u64 t64, at_64;
-  reg ui64 off2;
+  reg u8 sh;
+  reg u64 t64, at8 upto8;
+  reg ui64 off2, newat, len;
 
-  at8 = (8ui) at;
-  at8 = (8ui) ((8u) at8 & 0x07); // byte position in stword
+  at8 = (64u) at;
+  at8 &= 0x07; // byte position in stword
 
   if (at8 != 0) { // needs to fill first word...
     len = upto;
-    len -= (8ui) (8u) at; // len = upto-at (bytes to process)
+    len -= at; // len = upto-at (bytes to process)
     at >>= 3; at <<= 3; // at = 8*(at/8) (start of stword)
     off2, t64 = aread_subu64(buf, off, len);
-    len = len + at8; // bytes from the start of word
+    len = len + (64ui)at; // bytes from the start of word
     if (len >= 8) { // need to proccess more stwords...
       off += 8;
-      at_64 = (64u) (8u) at8;
-      off -= (64ui) at_64; // off += (8-at8)
+      off -= (64ui) at8; // off += (8-at8)
       at += 8;    // start of next stword
     } else { // this is the only affected stword
       off = off2; // 
       at = upto;  // its done!
     }
-    at8 <<= 3;   // bits to shift...
-    at8 = at8;
-    t64 <<= ((8u) at8 & 63);
-    at_64 = (64u) (8u) at;
-    st.[at_64] ^= t64;
+    sh = (8u) at8;
+    sh <<= 3;   // bits to shift...
+    t64 <<= (sh & 63);
+    st.[at] ^= t64;
   }
 
   // now: at%8==0 || at==upto
@@ -205,19 +210,17 @@ inline fn _add_incarray
   ( newat <= upto )
     {
       t64 = buf.[:u64 off];
-      at_64 = (64u) (8u) at;
-      st.[at_64] ^= t64;
+      st.[at] ^= t64;
       at = newat;
       off += 8;
     }
 
   // leftovers...
   if (at < upto) {
-    upto8 = upto;
-    upto8 = (8ui) ((8u) upto8 & 0x07);
-    off, t64 = aread_subu64(buf, off, upto8);
-    at_64 = (64u) (8u) at;
-    st.[at_64] ^= t64;
+    upto8 = (64u) upto;
+    upto8 &= 0x07;
+    off, t64 = aread_subu64(buf, off, (64ui) upto8);
+    st.[at] ^= t64;
   }
   
   at = upto;
@@ -230,26 +233,30 @@ inline fn __update_incarray_ref
 ) -> reg ptr keccak1600_incstate /* st */
 {
   reg u64 ststatus;
-  reg ui8 r8 at upto;
-  reg ui64 off;
+  reg ui64 off, r8, at, upto;
+  reg ptr keccak1600_state stk;
 
   ststatus = st[25];
-  r8, at = __r8_at(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  _, r8, at = __ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  stk = st[0:25];
+  () = #spill(st, buf);
 
   off = 0;
   upto = LEN;
   upto += at;
   while (r8 <= upto) {
-    at, off, st = _add_incarray(st, at, buf, off, r8);
-    () = #spill(r8, at, upto, off, buf);
-    st[0:25] = _keccakf1600_ref_(st[0:25]);
+    at, off, stk = _add_incarray(stk, at, buf, off, r8);
+    () = #spill(r8, at, upto, off);
+    stk = _keccakf1600_ref_(stk);
     () = #unspill(r8, at, upto, off, buf);
     upto -= r8;
     at = 0;
   }
   upto = upto;
-  at, _, st = _add_incarray(st, at, buf, off, upto);
-  st.[:u8 8*25] = (8u) at;
+  () = #unspill(st);
+  at, _, stk = _add_incarray(stk, at, buf, off, upto);
+  st[0:25] = stk;
+  st.[:u8 8*25] = (8u) (64u) at;
 
   return st;
 }
@@ -259,16 +266,12 @@ inline fn __finish_incarray_ref
 ) -> reg ptr keccak1600_incstate /* st */
 {
   reg u64 ststatus;
-  reg ui64 at_64, r8_64;
-  reg ui8 r8, at;
+  reg ui64 at, r8;
   reg u8 trailb;
   ststatus = st[25];
-  r8, at = __r8_at(ststatus);
-  trailb = __trailbyte(ststatus);
-  at_64 = (64ui) (64u) (8u) at;
-  r8_64 = (64ui) (64u) (8u) r8;
-  st.[:u8 at_64] ^= trailb;
-  st.[:u8 r8_64-1] ^= 0x80;
+  trailb, r8, at = __ststatus_data(ststatus);
+  st.[:u8 at] ^= trailb;
+  st.[:u8 r8-1] ^= 0x80;
   st.[:u32 8*25] &= 0xFF00FF00; // clear trail-byte and at-position
   
   return st;
@@ -276,31 +279,31 @@ inline fn __finish_incarray_ref
 
 fn _dump_incarray
 ( reg mut ptr u8[LEN] buf
-, reg const ptr keccak1600_incstate st
-, reg ui8 at      // at+LEN <= r8
 , reg ui64 off    // off + upto - at <= LEN
-, reg ui8 upto    // at <= upto <= r8
-) -> reg ui8         /* at */
+, reg const ptr keccak1600_state st
+, reg ui64 at     // at+LEN <= r8
+, reg ui64 upto   // at <= upto <= r8
+) -> reg ui64        /* at */
    , reg ui64        /* off */
    , reg ptr u8[LEN] /* buf */
 {
-  reg ui8 at8, newat, len, upto8;
-  reg u64 t64, at_64;
+  reg ui64 newat, len;
+  reg u64 t64, at8, upto8;
+  reg u8 sh;
 
-  at8 = (8ui) at;
-  at8 = (8ui) ((8u) at8 & 0x07); // byte position in stword
+  at8 = (64u) at;
+  at8 &= 0x07; // byte position in stword
 
   if (at8 != 0) { // needs to dump remainder of first word...
     len = upto;
-    len -= (8ui) (8u) at; // len = upto-at (bytes to process)
+    len -= at; // len = upto-at (bytes to process)
     at >>= 3; at <<= 3; // at = 8*(at/8) (start of stword)
-    at8 <<= 3;   // bits to shift...
-    at_64 = (64u) (8u) at;
-    t64 = st.[at_64];
-    at8 = at8;
-//    t64 >>= (8u) at8;
+    t64 = st.[at];
+    sh = (8u) at8;
+    sh <<= 3;   // bits to shift...
+    t64 >>= (sh & 63);
     off, buf = awrite_subu64(buf, off, t64, len);
-    len = len + at8; // bytes from the start of word
+    len += (64ui) at8; // bytes from the start of word
     if (len >= 8) {  // need to proccess more stwords...
       at += 8;       // start of next stword
     } else {         // this is the only affected stword
@@ -314,8 +317,7 @@ fn _dump_incarray
     { newat += 8; }
   ( newat <= upto )
     {
-      at_64 = (64u) (8u) at;
-      t64 = st.[:u64 at_64];
+      t64 = st.[:u64 at];
       buf.[:u64 off] = t64;
       at = newat;
       off += 8;
@@ -323,11 +325,10 @@ fn _dump_incarray
 
   // leftovers...
   if (at < upto) {
-    upto8 = upto;
-    upto8 = (8ui) ((8u) upto8 & 0x07);
-    at_64 = (64u) (8u) at;
-    t64 = st.[at_64];
-    off, buf = awrite_subu64(buf, off, t64, upto8);
+    upto8 = (64u) upto;
+    upto8 &= 0x07;
+    t64 = st.[at];
+    off, buf = awrite_subu64(buf, off, t64, (64ui) upto8);
   }
 
   at = upto;
@@ -341,42 +342,41 @@ inline fn __squeeze_incarray_ref
    , reg ptr u8[LEN]             /* buf */
 {
   reg u64 ststatus;
-  reg ui64 off, len, r8_64;
-  reg ui8 r8, at;
-  reg ptr u64[25] stk;
+  reg ui64 off, len, r8, at;
+  reg ptr keccak1600_state stk;
 
   ststatus = st[25];
-  r8, at = __r8_at(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  _, r8, at = __ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  stk = st[0:25];
+  () = #spill(st);
 
   if ( at == 0 ) {
-    stk = st[0:25];
-    () = #spill(st, r8, at, buf);
+    () = #spill(buf);
     stk = _keccakf1600_ref_(stk);
-    () = #unspill(st, r8, at, buf);
-    st[0:25] = stk;
+    () = #unspill(buf);
+    at = 0; // obs: no need to spill/unspill(at)!
   }
 
   off = 0;
-  len = (64ui) (64u) (8u) at;
+  len = at;
   len += LEN;
 
-  r8_64 = (64ui) (64u) (8u) r8;
-  while (r8_64 < len) {
-    at, off, buf = _dump_incarray(buf, st, at, off, r8);
-    stk = st[0:25];    
-    () = #spill(st, r8, at, len, off, buf);
+  while (r8 < len) {
+    at, off, buf = _dump_incarray(buf, off, stk, at, r8);
+    () = #spill(r8, at, len, off, buf);
     stk = _keccakf1600_ref_(stk);
-    () = #unspill(st, r8, at, len, off, buf);
-    st[0:25] = stk;
-    len -= r8_64;
+    () = #unspill(r8, at, len, off, buf);
+    len -= r8;
     at = 0;
   }
 
   len = len;
-  at, _, buf = _dump_incarray(buf, st, at, off, len);
+  at, _, buf = _dump_incarray(buf, off, stk, at, len);
 
+  () = #unspill(st);
+  st[0:25] = stk;
   // if ( at == r8 ) at = 0; // avoidable because r8_at() returns 0<=at<r8
-  st.[:u8 8*25] = (8u) at;
+  st.[:u8 8*25] = (8u) (64u) at;
 
   return st, buf;
 }
@@ -389,12 +389,12 @@ export fn test_ststatus
 , reg const ptr keccak1600_incstate st
 ) -> reg ptr u8[3]
 {
-  reg ui8 r8 at;
+  reg ui64 r8 at;
   reg u64 ststatus;
   ststatus = st[25];
-  r8, at = __r8_at(ststatus);
-  status[0] = (8u) r8;
-  status[1] = (8u) at;
+  _, r8, at = __ststatus_data(ststatus);
+  status[0] = (8u) (64u) r8;
+  status[1] = (8u) (64u) at;
   status[2] = st.[:u8 8*25+2];
   return status;
 }
@@ -407,7 +407,7 @@ export fn test_init
 {
   r64 = r64;
   trailb = trailb;
-  st = _init_incstate_ref(st, r64, trailb);
+  st = __init_incstate_ref(st, (8ui) r64, trailb);
   st = st;
   return st;
 }
@@ -445,65 +445,3 @@ export fn test_squeeze_ref
   buf = buf;
   return buf, st;
 }
-
-
-
-/*
-param int ASIZE = 20 * LEN;
-
-export fn test_kF
-( reg mut ptr keccak1600_incstate st
-) -> reg ptr keccak1600_incstate /* st */
-{
-  st = _testF(st);
-  return st;
-}
-
-export fn test_loop
-( reg mut ptr u8[ASIZE] buf
-) -> reg ptr u8[ASIZE] /* buf */
-{
-  reg ui64 i;
-  stack keccak1600_updstate st;
-  reg ptr u8[LEN] tbuf;
-  st = __init_updarray_ref(st, 17); // R64=17 (r8=136, as in SHA3_256)
-  i = 0;
-  while (i < ASIZE) {
-    tbuf = buf[i:LEN];
-    () = #spill(i, buf);
-    st = _update_updarray_ref(st, tbuf);
-    () = #unspill(i, buf);
-    i += LEN;
-  }
-  
-  st = __finish_updarray_ref(st, 0x1F);
-  i = 0;
-  while (i < ASIZE) {
-    tbuf = buf[i:LEN];
-    () = #spill(i, buf);
-    st, tbuf = _squeeze_updarray_ref(tbuf, st);
-    () = #unspill(i, buf);
-    buf[i:LEN] = tbuf;
-    i += LEN;
-  }
-  return buf;
-}
-
-
-
-
-#[returnaddress="stack"]
-fn _testF
-( reg mut ptr keccak1600_updstate st
-) -> reg ptr keccak1600_updstate /* st */
-{
- reg ptr u64[25] state;
- state = st[0:25];
- () = #spill(st);
- state = _keccakf1600_ref_(state);
- () = #unspill(st);
- st[0:25] = state;
- return st;
-}
- 
-*/
