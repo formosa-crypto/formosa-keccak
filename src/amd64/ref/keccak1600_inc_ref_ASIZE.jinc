@@ -1,20 +1,21 @@
+/* */
+param int LEN = 11;
+/* */
+
 require "keccak1600_bmi1.jinc"
 
-
-
-// TODO: make r8/at u64 (they are used in indexes)
+type keccak1600_state = u64[25];
+type keccak1600_incstate = u64[26];
 
 /**
- Last u64 word of keccak1600_updstate is filled with:
+ Last u64 word of keccak1600_incstate is filled with:
   - byte[0] - at_position (pre: 0 <= at <= 200)
   - byte[1] - r64-1, where r64 = 8*r8 (rate in bytes) -- (pre: 0 < r64 <= 25)
   - byte[2] - Trail Byte
 */
 
-type keccak1600_state = u64[25];
-type keccak1600_incstate = u64[26];
 
-inline fn __init_incstate_ref
+fn _init_incstate_ref
 ( reg mut ptr keccak1600_incstate st
 , reg ui8 r64 // 9 <= r64 < 25 
 , reg u8 trailb // 0 <= trailb < 256
@@ -32,6 +33,7 @@ inline fn __init_incstate_ref
   i = 0;
   while (i < 25) { st[i] = 0; i += 1; }
   st[25] = status;
+
   return st;
 }
 
@@ -43,7 +45,7 @@ inline fn __init_incstate_ref
   - at-position (at):  0 <= at < r8
  This would allow to establish safety independently of the given state.
 */
-inline fn __ststatus_data
+fn _ststatus_data
 ( reg u64 ststatus
 ) -> reg u8    /* trailb */
    , reg ui64  /* r8 ; 8 %| r8 /\ 0 < r8 <= 200  */
@@ -75,18 +77,62 @@ inline fn __ststatus_data
  at_ui = (64ui)at;
  return trailb, r8_ui, at_ui;
 }
-inline fn __trailbyte
-( reg u64 ststatus
-) -> reg u8
-{
-  reg u8 tb;
 
-  ststatus >>= 2*8;
-  tb = (8u) ststatus;
-  return tb;
+fn _finish_incarray_ref
+( reg mut ptr keccak1600_incstate st
+) -> reg ptr keccak1600_incstate /* st */
+{
+  reg u64 ststatus;
+  reg ui64 at, r8;
+  reg u8 trailb;
+  ststatus = st[25];
+  trailb, r8, at = _ststatus_data(ststatus);
+  st.[:u8 at] ^= trailb;
+  st.[:u8 r8-1] ^= 0x80;
+  st.[:u32 8*25] &= 0xFF00FF00; // clear trail-byte and at-position
+  
+  return st;
 }
 
-param int LEN = 1000;
+
+export fn keccak_ststatus
+( reg mut ptr u8[3] status
+, reg const ptr keccak1600_incstate st
+) -> reg ptr u8[3]
+{
+  reg ui64 r8 at;
+  reg u64 ststatus;
+  ststatus = st[25];
+  _, r8, at = _ststatus_data(ststatus);
+  status[0] = (8u) (64u) r8;
+  status[1] = (8u) (64u) at;
+  status[2] = st.[:u8 8*25+2];
+  return status;
+}
+
+export fn keccak_init
+( reg mut ptr keccak1600_incstate st
+, reg ui8 r64
+, reg u8 trailb
+) -> reg ptr keccak1600_incstate
+{
+  st = st;
+  r64 = r64;
+  trailb = trailb;
+  st = _init_incstate_ref(st, r64, trailb);
+  return st;
+}
+
+export fn keccak_finish
+( reg mut ptr keccak1600_incstate st
+) -> reg ptr keccak1600_incstate /* st */
+{
+  st = st;
+  st = _finish_incarray_ref(st);
+  return st;
+}
+
+// PARAMETRIC ON "LEN"
 
 inline fn aread_subu64
 ( reg const ptr u8[LEN] a
@@ -166,7 +212,7 @@ inline fn awrite_subu64
   return off, buf;
 }
 
-inline fn _add_incarray
+fn _add_incarray
 ( reg mut ptr keccak1600_state st
 , reg ui64 at               // 0 <= at < 200
 , reg const ptr u8[LEN] buf // at+LEN <= 200 (in fact, r8...)
@@ -189,6 +235,10 @@ inline fn _add_incarray
     at >>= 3; at <<= 3; // at = 8*(at/8) (start of stword)
     off2, t64 = aread_subu64(buf, off, len);
     len = len + (64ui)at; // bytes from the start of word
+    sh = (8u) at8;
+    sh <<= 3;   // bits to shift...
+    t64 <<= (sh & 63);
+    st.[at] ^= t64;
     if (len >= 8) { // need to proccess more stwords...
       off += 8;
       off -= (64ui) at8; // off += (8-at8)
@@ -197,10 +247,6 @@ inline fn _add_incarray
       off = off2; // 
       at = upto;  // its done!
     }
-    sh = (8u) at8;
-    sh <<= 3;   // bits to shift...
-    t64 <<= (sh & 63);
-    st.[at] ^= t64;
   }
 
   // now: at%8==0 || at==upto
@@ -227,7 +273,7 @@ inline fn _add_incarray
   return at, off, st;
 }
 
-inline fn __update_incarray_ref
+fn _update_incarray_ref
 ( reg mut ptr keccak1600_incstate st
 , reg const ptr u8[LEN] buf
 ) -> reg ptr keccak1600_incstate /* st */
@@ -237,7 +283,7 @@ inline fn __update_incarray_ref
   reg ptr keccak1600_state stk;
 
   ststatus = st[25];
-  _, r8, at = __ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  _, r8, at = _ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
   stk = st[0:25];
   () = #spill(st, buf);
 
@@ -261,22 +307,6 @@ inline fn __update_incarray_ref
   return st;
 }
 
-inline fn __finish_incarray_ref
-( reg mut ptr keccak1600_incstate st
-) -> reg ptr keccak1600_incstate /* st */
-{
-  reg u64 ststatus;
-  reg ui64 at, r8;
-  reg u8 trailb;
-  ststatus = st[25];
-  trailb, r8, at = __ststatus_data(ststatus);
-  st.[:u8 at] ^= trailb;
-  st.[:u8 r8-1] ^= 0x80;
-  st.[:u32 8*25] &= 0xFF00FF00; // clear trail-byte and at-position
-  
-  return st;
-}
-
 fn _dump_incarray
 ( reg mut ptr u8[LEN] buf
 , reg ui64 off    // off + upto - at <= LEN
@@ -287,7 +317,7 @@ fn _dump_incarray
    , reg ui64        /* off */
    , reg ptr u8[LEN] /* buf */
 {
-  reg ui64 newat, len;
+  reg ui64 newat, off2, len;
   reg u64 t64, at8, upto8;
   reg u8 sh;
 
@@ -302,11 +332,14 @@ fn _dump_incarray
     sh = (8u) at8;
     sh <<= 3;   // bits to shift...
     t64 >>= (sh & 63);
-    off, buf = awrite_subu64(buf, off, t64, len);
+    off2, buf = awrite_subu64(buf, off, t64, len);
     len += (64ui) at8; // bytes from the start of word
     if (len >= 8) {  // need to proccess more stwords...
+      off += 8;
+      off -= (64ui) at8;
       at += 8;       // start of next stword
     } else {         // this is the only affected stword
+      off = off2;
       at = upto;     // its done!
     }
   }
@@ -335,7 +368,7 @@ fn _dump_incarray
   return at, off, buf;
 }
 
-inline fn __squeeze_incarray_ref
+fn _squeeze_incarray_ref
 ( reg mut ptr u8[LEN] buf
 , reg mut ptr keccak1600_incstate st
 ) -> reg ptr keccak1600_incstate /* st */
@@ -346,7 +379,7 @@ inline fn __squeeze_incarray_ref
   reg ptr keccak1600_state stk;
 
   ststatus = st[25];
-  _, r8, at = __ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  _, r8, at = _ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
   stk = st[0:25];
   () = #spill(st);
 
@@ -381,58 +414,18 @@ inline fn __squeeze_incarray_ref
   return st, buf;
 }
 
-
-
-
-export fn test_ststatus
-( reg mut ptr u8[3] status
-, reg const ptr keccak1600_incstate st
-) -> reg ptr u8[3]
-{
-  reg ui64 r8 at;
-  reg u64 ststatus;
-  ststatus = st[25];
-  _, r8, at = __ststatus_data(ststatus);
-  status[0] = (8u) (64u) r8;
-  status[1] = (8u) (64u) at;
-  status[2] = st.[:u8 8*25+2];
-  return status;
-}
-
-export fn test_init
-( reg mut ptr keccak1600_incstate st
-, reg u8 r64
-, reg u8 trailb
-) -> reg ptr keccak1600_incstate
-{
-  r64 = r64;
-  trailb = trailb;
-  st = __init_incstate_ref(st, (8ui) r64, trailb);
-  st = st;
-  return st;
-}
-
-export fn test_update_ref
+export fn keccak_update_ref
 ( reg mut ptr keccak1600_incstate st
 , reg const ptr u8[LEN] buf
 ) -> reg ptr keccak1600_incstate /* st */
 {
   st = st;
   buf = buf;
-  st = __update_incarray_ref(st, buf);
-  st = st;
+  st = _update_incarray_ref(st, buf);
   return st;
 }
 
-export fn test_finish
-( reg mut ptr keccak1600_incstate st
-) -> reg ptr keccak1600_incstate /* st */
-{
-  st = __finish_incarray_ref(st);
-  return st;
-}
-
-export fn test_squeeze_ref
+export fn keccak_squeeze_ref
 ( reg mut ptr u8[LEN] buf
 , reg mut ptr keccak1600_incstate st
 ) -> reg ptr u8[LEN] /* buf */
@@ -440,8 +433,6 @@ export fn test_squeeze_ref
 {
   st = st;
   buf = buf;
-  st, buf = __squeeze_incarray_ref(buf, st);
-  st = st;
-  buf = buf;
+  st, buf = _squeeze_incarray_ref(buf, st);
   return buf, st;
 }
