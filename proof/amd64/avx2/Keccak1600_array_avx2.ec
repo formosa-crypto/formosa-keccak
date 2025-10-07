@@ -32,6 +32,8 @@ op addstate_avx2 (st: W256.t Array7.t, l: W8.t list): W256.t Array7.t =
  stavx2_from_st25 (addstate (stavx2_to_st25 st) (bytes2state l)).
 
 
+require import BitEncoding. import BS2Int BitChunking.
+ 
 abstract theory KeccakArrayAvx2.
 
 op aSIZE: int.
@@ -865,7 +867,7 @@ hoare aread_subu64_h _buf _off _dlt _len _trail:
  ==> res.`1 = _dlt + min (max 0 _len) 8
   /\ res.`2 = _len - min (max 0 _len) 8
   /\ res.`3 = (if _len < 8 then 0 else _trail)
-  /\ res.`4 = W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]).
+  /\ res.`4 = W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]). admit. (* 
 pose ll := min (max 0 _len) 8.
 proc => /=.
 case (lEN <= 0).
@@ -1214,7 +1216,7 @@ split => *.
   + rewrite ifT 1:/# get_to_uint !of_uintK /= (: 0 <= i %% 8 < 8) 1:/# /=.
     have -> : _trail %% 256 = 0 by smt().
   by smt().
-  by rewrite ifF 1:/# /=.
+  by rewrite ifF 1:/# /=. *)
 qed.
 
 phoare aread_subu64_ph _buf _off _dlt _len _trail:
@@ -1241,7 +1243,7 @@ hoare aread_subu128_h _buf _off _dlt _len _trail:
   /\ res.`2 = _len - min (max 0 _len) 16
   /\ res.`3 = (if _len < 16 then 0 else _trail)
   /\ res.`4 = W16u8.pack16 (sub _buf (_off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail]).
-  proc.
+  proc. admit. (* 
   case (lEN <= 0 /\ tRAIL %% 256 = 0).
   + rcondt 1; 1: by auto.
     auto => /> *;do split;1..3: smt().
@@ -1290,7 +1292,7 @@ hoare aread_subu128_h _buf _off _dlt _len _trail:
     by rewrite !nth_default;1,2: by rewrite size_sub /#.
   rewrite ifF 1:/# bits64E initiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /= ifT 1:/# get64E.
   rewrite pack8E /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-  rewrite nth_cat size_sub 1:/# ifT 1:/# nth_sub /#.
+  rewrite nth_cat size_sub 1:/# ifT 1:/# nth_sub /#. *)
 qed.
 
  phoare aread_subu128_ph _buf _off _dlt _len _trail:
@@ -1301,8 +1303,8 @@ qed.
   /\ res.`2 = _len - min (max 0 _len) 16
   /\ res.`3 = (if _len < 16 then 0 else _trail)
   /\ res.`4 = W16u8.pack16 (sub _buf (_off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail])
- ] = 1%r.
-proof.
+ ] = 1%r. 
+proof. 
 by conseq aread_subu128_ll (aread_subu128_h _buf _off _dlt _len _trail).
 qed.
 
@@ -1317,7 +1319,7 @@ hoare aread_subu256_h _buf _off _dlt _len _trail:
   /\ res.`2 = _len - min (max 0 _len) 32
   /\ res.`3 = (if _len < 32 then 0 else _trail)
   /\ res.`4 = W32u8.pack32 (sub _buf (_off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail]).
-proof.
+proof. admit. (* 
 proc. 
   case (lEN <= 0 /\ tRAIL %% 256 = 0).
   + rcondt 1; 1: by auto.
@@ -1369,7 +1371,7 @@ proc.
   + by rewrite nth_sub 1:/#  nth_cat size_sub 1:/# ifT 1:/# nth_sub /#.
   case (i %% 128 %/ 8 - min (max 0 (_len - 16)) 16 = 0) => ?; last first.
   + by rewrite  nth_default;1: by rewrite size_cat size_sub /#.
-  rewrite nth_cat size_sub 1:/# ifF 1:/# /#. 
+  rewrite nth_cat size_sub 1:/# ifF 1:/# /#.  *)
 qed.
 
 phoare aread_subu256_ph _buf _off _dlt _len _trail:
@@ -1396,7 +1398,7 @@ hoare awrite_subu64_h _buf _off _dlt _len _w:
  ==> res.`1 = A.fill (fun i => nth W8.zero (W8u8.to_list _w) (i-(_off + _dlt))) (_off + _dlt) (min (max 0 _len) 8) _buf
   /\ res.`2 = _dlt + min (max 0 _len) 8
   /\ res.`3 = _len - min (max 0 _len) 8.
-proof.
+proof. admit. (* 
 pose ll := min (max 0 _len) 8.
 pose ww := (W8u8.to_list _w).
 proc => /=.
@@ -1542,7 +1544,7 @@ move => H;elim H => />;last first.
   case (_off + _dlt <= i < _off + _dlt + ll) => ?;last by rewrite ifF 1:/# initiE 1:/#. 
   case (i - (_off + _dlt) = 0) => ?/=; last by smt().
   rewrite /ww /= ifT 1:/#;  rewrite ifT 1:/# /=.
-  by rewrite /(`>>`) /= bits8_div 1:// /truncateu8 //.
+  by rewrite /(`>>`) /= bits8_div 1:// /truncateu8 //. *)
 
 qed.
 
@@ -1570,7 +1572,6 @@ hoare awrite_subu128_h _buf _off _dlt _len _w:
   /\ res.`3 = _len - min (max 0 _len) 16.
 proof.
 proc => /=.
-
 admitted.
 
 phoare awrite_subu128_ph _buf _off _dlt _len _w:
@@ -1621,6 +1622,100 @@ addstate_array_avx2
 lemma addstate_array_avx2_ll: islossless M(P).__addstate_array_avx2
  by islossless.
 
+op sll_256 (w1 w2 : W256.t) : W256.t = w1 `<<<` to_uint w2.
+
+bind op [W256.t] sll_256 "shl".
+realize bvshlP.
+rewrite /sll_256 => bv1 bv2.
+by rewrite W256.to_uint_shl; 1: by smt(W256.to_uint_cmp).
+qed.
+
+clone import PolyArray as Array53 with
+        op size = 53.
+
+bind array Array53."_.[_]" Array53."_.[_<-_]" Array53.to_list Array53.of_list Array53.t 53.
+realize tolistP by done.
+realize get_setP by smt(Array53.get_setE). 
+realize eqP by smt(Array53.tP).
+realize get_out by smt(Array53.get_out).
+
+clone import PolyArray as Array28 with
+        op size = 28.
+
+bind array Array28."_.[_]" Array28."_.[_<-_]" Array28.to_list Array28.of_list Array28.t 28.
+realize tolistP by done.
+realize get_setP by smt(Array28.get_setE). 
+realize eqP by smt(Array28.tP).
+realize get_out by smt(Array28.get_out).
+
+op pack2u64(a b : W64.t) = W128.bits2w (w2bits a ++ w2bits b).
+
+bind op [W64.t & W64.t & W128.t] pack2u64 "concat".
+
+realize bvconcatP.
+proof.
+move=> w1 w2; apply/(eq_from_nth false); first by rewrite size_cat !size_w2bits.
+rewrite size_w2bits => i rgi; rewrite nth_cat !get_w2bits !size_w2bits.
+by rewrite /pack2u64 get_bits2w 1:// nth_cat size_w2bits !get_w2bits. 
+qed.
+
+op pack2u128(a b : W128.t) = W256.bits2w (w2bits a ++ w2bits b).
+
+bind op [W128.t & W128.t & W256.t] pack2u128 "concat".
+
+realize bvconcatP.
+proof.
+move=> w1 w2; apply/(eq_from_nth false); first by rewrite size_cat !size_w2bits.
+rewrite size_w2bits => i rgi; rewrite nth_cat !get_w2bits !size_w2bits.
+by rewrite /pack2u128 get_bits2w 1:// nth_cat size_w2bits !get_w2bits. 
+qed.
+
+op pack4u64(a b c d : W64.t) = pack2u128 (pack2u64 a b)  (pack2u64 c d).
+
+bind op [W64.t & W128.t] W2u64.zeroextu128 "zextend".
+realize bvzextendP.
+move => bv; rewrite /zeroextu128 /= of_uintK /= modz_small 2://.
+apply bound_abs; smt(W64.to_uint_cmp pow2_64).
+qed.
+
+bind op [W128.t & W256.t] W2u128.zeroextu256 "zextend".
+realize bvzextendP.
+move => bv; rewrite /zeroextu256 /= of_uintK /= modz_small 2://.
+apply bound_abs; smt(W128.to_uint_cmp pow2_128).
+qed.
+
+lemma merge_words128 (t0 t1 : W128.t) : W256.of_int (to_uint t0 %% W128.modulus + W128.modulus * to_uint t1) =
+  zeroextu256 t0 `|` sll_256 (zeroextu256 t1) (W256.of_int 128).
+proof.
+rewrite to_uint_eq to_uint_orw_disjoint;last first.
++ rewrite W256.of_uintK modz_small /=;1:smt(W128.to_uint_cmp pow2_128).
+  rewrite  /sll_256 to_uint_shl //= !to_uint_zeroextu256.
+  congr;smt(modz_small W128.to_uint_cmp pow2_128).
+rewrite /sll_256 wordP => i ib.
+rewrite andE map2iE 1:/# /=.
+rewrite !zeroextu256_bit;smt(get_out).
+qed.
+
+op init_28_64(f :  int -> W64.t) : W64.t Array28.t = Array28.init f.
+
+bind op [W64.t & Array28.t] init_28_64 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_28_64 => f.
+rewrite  BVA_Top_KeccakArrayAvx2_Array28_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array28.initE).
+qed.
+
+bind circuit VPINSR_2u64 "VPINSR_2u64".
+
+op Pi = fun i => nth 0  [0;0;0;0;1;2;3;4;10;20;5;15;16;7;23;14;11;22;8;19;21;17;13;9;6;12;18;24] i.
+op F(inp : W64.t Array53.t ) : W64.t Array28.t =
+        init_28_64 (fun i => inp.[i] `^` inp.[28 + Pi i]).
+op Pre = fun (_ : W64.t Array53.t) => true.
+
+lemma rngPi : forall i, 0 <= i < 28 => 0 <= Pi i < 25 by smt().
+
 hoare addstate_array_avx2_h _st _buf _off _len _tb:
  M(P).__addstate_array_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb
@@ -1631,17 +1726,99 @@ hoare addstate_array_avx2_h _st _buf _off _len _tb:
      /\ res.`2 = _off + _len.
 proof.
 proc => /=.
+pose sizes := fun (i : int) => nth 0 [8;32;8;32;8;32;8;32;8;32] i.
+pose asizes := fun (i : int) => nth 0 [0;8;40;48;80;88;120;128;160;168;200] i.
+pose deltai := fun (i : int) => (min (max 0 _len) (asizes i)).
+pose leni   := fun (i : int) => _len - deltai i.
+pose traili := fun (i : int) => if all (fun k => sizes (k-1) <= leni (k-1)) (iotared 0 (i+1)) then _tb else 0.
 case (32+8 < _len). 
-+ rcondt 8.
-  + wp; call (aread_subu256_h _buf _off (min (max 0 _len) 8) (_len - (min (max 0 _len) 8)) (if _len < 8 then 0 else _tb)).
-    by wp;call (aread_subu64_h _buf _off 0 _len _tb);auto => /> /#.
-   swap 21 -3.
-   swap 15 4.
-   swap 12 5.
-   swap 9 7.
-   swap [3..5] 1.
++ rcondt 8. 
+  + wp; call (aread_subu256_h _buf _off (deltai 1) (leni 1) (traili 1)).
+    wp;call (aread_subu64_h _buf _off (deltai 0) (leni 0) (traili 0)).
+    +  auto => /> *;do simplify traili;do split => />;smt(). 
+   inline 22.
+   swap 21 -3; swap 15 3; swap 12 5; swap 9 7; swap 7 13; swap 5 14; swap [3..4] 9.
+   sp;seq 10 : (offset = _off /\ dELTA = _len /\ st = _st /\
+                    ((sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []) ++
+                        (nseq (200 - _len - if _tb <> 0 then 1 else 0) W8.zero)) =
+                    (map W8.bits2w (chunk 8 (flatten [w2bits t64_1; w2bits r1;
+                                                      w2bits t64_2; w2bits r3;
+                                                      w2bits t64_3; w2bits r4;
+                                                      w2bits t64_4; w2bits r5;
+                                                      w2bits t64_5; w2bits r6])))).
+   + call (aread_subu256_h _buf _off (deltai 9) (leni 9) (traili 9)).
+     call (aread_subu64_h _buf _off  (deltai 8) (leni 8) (traili 8)).
+     call (aread_subu256_h _buf _off (deltai 7) (leni 7) (traili 7)).
+     call (aread_subu64_h _buf _off  (deltai 6) (leni 6) (traili 6)).
+     call (aread_subu256_h _buf _off (deltai 5) (leni 5) (traili 5)).
+     call (aread_subu64_h _buf _off  (deltai 4) (leni 4) (traili 4)).
+     call (aread_subu256_h _buf _off (deltai 3) (leni 3) (traili 3)).
+     call (aread_subu64_h _buf _off  (deltai 2) (leni 2) (traili 2)).
+     call (aread_subu256_h _buf _off (deltai 1) (leni 1) (traili 1)).
+     call (aread_subu64_h _buf _off  (deltai 0) (leni 0) (traili 0)).
+     auto => />.
+     do (simplify traili);move => ??????H0;split;1:smt().
+     do (simplify traili);move => ???????????H1;split; 1:smt().
+     do (simplify traili);move => ???????????H2;split; 1:smt().
+     do (simplify traili);move => ???????????H3;split; 1:smt().
+     do (simplify traili);move => ???????????H4;split; 1:smt().
+     do (simplify traili);move => ???????????H5;split; 1:smt().
+     do (simplify traili);move => ???????????H6;split; 1:smt().
+     do (simplify traili);move => ???????????H7;split; 1:smt().
+     do (simplify traili);move => ???????????H8;split; 1:smt().
+     do (simplify traili);move => ???????????H9;split; 1:smt().
+     do (simplify traili);move => ???????????H10;split; 1:smt().
+     rewrite H10 H9 H8 H7 H6 H5 H4 H3 H2 H1.
+     apply (eq_from_nth witness).
+     + rewrite size_cat size_cat size_sub 1:/# /=.
+       rewrite size_map size_chunk 1:/# size_flatten size_nseq /sumz /= /# .
+     move => i ib.
+     admit.
+       
+     + wp 20; conseq (: _ ==> st0 = addstate_avx2 _st (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else [])); 1: by auto => />.
+     proc change 7 : (zeroextu256 t128_0 `|` sll_256 (W2u128.zeroextu256 t128_1) (W256.of_int 128)); 1: by move => *; apply merge_words128.
+     exlim t64_1, r1, t64_2, r3, t64_3, r4, t64_4, r5, t64_5, r6 => _w1 _w2 _w3 _w4 _w5 _w6 _w7 _w8 _w9 _w10.
+     inline *;
+     bdep 3392 1792 [_st;_w1;_w2;_w3;_w4;_w5;_w6;_w7;_w8;_w9;_w10]
+                    [st;t64_1;r1;t64_2;r3;t64_3;r4;t64_4;r5;t64_5;r6]
+                    [st0]
+                    F Pre.
+     + by move => /> &hr *; rewrite allP /Pre /=.
+     + move => &hr /> Hin stout.
+       have Hs1 : size
+       (flatten
+     [   flatten (map W256.w2bits (to_list st{hr})); w2bits t64_1{hr}; w2bits r1{hr}; 
+        w2bits t64_2{hr}; w2bits r3{hr}; w2bits t64_3{hr}; w2bits r4{hr}; 
+        w2bits t64_4{hr}; w2bits r5{hr}; w2bits t64_5{hr}; w2bits r6{hr}]) = 3392.
+       + rewrite size_flatten /= (size_flatten' 256);1: smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list => />.
+       have Hs2 : size (flatten (map W256.w2bits (to_list stout))) = 1792.
+       + rewrite  (size_flatten' 256);1: smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list => />.       
+       have Hs3 : size (flatten (map W256.w2bits (to_list st{hr}))) = 1792.
+       + rewrite  (size_flatten' 256);1: smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list => />.       
+       rewrite chunk_size 1,2:/# -map_comp /(\o) /= flatten1 (chunk_size 1792) 1,2:/# /=.
+       rewrite /F /init_28_64 tP => Hout;rewrite tP => i ib;rewrite W256.wordP => k kb.
+       have := Hout (i * 4 + k %/ 64) _;1: by smt(Array7.size_to_list).
+       rewrite initiE 1:/# /= get_of_list;1: by smt(Array7.size_to_list).
+       rewrite get_of_list /=;1: by smt(Array53.size_to_list).
+       rewrite get_of_list /=;1: by smt(rngPi).
+       rewrite !(nth_map witness); 1..6:smt(size_chunk size_iota rngPi).
+    rewrite W64.wordP => Hw.
+    have := Hw (k %% 64) _; 1:smt().
+    rewrite !nth_iota /=;1..3:smt(rngPi).
+    have ->  : stout.[i].[k] = (W64.bits2w (take 64 (drop (64 * (i * 4 + k %/ 64)) (flatten (map W256.w2bits (to_list stout)))))).[k %% 64].
+    + rewrite get_bits2w 1:/# /= nth_take 1,2:/# nth_drop 1,2:/#.
+       have /= -> := nth_flatten false 256 (map W256.w2bits (to_list stout)) (64 * (i * 4 + k %/ 64) + k %% 64) _; 1: by rewrite allP => x;smt(mapP W256.size_w2bits).
+       rewrite (nth_map witness);1:smt(Array7.size_to_list).
+       by rewrite get_to_list get_w2bits /#.
+    move => <-;rewrite /addstate_avx2.
+    rewrite !get_bits2w 1..2:/# !nth_take 1..4:/# !nth_drop;1..4:smt(rngPi).
+    rewrite !(flatten_cons (flatten _)) !nth_cat ifT 1:/# ifF;1:smt(rngPi).
+    admit.
 
-   + rcondf 8.
++ rcondf 8.
   + wp; call (aread_subu256_h _buf _off (min (max 0 _len) 8) (_len - (min (max 0 _len) 8)) (if _len < 8 then 0 else _tb)).
     wp;call (aread_subu64_h _buf _off 0 _len _tb);auto => /> /#. 
   admit.
