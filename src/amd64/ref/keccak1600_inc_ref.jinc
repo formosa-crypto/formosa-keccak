@@ -1,0 +1,321 @@
+require "keccak1600_bmi1.jinc"
+
+// TODO: find more registor to allow regalloc
+
+/**
+ Last u64 word of keccak1600_incstate is filled with:
+  - byte[0] - at_position (0 <= at <= 200)
+  - byte[1] - (256-c8), where c8 is capacity in bytes ( 0 < c8 <= 128 )
+  - byte[2] - Trail Byte
+*/
+type keccak1600_incstate = u64[26];
+
+
+inline fn __init_incstate_ref
+( reg mut ptr keccak1600_incstate st
+, inline int R64 // 9 <= R64 < 25
+, inline int TrailByte // 0 <= TrailByte < 256
+) -> reg ptr keccak1600_incstate /* st */
+{
+  reg u64 i;
+  i = 0;
+  while (i < 25) { st[i] = 0; }
+  st[25] = 256*(256-200+8*R64)%256
+           + 256*256+(TrailByte % 256);
+  return st;
+}
+
+/**
+ When we read the update-data from the state (r8 and at-position), we guarantee
+ that it is wellformed, that is:
+  - rate in bytes (r8):  0 < r8 < 200  &&  r8 %| 8
+  - at-position (at):  0 <= at < r8
+ This would allow to establish safety independently of the given state.
+*/
+inline fn __r8_at
+( reg u64 ststatus
+) -> reg ui64 /* r8 ; 72 <= r8 <= 200  */
+   , reg ui64 /* at  ; 0 <= at < r8 */
+/* ensures:
+    r8 |% 8
+    0 < r8 < 200
+    0 <= at < r8  */
+{
+ reg u64 r8 at t;
+ reg ui64 r8_ui64 at_ui64;
+ at = ststatus;
+ r8 = at;
+ r8 >>= 8;
+ r8 |= 128; // ensures c8 is negative
+ at &= 255; // 0 <= at < 256
+ r8 += 200;
+ r8 &= 0b11111000; // ensures r8 %| 8 & r8 < 200
+
+ t = 0;
+ r8 = t if r8 <= at; // if ( r8 <= at ) { at=0; }
+
+ r8_ui64 = (64ui) r8;
+ at_ui64 = (64ui) at;
+ return r8_ui64, at_ui64;
+}
+
+inline fn __trailbyte
+( reg u64 ststatus
+) -> reg u8
+{
+  reg u8 tb;
+
+  ststatus >>= 2*8;
+  tb = (8u) ststatus;
+  return tb;
+}
+
+inline fn __add_incstate
+( reg mut ptr keccak1600_incstate st
+, reg ui64 at // 0 <= at < 200
+, reg ui64 buf
+, reg ui64 upto // at <= upto <= 200
+) -> reg ui64 /* at */
+   , reg ui64 /* buf */
+   , reg ptr keccak1600_incstate /* st */
+{
+  reg ui64 newat;
+  reg u8 t8;
+  reg u64 t64;
+  reg bool zf;
+
+  newat = upto;
+  newat -= at; // 0 <= newat <= 200
+  if (newat >= 8) {
+    while
+      { _, _, _, _, zf = #TEST((64u)at,7); }
+    ( !zf )
+      {
+	t8 = [:u8 (64u) buf];
+	st.[:u8 at] ^= t8; 
+	at +=1;
+	buf += 1;
+      }
+
+    // at |% 8
+    newat = at;
+    while 
+      { newat += 8; }
+    ( newat <= upto )
+      {
+	t64 = [:u64 (64u) buf];
+	st.[:u64 at] ^= t64;
+	at = newat;
+	buf += 8;
+      }
+  }
+
+  // leftovers...
+  while ( at < upto ) {
+    t8 = [:u8 (64u) buf];
+    st.[:u8 at] ^= t8; 
+    at += 1;
+    buf += 1;
+  }
+
+  return at, buf, st;
+}
+
+
+fn _update_incstate_ref
+( reg mut ptr keccak1600_incstate st
+, reg ui64 buf
+, reg ui64 len
+) -> reg ui64 /* buf */
+   , reg ptr keccak1600_incstate /* st */
+{
+  reg u64 ststatus;
+  reg ui64 r8 at;
+
+  ststatus = st[25];
+  r8, at = __r8_at(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+
+  len += at;
+  while (r8 <= len) {
+    at, buf, st = __add_incstate(st, at, buf, r8);
+    () = #spill(r8, at, len, buf);
+    st[0:25] = _keccakf1600_ref_(st[0:25]);
+    () = #unspill(r8, at, len, buf);
+    len -= r8;
+    at = 0;
+  }
+  at, buf, st = __add_incstate(st, at, buf, len);
+  st.[:u8 8*25] = (8u) (64u) at;
+
+  return buf, st;
+}
+
+inline fn __finish_incstate_ref
+( reg mut ptr keccak1600_incstate st
+) -> reg ptr keccak1600_incstate /* st */
+{
+  reg u64 ststatus;
+  reg ui64 r8 at;
+  reg u8 trailb;
+  ststatus = st[25];
+  r8, at = __r8_at(ststatus);
+  trailb = __trailbyte(ststatus);
+  st.[:u8 at] ^= trailb;
+  st.[:u8 r8-1] ^= 0x80;
+  st.[:u32 8*25] &= 0xFF00FF00; // clear trail-byte and at-position
+  
+  return st;
+}
+
+inline fn __dump_incstate
+( reg ui64 buf
+, reg const ptr keccak1600_incstate st
+, reg ui64 at // 0 <= at < 200
+, reg ui64 upto // at <= upto <= r8(200)
+) -> reg ui64 /* at */
+   , reg ui64 /* buf */
+{
+  reg ui64 newat;
+  reg u8 t8;
+  reg u64 t64;
+  reg bool zf;
+
+  newat = upto;
+  newat -= at; // 0 <= newat <= 200
+  if (newat >= 8) {
+    while 
+      { _, _, _, _, zf = #TEST((64u)at,7); }
+    ( !zf )
+      {
+	t8 = st.[:u8 at];
+	[:u8 (64u) buf] = t8; 
+	at +=1;
+	buf += 1;
+      }
+
+    // at |% 8
+    newat = at;
+    while 
+      { newat += 8; }
+    ( newat <= upto)
+      {
+	t64 = st.[:u64 at];
+	[:u64 (64u) buf] = t64;
+	at = newat;
+	buf += 8;
+      }
+  }
+
+  // leftovers...
+  while (at < upto) {
+    t8 = st.[:u8 at];
+    [:u8 (64u) buf] = t8; 
+    at += 1;
+    buf += 1;
+  }
+
+  return at, buf;
+}
+
+fn _squeeze_incstate_ref
+( reg ui64 buf
+, reg ui64 len
+, reg mut ptr keccak1600_incstate st
+) -> reg ui64 /* buf */
+   , reg ptr keccak1600_incstate /* st */
+{
+  reg u64 ststatus;
+  reg ui64 r8 at;
+
+  ststatus = st[25];
+  r8, at = __r8_at(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+
+  if ( at == 0 ) {
+    () = #spill(r8, at, buf);
+    st[0:25] = _keccakf1600_ref_(st[0:25]);
+    () = #unspill(r8, at, buf);
+  }
+
+  len += at;
+  while (r8 < len) {
+    at, buf = __dump_incstate(buf, st, at, r8);
+    () = #spill(r8, at, len, buf);
+    st[0:25] = _keccakf1600_ref_(st[0:25]);
+    () = #unspill(r8, at, len, buf);
+    len -= r8;
+    at = 0;
+  }
+
+  at, buf = __dump_incstate(buf, st, at, len);
+
+  // if ( at == r8 ) at = 0; // avoidable because r8_at() returns 0<=at<r8
+  st.[:u8 8*25] = (8u) (64u) at;
+
+  return buf, st;
+}
+
+
+export fn test_r8
+( reg const ptr keccak1600_incstate st
+) -> reg u64 
+{
+  reg ui64 r8, at;
+  reg u64 r, ststatus;
+  ststatus = st[25];
+  r8, at = __r8_at(ststatus);
+  r = (64u) r8;
+  return r;
+}
+
+fn _testF
+( reg mut ptr keccak1600_incstate st
+) -> reg ptr keccak1600_incstate /* st */
+{
+ reg ptr u64[25] state;
+ state = st[0:25];
+ () = #spill(st);
+ state = _keccakf1600_ref_(state);
+ () = #unspill(st);
+ st[0:25] = state;
+ return st;
+}
+ 
+export fn test_kF
+( reg mut ptr keccak1600_incstate st
+) -> reg ptr keccak1600_incstate /* st */
+{
+  st = _testF(st);
+  return st;
+}
+
+/*
+export fn test_loop
+( reg mut ptr u8[ASIZE] buf
+) -> reg ptr u8[ASIZE] /* buf */
+{
+  reg ui64 i;
+  stack keccak1600_incstate st;
+  reg ptr u8[LEN] tbuf;
+  st = __init_updarray_ref(st, 17); // R64=17 (r8=136, as in SHA3_256)
+  i = 0;
+  while (i < ASIZE) {
+    tbuf = buf[i:LEN];
+    () = #spill(i, buf);
+    st = _update_updarray_ref(st, tbuf);
+    () = #unspill(i, buf);
+    i += LEN;
+  }
+  
+  st = __finish_updarray_ref(st, 0x1F);
+  i = 0;
+  while (i < ASIZE) {
+    tbuf = buf[i:LEN];
+    () = #spill(i, buf);
+    st, tbuf = _squeeze_updarray_ref(tbuf, st);
+    () = #unspill(i, buf);
+    buf[i:LEN] = tbuf;
+    i += LEN;
+  }
+  return buf;
+}
+*/

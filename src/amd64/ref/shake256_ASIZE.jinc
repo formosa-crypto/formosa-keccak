@@ -1,0 +1,45 @@
+require "keccak1600_ref.jinc"
+
+param int ASIZE = 11*100;
+param int TB = 0x1F;
+param int R8 = 17*8;
+
+
+require "keccak1600_array_ref_ASIZE.jinc"
+
+
+export fn shake256_array_init
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  st = st;
+  st = __state_init_ref(st);
+  return st;
+}
+
+export fn shake256_absorb_ref
+( reg mut ptr u64[25] st
+, reg const ptr u8[ASIZE] buf
+) -> reg ptr u64[25] /* st */
+{
+  reg ui64 offset;
+  offset = 0;
+  st = st; buf = buf;
+  st, _, _ = __absorb_array_ref(st, 0, buf, offset, ASIZE, R8, TB);
+  st = st;
+  return st;
+}
+
+export fn shake256_squeeze_ref
+( reg mut ptr u8[ASIZE] buf
+, reg mut ptr u64[25] st
+) -> reg ptr u8[ASIZE] /* buf */
+   , reg ptr u64[25]   /* st */
+{
+  reg ui64 offset;
+
+  buf = buf; st = st;
+  offset = 0;
+  buf, _, st = __squeeze_array_ref(buf, offset, ASIZE, st, R8);
+  return buf, st;
+}
