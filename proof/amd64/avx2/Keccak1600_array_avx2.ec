@@ -867,7 +867,7 @@ lemma  aread_subu64_ll: islossless M(P).__aread_subu64
   /\ _r2 = _len - min (max 0 _len) 8
   /\ _r3 = (if _len < 8 then 0 else _trail)
   /\ _r4 =  W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail])) =>
-  _r4 = (bytes2state (sub _buf _off (_len+_dlt) ++ [W8.of_int _trail])).[_dlt %/ 8 + b2i (!8 %| _dlt)].
+  _r4 = (bytes2state (sub _buf _off (_len+_dlt) ++ if _trail<>0 then [W8.of_int _trail] else [])).[_dlt %/ 8 + b2i (!8 %| _dlt)].
  proof.
  move => [#] ????????? [#] ??? ->.
  case (!8 %| _dlt) => Hdiv.
@@ -891,18 +891,24 @@ lemma  aread_subu64_ll: islossless M(P).__aread_subu64
  
  rewrite /bytes2state pack8E get_of_list 1:/# wordP => k kb.
  rewrite initiE 1:/# /= /w64L_from_bytes get_of_list 1:/#.
- case (_dlt %/ 8 < (_len + _dlt + 1) %/ 8 + b2i (! 8 %| (_len + _dlt + 1))) => ?.
+ pose xtra := if _trail <> 0 then [W8.of_int _trail] else [].
+ case (_dlt %/ 8 < (_len + _dlt + size xtra) %/ 8 + b2i (! 8 %| (_len + _dlt + size xtra))) => ?.
  + rewrite (nth_map []) /=.
-   + rewrite size_chunkify 1:/# size_cat size_sub /# .
+   + rewrite size_chunkify 1:/# size_cat size_sub  /# .
    rewrite pack8E initiE 1:/# /= get_of_list 1:/# /= nth_chunkify 1,2:/#.
    rewrite nth_take 1,2:/# nth_drop 1,2:/#.
    rewrite nth_cat size_sub 1:/#.
    rewrite nth_cat size_sub 1:/#.
-   case (k %/ 8 < min (max 0 _len) 8) => ?; last by smt().
+   case (k %/ 8 < min (max 0 _len) 8) => ?; last by rewrite /xtra /=; smt().
    rewrite ifT 1:/# /sub !nth_mkseq 1,2:/# /= /#.
- rewrite nth_cat ifF;1: smt(size_sub).
- rewrite size_sub 1:/# /= ifF 1:/# /= (nth_default) //=.
- by rewrite size_map size_chunkify 1:/# size_cat size_sub /= /#.
+ case (k %/ 8 < min (max 0 _len) 8) => ?.
+ + rewrite nth_cat size_sub 1:/# ifT 1:/#.
+   rewrite (nth_default) //=; 1: by rewrite size_sub /#.
+   rewrite (nth_default) //=;  by rewrite size_map size_chunkify 1:/# size_cat size_sub /= /#.
+ rewrite nth_cat size_sub 1:/# ifF 1:/# /=.
+ rewrite (nth_default) //=;1:  by rewrite size_map size_chunkify 1:/# size_cat size_sub /= /#.
+ case (_trail = 0) => Ht; 2: by smt().
+ by rewrite Ht /=.
 qed.
 
 hoare aread_subu64_h _buf _off _dlt _len _trail:
@@ -1364,7 +1370,7 @@ lemma aread_subu256_contract(_buf : W8.t A.t, _off _dlt _len _trail _r1 _r2 _r3:
   /\ _r3 = (if _len < 32 then 0 else _trail)
   /\ _r4 =  W32u8.pack32 (sub _buf (_off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail])) =>
   forall k, 0<=k<4 =>
-  (W4u64.unpack64 _r4).[k] = (bytes2state (sub _buf _off (_len+_dlt) ++ [W8.of_int _trail])).[_dlt %/ 8+k + b2i ((!8 %| _dlt))].
+  (W4u64.unpack64 _r4).[k] = (bytes2state (sub _buf _off (_len+_dlt) ++ if _trail<>0 then [W8.of_int _trail] else [])).[_dlt %/ 8+k + b2i ((!8 %| _dlt))].
  proof.
  move => [#] ????????? [#] ??? -> kk kkb.
   case (!8 %| _dlt) => Hdiv.
@@ -1388,18 +1394,28 @@ lemma aread_subu256_contract(_buf : W8.t A.t, _off _dlt _len _trail _r1 _r2 _r3:
 
  rewrite /bytes2state pack32E get_of_list 1:/# wordP => k kb.
  rewrite unpack64E initiE 1:/# /= bits64E initiE 1:/# /= initiE 1:/# /= /w64L_from_bytes get_of_list 1:/# nth_cat size_sub 1:/# /=.
- case (_dlt %/ 8 + kk < (_len + _dlt + 1) %/ 8 + b2i (! 8 %| (_len + _dlt + 1))) => ?.
+ pose xtra := if _trail <> 0 then [W8.of_int _trail] else [].
+ case (_dlt %/ 8 + kk <  (_len + _dlt + size xtra) %/ 8 + b2i (! 8 %| (_len + _dlt + size xtra))) => ?.
  + rewrite (nth_map []) /=.
-   + rewrite size_chunkify 1:/# size_cat size_sub /# .
+   + by rewrite size_chunkify 1:/# size_cat size_sub /#.
    rewrite pack8E initiE 1:/# /= get_of_list 1:/# /= nth_chunkify 1,2:/#.
    rewrite nth_take 1,2:/# nth_drop 1,2:/#.
    rewrite nth_cat size_sub 1:/#.
-   case ((kk * 64 + k) %/ 8 < min (max 0 _len) 32) => ?; last by smt().
-   rewrite  ifT 1:/# !nth_sub 1,2:/# /#.
-   rewrite ifF 1:/# (nth_default) /=.
-   + rewrite size_map size_chunkify 1:/# size_cat size_sub 1:/# /= /# .
-   by rewrite ifF 1:/# zerowE /=.
-qed.
+   case ((kk * 64 + k) %/ 8 < min (max 0 _len) 32) => ?;last by rewrite /xtra /#.   
+   by rewrite  ifT 1:/# !nth_sub 1,2:/# /#.
+
+
+ case ((kk * 64 + k) %/ 8 < min (max 0 _len) 32) => ?.
+ rewrite nth_sub 1:/#  (nth_default) /=.
+   rewrite size_map size_chunkify 1:/# size_cat size_sub 1:/# /= /# .
+   by smt(W64.get_out).
+
+ rewrite  (nth_default) /=.
+   rewrite size_map size_chunkify 1:/# size_cat size_sub 1:/# /= /# .
+ case (_trail = 0) => Ht;1 : by rewrite Ht /=.
+ case ((kk * 64 + k) %/ 8 - min (max 0 _len) 32 = 0).  by smt(). by smt(zerowE).
+
+ qed.
 
  
 hoare aread_subu256_h _buf _off _dlt _len _trail:
@@ -1806,6 +1822,237 @@ lemma  chunkify_chunk (n : int) (l : 'a list) :
 rewrite /chunkify /chunk => ?;do congr => /#.
 qed.
 
+op sizes(i : int) = nth 0 [8;32;8;32;8;32;8;32;8;32] i.
+op asizes(i : int) = nth 0 [0;8;40;48;80;88;120;128;160;168;200] i.
+op deltai(_len : int, i : int) = (min (max 0 _len) (asizes i)).
+op leni(_len : int, i : int) = _len - deltai _len i.
+op traili(_len : int, _tb : int, i : int) = if all (fun k => sizes (k-1) <= leni _len (k-1)) (iotared 0 (i+1)) then _tb else 0.
+op theis(i : int) =  nth 0 [0;1;1;1;1;2;3;3;3;3;4;5;5;5;5;6;7;7;7;7;8;9;9;9;9] i.
+op theos(i : int) =  nth 0 [0;0;1;2;3;0;0;1;2;3;0;0;1;2;3;0;0;1;2;3;0;0;1;2;3] i.
+
+lemma bytes2_state_commute(_buf : W8.t A.t, _off _len _tb : int, idx : int):
+        0 <= idx < 25 =>
+        0 <= _len <= 200 - b2i (_tb<>0) =>
+       0<= _off =>
+       _off + _len <= aSIZE =>
+       0 <= _tb < 256 =>
+(bytes2state (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else [])).[idx] =
+(bytes2state (sub _buf _off (leni _len (theis idx) + deltai _len (theis idx)) ++ if traili _len _tb (theis idx) <> 0 then [W8.of_int (traili _len _tb (theis idx))] else []))
+ .[deltai _len (theis idx) %/ 8 + (theos idx) + b2i (! 8 %| deltai _len (theis idx))].
+proof.
+move => *.
+rewrite /bytes2state !get_of_list 1,2:/#.
+have  : all (fun idx => nth W64.zero (w64L_from_bytes (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else [])) idx =
+nth W64.zero
+  (w64L_from_bytes
+     (sub _buf _off (leni _len (theis idx) + deltai _len (theis idx)) ++
+      if traili _len _tb (theis idx) <> 0 then [W8.of_int (traili _len _tb (theis idx))] else []))
+  (deltai _len (theis idx) %/ 8 + theos idx + b2i (! 8 %| deltai _len (theis idx)))) (iota_ 0 25);
+    last by rewrite allP => ?; smt( mem_iota).
+pose xtra := if _tb <> 0 then [W8.of_int _tb] else [].
+rewrite -iotaredE /=; do split;do (simplify theis theos traili deltai leni asizes sizes min max).
++ rewrite /w64L_from_bytes.
+   case (0 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (1 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (2 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (3 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (4 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (5 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (6 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (7 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (8 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (9 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (10 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (11 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (12 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (13 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (14 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (15 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (16 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (17 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (18 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (19 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (20 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (21 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (22 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (23 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
++ rewrite /w64L_from_bytes.
+   case (24 < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+   + rewrite !(nth_map []) /=;
+     1,2: by rewrite size_chunkify 1:/# /= size_cat size_sub  /= /#.
+     by smt().
+   + rewrite !(nth_default) /=;
+      1,2: rewrite size_map size_chunkify 1:/# /= size_cat size_sub  /=  /#.
+     by smt().
+qed.
+
 hoare addstate_array_avx2_h _st _buf _off _len _tb:
  M(P).__addstate_array_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb /\ stavx2INV _st
@@ -1816,15 +2063,10 @@ hoare addstate_array_avx2_h _st _buf _off _len _tb:
      /\ res.`2 = _off + _len.
 proof.
 proc => /=.
-pose sizes := fun (i : int) => nth 0 [8;32;8;32;8;32;8;32;8;32] i.
-pose asizes := fun (i : int) => nth 0 [0;8;40;48;80;88;120;128;160;168;200] i.
-pose deltai := fun (i : int) => (min (max 0 _len) (asizes i)).
-pose leni   := fun (i : int) => _len - deltai i.
-pose traili := fun (i : int) => if all (fun k => sizes (k-1) <= leni (k-1)) (iotared 0 (i+1)) then _tb else 0.
 case (32+8 < _len). 
 + rcondt 8. 
-  + wp; call (aread_subu256_h _buf _off (deltai 1) (leni 1) (traili 1)).
-    wp;call (aread_subu64_h _buf _off (deltai 0) (leni 0) (traili 0)).
+  + wp; call (aread_subu256_h _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1)).
+    wp;call (aread_subu64_h _buf _off (deltai _len 0) (leni _len 0) (traili _len _tb 0)).
     +  auto => /> *;do simplify traili;do split => />;smt(). 
    inline 22.
    swap 21 -3; swap 15 3; swap 12 5; swap 9 7; swap 7 13; swap 5 14; swap [3..4] 9.
@@ -1837,16 +2079,16 @@ case (32+8 < _len).
                                                       w2bits t64_3; w2bits r4;
                                                       w2bits t64_4; w2bits r5;
                                                       w2bits t64_5; w2bits r6])))).
-   + call (aread_subu256_h _buf _off (deltai 9) (leni 9) (traili 9)).
-     call (aread_subu64_h _buf _off  (deltai 8) (leni 8) (traili 8)).
-     call (aread_subu256_h _buf _off (deltai 7) (leni 7) (traili 7)).
-     call (aread_subu64_h _buf _off  (deltai 6) (leni 6) (traili 6)).
-     call (aread_subu256_h _buf _off (deltai 5) (leni 5) (traili 5)).
-     call (aread_subu64_h _buf _off  (deltai 4) (leni 4) (traili 4)).
-     call (aread_subu256_h _buf _off (deltai 3) (leni 3) (traili 3)).
-     call (aread_subu64_h _buf _off  (deltai 2) (leni 2) (traili 2)).
-     call (aread_subu256_h _buf _off (deltai 1) (leni 1) (traili 1)).
-     call (aread_subu64_h _buf _off  (deltai 0) (leni 0) (traili 0)).
+   + call (aread_subu256_h _buf _off (deltai _len 9) (leni _len 9) (traili _len _tb 9)).
+     call (aread_subu64_h _buf _off  (deltai _len 8) (leni _len 8) (traili _len _tb 8)).
+     call (aread_subu256_h _buf _off (deltai _len 7) (leni _len 7) (traili _len _tb 7)).
+     call (aread_subu64_h _buf _off  (deltai _len 6) (leni _len 6) (traili _len _tb 6)).
+     call (aread_subu256_h _buf _off (deltai _len 5) (leni _len 5) (traili _len _tb 5)).
+     call (aread_subu64_h _buf _off  (deltai _len 4) (leni _len 4) (traili _len _tb 4)).
+     call (aread_subu256_h _buf _off (deltai _len 3) (leni _len 3) (traili _len _tb 3)).
+     call (aread_subu64_h _buf _off  (deltai _len 2) (leni _len 2) (traili _len _tb 2)).
+     call (aread_subu256_h _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1)).
+     call (aread_subu64_h _buf _off  (deltai _len 0) (leni _len 0) (traili _len _tb 0)).
      auto => />.
      move => *;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
      move => ???????r0??? /=H1;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
@@ -1861,16 +2103,16 @@ case (32+8 < _len).
      move => ???????r9??? /=H10.
      split;1: by smt().
      
-     have Hr0 := aread_subu64_contract  _buf _off (deltai 0) (leni 0) (traili 0) r0.`1 r0.`2 r0.`3 r0.`4 _ _;1,2: by rewrite ?H1; do (simplify traili deltai leni asizes sizes);smt(). 
-     have Hr1 := aread_subu256_contract _buf _off (deltai 1) (leni 1) (traili 1) r1.`1 r1.`2 r1.`3 r1.`4 _ _;1,2: by  by rewrite ?H2; do (simplify traili deltai leni asizes sizes);smt().
-     have Hr2 := aread_subu64_contract  _buf _off (deltai 2) (leni 2) (traili 2) r2.`1 r2.`2 r2.`3 r2.`4 _ _;1,2: by by rewrite ?H3; do (simplify traili deltai leni asizes sizes);smt(). 
-     have Hr3 := aread_subu256_contract _buf _off (deltai 3) (leni 3) (traili 3) r3.`1 r3.`2 r3.`3 r3.`4 _ _;1,2: by rewrite ?H4; do split; do (simplify traili deltai leni asizes sizes);smt().
-     have Hr4 := aread_subu64_contract  _buf _off (deltai 4) (leni 4) (traili 4) r4.`1 r4.`2 r4.`3 r4.`4 _ _;1,2: by rewrite ?H5; do (simplify traili deltai leni asizes sizes);smt(). 
-     have Hr5 := aread_subu256_contract _buf _off (deltai 5) (leni 5) (traili 5) r5.`1 r5.`2 r5.`3 r5.`4 _ _;1,2: by rewrite ?H6; do split;do (simplify traili deltai leni asizes sizes);smt().
-     have Hr6 := aread_subu64_contract  _buf _off (deltai 6) (leni 6) (traili 6) r6.`1 r6.`2 r6.`3 r6.`4 _ _;1,2: by rewrite ?H7;  do split;do (simplify traili deltai leni asizes sizes);smt().
-     have Hr7 := aread_subu256_contract _buf _off (deltai 7) (leni 7) (traili 7) r7.`1 r7.`2 r7.`3 r7.`4 _ _;1,2: by rewrite ?H8; do (simplify traili deltai leni asizes sizes);smt().
-     have Hr8 := aread_subu64_contract  _buf _off (deltai 8) (leni 8) (traili 8) r8.`1 r8.`2 r8.`3 r8.`4 _ _;1,2: by rewrite ?H9; do (simplify traili deltai leni asizes sizes);smt(). 
-     have Hr9 := aread_subu256_contract _buf _off (deltai 9) (leni 9) (traili 9) r9.`1 r9.`2 r9.`3 r9.`4 _ _;1,2: by rewrite ?H10; do (simplify traili deltai leni asizes sizes);smt().
+     have Hr0 := aread_subu64_contract  _buf _off (deltai _len 0) (leni _len 0) (traili _len _tb 0) r0.`1 r0.`2 r0.`3 r0.`4 _ _;1,2: by rewrite ?H1; do (simplify traili deltai leni asizes sizes);smt(). 
+     have Hr1 := aread_subu256_contract _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1) r1.`1 r1.`2 r1.`3 r1.`4 _ _;1,2: by  by rewrite ?H2; do (simplify traili deltai leni asizes sizes);smt().
+     have Hr2 := aread_subu64_contract  _buf _off (deltai _len 2) (leni _len 2) (traili _len _tb 2) r2.`1 r2.`2 r2.`3 r2.`4 _ _;1,2: by by rewrite ?H3; do (simplify traili deltai leni asizes sizes);smt(). 
+     have Hr3 := aread_subu256_contract _buf _off (deltai _len 3) (leni _len 3) (traili _len _tb 3) r3.`1 r3.`2 r3.`3 r3.`4 _ _;1,2: by rewrite ?H4; do split; do (simplify traili deltai leni asizes sizes);smt().
+     have Hr4 := aread_subu64_contract  _buf _off (deltai _len 4) (leni _len 4) (traili _len _tb 4) r4.`1 r4.`2 r4.`3 r4.`4 _ _;1,2: by rewrite ?H5; do (simplify traili deltai leni asizes sizes);smt(). 
+     have Hr5 := aread_subu256_contract _buf _off (deltai _len 5) (leni _len 5) (traili _len _tb 5) r5.`1 r5.`2 r5.`3 r5.`4 _ _;1,2: by rewrite ?H6; do split;do (simplify traili deltai leni asizes sizes);smt().
+     have Hr6 := aread_subu64_contract  _buf _off (deltai _len 6) (leni _len 6) (traili _len _tb 6) r6.`1 r6.`2 r6.`3 r6.`4 _ _;1,2: by rewrite ?H7;  do split;do (simplify traili deltai leni asizes sizes);smt().
+     have Hr7 := aread_subu256_contract _buf _off (deltai _len 7) (leni _len 7) (traili _len _tb 7) r7.`1 r7.`2 r7.`3 r7.`4 _ _;1,2: by rewrite ?H8; do (simplify traili deltai leni asizes sizes);smt().
+     have Hr8 := aread_subu64_contract  _buf _off (deltai _len 8) (leni _len 8) (traili _len _tb 8) r8.`1 r8.`2 r8.`3 r8.`4 _ _;1,2: by rewrite ?H9; do (simplify traili deltai leni asizes sizes);smt(). 
+     have Hr9 := aread_subu256_contract _buf _off (deltai _len 9) (leni _len 9) (traili _len _tb 9) r9.`1 r9.`2 r9.`3 r9.`4 _ _;1,2: by rewrite ?H10; do (simplify traili deltai leni asizes sizes);smt().
 
      rewrite !w4256w2bits /to_list /mkseq -iotaredE /=.
      rewrite Hr0 !Hr1 // Hr2 !Hr3 // Hr4 !Hr5 // Hr6 !Hr7 // Hr8 !Hr9 //.
@@ -1884,8 +2126,28 @@ case (32+8 < _len).
      rewrite get_of_list 1:/#.
      congr.
      rewrite /to_list /mkseq -iotaredE /=.
-     do split;do (simplify traili deltai leni asizes sizes);admit. 
-
+     do split => /=;1..6: by smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 6 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 7 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 8 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 9 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 10 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().  
+     by have -> := bytes2_state_commute _buf _off _len _tb 11 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 12 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 13 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 14 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 15 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 16 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 17 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 18 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 19 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 20 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 21 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 22 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 23 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 24 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+ 
+          
      + wp 20; conseq (: _ ==> st0 = addstate_avx2 _st (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else [])); 1: by auto => />.
      proc change 7 : (zeroextu256 t128_0 `|` sll_256 (W2u128.zeroextu256 t128_1) (W256.of_int 128)); 1: by move => *; apply merge_words128.
      exlim t64_1, r1, t64_2, r3, t64_3, r4, t64_4, r5, t64_5, r6 => _w1 _w2 _w3 _w4 _w5 _w6 _w7 _w8 _w9 _w10.
@@ -1996,7 +2258,57 @@ case (32+8 < _len).
          
 + rcondf 8.
   + wp; call (aread_subu256_h _buf _off (min (max 0 _len) 8) (_len - (min (max 0 _len) 8)) (if _len < 8 then 0 else _tb)).
-    wp;call (aread_subu64_h _buf _off 0 _len _tb);auto => /> /#. 
+    wp;call (aread_subu64_h _buf _off 0 _len _tb);auto => /> /#.
+    swap 6 -3.
+    sp;seq 2 : (offset = _off /\ dELTA = _len /\ st = _st /\ stavx2INV _st /\
+                0 <= _len <= 200 - b2i (_tb <> 0) /\ (!32 + 8 < _len) /\
+                    bytes2state (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []) =
+                    Array25.of_list W64.zero
+                       (map W64.bits2w (chunk 64 (flatten [w2bits t64_1; w2bits r1])))).
+   + call (aread_subu256_h _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1)).
+     call (aread_subu64_h _buf _off  (deltai _len 0) (leni _len 0) (traili _len _tb 0)).
+     auto => />.
+     move => *;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
+     move => ???????r0??? /=H1;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
+     move => ???????r1??? /=H2;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
+     have Hr0 := aread_subu64_contract  _buf _off (deltai _len 0) (leni _len 0) (traili _len _tb 0) r0.`1 r0.`2 r0.`3 r0.`4 _ _;1,2: by rewrite ?H1; do (simplify traili deltai leni asizes sizes);smt(). 
+     have Hr1 := aread_subu256_contract _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1) r1.`1 r1.`2 r1.`3 r1.`4 _ _;1,2: by  by rewrite ?H2; do (simplify traili deltai leni asizes sizes);smt().
+
+     rewrite !w4256w2bits /to_list /mkseq -iotaredE /=.
+     rewrite Hr0 !Hr1 //.
+     rewrite !flatten_cons /= !flatten_nil /=.
+     do 6!(rewrite chunk_cat;1:by smt(W64.size_w2bits size_cat)).
+     rewrite !(chunk0 _ []);1:by auto.
+     rewrite !chunk_size 1..10:/# /=.
+     have <- := (Array25.to_listK W64.zero (bytes2state (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []))).
+     apply Array25.tP => i ib.
+     rewrite get_of_list 1:/#.
+     rewrite get_of_list 1:/#.
+     pose v2 := nth _ (_::_).
+     pose xtra := if _tb <> 0 then [W8.of_int _tb] else [].
+     case(i<5) => ?;last first.
+     + rewrite /v2 (nth_default _ (_::_)) /= 1:/#.
+       rewrite /to_list nth_mkseq 1:/# /= /bytes2state get_of_list 1:/# /w64L_from_bytes.
+       case (i < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
+       + rewrite (nth_map []) /=.
+         + rewrite  size_chunkify 1:/# size_cat size_sub /#. 
+         rewrite pack8E /= wordP => k kb.
+         rewrite initiE 1:/# /= get_of_list 1:/# /chunkify nth_mkseq /=.
+         + rewrite size_cat size_sub /#.
+         rewrite nth_take 1,2:/# nth_drop 1,2:/# nth_cat size_sub 1:/#.
+         rewrite /xtra /=; case (8 * i + k %/ 8 < _len); first by smt().
+         move => ?; case (_tb <> 0) => ?/=;2: smt().
+         case (8 * i + k %/ 8 - _len = 0).
+         (* Something is wrong here? *)
+     (*   
+     rewrite /to_list /mkseq -iotaredE /=. 
+     do split => /=;1..6: by smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 6 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 7 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 8 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 9 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     by have -> := bytes2_state_commute _buf _off _len _tb 10 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().  
+     *)
   admit.
 
 qed.
