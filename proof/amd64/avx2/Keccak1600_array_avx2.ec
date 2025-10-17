@@ -918,7 +918,7 @@ hoare aread_subu64_h _buf _off _dlt _len _trail:
  ==> res.`1 = _dlt + min (max 0 _len) 8
   /\ res.`2 = _len - min (max 0 _len) 8
   /\ res.`3 = (if _len < 8 then 0 else _trail)
-  /\ res.`4 = W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]). admit. (* 
+  /\ res.`4 = W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]). 
 pose ll := min (max 0 _len) 8.
 proc => /=.
 case (lEN <= 0).
@@ -1267,7 +1267,7 @@ split => *.
   + rewrite ifT 1:/# get_to_uint !of_uintK /= (: 0 <= i %% 8 < 8) 1:/# /=.
     have -> : _trail %% 256 = 0 by smt().
   by smt().
-  by rewrite ifF 1:/# /=. *)
+  by rewrite ifF 1:/# /=. 
 qed.
 
 phoare aread_subu64_ph _buf _off _dlt _len _trail:
@@ -1294,7 +1294,7 @@ hoare aread_subu128_h _buf _off _dlt _len _trail:
   /\ res.`2 = _len - min (max 0 _len) 16
   /\ res.`3 = (if _len < 16 then 0 else _trail)
   /\ res.`4 = W16u8.pack16 (sub _buf (_off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail]).
-  proc. admit. (* 
+  proc. 
   case (lEN <= 0 /\ tRAIL %% 256 = 0).
   + rcondt 1; 1: by auto.
     auto => /> *;do split;1..3: smt().
@@ -1343,7 +1343,7 @@ hoare aread_subu128_h _buf _off _dlt _len _trail:
     by rewrite !nth_default;1,2: by rewrite size_sub /#.
   rewrite ifF 1:/# bits64E initiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /= ifT 1:/# get64E.
   rewrite pack8E /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-  rewrite nth_cat size_sub 1:/# ifT 1:/# nth_sub /#. *)
+  rewrite nth_cat size_sub 1:/# ifT 1:/# nth_sub /#. 
 qed.
 
  phoare aread_subu128_ph _buf _off _dlt _len _trail:
@@ -1426,7 +1426,7 @@ hoare aread_subu256_h _buf _off _dlt _len _trail:
   /\ res.`2 = _len - min (max 0 _len) 32
   /\ res.`3 = (if _len < 32 then 0 else _trail)
   /\ res.`4 = W32u8.pack32 (sub _buf (_off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail]).
-proof. admit. (* 
+proof. 
 proc. 
   case (lEN <= 0 /\ tRAIL %% 256 = 0).
   + rcondt 1; 1: by auto.
@@ -1478,7 +1478,7 @@ proc.
   + by rewrite nth_sub 1:/#  nth_cat size_sub 1:/# ifT 1:/# nth_sub /#.
   case (i %% 128 %/ 8 - min (max 0 (_len - 16)) 16 = 0) => ?; last first.
   + by rewrite  nth_default;1: by rewrite size_cat size_sub /#.
-  rewrite nth_cat size_sub 1:/# ifF 1:/# /#.  *)
+  rewrite nth_cat size_sub 1:/# ifF 1:/# /#.  
 qed.
 
 phoare aread_subu256_ph _buf _off _dlt _len _trail:
@@ -1505,7 +1505,7 @@ hoare awrite_subu64_h _buf _off _dlt _len _w:
  ==> res.`1 = A.fill (fun i => nth W8.zero (W8u8.to_list _w) (i-(_off + _dlt))) (_off + _dlt) (min (max 0 _len) 8) _buf
   /\ res.`2 = _dlt + min (max 0 _len) 8
   /\ res.`3 = _len - min (max 0 _len) 8.
-proof. admit. (* 
+proof. 
 pose ll := min (max 0 _len) 8.
 pose ww := (W8u8.to_list _w).
 proc => /=.
@@ -1651,7 +1651,7 @@ move => H;elim H => />;last first.
   case (_off + _dlt <= i < _off + _dlt + ll) => ?;last by rewrite ifF 1:/# initiE 1:/#. 
   case (i - (_off + _dlt) = 0) => ?/=; last by smt().
   rewrite /ww /= ifT 1:/#;  rewrite ifT 1:/# /=.
-  by rewrite /(`>>`) /= bits8_div 1:// /truncateu8 //. *)
+  by rewrite /(`>>`) /= bits8_div 1:// /truncateu8 //. 
 
 qed.
 
@@ -1670,6 +1670,29 @@ qed.
 lemma awrite_subu128_ll: islossless M(P).__awrite_subu128
  by islossless.
 
+lemma truncateu64_bits8_low (_w : W128.t) i :
+     0 <= i < 8 =>
+        (truncateu64 _w) \bits8 i = _w \bits8 i.
+move => ib.
+rewrite /truncateu64 /= W8u8.of_int_bits8_div //=.
+apply W8.to_uint_eq => /=.
+by have -> /=:= W16u8.bits8_div _w i _;1:smt().
+qed.
+
+lemma truncateu64_bits8_high (_w : W128.t) i :
+     0 <= i < 8 =>
+       truncateu64 (VPUNPCKH_2u64 _w _w) \bits8 i = _w \bits8 (i+8).
+move => ib.
+rewrite /VPUNPCKH_2u64 /interleave_gen /get_hi_2u64 /=.
+have -> : truncateu64 (pack2 [_w \bits64 1; _w \bits64 1]) = _w \bits64 1.
++ have -> : truncateu64 (pack2 [_w \bits64 1; _w \bits64 1]) =
+      (unpack64 (pack2 [_w \bits64 1; _w \bits64 1])).[0]; last by rewrite pack2K get_of_list //=.
+  apply W8u8.allP; rewrite allP => x;rewrite iotaredE mem_iota /= => xb.
+  rewrite truncateu64_bits8_low 1:/#.
+  by rewrite bits8_W2u64_red 1:/# get_of_list 1:/# /= /#.
+by rewrite W128_bits64_bits8 // /#.
+qed.
+ 
 hoare awrite_subu128_h _buf _off _dlt _len _w:
  M(P).__awrite_subu128
  : w = _w /\ buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\
@@ -1679,7 +1702,45 @@ hoare awrite_subu128_h _buf _off _dlt _len _w:
   /\ res.`3 = _len - min (max 0 _len) 16.
 proof.
 proc => /=.
-admitted.
+  case (lEN <= 0).
+  + rcondf 1; 1: by auto => /#.
+    auto => /> &hr *;have ->/= : (min (max 0 _len) 16) = 0 by smt().
+    rewrite tP => k kb;rewrite /fill initiE //= /#.
+
+  rcondt  1; 1: by auto => /#.
+
+  case (16 <= lEN).
+  + rcondt 1; 1: by auto.
+    auto => /> *;do split; 2.. :smt().
+    rewrite tP => k kb;rewrite /fill !initiE //=.
+    rewrite get8_set128_directE 1,2:/#.
+    case (_off + _dlt <= k < _off + _dlt + 16) => ?; first by smt().
+    rewrite /get8 initiE /#.
+
+  rcondf 1;1: by auto.
+  case (8<=lEN); last first.
+  + rcondf 1; 1: by auto.
+    wp; ecall (awrite_subu64_h _buf _off _dlt _len t64).
+    auto => /> *; do split;1:smt().
+    move => ? /= [r1 r2 r3] />;do split; 2..:smt().
+    rewrite tP => k kb;rewrite /fill !initiE //=.
+    case ( _off + _dlt <= k < _off + _dlt + min (max 0 _len) 8) => ?; last by smt().
+    have -> /= : _off + _dlt <= k < _off + _dlt + min (max 0 _len) 16 = true by smt().
+    by smt(truncateu64_bits8_low).
+
+  rcondt 1;1: by auto.
+  wp; ecall (awrite_subu64_h
+         (A.init (get8 (set64_direct (WA.init8 (fun (i : int) => _buf.[i])) (_off + _dlt) (MOVV_64 (truncateu64 _w))))) _off (_dlt+8) (_len-8) t64).
+  auto => /> *; do split;1,2:by smt().
+  move => ?? [r1 r2 r3] />;do split; 2..:smt().
+    rewrite tP => k kb;rewrite /fill !initiE //=.
+    case (_off + (_dlt + 8) <= k < _off + (_dlt + 8) + min (max 0 (_len - 8)) 8) => ?; 
+     1: by smt(truncateu64_bits8_high).
+     rewrite initiE 1:/# get8_set64_directE 1,2:/#.
+   case (_off + _dlt <= k < _off + _dlt + 8) => ?; 1: smt(truncateu64_bits8_low).
+    have -> /= : _off + _dlt <= k < _off + _dlt + min (max 0 _len) 16 = false by smt().
+    rewrite /get8 initiE /#.
+qed.
 
 phoare awrite_subu128_ph _buf _off _dlt _len _w:
  [ M(P).__awrite_subu128
@@ -1696,6 +1757,23 @@ qed.
 lemma awrite_subu256_ll: islossless M(P).__awrite_subu256
  by islossless.
 
+lemma truncateu128_bits8_low (_w : W256.t) i :
+     0 <= i <  16 =>
+        (truncateu128 _w) \bits8 i = _w \bits8 i.
+move => ib.
+rewrite /truncateu128 /= W16u8.of_int_bits8_div //=.
+apply W8.to_uint_eq => /=.
+by have -> /=:= W32u8.bits8_div _w i _;1:smt().
+qed.
+
+    
+lemma truncateu128_bits8_high (_w : W256.t) i :
+     0 <= i < 16 =>
+       VEXTRACTI128 _w W8.one  \bits8 i = _w \bits8 (i+16).
+move => ib.
+rewrite /VEXTRACTI128 /= nth_one /= /b2i /= W256_bits128_bits8 // /#.
+qed.
+ 
 hoare awrite_subu256_h _buf _off _dlt _len _w:
  M(P).__awrite_subu256
  : w = _w /\ buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\
@@ -1704,7 +1782,46 @@ hoare awrite_subu256_h _buf _off _dlt _len _w:
   /\ res.`2 = _dlt + min (max 0 _len) 32
   /\ res.`3 = _len - min (max 0 _len) 32.
 proof.
-admitted.
+proc. 
+  case (lEN <= 0).
+  + rcondf 1; 1: by auto => /#.
+    auto => /> &hr *;have ->/= : (min (max 0 _len) 32) = 0 by smt().
+    rewrite tP => k kb;rewrite /fill initiE //= /#.
+
+  rcondt  1; 1: by auto => /#.
+
+  case (32 <= lEN).
+  + rcondt 1; 1: by auto.
+    auto => /> *;do split; 2.. :smt().
+    rewrite tP => k kb;rewrite /fill !initiE //=.
+    rewrite get8_set256_directE 1,2:/#.
+    case (_off + _dlt <= k < _off + _dlt + 32) => ?; first by smt().
+    rewrite /get8 initiE /#.
+
+  rcondf 1;1: by auto.
+  sp 1;case (16<=lEN); last first.
+  + rcondf 1; 1: by auto.
+    wp; ecall (awrite_subu128_h _buf _off _dlt _len t128).
+    auto => /> *; do split;1:smt().
+    move => ? /= [r1 r2 r3] />;do split; 2..:smt().
+    rewrite tP => k kb;rewrite /fill !initiE 1..2:/# /=.
+    case ( _off + _dlt <= k < _off + _dlt + min (max 0 _len) 16) => ?; last by smt().
+    have -> /= : _off + _dlt <= k < _off + _dlt + min (max 0 _len) 32 = true by smt().
+    by smt(truncateu128_bits8_low).
+
+  rcondt 1;1: by auto.
+  wp; ecall (awrite_subu128_h
+         (A.init (get8 (set128_direct (WA.init8 (fun (i : int) => _buf.[i])) (_off + _dlt) (truncateu128 _w)))) _off (_dlt+16) (_len-16) (VEXTRACTI128 _w W8.one)).
+  auto => /> *; do split;1,2:by smt().
+  move => ?? [r1 r2 r3] />;do split; 2..:smt().
+    rewrite tP => k kb;rewrite /fill !initiE 1,2:/# /=.
+    case (_off + (_dlt + 16) <= k < _off + (_dlt + 16) + min (max 0 (_len - 16)) 16) => ?; 
+     1: by smt(truncateu128_bits8_high).
+     rewrite initiE 1:/# get8_set128_directE 1,2:/#.
+   case (_off + _dlt <= k < _off + _dlt + 16) => ?; 1: smt(truncateu128_bits8_low).
+    have -> /= :_off + _dlt <= k < _off + _dlt + min (max 0 _len) 32 = false by smt().
+    rewrite /get8 initiE /#.
+qed.
 
 phoare awrite_subu256_ph _buf _off _dlt _len _w:
  [ M(P).__awrite_subu256
