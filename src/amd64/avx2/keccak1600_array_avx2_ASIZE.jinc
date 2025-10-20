@@ -72,9 +72,7 @@ inline fn __absorb_array_avx2
    , reg u64 /* offset */
 {
   reg u64 i;
-  inline int ALL, ITERS;
-
-  ALL = LEN + (TRAILB!=0 ? 1 : 0);
+  inline int ITERS;
 
   // continue by processing full blocks
   ITERS = LEN / RATE8; // number of full blocks
@@ -127,7 +125,6 @@ inline fn __pstate_array_avx2
       DELTA, _, TRAILB, t64 = __aread_subu64(buf, offset, DELTA, LEN, TRAILB);
       t64 <<= 8*LO;
       pst[at] ^= t64;
-      LO = 0;
       AT = 0;
       LEN = 0;
     } else { // process first word
@@ -168,7 +165,6 @@ inline fn __pstate_array_avx2
     t64 = buf.[:u64 offset + DELTA];
     DELTA += 8;
     pst.[:u64 8*at] = t64;
-    at += 1;
     LEN -= 8;
   }
 

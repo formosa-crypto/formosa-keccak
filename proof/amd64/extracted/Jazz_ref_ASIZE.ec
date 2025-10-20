@@ -560,7 +560,6 @@ module M = {
         t <- (t `<<` (W8.of_int (8 * lO)));
         t <- (t `^` st.[(W64.to_uint at)]);
         st.[(W64.to_uint at)] <- t;
-        lO <- 0;
         aT <- 0;
         lEN <- 0;
         tRAILB <- 0;
@@ -642,7 +641,6 @@ module M = {
         (* Erased call to spill *)
         st <@ _keccakf1600_ref (st);
         (* Erased call to unspill *)
-        aT <- 0;
       } else {
         
       }

@@ -1106,23 +1106,19 @@ module M = {
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
-        w <- (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW64 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
         if ((4 <= lEN)) {
-          w <-
-          (zeroextu64 (loadW32 Glob.mem (W64.to_uint (buf + (W64.of_int 0))))
-          );
+          w <- (zeroextu64 (loadW32 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 4));
           lEN <- (lEN - 4);
         } else {
           w <- (W64.of_int 0);
         }
         if ((2 <= lEN)) {
-          t16 <-
-          (zeroextu64 (loadW16 Glob.mem (W64.to_uint (buf + (W64.of_int 0))))
-          );
+          t16 <- (zeroextu64 (loadW16 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 2));
           lEN <- (lEN - 2);
         } else {
@@ -1130,9 +1126,7 @@ module M = {
         }
         if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
-            t8 <-
-            (zeroextu64
-            (loadW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+            t8 <- (zeroextu64 (loadW8 Glob.mem (W64.to_uint buf)));
             if (((tRAIL %% 256) <> 0)) {
               t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
@@ -1164,9 +1158,7 @@ module M = {
       w <- (set0_256);
     } else {
       if ((8 <= lEN)) {
-        w <-
-        (VPBROADCAST_4u64
-        (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+        w <- (VPBROADCAST_4u64 (loadW64 Glob.mem (W64.to_uint buf)));
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
@@ -1185,13 +1177,12 @@ module M = {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
-        w <- (loadW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW128 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 16));
         lEN <- (lEN - 16);
       } else {
         if ((8 <= lEN)) {
-          w <-
-          (VMOV_64 (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+          w <- (VMOV_64 (loadW64 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 8));
           lEN <- (lEN - 8);
           (buf, lEN, tRAIL, t64) <@ __mread_subu64 (buf, lEN, tRAIL);
@@ -1213,12 +1204,12 @@ module M = {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
-        w <- (loadW256 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW256 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
         if ((16 <= lEN)) {
-          t128_0 <- (loadW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+          t128_0 <- (loadW128 Glob.mem (W64.to_uint buf));
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           (buf, lEN, tRAIL, t128_1) <@ __mread_subu128 (buf, lEN, tRAIL);
@@ -1242,15 +1233,12 @@ module M = {
     
     if ((0 < lEN)) {
       if ((8 <= lEN)) {
-        Glob.mem <-
-        (storeW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW64 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
         if ((4 <= lEN)) {
-          Glob.mem <-
-          (storeW32 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu32 w));
+          Glob.mem <- (storeW32 Glob.mem (W64.to_uint buf) (truncateu32 w));
           w <- (w `>>` (W8.of_int 32));
           buf <- (buf + (W64.of_int 4));
           lEN <- (lEN - 4);
@@ -1258,9 +1246,7 @@ module M = {
           
         }
         if ((2 <= lEN)) {
-          Glob.mem <-
-          (storeW16 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu16 w));
+          Glob.mem <- (storeW16 Glob.mem (W64.to_uint buf) (truncateu16 w));
           w <- (w `>>` (W8.of_int 16));
           buf <- (buf + (W64.of_int 2));
           lEN <- (lEN - 2);
@@ -1268,9 +1254,7 @@ module M = {
           
         }
         if ((1 <= lEN)) {
-          Glob.mem <-
-          (storeW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu8 w));
+          Glob.mem <- (storeW8 Glob.mem (W64.to_uint buf) (truncateu8 w));
           buf <- (buf + (W64.of_int 1));
           lEN <- (lEN - 1);
         } else {
@@ -1286,15 +1270,13 @@ module M = {
     var t64:W64.t;
     if ((0 < lEN)) {
       if ((16 <= lEN)) {
-        Glob.mem <-
-        (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW128 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 16));
         lEN <- (lEN - 16);
       } else {
         if ((8 <= lEN)) {
           Glob.mem <-
-          (storeW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (MOVV_64 (truncateu64 w)));
+          (storeW64 Glob.mem (W64.to_uint buf) (MOVV_64 (truncateu64 w)));
           buf <- (buf + (W64.of_int 8));
           lEN <- (lEN - 8);
           w <- (VPUNPCKH_2u64 w w);
@@ -1313,15 +1295,13 @@ module M = {
     var t128:W128.t;
     if ((0 < lEN)) {
       if ((32 <= lEN)) {
-        Glob.mem <-
-        (storeW256 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW256 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
         t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
-          Glob.mem <-
-          (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) t128);
+          Glob.mem <- (storeW128 Glob.mem (W64.to_uint buf) t128);
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           t128 <- (VEXTRACTI128 w (W8.of_int 1));
@@ -2432,10 +2412,8 @@ module M = {
   proc __absorb_array_avx2 (st:W256.t Array7.t, buf:W8.t Array999.t,
                             offset:W64.t, lEN:int, rATE8:int, tRAILB:int) : 
   W256.t Array7.t * W64.t = {
-    var aLL:int;
     var iTERS:int;
     var i:W64.t;
-    aLL <- (lEN + ((tRAILB <> 0) ? 1 : 0));
     iTERS <- (lEN %/ rATE8);
     if ((0 < iTERS)) {
       i <- (W64.of_int 0);
@@ -2485,7 +2463,6 @@ module M = {
         lEN, tRAILB);
         t64 <- (t64 `<<` (W8.of_int (8 * lO)));
         pst.[(W64.to_uint at)] <- (pst.[(W64.to_uint at)] `^` t64);
-        lO <- 0;
         aT <- 0;
         lEN <- 0;
       } else {
@@ -2551,7 +2528,6 @@ module M = {
       (WArray200.get64
       (WArray200.set64_direct (WArray200.init64 (fun i => pst.[i]))
       (W64.to_uint ((W64.of_int 8) * at)) t64)));
-      at <- (at + (W64.of_int 1));
       lEN <- (lEN - 8);
     } else {
       
@@ -2905,7 +2881,6 @@ module M = {
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint at) t256)));
-        lO <- 0;
         aT <- 0;
         lEN <- 0;
       } else {
@@ -3007,7 +2982,6 @@ module M = {
         offset, (rATE8 - aT), 0);
         lEN <- (lEN - (rATE8 - aT));
         st <@ _keccakf1600_avx2x4 (st);
-        aT <- 0;
       } else {
         
       }
@@ -3139,7 +3113,6 @@ module M = {
         (WArray800.get256
         (WArray800.set64 (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint (at + (W64.of_int 3))) t3)));
-        lO <- 0;
         aT <- 0;
         lEN <- 0;
         tRAILB <- 0;
@@ -3341,7 +3314,6 @@ module M = {
       offset <- (offset + (W64.of_int dELTA));
       if ((tRAILB <> 0)) {
         aLL <- (aLL + 1);
-        tRAILB <- 0;
       } else {
         
       }
@@ -3411,7 +3383,6 @@ module M = {
         buf2, buf3, offset, (rATE8 - aT), 0);
         lEN <- (lEN - (rATE8 - aT));
         st <@ _keccakf1600_avx2x4 (st);
-        aT <- 0;
       } else {
         
       }

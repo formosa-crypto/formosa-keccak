@@ -37,7 +37,6 @@ inline fn __addstate_array_ref
       t <<= 8*LO;
       t ^= st[:u64 at];
       st[:u64 at] = t;
-      LO = 0;
       AT = 0;
       LEN = 0;
       TRAILB = 0;
@@ -113,7 +112,6 @@ inline fn __absorb_array_ref
       () = #spill(buf,offset);
       st = _keccakf1600_ref(st);
       () = #unspill(buf,offset);
-      AT = 0;
     }
 
     // continue by processing full blocks

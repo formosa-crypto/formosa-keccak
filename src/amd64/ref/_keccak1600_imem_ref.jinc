@@ -37,7 +37,6 @@ inline fn __addstate_imem_ref
       t <<= 8*LO;
       t ^= st[:u64 at];
       st[:u64 at] = t;
-      LO = 0;
       AT = 0;
       LEN = 0;
       TRAILB = 0;
@@ -73,7 +72,7 @@ inline fn __addstate_imem_ref
   LO = (AT+LEN) % 8;
   if ( 0 < LO || TRAILB != 0 ) {
     buf, _, _, t = __mread_subu64(buf, LO, TRAILB);
-    if ( TRAILB != 0 ) { ALL += 1; TRAILB = 0; }
+    if ( TRAILB != 0 ) { ALL += 1; }
     t ^= st[:u64 at];
     st[:u64 at] = t;
   }
@@ -109,7 +108,6 @@ inline fn __absorb_imem_ref
       () = #spill(buf);
       st = _keccakf1600_ref(st);
       () = #unspill(buf);
-      AT = 0;
     }
 
     // continue by processing full blocks
