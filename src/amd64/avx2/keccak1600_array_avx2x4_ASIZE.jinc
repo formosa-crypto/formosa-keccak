@@ -37,7 +37,6 @@ inline fn __addstate_bcast_array_avx2x4
       t256 = #VPSLL_4u64(t256, 8*LO);
       t256 ^= st.[:u256 at];
       st.[:u256 at] = t256;
-      LO = 0;
       AT = 0;
       LEN = 0;
     } else { // process first word
@@ -108,7 +107,6 @@ inline fn __absorb_bcast_array_avx2x4
       st, _, offset = __addstate_bcast_array_avx2x4(st, AT, buf, offset, RATE8-AT, 0);
       LEN = LEN - (RATE8-AT);
       st = _keccakf1600_avx2x4(st);
-      AT = 0;
     }
 
     // continue by processing full blocks
@@ -173,7 +171,6 @@ inline fn __addstate_array_avx2x4
       t3 <<= 8*LO;
       t3 ^= st[:u64 at + 3];
       st[:u64 at + 3] = t3;
-      LO = 0;
       AT = 0;
       LEN = 0;
       TRAILB = 0;
@@ -255,7 +252,7 @@ inline fn __addstate_array_avx2x4
     _, _, _, t2 = __aread_subu64(buf2, offset, DELTA, LO, TRAILB);
     DELTA, _, _, t3 = __aread_subu64(buf3, offset, DELTA, LO, TRAILB);
     offset += DELTA;
-    if ( TRAILB != 0 ) { ALL += 1; TRAILB = 0; }
+    if ( TRAILB != 0 ) { ALL += 1; }
     t0 ^= st[:u64 at + 0];
     st[:u64 at + 0] = t0;
     t1 ^= st[:u64 at + 1];
@@ -298,7 +295,6 @@ inline fn __absorb_array_avx2x4
         = __addstate_array_avx2x4(st, AT, buf0, buf1, buf2, buf3, offset, RATE8-AT, 0);
       LEN = LEN - (RATE8-AT);
       st = _keccakf1600_avx2x4(st);
-      AT = 0;
     }
 
     // continue by processing full blocks

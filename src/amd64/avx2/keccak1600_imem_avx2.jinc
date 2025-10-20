@@ -61,9 +61,7 @@ inline fn __absorb_imem_avx2
    , reg u64 /* buf */
 {
   reg u64 i;
-  inline int ALL, ITERS;
-
-  ALL = LEN + (TRAILB!=0 ? 1 : 0);
+  inline int ITERS;
 
   // continue by processing full blocks
   ITERS = LEN / RATE8; // number of full blocks
@@ -114,7 +112,6 @@ inline fn __pstate_imem_avx2
       buf, _, TRAILB, t64 = __mread_subu64(buf, LEN, TRAILB);
       t64 <<= 8*LO;
       pst[at] ^= t64;
-      LO = 0;
       AT = 0;
       LEN = 0;
     } else { // process first word
@@ -153,7 +150,6 @@ inline fn __pstate_imem_avx2
     t64 = [:u64 buf];
     buf += 8;
     pst.[:u64 8*at] = t64;
-    at += 1;
     LEN -= 8;
   }
 
