@@ -35,31 +35,25 @@ ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + LEN}
   DELTA, LEN, TRAILB, r1 = __aread_subu256(buf, offset, DELTA, LEN, TRAILB);
   st[1] ^= r1;
 
-  if (0 < LEN ) {
-    DELTA, LEN, TRAILB, t64 = __aread_subu64(buf,offset, DELTA,  LEN, TRAILB);
-    t128_1 = (128u) t64;
+  DELTA, LEN, TRAILB, t64 = __aread_subu64(buf,offset, DELTA,  LEN, TRAILB);
+  t128_1 = (128u) t64;
+  t128_0 = #set0_128();
 
+  if ( 0 < LEN || TRAILB != 0) {
     DELTA, LEN, TRAILB, r3 = __aread_subu256(buf, offset, DELTA, LEN, TRAILB);
-
     DELTA, LEN, TRAILB, t64 = __aread_subu64(buf, offset, DELTA, LEN, TRAILB);
     t128_0 = (128u) t64;
-
     DELTA, LEN, TRAILB, r4 = __aread_subu256(buf, offset, DELTA, LEN, TRAILB);
-
     DELTA, LEN, TRAILB, t64 = __aread_subu64(buf, offset, DELTA, LEN, TRAILB);
     t128_1 = #VPINSR_2u64(t128_1, t64, 1);
-
     DELTA, LEN, TRAILB, r5 = __aread_subu256(buf, offset, DELTA, LEN, TRAILB);
-
     DELTA, LEN, TRAILB, t64 = __aread_subu64(buf, offset, DELTA, LEN, TRAILB);
     t128_0 = #VPINSR_2u64(t128_0, t64, 1);
-    r2 = (2u128)[t128_1, t128_0];
-    st[2] ^= r2;
-
     DELTA, LEN, TRAILB, r6 = __aread_subu256(buf, offset, DELTA, LEN, TRAILB);
-
     st = __addstate_r3456_avx2( st, r3, r4, r5, r6);
   }
+  r2 = (2u128)[t128_1, t128_0];
+  st[2] ^= r2;
   offset += DELTA;
   return st, offset;
 }
