@@ -1,6 +1,31 @@
-require "keccakf1600_avx2.jinc"
+require "keccakf1600.jinc"
 require "../common/keccak1600_generic.jinc"
 require "../common/subreadwrite_imem.jinc"
+
+
+inline fn __u64_to_u256
+( reg u64 x
+, inline int L
+) -> reg u256
+{
+  reg u256 t256;
+  reg u128 t128;
+
+  if (L % 2 == 0) {
+    t128 = (128u) x;
+  } else {
+    t128 = #set0_128();
+    t128 = #VPINSR_2u64(t128, x, 1);
+  }
+  t256 = #set0_256();
+  if (L / 2 == 0) {
+    t256 = #VINSERTI128(t256, t128, 0);
+  } else {
+    t256 = #VINSERTI128(t256, t128, 1);
+  }
+
+  return t256;
+}
 
 /*
    STATE INIT
@@ -22,18 +47,22 @@ inline fn __state_init_avx2() -> reg u256[7]
 */
 inline fn __pstate_init_avx2
 ( reg mut ptr u64[25] pst
-) -> reg ptr u64[25]
+) -> reg ptr u64[25], reg u256[7]
+ensures{is_arr_init(result.0,0,200) && is_arr_init(result.1,0,224)}
 {
   inline int i;
   reg u64 z64;
   reg u256 z256;
+  reg u256[7] st;
 
   z256 = #set0_256();
-  for i=0 to 25/4 { pst[u256 i] = z256; }
+  for i=0 to 25/4 { pst[:u256 i] = z256; }
   z64 = 0;
   pst[24] = z64;
 
-  return pst;
+  st = __state_init_avx2();
+
+  return pst, st;
 }
 
 inline fn __perm_reg3456_avx2
@@ -106,36 +135,36 @@ inline fn __state_from_pstate_avx2
   reg u128 t128_0, t128_1;
   reg u64 t;
 
-  st[0] = #VPBROADCAST_4u64(pst.[u64 0]);
-  st[1] = pst.[u256 8];
+  st[0] = #VPBROADCAST_4u64(pst.[:u64 0]);
+  st[1] = pst.[:u256 8];
 
   // [ 5 - ]
-  t128_0 = #VMOV(pst.[u64 5*8]);
+  t128_0 = #VMOV(pst.[:u64 5*8]);
   // [ 6 7 8 9 ]
-  st[3] = pst.[u256 6*8];
+  st[3] = pst.[:u256 6*8];
   // [ 10 - ]
-  t128_1 = #VMOV(pst.[u64 10*8]);
+  t128_1 = #VMOV(pst.[:u64 10*8]);
   // [ 11 12 13 14 ]
-  st[4] = pst.[u256 11*8];
+  st[4] = pst.[:u256 11*8];
   // [ 5 15 ]
-  t = pst.[u64 15*8];
+  t = pst.[:u64 15*8];
   t128_0 = #VPINSR_2u64(t128_0, t, 1);
   // [ 16 17 18 19 ]
-  st[5] = pst.[u256 16*8];
+  st[5] = pst.[:u256 16*8];
   // [ 10 20 ]
-  t = pst.[u64 20*8];
+  t = pst.[:u64 20*8];
   t128_1 = #VPINSR_2u64(t128_1, t, 1);
   // [ 10 20 5 15 ]
   st[2] = (2u128)[t128_0, t128_1];
   // [ 21 22 23 24 ]
-  st[6] = pst.[u256 21*8];
+  st[6] = pst.[:u256 21*8];
   st[3], st[4], st[5], st[6] = __perm_reg3456_avx2(st[3], st[4], st[5], st[6]);
 
   return st;
 }
 
 
-inline fn __addstate_r3456
+inline fn __addstate_r3456_avx2
 ( reg u256[7] st
 , reg u256 r3 r4 r5 r6
 ) -> reg u256[7]
@@ -171,20 +200,20 @@ inline fn __addstate_r3456
   return st;
 }
 
-inline fn __addpst01
+inline fn __addpst01_avx2
 ( reg u256[7] st
 , reg const ptr u64[25] pst
 ) -> reg u256[7]
 {
   reg u256 t256;
-  t256 = #VPBROADCAST_4u64(pst.[u64 0]);
+  t256 = #VPBROADCAST_4u64(pst.[:u64 0]);
   st[0] ^= t256;
-  t256 = pst.[u256 8*1];
+  t256 = pst.[:u256 8*1];
   st[1] ^= t256;
   return st;
 }
 
-inline fn __addpst23456  // remaining entries
+inline fn __addpst23456_avx2  // remaining entries
 ( reg u256[7] st
 , reg const ptr u64[25] pst
 ) -> reg u256[7]
@@ -194,28 +223,28 @@ inline fn __addpst23456  // remaining entries
   reg u64 t;
 
   // [ 5 - ]
-  t128_0 = #VMOV(pst.[u64 5*8]);
+  t128_0 = #VMOV(pst.[:u64 5*8]);
   // [ 6 7 8 9 ]
-  r3 = pst.[u256 6*8];
+  r3 = pst.[:u256 6*8];
   // [ 10 - ]
-  t128_1 = #VMOV(pst.[u64 10*8]);
+  t128_1 = #VMOV(pst.[:u64 10*8]);
   // [ 11 12 13 14 ]
-  r4 = pst.[u256 11*8];
+  r4 = pst.[:u256 11*8];
   // [ 5 15 ]
-  t = pst.[u64 15*8];
+  t = pst.[:u64 15*8];
   t128_0 = #VPINSR_2u64(t128_0, t, 1);
   // [ 16 17 18 19 ]
-  r5 = pst.[u256 16*8];
+  r5 = pst.[:u256 16*8];
   // [ 10 20 ]
-  t = pst.[u64 20*8];
+  t = pst.[:u64 20*8];
   t128_1 = #VPINSR_2u64(t128_1, t, 1);
   // [ 10 20 5 15 ]
   r2 = (2u128)[t128_0, t128_1];
   st[2] ^= r2;
   // [ 21 22 23 24 ]
-  r6 = pst.[u256 21*8];
+  r6 = pst.[:u256 21*8];
 
-  st = __addstate_r3456(st, r3, r4, r5, r6);
+  st = __addstate_r3456_avx2(st, r3, r4, r5, r6);
 
   return st;
 }
@@ -225,8 +254,8 @@ fn _addpstate_avx2
 , reg const ptr u64[25] pst
 ) -> reg u256[7]
 {
-  st = __addpst01(st, pst);
-  st = __addpst23456(st, pst);
+  st = __addpst01_avx2(st, pst);
+  st = __addpst23456_avx2(st, pst);
   return st;
 }
 
@@ -235,7 +264,9 @@ fn _addpstate_avx2
    ============
 */
 
-inline fn __stavx2_pos(inline int POS) -> inline int, inline int {
+inline fn __stavx2_pos_avx2(inline int POS) -> inline int, inline int 
+ensures{0<=result.0 && result.0 < 7}
+{
   inline int R, L;
   //0: [ 0  0  0  0  ]
   R = 0; L = 0;
@@ -271,34 +302,10 @@ inline fn __stavx2_pos(inline int POS) -> inline int, inline int {
   return R,L;
 }
 
-inline fn __u64_to_u256
-( reg u64 x
-, inline int L
-) -> reg u256
-{
-  reg u256 t256;
-  reg u128 t128;
-
-  if (L % 2 == 0) {
-    t128 = (128u) x;
-  } else {
-    t128 = #set0_128();
-    t128 = #VPINSR_2u64(t128, x, 1);
-  }
-  t256 = #set0_256();
-  if (L / 2 == 0) {
-    t256 = #VINSERTI128(t256, t128, 0);
-  } else {
-    t256 = #VINSERTI128(t256, t128, 1);
-  }
-
-  return t256;
-}
-
 inline fn __addratebit_avx2
 ( reg u256[7] st
 , inline int RATE8
-) -> reg ptr u256[7]
+) -> reg u256[7]
 {
   inline int R, L;
   reg u256 t256;
@@ -306,7 +313,7 @@ inline fn __addratebit_avx2
   reg u64 t64;
   t64 = 1;
   t64 <<= (8*RATE8-1) % 64; // obs: should be 63 for all admissible rates!
-  R,L = __stavx2_pos((RATE8-1)/8);
+  R,L = __stavx2_pos_avx2((RATE8-1)/8);
   if (R==0) {
     t256 = #VPBROADCAST_4u64(t64);
   } else {

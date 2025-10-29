@@ -4,15 +4,15 @@
 #include <stdbool.h>
 
 
-extern void get_params(uint64_t*);
+extern void get_params_ref(uint64_t*);
 
 // FIXEDSIZES
 typedef uint64_t KeccakState[25];
 
-extern void init_state(KeccakState st);
-extern void TEST_AT__absorb_ref(KeccakState st, const uint8_t buf[__BIGSIZE]);
-extern void TEST_ONESHOT__absorb_ref(KeccakState st, const uint8_t buf[__BIGSIZE]);
-extern void TEST_ONESHOT__squeeze_ref(uint8_t buf[__BIGSIZE], KeccakState st);
+extern void init_state_ref(KeccakState st);
+extern void TEST_AT__absorb_ref(KeccakState st, const uint8_t buf[]);
+extern void TEST_ONESHOT__absorb_ref(KeccakState st, const uint8_t buf[]);
+extern void TEST_ONESHOT__squeeze_ref(uint8_t buf[], KeccakState st);
 
 
 // UPDSTATE
@@ -64,24 +64,23 @@ int chkeq_buf(char *str, uint8_t a1[], uint8_t a2[], size_t len) {
 
 
 int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
-  int r = 0;
+  int r=0, i, niters=bigsize/size;
   _Alignas(32) KeccakUpdState s1, s2, s3;
 
   uint8_t buf_in[bigsize];
   uint8_t buf_o1[bigsize], buf_o2[bigsize];
-  int i, niters=bigsize/size;
-  uint8_t t8 = 0;
 
   // init input buffer
-  for (i=0; i<__BIGSIZE; i++) {
+  uint8_t t8 = 0;
+  for (i=0; i<bigsize; i++) {
     buf_in[i] = t8;
     t8++;
   }
 
   // init states
   init_updstate_ref(s1, rate8/8, trail);
-  init_state(s2);
-  init_state(s3);
+  init_state_ref(s2);
+  init_state_ref(s3);
   r = r || chkeq_buf("init", (uint8_t*) s1, (uint8_t*) s2, 8*25);
 
 
@@ -109,7 +108,7 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
 int main() {
   uint64_t params[4];
 
-  get_params(params);
+  get_params_ref(params);
 
   return run_test(params[0], params[1], params[2], params[3]);
 }

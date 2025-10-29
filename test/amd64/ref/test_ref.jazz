@@ -9,7 +9,7 @@ param int REPS = RATE8/15; // 11
 
 param int BIGSIZE = SIZE*(REPS+1); // 2196
 
-export fn get_params
+export fn get_params_ref
 ( reg mut ptr u64[4] params
 ) -> reg ptr u64[4]  /* params */
 {
@@ -20,7 +20,7 @@ export fn get_params
   return params;
 }
 
-export fn init_state
+export fn init_state_ref
 ( reg mut ptr u64[25] st
 ) -> reg ptr u64[25]
 {

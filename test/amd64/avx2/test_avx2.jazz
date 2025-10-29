@@ -1,0 +1,111 @@
+from Keccak require "avx2/keccak1600_fixedsizes.jinc"
+
+param int RATE8 = R168;
+param int TRAIL = SHAKE;
+
+param int SIZE = RATE8+15; // 183
+param int REPS = RATE8/15; // 11
+
+param int BIGSIZE = SIZE*(REPS+1); // 2196
+
+export fn get_params_avx2
+( reg mut ptr u64[4] params
+) -> reg ptr u64[4]  /* params */
+{
+  params[0] = RATE8;
+  params[1] = TRAIL;
+  params[2] = SIZE;
+  params[3] = BIGSIZE;
+  return params;
+}
+
+export fn init_state_avx2
+( reg mut ptr u64[25] state
+) -> reg ptr u64[25]
+{
+  reg u256[7] st;
+  state = state;
+  st = __state_init_avx2();
+  state = __stavx2_unpack(state, st);
+  return state;
+}
+
+
+namespace TEST_AT {
+
+  param int ASIZE = SIZE;
+
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+
+    export fn absorb_avx2
+    ( reg mut ptr u64[25] state
+    , reg const ptr u8[BIGSIZE] buf
+    ) -> reg ptr u64[25] /* st */
+    {
+      inline int i, AT;
+      reg u256[7] st;
+      reg ptr u8[ASIZE] b;
+
+      buf = buf;
+      state = state;
+      st = __stavx2_pack(state);
+      () = #spill(buf);
+      AT = 0;
+      for i = 0 to BIGSIZE/SIZE-1 {
+	() = #unspill(buf);
+	b = buf[i*ASIZE:ASIZE];
+	st, AT = __absorb_at_avx2(st, AT, b, 0);
+      }
+      () = #unspill(buf);
+      b = buf[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
+      st, AT = __absorb_at_avx2(st, AT, b, TRAIL);
+      state = __stavx2_unpack(state, st);
+      return state;
+    }
+}
+
+namespace TEST_ONESHOT {
+
+  param int ASIZE = BIGSIZE;
+
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+
+  export fn absorb_avx2
+  ( reg mut ptr u64[25] state
+  , reg const ptr u8[ASIZE] buf
+  ) -> reg ptr u64[25] /* st */
+  {
+    reg u256[7] st;
+    state = state; buf = buf;
+    st = __stavx2_pack(state);
+    st = __absorb_avx2(st, buf, TRAIL);
+    state = __stavx2_unpack(state, st);
+    return state;
+  }
+
+  export fn squeeze_avx2
+  ( reg mut ptr u8[ASIZE] buf
+  , reg mut ptr u64[25] state
+  ) -> reg ptr u8[ASIZE] /* buf */
+     , reg ptr u64[25]   /* st */
+  {
+    reg u256[7] st;
+    state = state; buf = buf;
+    st = __stavx2_pack(state);
+    buf, st = __squeeze_avx2(buf, st);
+    state = __stavx2_unpack(state, st);    
+    return buf, state;
+  }
+
+}
+
+
+from Keccak require "avx2/keccak1600_updstate.jinc"
+
+namespace TEST_UPD {
+
+  param int ASIZE = SIZE;
+
+  from Keccak require "avx2/keccak1600_updstate_ASIZE.jinc"
+
+}
