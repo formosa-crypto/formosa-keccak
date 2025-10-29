@@ -1,0 +1,134 @@
+/* IMPORTANT:
+ This file expects to be "required" after defining the function '__ANDN_64',
+ itself defined in either 'select_nobmi1_ref.jinc' or 'select_bmi1_ref.jinc'
+*/
+
+require "keccak1600.jinc"
+
+type keccak_updstate = u64[26];
+
+/**
+ Last u64 word of keccak_updstate is filled with:
+  - byte[0] - at_position (pre: 0 <= at <= 200)
+  - byte[1] - r64-1, where r64 = 8*r8 (rate in bytes) -- (pre: 0 < r64 <= 25)
+  - byte[2] - Trail Byte
+*/
+
+
+fn _init_updstate_ref
+( reg mut ptr keccak_updstate st
+, reg ui8 r64 // 9 <= r64 < 25 
+, reg u8 trailb // 0 <= trailb < 256
+) -> reg ptr keccak_updstate /* st */
+{
+  reg ui64 i;
+  reg u64 t, status;
+
+  status = (64u) trailb;
+  status <<= 8;
+  r64 = (8ui) ((8u)r64 - 1);
+  t = (64u) (8u) r64;
+  status += t;
+  status <<= 8;
+  i = 0;
+  while (i < 25) { st[i] = 0; i += 1; }
+  st[25] = status;
+
+  return st;
+}
+
+
+/**
+ When we read the update-data from the state (r8 and at-position), we guarantee
+ that it is wellformed, that is:
+  - rate in bytes (r8):  0 < r8 < 200  &&  r8 %| 8
+  - at-position (at):  0 <= at < r8
+ This would allow to establish safety independently of the given state.
+*/
+fn _ststatus_data
+( reg u64 ststatus
+) -> reg u8    /* trailb */
+   , reg ui64  /* r8 ; 8 %| r8 /\ 0 < r8 <= 200  */
+   , reg ui64  /* at  ; 0 <= at < r8 */
+/* ensures:
+    8 |% r8
+    0 < r8 <= 200
+    0 <= at < r8  */
+{
+ reg u64 r8, at, c_0, c_200;
+ reg ui64 r8_ui, at_ui;
+ reg u8 trailb;
+
+ at = ststatus;
+ at &= 0xFF;
+ ststatus >>= 8;
+ r8 = ststatus;
+ r8 &= 255; // 0 <= r8 < 256
+ r8 += 1;   // 0 < r8 <= 256
+ r8 <<= 3;  // 8 %| r8  /\  0 < r8 <= 2048
+ c_200 = 200;
+ r8 = c_200 if r8 > 200;  // 8 %| r8  /\  0 < r8 <= 200
+ c_0 = 0;
+ at = c_0 if r8 <= at;  // 0 <= at < r8
+ ststatus >>= 8;
+ trailb = (8u) ststatus;
+
+ r8_ui = (64ui)r8;
+ at_ui = (64ui)at;
+ return trailb, r8_ui, at_ui;
+}
+
+fn _finish_updstate_ref
+( reg mut ptr keccak_updstate st
+) -> reg ptr keccak_updstate /* st */
+{
+  reg u64 ststatus;
+  reg ui64 at, r8;
+  reg u8 trailb;
+  ststatus = st[25];
+  trailb, r8, at = _ststatus_data(ststatus);
+  st.[:u8 at] ^= trailb;
+  st.[:u8 r8-1] ^= 0x80;
+  st.[:u32 8*25] &= 0xFF00FF00; // clear trail-byte and at-position
+  
+  return st;
+}
+
+
+export fn ststatus_updstate_ref
+( reg mut ptr u8[3] status
+, reg const ptr keccak_updstate st
+) -> reg ptr u8[3]
+{
+  reg ui64 r8 at;
+  reg u64 ststatus;
+  ststatus = st[25];
+  _, r8, at = _ststatus_data(ststatus);
+  status[0] = (8u) (64u) r8;
+  status[1] = (8u) (64u) at;
+  status[2] = st.[:u8 8*25+2];
+  return status;
+}
+
+export fn init_updstate_ref
+( reg mut ptr keccak_updstate st
+, reg ui8 r64
+, reg u8 trailb
+) -> reg ptr keccak_updstate
+{
+  st = st;
+  r64 = r64;
+  trailb = trailb;
+  st = _init_updstate_ref(st, r64, trailb);
+  return st;
+}
+
+export fn finish_updstate_ref
+( reg mut ptr keccak_updstate st
+) -> reg ptr keccak_updstate /* st */
+{
+  st = st;
+  st = _finish_updstate_ref(st);
+  return st;
+}
+

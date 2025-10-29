@@ -1,4 +1,9 @@
+/* IMPORTANT:
+ This file expects to be "required" after defining the function '__ANDN_64',
+ itself defined in either 'select_nobmi1_ref.jinc' or 'select_bmi1_ref.jinc'
+*/
 require "../common/keccak1600_generic.jinc"
+require "keccakf1600.jinc"
 
 /*
    STATE INIT

@@ -11,7 +11,7 @@ u64 __ASIZE = ASIZE;
 u64 __RATE8 = RATE8;
 
 
-require "../common/subreadwrite_array_ASIZE.jinc"
+require "../common/subreadwrite_ASIZE.jinc"
 
 /*
    INCREMENTAL ARRAY ABSORB

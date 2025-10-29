@@ -1,0 +1,234 @@
+/* DEPENDENCIES:
+require "keccak1600_updstate.jinc"
+
+namespace A_ASIZE {
+  param int ASIZE = XXXXX;
+  //THIS FILE
+*/
+
+require "../common/subreadwrite_ASIZE.jinc"
+
+fn _add_updstate_ref
+( reg mut ptr keccak_state st
+, reg ui64 at               // 0 <= at < 200
+, reg const ptr u8[ASIZE] buf // at+ASIZE <= 200 (in fact, r8...)
+, reg ui64 off    // off + upto - at <= ASIZE
+, reg ui64 upto    // at <= upto <= 200 (in fact, r8...)
+) -> reg ui64                 /* at */
+   , reg ui64                 /* off */
+   , reg ptr keccak_state /* st */
+{
+  reg u8 sh;
+  reg u64 t64, at8 upto8;
+  reg ui64 off2, newat, len;
+
+  at8 = (64u) at;
+  at8 &= 0x07; // byte position in stword
+
+  if (at8 != 0) { // needs to fill first word...
+    len = upto;
+    len -= at; // len = upto-at (bytes to process)
+    at >>= 3; at <<= 3; // at = 8*(at/8) (start of stword)
+    off2, t64 = __a_rlen_read_upto8(buf, off, len);
+    len = len + (64ui)at; // bytes from the start of word
+    sh = (8u) at8;
+    sh <<= 3;   // bits to shift...
+    t64 <<= (sh & 63);
+    st.[at] ^= t64;
+    if (len >= 8) { // need to proccess more stwords...
+      off += 8;
+      off -= (64ui) at8; // off += (8-at8)
+      at += 8;    // start of next stword
+    } else { // this is the only affected stword
+      off = off2; // 
+      at = upto;  // its done!
+    }
+  }
+
+  // now: at%8==0 || at==upto
+  newat = at;
+  while
+    { newat += 8; }
+  ( newat <= upto )
+    {
+      t64 = buf.[:u64 off];
+      st.[at] ^= t64;
+      at = newat;
+      off += 8;
+    }
+
+  // leftovers...
+  if (at < upto) {
+    upto8 = (64u) upto;
+    upto8 &= 0x07;
+    off, t64 = __a_rlen_read_upto8(buf, off, (64ui) upto8);
+    st.[at] ^= t64;
+  }
+  
+  at = upto;
+  return at, off, st;
+}
+
+fn _update_updstate_ref
+( reg mut ptr keccak_updstate st
+, reg const ptr u8[ASIZE] buf
+) -> reg ptr keccak_updstate /* st */
+{
+  reg u64 ststatus;
+  reg ui64 off, r8, at, upto;
+  reg ptr keccak_state stk;
+
+  ststatus = st[25];
+  _, r8, at = _ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  stk = st[0:25];
+  () = #spill(st, buf);
+
+  off = 0;
+  upto = ASIZE;
+  upto += at;
+  while (r8 <= upto) {
+    at, off, stk = _add_updstate_ref(stk, at, buf, off, r8);
+    () = #spill(r8, at, upto, off);
+    stk = _keccakf1600_ref_(stk);
+    () = #unspill(r8, at, upto, off, buf);
+    upto -= r8;
+    at = 0;
+  }
+  upto = upto;
+  () = #unspill(st);
+  at, _, stk = _add_updstate_ref(stk, at, buf, off, upto);
+  st[0:25] = stk;
+  st.[:u8 8*25] = (8u) (64u) at;
+
+  return st;
+}
+
+fn _dump_updstate_ref
+( reg mut ptr u8[ASIZE] buf
+, reg ui64 off    // off + upto - at <= ASIZE
+, reg const ptr keccak_state st
+, reg ui64 at     // at+ASIZE <= r8
+, reg ui64 upto   // at <= upto <= r8
+) -> reg ui64        /* at */
+   , reg ui64        /* off */
+   , reg ptr u8[ASIZE] /* buf */
+{
+  reg ui64 newat, off2, len;
+  reg u64 t64, at8, upto8;
+  reg u8 sh;
+
+  at8 = (64u) at;
+  at8 &= 0x07; // byte position in stword
+
+  if (at8 != 0) { // needs to dump remainder of first word...
+    len = upto;
+    len -= at; // len = upto-at (bytes to process)
+    at >>= 3; at <<= 3; // at = 8*(at/8) (start of stword)
+    t64 = st.[at];
+    sh = (8u) at8;
+    sh <<= 3;   // bits to shift...
+    t64 >>= (sh & 63);
+    buf, off2 = __a_rlen_write_upto8(buf, off, t64, len);
+    len += (64ui) at8; // bytes from the start of word
+    if (len >= 8) {  // need to proccess more stwords...
+      off += 8;
+      off -= (64ui) at8;
+      at += 8;       // start of next stword
+    } else {         // this is the only affected stword
+      off = off2;
+      at = upto;     // its done!
+    }
+  }
+
+  // now: at%8==0 || at==upto
+  newat = at;
+  while
+    { newat += 8; }
+  ( newat <= upto )
+    {
+      t64 = st.[:u64 at];
+      buf.[:u64 off] = t64;
+      at = newat;
+      off += 8;
+    }
+
+  // leftovers...
+  if (at < upto) {
+    upto8 = (64u) upto;
+    upto8 &= 0x07;
+    t64 = st.[at];
+    buf, off = __a_rlen_write_upto8(buf, off, t64, (64ui) upto8);
+  }
+
+  at = upto;
+  return at, off, buf;
+}
+
+fn _squeeze_updstate_ref
+( reg mut ptr u8[ASIZE] buf
+, reg mut ptr keccak_updstate st
+) -> reg ptr keccak_updstate /* st */
+   , reg ptr u8[ASIZE]             /* buf */
+{
+  reg u64 ststatus;
+  reg ui64 off, len, r8, at;
+  reg ptr keccak_state stk;
+
+  ststatus = st[25];
+  _, r8, at = _ststatus_data(ststatus); // 0 < r8 < 200; r8 |% 8; 0 <= at <= r8
+  stk = st[0:25];
+  () = #spill(st);
+
+  if ( at == 0 ) {
+    () = #spill(buf);
+    stk = _keccakf1600_ref_(stk);
+    () = #unspill(buf);
+    at = 0; // obs: no need to spill/unspill(at)!
+  }
+
+  off = 0;
+  len = at;
+  len += ASIZE;
+
+  while (r8 < len) {
+    at, off, buf = _dump_updstate_ref(buf, off, stk, at, r8);
+    () = #spill(r8, at, len, off, buf);
+    stk = _keccakf1600_ref_(stk);
+    () = #unspill(r8, at, len, off, buf);
+    len -= r8;
+    at = 0;
+  }
+
+  len = len;
+  at, _, buf = _dump_updstate_ref(buf, off, stk, at, len);
+
+  () = #unspill(st);
+  st[0:25] = stk;
+  // if ( at == r8 ) at = 0; // avoidable because r8_at() returns 0<=at<r8
+  st.[:u8 8*25] = (8u) (64u) at;
+
+  return st, buf;
+}
+
+export fn update_updstate_ref
+( reg mut ptr keccak_updstate st
+, reg const ptr u8[ASIZE] buf
+) -> reg ptr keccak_updstate /* st */
+{
+  st = st;
+  buf = buf;
+  st = _update_updstate_ref(st, buf);
+  return st;
+}
+
+export fn squeeze_updstate_ref
+( reg mut ptr u8[ASIZE] buf
+, reg mut ptr keccak_updstate st
+) -> reg ptr u8[ASIZE] /* buf */
+   , reg ptr keccak_updstate /* st */
+{
+  st = st;
+  buf = buf;
+  st, buf = _squeeze_updstate_ref(buf, st);
+  return buf, st;
+}

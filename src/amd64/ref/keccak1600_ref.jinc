@@ -1,3 +1,0 @@
-// REFERENCE implementation (without BMI1 support)
-require "keccakf1600_ref.jinc"
-require "_keccak1600_ref.jinc"

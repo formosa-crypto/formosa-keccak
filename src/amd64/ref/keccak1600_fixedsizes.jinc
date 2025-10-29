@@ -1,3 +1,12 @@
+/* IMPORTANT:
+ This file expects to be "required" after defining the function '__ANDN_64',
+ itself defined in either 'select_nobmi1_ref.jinc' or 'select_bmi1_ref.jinc'
+*/
+require "keccak1600.jinc"
+
+
+
+
 /*********** FIXME: BASE THIS ON THE PARAMETRIC VERSION
 
 
@@ -9,7 +18,6 @@ require "keccakf1600_ref.jinc"		// without BMI1 support
 require "keccakf1600_ref_bmi1.jinc"	// with BMI1 support
 */
 
-require "keccak1600_ref.jinc"
 require "../common/subreadwrite_imem.jinc"
 
 
