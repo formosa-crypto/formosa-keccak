@@ -1,49 +1,190 @@
+/******* TO REVIEW BASED ON THE ARRAY VARSION!!!!!
+
 /**
-    READ A FIXED NUMBER OF BYTES INTO A WORD
+    READ A FIXED NUMBER OF BYTES FROM MEMORY INTO A WORD
 **/
 
-inline fn __mread_subu64
-( reg u64 buf
+inline fn __m_ilen_read_upto8_at
+( reg ui64 buf
 , inline int LEN
 , inline int TRAIL
-) -> reg u64 /* buf */
+, inline int AT    /* 0 <= AT */
+) -> reg ui64   /* buf */
+   , inline int /* LEN */
+   , inline int /* TRAIL */
+   , inline int /* AT */
+   , reg u64    /* w */
+/*
+/* safety */ requires { 
+ is_mem_init((64u) buf,max(0,min(LEN,8))) 
+ && 0 <= TRAIL && TRAIL < 256
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,8),0)
+ && result.1 == LEN - max(min(LEN,8),0)
+ && result.2 == (8 <= LEN ? TRAIL : 0)
+}
+*/
+{
+  reg u64 w, t16, t8;
+  inline int ILEN;
+
+  if ( 8 <= AT ) {
+    AT -= 8;
+  } else {
+    ILEN = LEN;
+    if (LEN <= 0) {
+      w = TRAIL % 256;
+      TRAIL = 0;
+      w <<= 8*AT;
+      AT = 8; // AT==8: finished!
+    } else if (8 <= LEN) {
+      w = [:u64 (64u) buf];
+      w <<= 8*AT;
+      buf += 8-AT;
+      LEN -= 8-AT;
+      AT = 8;
+    } else {
+      if (4 <= LEN) {
+	w = (64u) [:u32(64u) buf];
+	w <<= 8*AT;
+	buf += (4+AT >= 8 ? 8-AT : 4);
+	LEN -= (4+AT >= 8 ? 8-AT : 4);
+	AT = (4+AT >= 8 ? 8 : 4+AT); // AT==8: finished!
+      } else {
+	w = 0;
+      }
+      if (AT < 8 && 2 <= LEN) {
+	t16 = (64u) [:u16 (64u) buf];
+	buf += (2+AT >= 8 ? 8-AT : 2);
+	LEN -= (2+AT >= 8 ? 8-AT : 2);
+	t16 <<= 8*AT;
+	w |= t16;
+	AT = (2+AT >= 8 ? 8 : 2+AT);
+      }
+      if (AT < 8 && 1 <= LEN) {
+	t8 = (64u) [:u8 (64u) buf];
+	t8 |= 256*(TRAIL%256);
+	buf += 1;
+	LEN -= 1;
+	t8 <<= 8*AT;
+	w |= t8;
+	AT += 1;
+	if (AT >= 8) { TRAIL = 0; }
+      } else if (AT < 8 && TRAIL%256 != 0) {
+	t8 = TRAIL%256;
+	t8 <<= 8*AT;
+	w |= t8;
+	TRAIL = 0;
+	AT += 1;
+      }
+    }
+    AT = AT % 8;
+  }
+  return buf, LEN, TRAIL, AT, w; 
+}
+
+/*
+inline fn __m_ilen_read_upto16_at
+( reg ui64 buf
+, inline int LEN
+, inline int TRAIL
+, inline int AT
+) -> reg ui64 /* buf */
+   , inline int /* LEN */
+   , inline int /* TRAIL */
+   , inline int /* AT */
+   , reg u128 /* w */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,max(0,min(LEN,16)))
+ && 0 <= TRAIL && TRAIL < 256
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,16),0)
+ && result.1 == LEN - max(min(LEN,16),0)
+ && result.2 == (16 <=s LEN ? TRAIL : 0)
+}
+*/
+{
+  reg u128 w;
+  reg u64 t64;
+  if (LEN <= 0 && TRAIL%256==0) {
+    w = #set0_128();
+  } else if (16 <= LEN) {
+    w = [:u128 (64u) buf];
+    buf += 16;
+    LEN -= 16;
+  } else {
+    if (8 <= LEN) {
+      w = #VMOV([:u64 (64u) buf]);
+      buf += 8;
+      LEN -= 8;
+      buf, LEN, TRAIL, t64 = __m_ilen_read_upto8(buf, LEN, TRAIL);
+      w = #VPINSR_2u64(w, t64, 1); 
+    } else {
+      buf, LEN, TRAIL, t64 = __m_ilen_read_upto8(buf, LEN, TRAIL);
+      w = (128u) t64;
+    }
+  }
+  return buf, LEN, TRAIL, w;
+}
+*/
+
+// __mread_subu64
+inline fn __m_ilen_read_upto8
+( reg ui64 buf
+, inline int LEN
+, inline int TRAIL
+) -> reg ui64 /* buf */
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u64 /* w */
+/*
+/* safety */ requires { 
+ is_mem_init((64u) buf,max(0,min(LEN,8))) 
+ && 0 <= TRAIL && TRAIL < 256
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,8),0)
+ && result.1 == LEN - max(min(LEN,8),0)
+ && result.2 == (8 <= LEN ? TRAIL : 0)
+}
+*/
 {
   reg u64 w, t16, t8;
   inline int ILEN;
   ILEN = LEN;
   if (LEN <=s 0) {
-    w = TRAIL;
+    w = TRAIL % 256;
     TRAIL = 0;
   } else if (8 <=s LEN) {
-    w = (u64)[buf];
+    w = [:u64 (64u) buf];
     buf += 8;
     LEN -= 8;
   } else {
     if (4 <=s LEN) {
-      w = (64u) (u32)[buf];
+      w = (64u) [:u32(64u) buf];
       buf += 4;
       LEN -= 4;
     } else {
       w = 0;
     }
     if (2 <=s LEN) {
-      t16 = (64u) (u16)[buf];
+      t16 = (64u) [:u16 (64u) buf];
       buf += 2;
       LEN -= 2;
     } else {
       t16 = 0;
     }
-    if (1 <=s LEN || TRAIL != 0) {
+    if (1 <=s LEN || TRAIL%256 != 0) {
       if (1 <=s LEN) {
-        t8 = (64u) (u8)[buf];
-        if (TRAIL != 0) { t8 |= 256*TRAIL; }
+        t8 = (64u) [:u8 (64u) buf];
+        if (TRAIL%256 != 0) { t8 |= 256*(TRAIL%256); }
         buf += 1;
         LEN -= 1;
       } else { 
-        t8 = TRAIL;
+        t8 = TRAIL % 256;
       }
       TRAIL = 0;
       t8 <<= 8*(2*((ILEN/2) % 2));
@@ -55,27 +196,39 @@ inline fn __mread_subu64
   return buf, LEN, TRAIL, w; 
 }
 
-inline fn __mread_bcast_4subu64
-( reg u64 buf
+// __mread_bcast_4subu64
+inline fn __m_ilen_read_bcast_upto8
+( reg ui64 buf
 , inline int LEN
 , inline int TRAIL
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u256 /* w */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,max(0,min(LEN,8)))
+ && 0 <= TRAIL && TRAIL < 256
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,8),0)
+ && result.1 == LEN - max(min(LEN,8),0)
+ && result.2 == (8 <=s LEN ? TRAIL : 0)
+}
+*/
 {
   reg u64 t64;
   reg u128 t128;
   reg u256 w;
-  if (LEN <=s 0 && TRAIL==0) {
+  if (LEN <=s 0 && TRAIL%256==0) {
     w = #set0_256();
   } else {
     if (8 <= LEN) {
-      w = #VPBROADCAST_4u64((u64)[buf]);
+      w = #VPBROADCAST_4u64([:u64 (64u) buf]);
       buf += 8;
       LEN -= 8;
     } else {
-      buf, LEN, TRAIL, t64 = __mread_subu64(buf, LEN, TRAIL);
+      buf, LEN, TRAIL, t64 = __m_ilen_read_upto8(buf, LEN, TRAIL);
       t128 = (128u) t64;
       w = #VPBROADCAST_4u64(t128);
     }
@@ -83,65 +236,89 @@ inline fn __mread_bcast_4subu64
   return buf, LEN, TRAIL, w; 
 }
 
-inline fn __mread_subu128
-( reg u64 buf
+// __mread_subu128
+inline fn __m_ilen_read_upto16
+( reg ui64 buf
 , inline int LEN
 , inline int TRAIL
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u128 /* w */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,max(0,min(LEN,16)))
+ && 0 <= TRAIL && TRAIL < 256
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,16),0)
+ && result.1 == LEN - max(min(LEN,16),0)
+ && result.2 == (16 <=s LEN ? TRAIL : 0)
+}
+*/
 {
   reg u128 w;
   reg u64 t64;
-  if (LEN <=s 0 && TRAIL==0) {
+  if (LEN <=s 0 && TRAIL%256==0) {
     w = #set0_128();
   } else if (16 <=s LEN) {
-    w = (u128) [buf];
+    w = [:u128 (64u) buf];
     buf += 16;
     LEN -= 16;
   } else {
     if (8 <=s LEN) {
-      w = #VMOV((u64)[buf]);
+      w = #VMOV([:u64 (64u) buf]);
       buf += 8;
       LEN -= 8;
-      buf, LEN, TRAIL, t64 = __mread_subu64(buf, LEN, TRAIL);
+      buf, LEN, TRAIL, t64 = __m_ilen_read_upto8(buf, LEN, TRAIL);
       w = #VPINSR_2u64(w, t64, 1); 
     } else {
-      buf, LEN, TRAIL, t64 = __mread_subu64(buf, LEN, TRAIL);
+      buf, LEN, TRAIL, t64 = __m_ilen_read_upto8(buf, LEN, TRAIL);
       w = (128u) t64;
     }
   }
   return buf, LEN, TRAIL, w;
 }
 
-inline fn __mread_subu256
-( reg u64 buf
+// __mread_subu256
+inline fn __m_ilen_read_upto32
+( reg ui64 buf
 , inline int LEN
 , inline int TRAIL
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u256 /* w */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,max(0,min(LEN,32)))
+ && 0 <= TRAIL && TRAIL < 256
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,32),0)
+ && result.1 == LEN - max(min(LEN,32),0)
+ && result.2 == (32<=s LEN ? TRAIL : 0)
+}
+*/
 {
   reg u256 w;
   reg u128 t128_0, t128_1;
-  if (LEN <=s 0 && TRAIL==0) {
+  if (LEN <=s 0 && TRAIL%256==0) {
     w = #set0_256();
   } else if (32 <=s LEN) {
-    w = (u256)[buf];
+    w = [:u256 (64u) buf];
     buf += 32;
     LEN -= 32;
   } else {
     if (16 <=s LEN) {
-      t128_0 = (u128) [buf];
+      t128_0 = [:u128 (64u) buf];
       buf += 16;
       LEN -= 16;
-      buf, LEN, TRAIL, t128_1 = __mread_subu128(buf, LEN, TRAIL);
+      buf, LEN, TRAIL, t128_1 = __m_ilen_read_upto16(buf, LEN, TRAIL);
       w = (2u128)[t128_1, t128_0];
     } else {
       t128_1 = #set0_128();
-      buf, LEN, TRAIL, t128_0 = __mread_subu128(buf, LEN, TRAIL);
+      buf, LEN, TRAIL, t128_0 = __m_ilen_read_upto16(buf, LEN, TRAIL);
       w = (2u128)[t128_1, t128_0];
     }
   }
@@ -150,35 +327,46 @@ inline fn __mread_subu256
 
 
 /**
-    WRITE A FIXED NUMBER OF BYTES FROM A WORD
+    WRITE A FIXED NUMBER OF BYTES FROM MEMORY INTO A WORD
 **/
-inline fn __mwrite_subu64
-( reg u64 buf
+
+// __mwrite_subu64
+inline fn __m_ilen_write_upto8
+( reg ui64 buf
 , inline int LEN
 , reg u64 w
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
    , inline int /* LEN */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,max(0,min(LEN,8)))
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,8),0)
+ && result.1 == LEN - max(min(LEN,8),0)
+}
+*/
 {
   if (0 <s LEN) {
     if (8 <=s LEN) {
-      (u64)[buf] = w;
+      [:u64 (64u) buf] = w;
       buf += 8;
       LEN -= 8;
     } else {
       if (4 <=s LEN) {
-        (u32)[buf] = (32u) w;
+        [:u32 (64u) buf] = (32u) w;
 	w >>= 32;
         buf += 4;
         LEN -= 4;
       }
       if (2 <=s LEN) {
-        (u16)[buf] = (16u) w;
+        [:u16 (64u) buf] = (16u) w;
 	w >>= 16;
         buf += 2;
         LEN -= 2;
       }
       if (1 <=s LEN) {
-        (u8)[buf] = (8u) w;
+        [:u8 (64u) buf] = (8u) w;
         buf += 1;
         LEN -= 1;
       }
@@ -187,58 +375,181 @@ inline fn __mwrite_subu64
   return buf, LEN; 
 }
 
-inline fn __mwrite_subu128
-( reg u64 buf
+// __mwrite_subu128
+inline fn __m_ilen_write_upto16
+( reg ui64 buf
 , inline int LEN
 , reg u128 w
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
    , inline int /* LEN */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,max(0,min(LEN,16)))
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,16),0)
+ && result.1 == LEN - max(min(LEN,16),0)
+}
+*/
 {
   reg u64 t64;
   if (0 <s LEN) {
     if (16 <=s LEN) {
-      (u128)[buf] = w;
+      [:u128 (64u) buf] = w;
       buf += 16;
       LEN -= 16;
     } else {
       if (8 <=s LEN) {
-        (u64)[buf] = #MOVV(w);
+        [:u64 (64u) buf] = #MOVV(w);
         buf += 8;
         LEN -= 8;
         w = #VPUNPCKH_2u64(w, w);
       }
       t64 = (64u) w;
-      buf, LEN = __mwrite_subu64(buf, LEN, t64);
+      buf, LEN = __m_ilen_write_upto8(buf, LEN, t64);
     }
   }
   return buf, LEN;
 }
 
-inline fn __mwrite_subu256
-( reg u64 buf
+// __mwrite_subu256
+inline fn __m_ilen_write_upto32
+( reg ui64 buf
 , inline int LEN
 , reg u256 w
-) -> reg u64 /* buf */
+) -> reg ui64 /* buf */
    , inline int /* LEN */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,max(0,min(LEN,32)))
+}
+/* safety */ ensures {
+ result.0 == buf + max(min(LEN,32),0)
+ && result.1 == LEN - max(min(LEN,32),0)
+}
+*/
 {
   reg u128 t128;
   if (0 <s LEN) {
     if (32 <= LEN) {
-      (u256)[buf] = w;
+      [:u256 (64u) buf] = w;
       buf += 32;
       LEN -= 32;
     } else {
+      t128 = (128u) w;
       if (16 <= LEN) {
-        (u128)[buf] = (128u) w;
+        [:u128 (64u) buf] = t128;
         buf += 16;
         LEN -= 16;
         t128 = #VEXTRACTI128(w, 1);
-      } else {
-        t128 = (128u) w;
       }
-      buf, LEN = __mwrite_subu128(buf, LEN, t128);
+      buf, LEN = __m_ilen_write_upto16(buf, LEN, t128);
     }
   }
   return buf, LEN;
 }
 
+
+
+/**
+    READ A VARIABLE NUMBER OF BYTES FROM MEMORY INTO A WORD
+**/
+
+inline fn __m_rlen_read_upto8
+( reg ui64 buf
+, reg ui64 len
+) -> reg ui64  /* buf */
+   , reg u64   /* data */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,min(len,8))
+}
+/* safety */ ensures { result.0 == buf + min(len,8) }
+*/
+{
+  reg u64 w, x;
+  reg u8 sh;
+  reg bool zf;
+
+  if (len >= 8) {
+    w = [:u64 (64u) buf];
+    buf += 8;
+  } else {
+    _, _, _, _, zf = #TEST((64u)len, 4);
+    if (!zf) {
+      w = (64u) [:u32 (64u) buf];
+      buf += 4;
+      sh = 32;
+    } else {
+      w = 0;
+      sh = 0;
+    }
+    _, _, _, _, zf = #TEST((64u)len, 2);
+    if (!zf) {
+      x = (64u) [:u16 (64u) buf];
+      x <<= (sh & 63);
+      w += x;
+      buf += 2;
+      sh += 16;
+    }
+    _, _, _, _, zf = #TEST((64u)len, 1);
+    if (!zf) {
+      x = (64u) [:u8 (64u) buf];
+      x <<= (sh & 63);
+      w += x;
+      buf += 1;
+    }
+  }
+  return buf, w;
+}
+
+
+
+
+/**
+    WRITE A VARIABLE NUMBER OF BYTES FROM MEMORY INTO A WORD
+**/
+
+inline fn __m_rlen_write_upto8
+( reg ui64 buf
+, reg u64 data
+, reg ui64 len
+) -> reg ui64  /* buf */
+/*
+/* safety */ requires {
+ is_mem_init((64u) buf,min(len,8))
+}
+/* safety */ ensures { 
+ \all (k \in 0:ASIZE)
+   ( is_arr_init(result.0,k,1)
+     == (is_arr_init(buf,k,1) || off <= k && k < off + min(LEN,8)) )
+}
+*/
+{
+  reg bool zf;
+
+  if (len >= 8) {
+    [:u64 (64u) buf] = data;
+    buf += 8;
+  } else {
+    _, _, _, _, zf = #TEST((64u)len, 4);
+    if (!zf) {
+      [:u32 (64u) buf] = (32u) data;
+      buf += 4;
+      data >>= 32;
+    }
+    _, _, _, _, zf = #TEST((64u)len, 2);
+    if (!zf) {
+      [:u16 (64u) buf] = (16u) data;
+      buf += 2;
+      data >>= 16;
+    }
+    _, _, _, _, zf = #TEST((64u)len, 1);
+    if (!zf) {
+      [:u8 (64u) buf] = (8u) data;
+      buf += 1;
+    }
+  }
+  return buf;
+}
+*/

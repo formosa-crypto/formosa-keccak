@@ -1,0 +1,216 @@
+/* DEPENDENCIES:
+require "keccak1600_ref.jinc"
+OR
+require "keccak1600_bmi1.jinc"
+
+param int ASIZE = XXXXX;
+param int RATE8 = YYY;
+*/
+
+u64 __ASIZE = ASIZE;
+u64 __RATE8 = RATE8;
+
+
+require "../common/subreadwrite_array_ASIZE.jinc"
+
+/*
+   INCREMENTAL ARRAY ABSORB
+   ========================
+*/
+inline fn __addstate_ref
+( reg mut ptr u64[25] st
+, inline int AT /* bytes (0 <= AT < 200) */
+, reg const ptr u8[ASIZE] buf
+, reg ui64 offset
+, inline int LEN
+, inline int TRAILB
+) -> reg ptr u64[25] /* st */
+   , inline int /* AT */
+   , reg ui64 /* offset */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN &&  0<=AT  && AT < 200 && offset + LEN <= ASIZE
+   && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 
+   && is_arr_init(buf,offset,LEN) && is_arr_init(st,0,25*8)
+   && 0 <= TRAILB && TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8) && result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0)
+   && result.2 == offset + LEN
+ }
+*/
+{
+  inline int DELTA, AT8;
+  reg ui64 at;
+  reg u64 w;
+
+  DELTA = 0;
+
+  // fill first word...
+  AT8 = AT;
+  AT = 8*(AT/8);
+  if ( AT8 != 0 ) {
+    DELTA, LEN, TRAILB, AT8, w = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAILB, AT, AT8);
+    st[AT/8] ^= w;
+    AT = AT8;
+  }
+
+  // add complete words
+  offset += DELTA;
+  at = AT/8;
+  while ( at < AT/8 + LEN/8 ) {
+    w = buf.[:u64 offset];
+    offset += 8;
+    st[at] ^= w;
+    at += 1;
+  }
+
+  // add last word...
+  AT += 8*(LEN/8);
+  LEN = LEN%8;
+  if ( 0 < LEN || TRAILB%256!= 0 ) {
+    AT += LEN+(TRAILB%256!=0?1:0);
+    DELTA, LEN, TRAILB, w = __a_ilen_read_upto8(buf, offset, 0, LEN, TRAILB);
+    st[at] ^= w;
+    offset += DELTA;
+  }
+
+  return st, AT, offset;
+}
+
+inline fn __absorb_at_ref
+( reg mut ptr u64[25] st
+, inline int AT
+, reg const ptr u8[ASIZE] buf
+//, inline int RATE8
+, inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
+) -> reg ptr u64[25] /* st */
+   , inline int /* AT */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN &&  0<=AT  && AT < RATE8 && offset + LEN <= ASIZE
+   && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 && 0 < RATE8 && RATE8 < 200
+   && is_arr_init(buf,offset,LEN) && is_arr_init(st,0,25*8)
+   && 0 <= TRAILB && TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8)
+   && result.1 == (AT + LEN) % RATE8 + (TRAILB != 0 ? 1 : 0)
+ }
+*/
+{
+  reg ui64 offset, i;
+  inline int ITERS, LEN;
+
+  offset = 0;
+  LEN = ASIZE;  
+
+  if ( AT+LEN >= RATE8 ) { // more than one block...
+    st, _, offset = __addstate_ref(st, AT, buf, offset, RATE8-AT, 0);
+    LEN = LEN - (RATE8-AT);
+    AT = 0;
+    () = #spill(buf,offset);
+    st = _keccakf1600_ref(st);
+    () = #unspill(buf,offset);
+    ITERS = LEN/RATE8;
+    i = 0;
+    while ( i < ITERS ) {
+      st, _, offset = __addstate_ref(st, 0, buf, offset, RATE8, 0);
+      () = #spill(buf,offset,i);
+      st = _keccakf1600_ref(st);
+      () = #unspill(buf,offset,i);
+      i += 1;
+    }
+    LEN = LEN % RATE8;
+  }
+  st, AT, _ = __addstate_ref(st, AT, buf, offset, LEN, TRAILB);
+  if (TRAILB!=0) { st = __addratebit_ref(st, RATE8); }
+
+  return st, AT;
+} 
+
+
+/*
+   ONE-SHOT (FIXED-SIZE) MEMORY SQUEEZE
+   ====================================
+*/
+inline fn __dumpstate_ref
+( reg mut ptr u8[ASIZE] buf
+, reg ui64 offset
+, inline int LEN
+, reg const ptr u64[25] st
+) -> reg ptr u8[ASIZE] /* buf */
+   , reg ui64 /* offset */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN && is_arr_init(st,0,25*8) && offset + LEN <= ASIZE && LEN <= 200
+ }
+/* safety */ ensures
+ { (\all (k \in 0:ASIZE)
+       (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + LEN))))
+   && result.1 == offset + LEN
+ }
+*/
+{ 
+  reg ui64 i;
+  reg u64 t;
+  inline int DELTA;
+
+  i = 0;
+  while (i < LEN/8) {
+    t = st[i];
+    buf.[:u64 offset] = t;
+    offset += 8;
+    i += 1;
+  }
+  if (0 < LEN%8) {
+    t = st[i];
+    buf, DELTA, _ = __a_ilen_write_upto8( buf, offset, 0, LEN%8, t);
+    offset += DELTA;
+  }
+
+  return buf, offset;
+}
+
+inline fn __squeeze_array_ref
+( reg mut ptr u8[ASIZE] buf
+//, reg ui64 offset
+//, inline int LEN
+, reg mut ptr u64[25] st
+//, inline int RATE8
+) -> reg ptr u8[ASIZE] /* buf */
+//   , reg ui64           /* offset */
+   , reg ptr u64[25] /* st */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= LEN && is_arr_init(st,0,25*8) && offset + LEN <= ASIZE
+   && 0 < RATE8 && RATE8 < 200
+ }
+/* safety */ ensures
+ { (\all (k \in 0:ASIZE)
+    (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + LEN))))
+   && is_arr_init(result.2,0,25*8)
+ }
+*/
+{
+  reg ui64 offset, i;
+
+  offset = 0;
+  i = 0;
+  while (i < ASIZE/RATE8) {
+    () = #spill(buf,offset);
+    st = _keccakf1600_ref(st);
+    () = #unspill(buf,offset);
+    buf, offset = __dumpstate_ref(buf, offset, RATE8, st);
+    i += 1;
+  }
+  if (0 < ASIZE%RATE8) {
+    () = #spill(buf,offset);
+    st = _keccakf1600_ref(st);
+    () = #unspill(buf,offset);
+    buf, offset = __dumpstate_ref(buf, offset, ASIZE%RATE8, st);
+  }
+
+  return buf, st;
+}
+

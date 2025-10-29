@@ -1,3 +1,8 @@
+/*********** FIXME: BASE THIS ON THE PARAMETRIC VERSION
+
+
+
+
 /** IMPORTANT:
   This file is expected to be loaded with one of the following files
 require "keccakf1600_ref.jinc"		// without BMI1 support
@@ -196,3 +201,4 @@ inline fn __squeeze_imem_ref
   return buf, st;
 }
 
+*/

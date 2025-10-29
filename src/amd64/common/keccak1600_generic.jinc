@@ -9,3 +9,4 @@ param int SHA3 = 0x06;
 param int RAWSHAKE = 0x07;
 param int SHAKE = 0x1F;
 
+type keccak_state = u64[25];
