@@ -63,7 +63,49 @@ ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + LEN}
   return st, AT, offset;
 }
 
+inline fn __absorb_at_avx2
+( reg u256[7] st
+, inline int AT
+, reg const ptr u8[ASIZE] buf
+//, inline int RATE8
+, inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
+) -> reg u256[7] /* st */
+   , inline int  /* AT */
+/*
+requires{0<= offset && 0<= LEN && offset + LEN <= ASIZE && 0<RATE8 && RATE8 < 200 &&
+         is_arr_init(buf,offset,LEN) && is_arr_init(st,0,7*32)}
+requires{0 <= TRAILB && TRAILB < 256}
+ensures{is_arr_init(result.0,0,7*32)}
+*/
+{
+  reg ui64 offset, i;
+  inline int LEN, ITERS;
 
+  offset = 0;
+  LEN = ASIZE;  
+
+  if ( AT+LEN >= RATE8 ) { // more than one block...
+    st, _, offset = __addstate_at_avx2(st, AT, buf, offset, RATE8-AT, 0);
+    LEN = LEN - (RATE8-AT);
+    AT = 0;
+    st = _keccakf1600_avx2(st);
+    ITERS = LEN/RATE8;
+    i = 0;
+    while ( i < ITERS ) {
+      st, _, offset = __addstate_at_avx2(st, 0, buf, offset, RATE8, 0);
+      st = _keccakf1600_avx2(st);
+      i += 1;
+    }
+    LEN = LEN % RATE8;
+  }
+  st, AT, _ = __addstate_at_avx2(st, AT, buf, offset, LEN, TRAILB);
+  if (TRAILB!=0) { st = __addratebit_avx2(st, RATE8); }
+
+  return st, AT;
+}
+
+
+// OLD VERSION (TODO: to remove, after benchmarking..."
 inline fn __addstate_avx2
 ( reg u256[7] st
 , reg const ptr u8[ASIZE] buf
@@ -113,47 +155,6 @@ ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + LEN}
   st[2] ^= r2;
   offset += DELTA;
   return st, offset;
-}
-
-inline fn __absorb_at_avx2
-( reg u256[7] st
-, inline int AT
-, reg const ptr u8[ASIZE] buf
-//, inline int RATE8
-, inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
-) -> reg u256[7] /* st */
-   , inline int  /* AT */
-/*
-requires{0<= offset && 0<= LEN && offset + LEN <= ASIZE && 0<RATE8 && RATE8 < 200 &&
-         is_arr_init(buf,offset,LEN) && is_arr_init(st,0,7*32)}
-requires{0 <= TRAILB && TRAILB < 256}
-ensures{is_arr_init(result.0,0,7*32)}
-*/
-{
-  reg ui64 offset, i;
-  inline int LEN, ITERS;
-
-  offset = 0;
-  LEN = ASIZE;  
-
-  if ( AT+LEN >= RATE8 ) { // more than one block...
-    st, _, offset = __addstate_at_avx2(st, AT, buf, offset, RATE8-AT, 0);
-    LEN = LEN - (RATE8-AT);
-    AT = 0;
-    st = _keccakf1600_avx2(st);
-    ITERS = LEN/RATE8;
-    i = 0;
-    while ( i < ITERS ) {
-      st, _, offset = __addstate_at_avx2(st, 0, buf, offset, RATE8, 0);
-      st = _keccakf1600_avx2(st);
-      i += 1;
-    }
-    LEN = LEN % RATE8;
-  }
-  st, AT, _ = __addstate_at_avx2(st, AT, buf, offset, LEN, TRAILB);
-  if (TRAILB!=0) { st = __addratebit_avx2(st, RATE8); }
-
-  return st, AT;
 }
 
 inline fn __absorb_avx2
