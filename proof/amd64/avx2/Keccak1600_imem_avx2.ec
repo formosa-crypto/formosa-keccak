@@ -1,0 +1,445 @@
+(******************************************************************************
+   Keccak1600_imem_avx2.ec:
+
+   Correctness proof for the Keccak (fixed-sized) memory absorb/squeeze
+  AVX2 implementation
+
+
+
+******************************************************************************)
+
+require import List Real Distr Int IntDiv CoreMap.
+
+from Jasmin require import JModel.
+
+from CryptoSpecs require export Keccakf1600_Spec.
+
+from JazzEC require import Jazz_avx2.
+
+from JazzEC require import WArray200.
+from JazzEC require import Array25.
+
+from CryptoSpecs require import JWordList.
+from CryptoSpecs require import FIPS202_Keccakf1600.
+from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec.
+
+
+require export Keccak1600_avx2 Keccakf1600_avx2.
+
+(* subuX *)
+lemma  mread_subu64_ll: islossless M.__mread_subu64
+ by islossless.
+
+(*
+hoare aread_subu64_h _buf _off _dlt _len _trail:
+ M(P).__aread_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 8
+  /\ res.`2 = _len - min (max 0 _len) 8
+  /\ res.`3 = (if _len < 8 then 0 else _trail)
+  /\ res.`4 = W8u8.pack8 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]).
+admitted.
+
+phoare aread_subu64_ph _buf _off _dlt _len _trail:
+ [ M(P).__aread_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 8
+  /\ res.`2 = _len - min (max 0 _len) 8
+  /\ res.`3 = (if _len < 8 then 0 else _trail)
+  /\ res.`4 = W8u8.pack8 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail])
+ ] = 1%r.
+proof.
+by conseq aread_subu64_ll (aread_subu64_h _buf _off _dlt _len _trail).
+qed.
+*)
+
+lemma  mread_subu128_ll: islossless M.__mread_subu128
+ by islossless.
+
+(*
+hoare aread_subu128_h _buf _off _dlt _len _trail:
+ M(P).__aread_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 16
+  /\ res.`2 = _len - min (max 0 _len) 16
+  /\ res.`3 = (if _len < 16 then 0 else _trail)
+  /\ res.`4 = W16u8.pack16 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail]).
+admitted.
+
+phoare aread_subu128_ph _buf _off _dlt _len _trail:
+ [ M(P).__aread_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 16
+  /\ res.`2 = _len - min (max 0 _len) 16
+  /\ res.`3 = (if _len < 16 then 0 else _trail)
+  /\ res.`4 = W16u8.pack16 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 16) ++ [W8.of_int _trail])
+ ] = 1%r.
+proof.
+by conseq aread_subu128_ll (aread_subu128_h _buf _off _dlt _len _trail).
+qed.
+*)
+
+lemma  mread_subu256_ll: islossless M.__mread_subu256
+ by islossless.
+
+(*
+hoare aread_subu256_h _buf _off _dlt _len _trail:
+ M(P).__aread_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 32
+  /\ res.`2 = _len - min (max 0 _len) 32
+  /\ res.`3 = (if _len < 32 then 0 else _trail)
+  /\ res.`4 = W32u8.pack32 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail]).
+admitted.
+
+phoare aread_subu256_ph _buf _off _dlt _len _trail:
+ [ M(P).__aread_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail
+ ==> res.`1 = _dlt + min (max 0 _len) 32
+  /\ res.`2 = _len - min (max 0 _len) 32
+  /\ res.`3 = (if _len < 32 then 0 else _trail)
+  /\ res.`4 = W32u8.pack32 (sub _buf (to_uint _off+_dlt) (min (max 0 _len) 32) ++ [W8.of_int _trail])
+ ] = 1%r.
+proof.
+by conseq aread_subu256_ll (aread_subu256_h _buf _off _dlt _len _trail).
+qed.
+*)
+
+lemma mwrite_subu64_ll: islossless M.__mwrite_subu64
+ by islossless.
+
+(*
+hoare awrite_subu64_h _buf _off _dlt _len _w:
+ M(P).__awrite_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W8u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 8) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 8
+  /\ res.`3 = _len - min (max 0 _len) 8.
+proof.
+admitted.
+
+phoare awrite_subu64_ph _buf _off _dlt _len _w:
+ [ M(P).__awrite_subu64
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W8u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 8) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 8
+  /\ res.`3 = _len - min (max 0 _len) 8
+ ] = 1%r.
+proof.
+by conseq awrite_subu64_ll (awrite_subu64_h _buf _off _dlt _len _w).
+qed.
+*)
+
+lemma mwrite_subu128_ll: islossless M.__mwrite_subu128
+ by islossless.
+
+(*
+hoare awrite_subu128_h _buf _off _dlt _len _w:
+ M(P).__awrite_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W16u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 16) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 16
+  /\ res.`3 = _len - min (max 0 _len) 16.
+proof.
+admitted.
+
+phoare awrite_subu128_ph _buf _off _dlt _len _w:
+ [ M(P).__awrite_subu128
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W16u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 16) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 16
+  /\ res.`3 = _len - min (max 0 _len) 16
+ ] = 1%r.
+proof.
+by conseq awrite_subu128_ll (awrite_subu128_h _buf _off _dlt _len _w).
+qed.
+*)
+
+lemma mwrite_subu256_ll: islossless M.__mwrite_subu256
+ by islossless.
+
+(*
+hoare awrite_subu256_h _buf _off _dlt _len _w:
+ M(P).__awrite_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W32u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 32) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 32
+  /\ res.`3 = _len - min (max 0 _len) 32.
+proof.
+admitted.
+
+phoare awrite_subu256_ph _buf _off _dlt _len _w:
+ [ M(P).__awrite_subu256
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len
+ ==> res.`1 = A.fill (nth W8.zero (W32u8.to_list _w)) (to_uint _off + _dlt) (min (max 0 _len) 32) _buf
+  /\ res.`2 = _dlt + min (max 0 _len) 32
+  /\ res.`3 = _len - min (max 0 _len) 32
+ ] = 1%r.
+proof.
+by conseq awrite_subu256_ll (awrite_subu256_h _buf _off _dlt _len _w).
+qed.
+*)
+
+
+(*
+   ONE-SHOT (FIXED-SIZE) MEMORY ABSORB
+   ===================================
+*)
+
+(*
+addstate_imem_avx2
+*)
+lemma addstate_imem_avx2_ll: islossless M.__addstate_imem_avx2
+ by islossless.
+
+hoare addstate_imem_avx2_h _st _buf _len _trailb:
+ M.__addstate_imem_avx2
+ : st=_st /\ buf=_buf /\ lEN=_len /\ tRAILB=_trailb
+ ==> true.
+proof.
+admit.
+qed.
+
+(*
+absorb_imem_avx2
+*)
+phoare absorb_imem_avx2_ll:
+ [ M.__absorb_imem_avx2
+ : 0 < rATE8 <= 200 /\ to_uint buf + lEN < W64.modulus
+ ==> true
+ ] = 1%r.
+proof.
+proc.
+seq 3: (0 < rATE8 <=200 /\ iTERS < W64.modulus) => //=.
+  sp; if => //=.
+   while (iTERS=lEN %/ rATE8 /\ to_uint i <= iTERS < W64.modulus) (iTERS-to_uint i).
+    move=> z; wp.
+    call keccakf1600_avx2_ll.
+    call addstate_imem_avx2_ll.
+    auto => /> &m ??; rewrite ultE of_uintK modz_small. 
+     smt(W64.to_uint_cmp).
+    by move => H; rewrite to_uintD_small /= /#. 
+   auto => /> &m *.
+   split; first smt(W64.to_uint_cmp).
+   by move=> i *; rewrite ultE of_uintK modz_small; smt(W64.to_uint_cmp).
+  auto => /> /#.
+ by islossless.
+hoare => /=.
+sp; if => //=.
+ while #post.
+ wp; call (:true) => //=.
+ call (:true) => //=.
+ auto => /> *.
+ smt(W64.to_uint_cmp).
+auto => /> *.
+smt().
+qed.
+
+
+hoare absorb_imem_avx2_h _mem _st _buf _len _r8 _tb:
+ M.__absorb_imem_avx2
+ : st=_st /\ buf=_buf /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+   /\ Glob.mem=_mem /\ 0 < rATE8 <= 200 /\ to_uint buf + lEN < W64.modulus
+ ==> Glob.mem = _mem
+  /\ absorb_spec_avx2 _r8 _tb (memread _mem (to_uint _buf) _len) res.`1
+  /\ res.`2 = _buf + W64.of_int _len.
+proof.
+proc.
+admit.
+qed.
+
+phoare absorb_imem_avx2_ph _mem _st _buf _len _r8 _tb:
+ [ M.__absorb_imem_avx2
+ : st=_st /\ buf=_buf /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+   /\ Glob.mem=_mem /\ 0 < rATE8 <= 200 /\ to_uint buf + lEN < W64.modulus
+ ==> Glob.mem = _mem
+  /\ absorb_spec_avx2 _r8 _tb (memread _mem (to_uint _buf) _len) res.`1
+  /\ res.`2 = _buf + W64.of_int _len
+ ] = 1%r.
+proof.
+by conseq absorb_imem_avx2_ll (absorb_imem_avx2_h _mem _st _buf _len _r8 _tb).
+qed.
+
+
+(*
+   INCREMENTAL (FIXED-SIZE) MEMORY ABSORB
+   ======================================
+*)
+
+(*
+pstate_imem_avx2
+*)
+phoare pstate_imem_avx2_ll: 
+ [ M.__pstate_imem_avx2
+ : 0 <= aT <= aT + lEN <= 200 - b2i (tRAILB<>0) 
+ ==> true
+ ] = 1%r.
+proof.
+proc => /=.
+sp; if => //.
+ admit.
+if => //.
+ admit.
+by islossless.
+qed.
+
+hoare pstate_imem_avx2_h _mem _pst _at _buf _len _tb:
+ M.__pstate_imem_avx2
+ : Glob.mem=_mem /\ pst=_pst /\ aT=_at /\ buf=_buf /\ lEN=_len /\ tRAILB=_tb
+ /\ 0 <= aT <= aT + lEN <= 200 - b2i (_tb<>0)
+ /\ to_uint buf + lEN < W64.modulus
+ ==> Glob.mem = _mem
+  /\ res.`1 = fillpst_at _pst _at (memread _mem (to_uint _buf) _len ++ if _tb<>0 then [W8.of_int _tb] else [])
+  /\ res.`2 = _at + _len
+  /\ res.`3 = _buf + W64.of_int _len.
+proof.
+proc.
+admitted.
+
+phoare pstate_imem_avx2_ph _mem _pst _at _buf _len _tb:
+ [ M.__pstate_imem_avx2
+ : Glob.mem=_mem /\ pst=_pst /\ aT=_at /\ buf=_buf /\ lEN=_len /\ tRAILB=_tb
+ /\ 0 <= aT <= aT + lEN <= 200 - b2i (_tb<>0)
+ /\ to_uint buf + lEN < W64.modulus
+ ==> Glob.mem = _mem
+  /\ res.`1 = fillpst_at _pst _at (memread _mem (to_uint _buf) _len ++ if _tb<>0 then [W8.of_int _tb] else [])
+  /\ res.`2 = _at + _len
+  /\ res.`3 = _buf + W64.of_int _len
+ ] = 1%r.
+proof.
+by conseq pstate_imem_avx2_ll (pstate_imem_avx2_h _mem _pst _at _buf _len _tb).
+qed.
+
+(*
+pabsorb_imem_avx2
+*)
+phoare pabsorb_imem_avx2_ll:
+ [ M.__pabsorb_imem_avx2
+ : 0 <= aT < 200
+ /\ 0 < rATE8 <= 200
+ /\ to_uint buf + lEN < W64.modulus
+ ==> true
+ ] = 1%r.
+proof.
+proc => /=.
+sp; if => //.
+ admit.
+if => //.
+ admit.
+admit.
+qed.
+
+hoare pabsorb_imem_avx2_h _mem _l _buf _len _r8 _tb:
+ M.__pabsorb_imem_avx2
+ : Glob.mem=_mem /\ aT = size _l %% _r8 /\ buf=_buf /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ pabsorb_spec_avx2 _r8 _l pst st
+ /\ 0 <= _len
+ /\ to_uint _buf + _len < W64.modulus
+ ==> if _tb <> 0
+     then absorb_spec_avx2 _r8 _tb (_l ++ memread _mem (to_uint _buf) _len) res.`3
+     else pabsorb_spec_avx2 _r8 (_l ++ memread _mem (to_uint _buf) _len) res.`1 res.`3
+          /\ res.`2 = (size _l + _len) %% _r8
+          /\ res.`4 = _buf + W64.of_int _len.
+proof.
+proc => /=.
+admitted.
+
+phoare pabsorb_imem_avx2_ph _mem _l _buf _len _r8 _tb:
+ [ M.__pabsorb_imem_avx2
+ : Glob.mem=_mem /\ aT = size _l %% _r8 /\ buf=_buf /\ lEN=_len /\ rATE8=_r8 /\ tRAILB=_tb
+ /\ pabsorb_spec_avx2 _r8 _l pst st
+ /\ 0 <= _len
+ /\ to_uint _buf + _len < W64.modulus
+ ==> if _tb <> 0
+     then absorb_spec_avx2 _r8 _tb (_l ++ memread _mem (to_uint _buf) _len) res.`3
+     else pabsorb_spec_avx2 _r8 (_l ++ memread _mem (to_uint _buf) _len) res.`1 res.`3
+          /\ res.`2 = (size _l + _len) %% _r8
+          /\ res.`4 = _buf + W64.of_int _len
+ ] = 1%r.
+proof.
+conseq pabsorb_imem_avx2_ll (pabsorb_imem_avx2_h _mem _l _buf _len _r8 _tb) => |> &m ->.
+by rewrite /pabsorb_spec_avx2 => /#.
+qed.
+
+(*
+   ONE-SHOT (FIXED-SIZE) MEMORY SQUEEZE
+   ====================================
+*)
+
+(*
+dumpstate_imem_avx2
+*)
+lemma dumpstate_imem_avx2_ll: islossless M.__dumpstate_imem_avx2
+ by islossless.
+
+hoare dumpstate_imem_avx2_h _mem _buf _len _st:
+ M.__dumpstate_imem_avx2
+ : Glob.mem=_mem /\ buf=_buf /\ lEN=_len /\ st=_st
+ /\ 0 <= _len <= 200
+ /\ to_uint _buf + _len < W64.modulus
+ ==> Glob.mem = stores _mem (to_uint _buf) (sub (stbytes (stavx2_to_st25 _st)) 0 _len)
+  /\ res = _buf + W64.of_int _len.
+proof.
+proc => /=.
+admitted.
+
+phoare dumpstate_imem_avx2_ph _mem _buf _len _st:
+ [ M.__dumpstate_imem_avx2
+ : Glob.mem=_mem /\ buf=_buf /\ lEN=_len /\ st=_st
+ /\ 0 <= _len <= 200
+ /\ to_uint _buf + _len < W64.modulus
+ ==> Glob.mem = stores _mem (to_uint _buf) (sub (stbytes (stavx2_to_st25 _st)) 0 _len)
+  /\ res = _buf + W64.of_int _len
+ ] = 1%r.
+proof.
+by conseq dumpstate_imem_avx2_ll (dumpstate_imem_avx2_h _mem _buf _len _st).
+qed.
+
+(*
+squeeze_imem_avx2
+*)
+lemma squeeze_imem_avx2_ll: islossless M.__squeeze_imem_avx2.
+proof.
+proc; sp; if=> //.
+seq 1: true => //.
+ if => //.
+ while (0 < iTERS) (iTERS-to_uint i).
+  move=> z.
+  wp; call dumpstate_imem_avx2_ll.
+  call keccakf1600_avx2_ll.
+  auto => /> &m; rewrite ultE of_uintK => /= *.
+  by rewrite to_uintD_small /= /#.
+ auto => /> &m i ?H; rewrite ultE of_uintK /#.
+if => //.
+call  dumpstate_imem_avx2_ll.
+call keccakf1600_avx2_ll.
+by auto.
+qed.
+
+hoare squeeze_imem_avx2_h _mem _buf _len _st _r8:
+ M.__squeeze_imem_avx2
+ : Glob.mem=_mem /\ buf=_buf /\ lEN=_len /\ st=_st /\ rATE8=_r8
+ /\ 0 <= _len
+ /\ 0 < _r8 <= 200
+ /\ to_uint _buf + _len < W64.modulus
+ ==> Glob.mem = stores _mem (to_uint _buf) (SQUEEZE1600 _r8 _len (stavx2_to_st25 _st))
+  /\ res.`1 = _buf + W64.of_int _len
+  /\ res.`2 = stavx2_from_st25 (st_i (stavx2_to_st25 _st) ((_len-1) %/ _r8 + 1)).
+proof.
+proc.
+admitted.
+
+phoare squeeze_imem_avx2_ph _mem _buf _len _st _r8:
+ [ M.__squeeze_imem_avx2
+ : Glob.mem=_mem /\ buf=_buf /\ lEN=_len /\ st=_st /\ rATE8=_r8
+ /\ 0 <= _len
+ /\ 0 < _r8 <= 200
+ /\ to_uint _buf + _len < W64.modulus
+ ==> Glob.mem = stores _mem (to_uint _buf) (SQUEEZE1600 _r8 _len (stavx2_to_st25 _st))
+  /\ res.`1 = _buf + W64.of_int _len
+  /\ res.`2 = stavx2_from_st25 (st_i (stavx2_to_st25 _st) ((_len-1) %/ _r8 + 1))
+ ] = 1%r.
+proof.
+by conseq squeeze_imem_avx2_ll (squeeze_imem_avx2_h _mem _buf _len _st _r8).
+qed.
+
