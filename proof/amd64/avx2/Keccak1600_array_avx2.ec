@@ -1877,14 +1877,23 @@ admitted.
 lemma a_ilen_read_upto8_at_ll: islossless M(P).__a_ilen_read_upto8_at
  by islossless.
 
-hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail:
+hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
  M(P).__a_ilen_read_upto8_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\
-    0 <= _off + _dlt /\ _off + _dlt + min (max 0 _len) 8 <= aSIZE /\ 0 <= _trail < 256
- ==> res.`1 = _dlt + min (max 0 _len) 8
-  /\ res.`2 = _len - min (max 0 _len) 8
-  /\ res.`3 = (if _len < 8 then 0 else _trail)
-  /\ res.`5 = W8u8.pack8 (sub _buf (_off+_dlt) (min (max 0 _len) 8) ++ [W8.of_int _trail]).
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+(*    0 <= _off + _dlt /\ _off + _dlt + min (max 0 _len) 8 <= aSIZE /\ 0 <= _trail < 256*)
+ ==> read_upto_at_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (W8u8.to_list res.`5).
+admitted.
+
+lemma a_ilen_read_upto32_at_ll: islossless M(P).__a_ilen_read_upto32_at
+ by islossless.
+
+hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
+ M(P).__a_ilen_read_upto8_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+(*    0 <= _off + _dlt /\ _off + _dlt + min (max 0 _len) 8 <= aSIZE /\ 0 <= _trail < 256*)
+ ==> read_upto_at_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (W8u8.to_list res.`5).
+admitted.
+
 
 
 lemma  aread_subu64_ll: islossless M(P).__aread_subu64
