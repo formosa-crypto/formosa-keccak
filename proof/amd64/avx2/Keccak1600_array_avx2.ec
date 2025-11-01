@@ -2900,6 +2900,15 @@ realize get_setP by smt(Array53.get_setE).
 realize eqP by smt(Array53.tP).
 realize get_out by smt(Array53.get_out).
 
+clone import PolyArray as Array34 with
+        op size = 34.
+
+bind array Array34."_.[_]" Array34."_.[_<-_]" Array34.to_list Array34.of_list Array34.t 34.
+realize tolistP by done.
+realize get_setP by smt(Array34.get_setE). 
+realize eqP by smt(Array34.tP).
+realize get_out by smt(Array34.get_out).
+
 clone import PolyArray as Array28 with
         op size = 28.
 
@@ -2967,7 +2976,13 @@ op F2(inp : W64.t Array53.t ) : W256.t Array7.t =
        (init_7_256 (fun ii => u256_pack4 inp.[4*ii+0] inp.[4*ii+1] inp.[4*ii+2] inp.[4*ii+3])))
        (init_25_64 (fun ii => inp.[28+ii]))).
 
-op Pre = fun (x : W64.t Array53.t) =>  x.[0] = x.[1] /\ x.[0] = x.[2] /\ x.[0] = x.[3].
+op F3(inp : W64.t Array34.t ) : W256.t Array7.t =
+   stavx2_from_st25 (addstate (stavx2_to_st25
+       (init_7_256 (fun ii => u256_pack4 inp.[4*ii+0] inp.[4*ii+1] inp.[4*ii+2] inp.[4*ii+3])))
+       (init_25_64 (fun ii => if 0 <= ii < 6 then inp.[28+ii] else W64.zero))).
+
+op Pre2 = fun (x : W64.t Array53.t) =>  x.[0] = x.[1] /\ x.[0] = x.[2] /\ x.[0] = x.[3].
+op Pre3 = fun (x : W64.t Array34.t) =>  x.[0] = x.[1] /\ x.[0] = x.[2] /\ x.[0] = x.[3].
 
 
 
@@ -3217,12 +3232,13 @@ hoare addstate_avx2_h _st _buf _off _len _tb:
      /\ res.`2 = _off + _len.
 proof.
 proc => /=.
-case (32+8+8 < _len). 
+case (_len < 32+8+8 \/ (_len = 32+8+8 /\ _tb = 0)); last first. 
 + rcondt 11.
   + wp; call (a_ilen_read_upto8_h _buf _off (deltai _len 2) (leni _len 2) (traili _len _tb 2)).
     wp; call (a_ilen_read_upto32_h _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1)).
     wp;call (a_ilen_read_upto8_h _buf _off (deltai _len 0) (leni _len 0) (traili _len _tb 0)).
-    +  auto => /> *;do simplify traili;do split => />;smt(). 
+    +  auto => /> *;do simplify traili => /> *;do split;smt().
+      
    inline 21.
    (* swap 21 -3.*)
    swap 19 2.
@@ -3233,7 +3249,8 @@ case (32+8+8 < _len).
    swap 5 9.
    swap [3..4] 9.
    sp;seq 10 : (offset = _off /\ dELTA = _len /\ st = _st /\ stavx2INV _st /\
-                0 <= _len <= 200 - b2i (_tb <> 0) /\ 32 + 8 + 8 < _len /\
+                0 <= _len <= 200 - b2i (_tb <> 0) /\
+                (!(_len < 32+8+8 \/ (_len = 32+8+8 /\ _tb = 0))) /\
                     bytes2state (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []) =
                     Array25.of_list W64.zero
                        (map W64.bits2w (chunk 64 (flatten [w2bits t64_1; w2bits r1;
@@ -3317,8 +3334,8 @@ case (32+8+8 < _len).
      bdep 3392 1792 [_st;_w1;_w2;_w3;_w4;_w5;_w6;_w7;_w8;_w9;_w10]
                     [st;t64_1;r1;t64_2;r3;t64_3;r4;t64_4;r5;t64_5;r6]
                     [st]
-                    F2 Pre.
-     + move => />  Hst0 Hst1 Hst2  *; rewrite allP /Pre /= => x;rewrite mapP => H;elim H =>xx /=.
+                    F2 Pre2.
+     + move => />  Hst0 Hst1 Hst2  *; rewrite allP /Pre2 /= => x;rewrite mapP => H;elim H =>xx /=.
        move => [Hxx Hx]; have Hsti : forall i, 0 <= i < 4 => x.[i] = u256_bits64 _st.[0] i; last by  rewrite !Hsti //= Hst0 Hst1 Hst2 //.
        move => i ib.
        rewrite Hx; rewrite get_of_list 1:/# /=.
@@ -3418,61 +3435,167 @@ case (32+8+8 < _len).
        rewrite size_map size_chunk 1:/# (size_flatten' 256);1:smt(mapP W256.size_w2bits).
        by rewrite size_map size_to_list /=.
 
-   admit. (*
-+ rcondf 8.
-  + wp; call (aread_subu256_h _buf _off (min (max 0 _len) 8) (_len - (min (max 0 _len) 8)) (if _len < 8 then 0 else _tb)).
-    wp;call (aread_subu64_h _buf _off 0 _len _tb);auto => /> /#.
++ rcondf 11.
+  + wp; call (a_ilen_read_upto8_h _buf _off (deltai _len 2) (leni _len 2) (traili _len _tb 2)).
+    wp; call (a_ilen_read_upto32_h _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1)).
+    wp;call (a_ilen_read_upto8_h _buf _off (deltai _len 0) (leni _len 0) (traili _len _tb 0)).
+    +  auto => /> *;do simplify traili;do split => /> /#. 
     swap 6 -3.
-    sp;seq 2 : (offset = _off /\ dELTA = _len /\ st = _st /\ stavx2INV _st /\
-                0 <= _len <= 200 - b2i (_tb <> 0) /\ (!32 + 8 < _len) /\
+    swap 8 -4.
+    sp;seq 3 : (offset = _off /\ dELTA = _len /\ st = _st /\ stavx2INV _st /\
+                0 <= _len <= 200 - b2i (_tb <> 0) /\  (_len < 32 + 8 + 8 \/ _len = 32 + 8 + 8 /\ _tb = 0) /\
                     bytes2state (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []) =
                     Array25.of_list W64.zero
-                       (map W64.bits2w (chunk 64 (flatten [w2bits t64_1; w2bits r1])))).
-   + call (aread_subu256_h _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1)).
-     call (aread_subu64_h _buf _off  (deltai _len 0) (leni _len 0) (traili _len _tb 0)).
+                       (map W64.bits2w (chunk 64 (flatten [w2bits t64_1; w2bits r1; w2bits t64_2])))).
+   + wp; call (a_ilen_read_upto8_h _buf _off (deltai _len 2) (leni _len 2) (traili _len _tb 2)).
+     wp; call (a_ilen_read_upto32_h _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1)).
+     wp;call (a_ilen_read_upto8_h _buf _off (deltai _len 0) (leni _len 0) (traili _len _tb 0)).
      auto => />.
+
      move => *;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
      move => ???????r0??? /=H1;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
      move => ???????r1??? /=H2;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
+     move => ???????r2??? /=H3;split; 1: by do (simplify traili deltai leni asizes sizes);smt().
+     
      have Hr0 := aread_subu64_contract  _buf _off (deltai _len 0) (leni _len 0) (traili _len _tb 0) r0.`1 r0.`2 r0.`3 r0.`4 _ _;1,2: by rewrite ?H1; do (simplify traili deltai leni asizes sizes);smt(). 
      have Hr1 := aread_subu256_contract _buf _off (deltai _len 1) (leni _len 1) (traili _len _tb 1) r1.`1 r1.`2 r1.`3 r1.`4 _ _;1,2: by  by rewrite ?H2; do (simplify traili deltai leni asizes sizes);smt().
-
+     have Hr2 := aread_subu64_contract  _buf _off (deltai _len 2) (leni _len 2) (traili _len _tb 2) r2.`1 r2.`2 r2.`3 r2.`4 _ _;1,2: by by rewrite ?H3; do (simplify traili deltai leni asizes sizes);smt(). 
      rewrite !w4256w2bits /to_list /mkseq -iotaredE /=.
-     rewrite Hr0 !Hr1 //.
+     rewrite Hr0 !Hr1 // Hr2 //.
      rewrite !flatten_cons /= !flatten_nil /=.
-     do 6!(rewrite chunk_cat;1:by smt(W64.size_w2bits size_cat)).
+     do 7!(rewrite chunk_cat;1:by smt(W64.size_w2bits size_cat)).
      rewrite !(chunk0 _ []);1:by auto.
-     rewrite !chunk_size 1..10:/# /=.
+     rewrite !chunk_size 1..12:/# /=.
      have <- := (Array25.to_listK W64.zero (bytes2state (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else []))).
-     apply Array25.tP => i ib.
+     apply Array25.tP => i ib. 
      rewrite get_of_list 1:/#.
      rewrite get_of_list 1:/#.
-     pose v2 := nth _ (_::_).
-     pose xtra := if _tb <> 0 then [W8.of_int _tb] else [].
-     case(i<5) => ?;last first.
-     + rewrite /v2 (nth_default _ (_::_)) /= 1:/#.
-       rewrite /to_list nth_mkseq 1:/# /= /bytes2state get_of_list 1:/# /w64L_from_bytes.
-       case (i < (_len + size xtra) %/ 8 + b2i (! 8 %| (_len + size xtra))) => ?.
-       + rewrite (nth_map []) /=.
-         + rewrite  size_chunkify 1:/# size_cat size_sub /#. 
-         rewrite pack8E /= wordP => k kb.
-         rewrite initiE 1:/# /= get_of_list 1:/# /chunkify nth_mkseq /=.
-         + rewrite size_cat size_sub /#.
-         rewrite nth_take 1,2:/# nth_drop 1,2:/# nth_cat size_sub 1:/#.
-         rewrite /xtra /=; case (8 * i + k %/ 8 < _len); first by smt().
-         move => ?; case (_tb <> 0) => ?/=;2: smt().
-         case (8 * i + k %/ 8 - _len = 0).
-         (* Something is wrong here? *)
-     (*   
-     rewrite /to_list /mkseq -iotaredE /=. 
-     do split => /=;1..6: by smt().
-     by have -> := bytes2_state_commute _buf _off _len _tb 6 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
-     by have -> := bytes2_state_commute _buf _off _len _tb 7 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
-     by have -> := bytes2_state_commute _buf _off _len _tb 8 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
-     by have -> := bytes2_state_commute _buf _off _len _tb 9 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
-     by have -> := bytes2_state_commute _buf _off _len _tb 10 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().  
-     *)
-*)
+     rewrite (nth_change_dfl (witness<:W64.t>)); 1: smt(Array25.size_to_list).
+     case (0 <= i < 6) => ?; last first.
+     + rewrite (nth_change_dfl (witness<:W64.t>)); 1: smt(Array25.size_to_list).
+       rewrite get_to_list /bytes2state get_of_list // nth_default; last by smt().
+       by rewrite /w64L_from_bytes size_map size_chunkify // size_cat size_sub // /#.
+     rewrite /to_list /mkseq /= -iotaredE /=. 
+     case (i = 0) => ?.
+     + by have -> := bytes2_state_commute _buf _off _len _tb 0 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     case (i - 1 = 0) => ?.
+     + by have -> := bytes2_state_commute _buf _off _len _tb 1 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     case (i - 2 = 0) => ?.
+     + by have -> := bytes2_state_commute _buf _off _len _tb 2 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     case (i - 3 = 0) => ?.
+     + by have -> := bytes2_state_commute _buf _off _len _tb 3 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     case (i - 4 = 0) => ?.
+     + by have -> := bytes2_state_commute _buf _off _len _tb 4 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+     case (i - 5 = 0) => ?.
+     + by have -> := bytes2_state_commute _buf _off _len _tb 5 _ _ _ _ _;(simplify theis theos traili deltai leni asizes sizes);smt().
+    by smt().
+
+   + wp 8; conseq (: _ ==> st = addstate_avx2 _st (sub _buf _off _len ++ if _tb <> 0 then [W8.of_int _tb] else [])); 1: by auto => />.
+     proc change 7 : (zeroextu256 t128_0 `|` sll_256 (W2u128.zeroextu256 t128_1) (W256.of_int 128)); 1: by move => *; apply merge_words128.
+     exlim t64_1, r1, t64_2 => _w1 _w2 _w3.
+     inline *;
+     bdep 2176 1792 [_st;_w1;_w2;_w3]
+                    [st;t64_1;r1;t64_2]
+                    [st]
+                    F3 Pre3.
+     + move => />  Hst0 Hst1 Hst2  *; rewrite allP /Pre3 /= => x;rewrite mapP => H;elim H =>xx /=.
+       move => [Hxx Hx]; have Hsti : forall i, 0 <= i < 4 => x.[i] = u256_bits64 _st.[0] i; last by  rewrite !Hsti //= Hst0 Hst1 Hst2 //.
+       move => i ib.
+       rewrite Hx; rewrite get_of_list 1:/# /=.
+       move : Hxx; rewrite chunk_size 1:/# /=.
+       + rewrite size_flatten /= (size_flatten' 256);1:by smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list => />.
+       rewrite flatten_cons => ->; rewrite (nth_map []).
+       + rewrite size_chunk 1:/#.
+       + rewrite size_cat /= (size_flatten' 256);1:by smt(mapP W256.size_w2bits).
+         rewrite size_map size_to_list size_flatten.
+         by rewrite /sumz /= /#.
+       rewrite chunk_cat;1: by rewrite (size_flatten' 256);smt(mapP W256.size_w2bits).
+       rewrite nth_cat ifT.
+       + rewrite size_chunk 1:/#.
+         rewrite (size_flatten' 256);1:smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list /#.
+       rewrite nth_chunk 1,2:/#.
+       + rewrite (size_flatten' 256);1:smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list /#.
+       apply W64.wordP => k kb.
+       rewrite get_bits2w // nth_take 1,2:/# nth_drop 1,2:/#.
+       rewrite (nth_flatten false 256);1: by rewrite allP => ?;rewrite mapP;smt(W256.size_w2bits).
+       rewrite (nth_map witness);1:by rewrite size_to_list /#.
+       rewrite (nth_map witness) /=;1:by rewrite size_iota /#.
+       rewrite nth_iota 1:/# initiE 1:/# /#.
+
+     + move => &hr /> ?????? Hin stout.
+       have Hs1 : size
+         (flatten [flatten (map W256.w2bits
+                     (to_list st{hr})); w2bits t64_1{hr}; w2bits r1{hr}; w2bits t64_2{hr}]) = 2176.
+       + rewrite size_flatten /= (size_flatten' 256);1: smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list => />.
+       have Hs2 : size (flatten (map W256.w2bits (to_list stout))) = 1792.
+       + rewrite  (size_flatten' 256);1: smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list => />.       
+       have Hs3 : size (flatten (map W256.w2bits (to_list st{hr}))) = 1792.
+       + rewrite  (size_flatten' 256);1: smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list => />.
+       have Hs4 : size (chunk 64 (flatten
+        [flatten (map W256.w2bits (to_list st{hr})); w2bits t64_1{hr}; 
+           w2bits r1{hr}; w2bits t64_2{hr}])) = 34.
+       + rewrite size_chunk 1:/# size_flatten /=  (size_flatten' 256);1: smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list /sumz=> />.
+       
+
+       rewrite chunk_size 1,2:/# -map_comp /(\o) /= flatten1 (chunk_size 1792) 1,2:/# /=.
+       rewrite tP => Hout.
+       rewrite tP => i ib.
+       have := Hout i ib.
+       pose aa := (F3 _).[i].
+       rewrite initiE 1:/# /= (nth_map witness).
+       + rewrite size_chunk 1:/# /= (size_flatten' 256);1:by smt(mapP W256.size_w2bits).
+         by rewrite size_map size_to_list /= /#.
+       rewrite flattenK 1:/#;1: by move => ?; rewrite mapP; smt(W256.size_w2bits).
+       rewrite (nth_map witness);1:by smt(Array7.size_to_list).
+       rewrite w2bitsK get_to_list => <-;rewrite /aa /F3 /addstate_avx2;do congr.
+       + (* state matching *)
+         rewrite tP => k kb;rewrite initiE 1:/# /= /u256_pack4 /Bindings.concat_2u128 /concat_2u64!pack2E !initiE 1..4:/# wordP => j jb.
+         rewrite !initiE 1:/# /= get_of_list 1:/# /=.
+         case (j %/64 = 0) => ?.
+         + rewrite ifT 1:/# initiE 1:/# /= get_of_list 1:/# /= ifT 1:/# (nth_map []) 1:/#.
+           rewrite get_bits2w 1:/# flatten_cons chunk_cat;1: by smt(mapP Array7.size_to_list).
+           rewrite nth_cat ifT;1: by smt(size_chunk).
+           rewrite nth_chunk 1..3:/# nth_take 1,2:/# nth_drop 1,2:/#.
+           rewrite (nth_flatten _ 256);1: by rewrite allP => ? /=;rewrite mapP; smt( W256.size_w2bits).
+           by rewrite (nth_map witness) /=;smt(Array7.size_to_list).
+         case (j %/64 = 1) => ?.
+         + rewrite ifT 1:/# initiE 1:/# /= get_of_list 1:/# /= ifF 1:/# (nth_map []) 1:/# ifT 1:/#.
+           rewrite get_bits2w 1:/# flatten_cons chunk_cat;1: by smt(mapP Array7.size_to_list).
+           rewrite nth_cat ifT;1: by smt(size_chunk).
+           rewrite nth_chunk 1..3:/# nth_take 1,2:/# nth_drop 1,2:/#.
+           rewrite (nth_flatten _ 256);1: by rewrite allP => ? /=;rewrite mapP; smt( W256.size_w2bits).
+           by rewrite (nth_map witness) /=;smt(Array7.size_to_list).
+         case (j %/64 = 2) => ?.
+         + rewrite ifF 1:/# ifT 1:/# initiE 1:/# /= get_of_list 1:/# /= ifT 1:/# (nth_map []) 1:/#.
+           rewrite get_bits2w 1:/# flatten_cons chunk_cat;1: by smt(mapP Array7.size_to_list).
+           rewrite nth_cat ifT;1: by smt(size_chunk).
+           rewrite nth_chunk 1..3:/# nth_take 1,2:/# nth_drop 1,2:/#.
+           rewrite (nth_flatten _ 256);1: by rewrite allP => ? /=;rewrite mapP; smt( W256.size_w2bits).
+           by rewrite (nth_map witness) /=;smt(Array7.size_to_list).
+         case (j %/64 = 3) => ?.
+         + rewrite ifF 1:/# ifT 1:/# initiE 1:/# /= get_of_list 1:/# /= ifF 1:/# (nth_map []) 1:/# ifT 1:/#.
+           rewrite get_bits2w 1:/# flatten_cons chunk_cat;1: by smt(mapP Array7.size_to_list).
+           rewrite nth_cat ifT;1: by smt(size_chunk).
+           rewrite nth_chunk 1..3:/# nth_take 1,2:/# nth_drop 1,2:/#.
+           rewrite (nth_flatten _ 256);1: by rewrite allP => ? /=;rewrite mapP; smt( W256.size_w2bits).
+           by rewrite (nth_map witness) /=;smt(Array7.size_to_list).
+         by smt(). 
+     + (* read matching *) 
+       rewrite Hin; rewrite tP => k kb.
+       rewrite get_of_list 1:/# initiE 1:/# /=.
+       case (0 <=k<6) => ?; last 
+          by rewrite nth_default // size_map size_chunk // size_flatten /=  /sumz /= /#. 
+       rewrite get_of_list 1:/# /= flatten_cons chunk_cat;1: by smt(mapP Array7.size_to_list).
+       rewrite map_cat nth_cat ifF;1: smt(size_map size_chunk).
+       rewrite size_map size_chunk 1:/# (size_flatten' 256);1:smt(mapP W256.size_w2bits).
+       by rewrite size_map size_to_list /=.
 qed.
 
 
