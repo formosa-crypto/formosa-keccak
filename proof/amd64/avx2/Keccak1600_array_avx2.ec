@@ -1879,10 +1879,390 @@ lemma a_ilen_read_upto8_at_ll: islossless M(P).__a_ilen_read_upto8_at
 
 hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
  M(P).__a_ilen_read_upto8_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\
+   0 <= _len /\ 0 <= _at /\ 0 <= _cur
 (*    0 <= _off + _dlt /\ _off + _dlt + min (max 0 _len) 8 <= aSIZE /\ 0 <= _trail < 256*)
  ==> read_upto_at_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (W8u8.to_list res.`5).
-admitted.
+pose ll := min (max 0 _len) 8.
+proc => /=.
+case (aT < cUR \/ cUR + 8 <= aT).
++ rcondt ^if; 1: by auto.
+  auto => /> *;do split;2..: smt().
+  rewrite drop_cat !size_cat !size_nseq !size_sub //=.
+  case (_cur < max 0 _at + _len) => ?.
+  + rewrite drop_cat /= size_nseq.
+    case (_cur < max 0 _at) => ?.
+    + rewrite drop_nseq 1:/# take_cat size_cat size_nseq size_sub 1:/#.
+      case (8 < max 0 (_at - _cur) + _len)=> ?.
+      + rewrite take_cat size_nseq.
+        case (8 < max 0 (_at - _cur)) => ?.
+        + rewrite take_nseq /=.
+          apply (eq_from_nth W8.zero) => /=; 1: by rewrite size_nseq /#.
+          by rewrite !W8u8.get_zero /= => *;rewrite (nth_nseq W8.zero) /#.
+        apply (eq_from_nth W8.zero) => /=;1: by  rewrite size_cat size_nseq /= size_take 1:/# size_sub /#.
+        rewrite !W8u8.get_zero /= => *.
+        by rewrite nth_cat size_nseq ifT 1:/# (nth_nseq W8.zero) /#.
+     rewrite ifT 1:/# /= cats0.
+     apply (eq_from_nth W8.zero) => /=;1: by  rewrite size_cat size_nseq /=  size_sub /#.
+     rewrite !W8u8.get_zero /= => *.
+     by rewrite nth_cat size_nseq ifT 1:/# (nth_nseq W8.zero) /#.
+   rewrite take_cat size_drop 1:/# size_sub 1:/#.
+   case (8 < max 0 (_len - (_cur - max 0 _at))) => ?.
+   + apply (eq_from_nth W8.zero) => /=;1:by rewrite size_take // size_drop 1:/#  size_sub /#.
+     rewrite !W8u8.get_zero /= => *.
+     rewrite nth_take 1,2:/# nth_drop 1,2:/# nth_sub 1:/#.
+     admitted. (* something wrong? *)
+  (* 
+case (lEN <= 0).
++ rcondt ^if; 1: by auto.
+  auto => /> [#]?????;do split; 1..3:smt().
+  rewrite W8u8.of_uint_pack8.
+  congr; apply W8u8.Pack.ext_eq => i ib.
+  rewrite !get_of_list // (nth_map witness) /=; 1:smt(size_iota).
+  rewrite nth_cat size_sub 1:/# /= ifF 1:/# /= nth_iota //=.
+  case (i = 0) => Hi;
+     1: by rewrite Hi /max /min /= ifT 1:/# to_uint_eq /= !modz_mod.
+  rewrite ifF 1:/#; congr; have : 2^8 <= 2^(8*i); last by  simplify; smt(). 
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+  
+rcondf ^if; 1: by auto.
+case (8 <= lEN).
++ rcondt ^if;1: by auto.
+   auto => /> [#] ??????; do split;1..3:smt().
+  rewrite /get64_direct;congr; apply W8u8.Pack.ext_eq => i ib.
+  rewrite initiE 1:/# /=  get_of_list //. 
+  rewrite nth_cat size_sub 1:/# /= ifT 1:/# /=.
+  by rewrite nth_sub 1:/# /= initiE /#.
+
+rcondf ^if; 1: by auto.
+
+(* We have ll = lEN *)
+
+auto => /> ??????.
+
+have H : _len \in iota_ 0 8 by smt(mem_iota).
+rewrite -iotaredE /= in H.
+
+elim H => />.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+move => H;elim H => />;last first.
+
+(* _len = 7 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /= (: 0 <= i-32 < 64) 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# initiE 1:/# /= initiE 1:/# /=.
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite /get8 initiE 1:/# /= nth_sub 1:/# get_to_uint /= of_uintK /= modz_small 1:/# (modz_small _ 18446744073709551616)  1:/#. 
+    suff : 256 * (_trail %% 256) %/ 2 ^ (i - 48) %% 2 = 0 by smt().
+    rewrite mulrC -pow2_8 divMr; 1: by apply dvdz_exp2l;smt().
+    rewrite expz_div 1,2:/# (: 8 - (i - 48) = (8 - (i - 48) - 1) + 1) 1:/#.
+    rewrite exprS 1:/# (Ring.IntID.mulrC 2 _) /#.
+
+  rewrite ifF 1:/# zerowE /=  ifF 1:/# /= ifT 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 48 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  have -> : 2 ^ (i - 48) = 2^((i-48-8) + 8) by auto.
+  rewrite exprD_nneg 1,2:/#mulrC -pow2_8 divzMpr //=.  
+  by have -> : i-56 = i%%8 by smt().
+
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /= (: 0 <= i-32 < 64) 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  get_out 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /=.
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    by rewrite /get8 initiE 1:/# /= nth_sub /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/# /= ifT 1:/#.
+  rewrite !get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  by have -> /= : _trail %% 256 = 0 by smt().
+
+(* _len = 6 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /= (: 0 <= i-32 < 64) 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 48 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/# !of_uintK /=.
+    by have -> : i-48 = i%%8 by smt().
+  rewrite ifF 1:/# /=.
+  suff /= : 2^8 <= 2 ^ (i - 48)  by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ split; 1: smt().
+  apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# get_out 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (32 <= i < 48) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite get16E pack2E  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# zerowE. 
+  case (48 <= i < 56) => ibbbb.
+  + rewrite ifT 1:/#.
+    rewrite !get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=.
+     by have -> /= : _trail %% 256 = 0 by smt().
+  by rewrite ifF 1:/# zerowE /=.
+
+(* _len = 5 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2iE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 32 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /= (:0 <= (i - 32) %% 8 < 8) 1:/# /=.
+    rewrite nth_sub 1:/#.
+    have -> : (i - 32) %% 8 = i %% 8 by smt().
+    have ->/= : 256 * (_trail %% 256) %/ 2 ^ (i - 32) %% 2 = 0;
+       last by smt().
+    have /={1}-> : 2 ^ 8 = 2^(8 - (i-32) + (i-32)) by congr;smt().
+    rewrite exprD_nneg 1,2:/# mulrC mulrA mulzK;1:smt(expr_gt0).
+    have ->: 2 ^ (8 - (i - 32)) = 2 ^ ((8 - (i - 32) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 32 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  rewrite mulrC -{2}pow2_8 (:2^(i-32) = 2^((i-32-8)+8));1: by congr;smt().
+  rewrite exprD_nneg /= 1,2:/# divzMpr //=.
+  case (40 <= i < 48) => ibbbb.
+  + rewrite ifT 1:/# !of_uintK /=;1:do congr;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-40) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# get_out 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite nth_sub /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  case (40 <= i < 48) => ibbbb.
+  + rewrite ifT 1:/# get_to_uint !of_uintK /= (:0 <= i %% 8 < 8) 1:/# /=.
+    by have -> /= : _trail %% 256 = 0;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-40) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
+
+(* _len = 4 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# get_to_uint (: 0 <= i - 32 < 64) 1:/# /= of_uintK /=  (modz_small _ 18446744073709551616)  1:/#.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifT 1:/# get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=.
+    by have -> : (i - 32) = i %% 8 by smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-32) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ split;1:smt().
+  apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get32E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 32) => ibb.
+  + rewrite ifT 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /=. 
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (32 <= i < 40) => ibbb.
+  + rewrite ifF 1:/# ifT 1:/# get_to_uint !of_uintK /= (:0 <= i %% 8 < 8) 1:/# /=. 
+    by have -> /= : _trail %% 256 = 0;smt().
+  case (40 <= i < 48) => ibbbb.
+  + by rewrite ifF 1:/# ifF 1:/# get_to_uint (:0 <= i %% 8 < 8) 1:/# /=.
+  by rewrite ifF 1:/# /= ifF 1:/# /=.
+
+ (* _len = 3 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# map2E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 16 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /= (:0 <= (i - 16) %% 8 < 8) 1:/# /=.
+    rewrite nth_sub 1:/#.
+    have -> : (i - 16) %% 8 = i %% 8 by smt().
+    have ? : 256 * (_trail %% 256) %/ 2 ^ (i - 16) %% 2 = 0; last by have -> : i %/8 = 2; smt().
+    have /={1}-> : 2 ^ 8 = 2^(8 - (i-16) + (i-16)) by congr;smt().
+    rewrite exprD_nneg 1,2:/# mulrC mulrA mulzK;1:smt(expr_gt0).
+    have ->: 2 ^ (8 - (i - 16)) = 2 ^ ((8 - (i - 16) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# /#.
+  rewrite ifF 1:/# zerowE /=  ifF 1:/#.
+  rewrite !get_to_uint /= !of_uintK /= (modz_small _ 18446744073709551616)  1:/# (: (0 <= i - 16 < 64)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+  rewrite mulrC -{2}pow2_8 (:2^(i-16) = 2^((i-16-8)+8));1: by congr;smt().
+  rewrite exprD_nneg /= 1,2:/# divzMpr //=.
+  case (24 <= i < 32) => ibbbb.
+  + rewrite ifT 1:/# !of_uintK /=;1:do congr;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-24) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# /= W16.initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= W64.get_out 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=. 
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifT 1:/# ifT 1:/# /get8  initiE 1:/# /=. 
+    rewrite !get_to_uint /= (:(0 <= (i - 16) %% 8 < 8)) 1:/# /= (: 0 <= i %% 8 < 8) 1:/# /=.
+    rewrite nth_sub 1:/#.
+    have -> : (i - 16) %% 8 = i %% 8 by smt().
+    have ? : 256 * (_trail %% 256) %/ 2 ^ (i - 16) %% 2 = 0; last by have -> : i %/8 = 2; smt().
+    have /={1}-> : 2 ^ 8 = 2^(8 - (i-16) + (i-16)) by congr;smt().
+    rewrite exprD_nneg 1,2:/# mulrC mulrA mulzK;1:smt(expr_gt0).
+    have ->: 2 ^ (8 - (i - 16)) = 2 ^ ((8 - (i - 16) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# /#.
+  case (24 <= i < 32) => ibbbb.
+  + rewrite ifF 1:/# ifF 1:/# ifT 1:/# get_to_uint (:0 <= (i-16) %% 8 < 8) 1:/# /= get_to_uint (: 0 <= i %% 8 < 8) 1:/# /= (: _trail %% 256 = 0) /#.
+   by rewrite ifF 1:/# /= ifF 1:/# /= ifF 1:/# get_to_uint (:0 <= i %% 8 < 8) 1:/# /=.
+
+ (* _len = 2 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# shlwE ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# ifT 1:/#.
+    rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    by rewrite W64.get_out 1:/# nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# get_to_uint (:  0 <= i - 16 < 64) 1:/# /= of_uintK /= (modz_small _ 18446744073709551616)  1:/# /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifT 1:/#.
+    rewrite !get_to_uint /= (: 0 <= i %% 8 < 8) 1:/# /=;do congr;smt().
+  rewrite ifF 1:/# /=; suff /= : 2^8 <= 2^(i-16) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
+  + split;1:smt().
+  apply W64.wordP => i ib.
+  rewrite  /(`<<`) /= ib /=.
+  rewrite !zeroextu64E get16E !pack8E !pack4E !pack2E initiE 1:/# /=.
+  rewrite initiE 1:/# /=.
+  case (0 <= i < 16) => ibb.
+  + rewrite ifT 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+    rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /= ifT 1:/#.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# initiE 1:/# /=. 
+  rewrite !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (16 <= i < 24) => ibbb.
+  + rewrite ifF 1:/# ifT 1:/# get_to_uint !of_uintK /= (:0 <= i %% 8 < 8) 1:/# /=. 
+    by have -> /= : _trail %% 256 = 0;smt().
+  case (24 <= i < 32) => ibbbb.
+  + by rewrite ifF 1:/# ifF 1:/# get_to_uint (:0 <= i %% 8 < 8) 1:/# /=.
+  by rewrite ifF 1:/# /= ifF 1:/# /=.
+
+(* _len = 1 *) 
+split => *.
++ apply W64.wordP => i ib.
+  rewrite !orE  /= /(`<<`) /= map2iE 1:/# ib /=.
+  rewrite !zeroextu64E /get8 !pack8E initiE 1:/# /=.
+  rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= !get_of_list 1:/# /= nth_cat size_sub 1:/# /=.
+  case (0 <= i < 8) => ibb.
+  + rewrite ifT 1:/# ifT 1:/# get_to_uint !of_uintK /= ib /= (modz_small _ 18446744073709551616)  1:/#.
+    rewrite mulrC -{2}pow2_8 (:2^8 = 2^((8 - i) + i));1: by congr;smt().
+    rewrite exprD_nneg /= 1,2:/# mulrA mulzK;1:smt(expr_gt0).
+     have ->: 2 ^ (8 - i) = 2 ^ (((8 - i) - 1) + 1); 1: by congr;auto.
+    rewrite exprS 1:/# mulrA mulrC mulrA modzMl.
+    by rewrite nth_sub;smt().
+  rewrite ifF 1:/# ifF 1:/# zerowE /= get_to_uint ib /= of_uintK /= (modz_small _ 18446744073709551616)  1:/#.
+  case (8 <= i < 16) => ibbb.
+  + rewrite ifT 1:/# get_to_uint (: 0 <= i %% 8 < 8) 1:/# /=.
+    rewrite mulrC -{2}pow2_8 (:2^(i) = 2^((i-8)+8));1: by congr;smt().
+    rewrite exprD_nneg /= 1,2:/# divzMpr //=.
+    by have -> : i - 8 = i %% 8;smt().
+  rewrite ifF 1:/# /=.
+  have ? : 256 * (_trail %% 256) %/ 2 ^ (i) %% 2 = 0; last by smt().
+  suff /= : 2^16 <= 2^(i) by smt().
+  by apply (ler_weexpn2l 2) => /=;smt(expr_ge0).
+
++ apply W64.wordP => i ib.
+  rewrite  /(`<<`) /= ib /=.
+  rewrite !zeroextu64E  !pack8E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /=.
+  case (0<=i<8) => ibb.
+  + rewrite ifT 1:/# /get8 initiE 1:/# /=.
+  rewrite   nth_cat size_sub 1:/# /= ifT 1:/# nth_sub /#.
+  rewrite ifF 1:/#.
+  rewrite   nth_cat size_sub 1:/# /= ifF 1:/#.
+  case (8 <= i < 16) => ibbb.
+  + rewrite ifT 1:/# get_to_uint !of_uintK /= (: 0 <= i %% 8 < 8) 1:/# /=.
+    have -> : _trail %% 256 = 0 by smt().
+  by smt().
+  by rewrite ifF 1:/# /=. 
+qed.
+
+ *)
 
 lemma a_ilen_read_upto32_at_ll: islossless M(P).__a_ilen_read_upto32_at
  by islossless.
