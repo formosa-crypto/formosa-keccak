@@ -3783,19 +3783,113 @@ hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
  ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256_to_bytes res.`5).
 admitted.
 
+(*
+lemma stavx2_bvP (_a: W256.t Array7.t):
+ (map
+     (fun (temp : bool list) =>
+        (of_list W256.zero (map W256.bits2w (chunk 256 temp)))%Array7)
+     (chunk 1792 (flatten [flatten (map W256.w2bits (to_list _a))])))
+ = [_a].
+proof.
+rewrite flatten1 chunk_size 1://= /=.
+ rewrite (size_flatten_ctt 256).
+  by move=> bs /mapP => [[w [_ ->]]].
+ by rewrite size_map size_to_list.
+rewrite flattenK 1://.
+ move=> bs /mapP [l [Hl ->]].
+ by rewrite /w2bits size_mkseq.
+by rewrite -map_comp /(\o) /= map_id to_listK.
+qed.
+*)
 
-op ADDST_avx2 (st : W256.t Array7.t) (st25: W64.t Array25.t) =
+print addstate_avx2.
+op addst_avx2 (st : W256.t Array7.t) (st25: W64.t Array25.t) =
  stavx2_from_st25 (addstate (stavx2_to_st25 st) st25).
 
+op stavx2_to_bits (stavx2: W256.t Array7.t) =
+ flatten (map W256.w2bits (to_list stavx2)).
+
+(* FIXME! JWordList... *)
+op W256L_from_bits (bs: bool list): W256.t list.
+op stavx2_from_bits bs =
+ Array7.of_list W256.zero (W256L_from_bits bs).
+
+
+lemma flatten_states (stavx2: W256.t Array7.t) llbytes l:
+ stavx2INV stavx2 =>
+ size l = 1600 =>
+ l = List.map bytes_to_bits llbytes =>
+ flatten (stavx2_to_bits stavx2 :: l)
+ = state2bits (stavx2_to_st25 stavx2)
+   ++ state2bits (bytes2state (flatten llbytes)).
+proof.
+move=> Hinv Hsz El.
+rewrite El flatten_cons; congr.
+ admit
+(*
+stavx2_to_bits stavx2 = state2bits (stavx2_to_st25 stavx2)
+*).
+admit(* CANCELATION...
+flatten (map bytes_to_bits llbytes) =
+state2bits (bytes2state (flatten llbytes))
+*).
+qed.
+(* PARA INVOCAR LEMA
+[ u64_to_bytes t64_1; u256_to_bytes r1
+; u64_to_bytes t64_2; u256_to_bytes r3
+; u64_to_bytes t64_3; u256_to_bytes r4
+; u64_to_bytes t64_4; u256_to_bytes r5
+; u64_to_bytes t64_5; u256_to_bytes r6
+]
+*)
+
+(*
+map F2
+  (map
+     (fun (temp : bool list) =>
+        Array53.of_list W64.zero (map W64.bits2w (chunk 64 temp)))
+     (chunk 3392
+        (flatten
+           [flatten (map W256.w2bits (to_list _st)); w2bits t64_1{m};
+              w2bits _w2; w2bits _w3; w2bits _w4; w2bits _w5; w2bits _w6;
+              w2bits _w7; w2bits _w8; w2bits _w9; w2bits _w10]))) =
+map
+  (fun (temp : bool list) =>
+     Array7.of_list W256.zero (map W256.bits2w (chunk 256 temp)))
+  (chunk 1792 (flatten [flatten (map W256.w2bits (to_list st))])) =>
+st =
+ADDST_avx2 _st
+  (bytes2state (nseq _at W8.zero ++ sub _buf _off _len ++ [W8.of_int _tb])) /\
+aT{m} = _off + _len
+
+
+map F2
+  (map
+     (fun (temp : bool list) =>
+        Array53.of_list W64.zero (map W64.bits2w (chunk 64 temp)))
+     (chunk 3392
+        (flatten
+           [flatten (map W256.w2bits (to_list _st)); w2bits t64_1{m};
+              w2bits _w2; w2bits _w3; w2bits _w4; w2bits _w5; w2bits _w6;
+              w2bits _w7; w2bits _w8; w2bits _w9; w2bits _w10])))
+=
+map
+  (fun (temp : bool list) =>
+     Array7.of_list W256.zero (map W256.bits2w (chunk 256 temp)))
+  (chunk 1792 (flatten [flatten (map W256.w2bits (to_list st))]))
+
+*)
 
 hoare addstate_at_avx2_h _st _buf _off _len _tb _at:
  M(P).__addstate_at_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ lEN=_len /\ tRAILB=_tb /\ aT=_at
  /\ 0 <= _at <= _at+_len <= 200 - b2i (_tb<>0) 
-   /\ 0<= offset /\ offset + _len <= aSIZE /\ 0 <= _tb < 256
+ /\ 0<= offset /\ offset + _len <= aSIZE /\ 0 <= _tb < 256
+ /\  stavx2INV _st
  ==> let l = nseq _at W8.zero ++ sub _buf _off _len ++ [W8.of_int _tb]
-     in res.`1 = ADDST_avx2 _st (bytes2state l)
-     /\ res.`2 = _off + _len.
+     in res.`1 = addst_avx2 _st (bytes2state l)
+     /\ res.`2 = _at + _len + b2i (_tb<>0)
+     /\ res.`3 = _off + _len.
 proof.
 proc.
 (* BATOTA... *) rcondt 11. admit.
@@ -3804,9 +3898,11 @@ swap 5 -3; swap 7 -4; swap 10 -6; swap 11 -6; swap 13 -7; swap 14 -7.
 swap [16..17] -8.
 swap 19 -9.
 seq 10: ( subread_spec 200 _buf _off 0 _len _tb 0 _at dELTA 0 0 aT (u64_to_bytes t64_1 ++ u256_to_bytes r1 ++ u64_to_bytes t64_2 ++ u256_to_bytes r3 ++ u64_to_bytes t64_3 ++ u256_to_bytes r4 ++ u64_to_bytes t64_4 ++ u256_to_bytes r5 ++ u64_to_bytes t64_5 ++ u256_to_bytes r6)
+        /\ subread_pre 0 _at _len _tb
         /\ dELTA = _len
         /\ st=_st /\ buf=_buf /\ offset=_off
         /\ aT=_at+_len+b2i (_tb<>0)
+        /\ stavx2INV st 
         ).
  ecall (a_ilen_read_upto32_at_h buf offset dELTA lEN tRAILB 168 aT).
  ecall (a_ilen_read_upto8_at_h buf offset dELTA lEN tRAILB 160 aT).
@@ -3818,7 +3914,7 @@ seq 10: ( subread_spec 200 _buf _off 0 _len _tb 0 _at dELTA 0 0 aT (u64_to_bytes
  ecall (a_ilen_read_upto8_at_h buf offset dELTA lEN tRAILB 40 aT).
  ecall (a_ilen_read_upto32_at_h buf offset dELTA lEN tRAILB 8 aT).
  ecall (a_ilen_read_upto8_at_h buf offset dELTA lEN tRAILB 0 aT).
- auto => &m |> /= ???????.
+ auto => &m |> /= ??????? STinv.
  move=> [] /= dlt0 len0 tb0 at0 w0 H0.
  move=> [] /= dlt1 len1 tb1 at1 w1 H1.
  move=> [] /= dlt2 len2 tb2 at2 w2 H2.
@@ -3844,20 +3940,76 @@ smt().
 
 exlim t64_1, r1, t64_2, r3, t64_3, r4, t64_4, r5, t64_5, r6 => _w1 _w2 _w3 _w4 _w5 _w6 _w7 _w8 _w9 _w10.
 proc change 11 : (zeroextu256 t128_2 `|` sll_256 (W2u128.zeroextu256 t128_1) (W256.of_int 128)); 1: by move => *; apply merge_words128.
-inline*; wp -1.
+inline*.
+wp -1.
 bdep 3392 1792
  [_st;_w1;_w2;_w3;_w4;_w5;_w6;_w7;_w8;_w9;_w10]
  [st;t64_1;r1;t64_2;r3;t64_3;r4;t64_4;r5;t64_5;r6]
  [st]
  F2 Pre2.
-move=> />.
- by rewrite /Pre allP /=. 
-move=> &m.
-move=> [] -> H st Hst.
-split.
+move=> &m [#]->->->->->->->->->-> |> Hspec Hpre Hinv.
+ rewrite allP /Pre2 /= => x /mapP [bs].
+have ->: (flatten
+      [flatten (map W256.w2bits (to_list st{m})); w2bits t64_1{m};
+         w2bits r1{m}; w2bits t64_2{m}; w2bits r3{m}; w2bits t64_3{m};
+         w2bits r4{m}; w2bits t64_4{m}; w2bits r5{m}; w2bits t64_5{m};
+         w2bits r6{m}])
+ = flatten ([flatten (map W256.w2bits (to_list st{m}))] ++ [w2bits t64_1{m};
+         w2bits r1{m}; w2bits t64_2{m}; w2bits r3{m}; w2bits t64_3{m};
+         w2bits r4{m}; w2bits t64_4{m}; w2bits r5{m}; w2bits t64_5{m};
+         w2bits r6{m}]) by done.
+ rewrite flatten_cat flatten1.
+
+rewrite chunk_size 1://= /=.
+ rewrite size_cat.
+ rewrite (size_flatten_ctt 256).
+  by move=> l /mapP => [[w [_ ->]]].
+ rewrite size_map size_to_list.
+ rewrite !flatten_cons flatten_nil cats0 !size_cat.
+ by rewrite !W64.size_w2bits !W256.size_w2bits.
+ move=> [] ->.
+ have ->: flatten (map W256.w2bits (to_list st{m}))
+      = bytes_to_bits (state2bytes (stavx2_to_st25 st{m})).
+  admit.
  admit.
-move: H; rewrite /read_upto_at_spec => /> *.
-admit.
+move=> &m [#]->->->->->->->->->-> |> Hspec Hpre Hinv st.
+move: (subread_specP _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hspec) => {Hspec} //.
+ smt().
+rewrite nseq0 => |> _ Hb2st HH.
+(*
+Hpre: subread_pre 0 _at dELTA{m} _tb
+Hinv: stavx2INV st{m}
+st: W256.t Array7.t
+Hb2st: bytes2state
+         (nseq _at W8.zero ++ sub buf{m} offset{m} dELTA{m} ++
+          [W8.of_int _tb]) =
+       bytes2state
+         (u64_to_bytes t64_1{m} ++ u256_to_bytes r1{m} ++
+          u64_to_bytes t64_2{m} ++ u256_to_bytes r3{m} ++
+          u64_to_bytes t64_3{m} ++ u256_to_bytes r4{m} ++
+          u64_to_bytes t64_4{m} ++ u256_to_bytes r5{m} ++
+          u64_to_bytes t64_5{m} ++ u256_to_bytes r6{m})
+HH: map F2
+      (map
+         (fun (temp : bool list) =>
+            Array53.of_list W64.zero (map W64.bits2w (chunk 64 temp)))
+         (chunk 3392
+            (flatten
+               [flatten (map W256.w2bits (to_list st{!m})); w2bits t64_1{m};
+                  w2bits r1{m}; w2bits t64_2{m}; w2bits r3{m};
+                  w2bits t64_3{m}; w2bits r4{m}; w2bits t64_4{m};
+                  w2bits r5{m}; w2bits t64_5{m}; w2bits r6{m}]))) =
+    map
+      (fun (temp : bool list) =>
+         Array7.of_list W256.zero (map W256.bits2w (chunk 256 temp)))
+      (chunk 1792 (flatten [flatten (map W256.w2bits (to_list st))]))
+------------------------------------------------------------------------
+st =
+ADDST_avx2 st{!m}
+  (bytes2state
+     (nseq _at W8.zero ++ sub buf{m} offset{m} dELTA{m} ++ [W8.of_int _tb]))
+*)
+ admit.
 qed.
 
 
