@@ -1,4 +1,5 @@
 from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
+from Keccak require "avx2/keccak1600x4_updstate.jinc"
 
 param int RATE8 = R168;
 param int TRAIL = SHAKE;
@@ -25,6 +26,25 @@ export fn init_state_avx2x4
 {
   state = __state_init_avx2x4(state);
   return state;
+}
+
+export fn unpack_updstate_avx2x4
+( reg mut ptr u64[26] st0 st1 st2 st3
+, reg const ptr keccakx4_updstate st4x
+) -> reg ptr u64[26]
+   , reg ptr u64[26]
+   , reg ptr u64[26]
+   , reg ptr u64[26]
+{
+  reg u64 ststatus;
+  st4x = st4x;
+  st0[0:25], st1[0:25], st2[0:25], st3[0:25] = __st4x_unpack(st0[0:25], st1[0:25], st2[0:25], st3[0:25], st4x[:u256 0:25]);
+  ststatus = st4x[:u64 4*25];
+  st0[25] = ststatus;
+  st1[25] = ststatus;
+  st2[25] = ststatus;
+  st3[25] = ststatus;
+  return st0, st1, st2, st3;
 }
 
 namespace TEST_AT {

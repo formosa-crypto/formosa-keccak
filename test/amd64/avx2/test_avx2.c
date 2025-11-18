@@ -98,7 +98,7 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
   }
   finish_updstate_ref(s0);
   finish_updstate_avx2(s1);
-  chkeq_buf("update_updstate (ref vs. oneshot)", (uint8_t*) s0, (uint8_t*) s1, 8*26);
+  chkeq_buf("update_updstate (ref vs. avx2)", (uint8_t*) s0, (uint8_t*) s1, 8*26);
   TEST_ONESHOT__absorb_avx2(s2, buf_in);
   chkeq_buf("absorb_avx2 (updstate vs. oneshot)", (uint8_t*) s1, (uint8_t*) s2, 8*25);
   TEST_AT__absorb_avx2(s3, buf_in);

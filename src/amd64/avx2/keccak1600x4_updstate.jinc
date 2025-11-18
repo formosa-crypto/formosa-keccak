@@ -126,7 +126,7 @@ export fn init_updstate_avx2x4
   return st;
 }
 
-export fn finish_updstate_ref
+export fn finish_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 ) -> reg ptr keccakx4_updstate /* st */
 {
