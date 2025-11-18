@@ -23,11 +23,14 @@ JASMINC ?= jasminc -I Keccak=$(SRCDIR)
 
 .DEFAULT_GOAL := all
 
-PROGS = test_avx2
+PROGS = test_avx2 test_avx2x4
 
 all: $(PROGS)
 
 test_avx2: test_avx2.c test_avx2.s ../ref/test_ref.s
+	$(GCC) -o $@ $^
+
+test_avx2x4: test_avx2x4.c test_avx2x4.s ../ref/test_ref.s
 	$(GCC) -o $@ $^
 
 %.s: %.jazz

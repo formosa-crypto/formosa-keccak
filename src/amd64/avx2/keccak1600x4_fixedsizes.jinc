@@ -1,0 +1,52 @@
+require "keccakf1600x4.jinc"
+require "../common/keccak1600_generic.jinc"
+require "../common/subreadwrite_imem.jinc"
+
+/*
+   STATE INIT
+   ==========
+*/
+inline fn __state_init_avx2x4
+( reg mut ptr u256[25] st
+) -> reg ptr u256[25]
+/*
+ensures{is_arr_init(result.0,0,800)}
+*/
+{
+  reg ui64 i;
+  reg u256 z256;
+  z256 = #set0_256();
+  i = 0;
+  while (i < 32*25) {
+    st.[:u256 i] = z256;
+    i += 32; 
+  }
+  return st;
+}
+
+/*
+   ADD RATE BIT
+   ============
+*/
+
+inline fn __addratebit_avx2x4
+( reg mut ptr u256[25] st
+, inline int RATE8
+) -> reg ptr u256[25]
+/*
+requires{is_arr_init(st,0,800) && 0<RATE8 && RATE8 < 200 }
+ensures{is_arr_init(result.0,0,800)}
+*/
+{
+  reg u256 t256;
+  reg u128 t128;
+  reg u64 t64;
+  t64 = 1;
+  t64 <<= (8*RATE8-1) % 64; // obs: should be 63 for all admissible rates!
+  t128 = (128u) t64;
+  t256 = #VPBROADCAST_4u64(t128);
+  t256 ^= st[(RATE8-1)/8];
+  st[(RATE8-1)/8] = t256;
+  return st;
+}
+

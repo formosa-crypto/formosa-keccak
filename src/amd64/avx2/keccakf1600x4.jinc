@@ -1,0 +1,231 @@
+require "../common/keccakf1600_generic.jinc"
+
+type keccakx4_state = u256[25];
+
+require "keccakf1600x4_pround_inlined.jinc"
+
+u256 ROL56 = 0x181F1E1D1C1B1A191017161514131211080F0E0D0C0B0A090007060504030201;
+u256 ROL8  = 0x1E1D1C1B1A19181F16151413121110170E0D0C0B0A09080F0605040302010007;
+
+
+inline fn __keccakf1600_avx2x4
+( reg ptr u256[25] a
+) -> reg ptr u256[25]
+{
+  reg ptr u64[24] RC;
+
+  stack u256[25] s_e;
+  reg ptr u256[25] e;
+
+  reg u256 rc r8 r56 t;
+  reg ui64 c;
+
+  RC = KECCAK1600_RC;
+  e = s_e;
+  r8 = ROL8;
+  r56 = ROL56;
+
+  c = 0;
+  while(c < KECCAK_ROUNDS)
+  {
+    rc = #VPBROADCAST_4u64(RC[c]);
+
+    e = _keccakf1600_4x_pround(e, a, r8, r56);
+    t = rc ^ e[0];
+    e[0] = t;
+
+    a, e = #swap(e, a);
+
+    rc = #VPBROADCAST_4u64(RC[c+1]);
+    a = _keccakf1600_4x_pround(a, e, r8, r56);
+    t = rc ^ a[0];
+    a[0] = t;
+
+    a, e = #swap(e, a);
+
+    c += 2;
+  } 
+
+  return a;
+}
+
+fn _keccakf1600_avx2x4
+( reg ptr u256[25] a
+) -> reg ptr u256[25]
+{
+  a = __keccakf1600_avx2x4(a);
+  return a;
+}
+
+inline fn _keccakf1600_avx2x4_
+( reg ptr u256[25] a
+) -> reg ptr u256[25]
+{
+  a = a;
+  a = _keccakf1600_avx2x4(a);
+  a = a;
+  return a;
+}
+
+// pack 4 keccak states (st25) into a 4-way state (st4x)
+inline fn __u256x4_4u64x4
+( reg u256 x0 x1 x2 x3
+) -> reg u256, reg u256, reg u256, reg u256 {
+  // x0 = l00 l01  l02 l03
+  // x1 = l10 l11  l12 l13
+  // x2 = l20 l21  l22 l23
+  // x3 = l30 l31  l32 l33
+  reg u256 y0, y1, y2, y3;
+  y0 = #VPUNPCKL_4u64(x0, x1);	// y0 = l00 l10  l02 l12
+  y1 = #VPUNPCKH_4u64(x0, x1);	// y1 = l01 l11  l03 l13
+  y2 = #VPUNPCKL_4u64(x2, x3);	// y2 = l20 l30  l22 l32
+  y3 = #VPUNPCKH_4u64(x2, x3);	// y3 = l21 l31  l23 l33
+
+  x0 = #VPERM2I128(y0, y2, 0x20);	// x0 = l00 l10  l20 l30
+  x1 = #VPERM2I128(y1, y3, 0x20);	// x1 = l01 l11  l21 l31
+  x2 = #VPERM2I128(y0, y2, 0x31);	// x2 = l02 l12  l22 l32
+  x3 = #VPERM2I128(y1, y3, 0x31);	// x3 = l03 l13  l23 l33
+
+  return x0, x1, x2, x3;
+}
+
+inline fn __st4x_pack
+( reg mut ptr u256[25] st4x
+, reg const ptr u64[25] st0 st1 st2 st3
+) -> reg ptr u256[25]
+/*
+/* safety */ requires
+ { is_arr_init(st0,0,25*8) && is_arr_init(st1,0,25*8)
+   && is_arr_init(st2,0,25*8) && is_arr_init(st3,0,25*8)
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*32) }
+*/
+{
+  inline int i;
+  reg u256 x0, x1, x2, x3;
+  reg u64 t0, t1, t2, t3;
+  for i = 0 to 6 {
+    x0 = st0[:u256 i];
+    x1 = st1[:u256 i];
+    x2 = st2[:u256 i];
+    x3 = st3[:u256 i];
+    x0, x1, x2, x3 = __u256x4_4u64x4(x0, x1, x2, x3);
+    st4x[4*i+0] = x0;
+    st4x[4*i+1] = x1;
+    st4x[4*i+2] = x2;
+    st4x[4*i+3] = x3;
+  }
+  t0 = st0[24];
+  t1 = st1[24];
+  t2 = st2[24];
+  t3 = st3[24];
+  st4x[:u64 4*24+0] = t0;
+  st4x[:u64 4*24+1] = t1;
+  st4x[:u64 4*24+2] = t2;
+  st4x[:u64 4*24+3] = t3;
+
+  return st4x;
+}
+
+
+
+// extracts 4 keccak states (st25) from a 4-way state (st4x)
+inline fn __4u64x4_u256x4
+( reg u256 y0 y1 y2 y3
+) -> reg u256, reg u256, reg u256, reg u256 {
+  // y0 = l00 l10  l20 l30
+  // y1 = l01 l11  l21 l31
+  // y2 = l02 l12  l22 l32
+  // y3 = l03 l13  l23 l33
+  reg u256 x0, x1, x2, x3;
+  x0 = #VPERM2I128(y0, y2, 0x20);	// x0 = l00 l10  l02 l12
+  x1 = #VPERM2I128(y1, y3, 0x20);	// x1 = l01 l11  l03 l13
+  x2 = #VPERM2I128(y0, y2, 0x31);	// x2 = l20 l30  l22 l32
+  x3 = #VPERM2I128(y1, y3, 0x31);	// x3 = l21 l31  l23 l33
+
+  y0 = #VPUNPCKL_4u64(x0, x1);	// y0 = l00 l01  l02 l03
+  y1 = #VPUNPCKH_4u64(x0, x1);	// y1 = l10 l11  l12 l13
+  y2 = #VPUNPCKL_4u64(x2, x3);	// y2 = l20 l21  l22 l23
+  y3 = #VPUNPCKH_4u64(x2, x3);	// y3 = l30 l31  l32 l33
+
+  return y0, y1, y2, y3;
+}
+
+inline fn __st4x_unpack
+( reg mut ptr u64[25] st0 st1 st2 st3
+, reg const ptr u256[25] st4x
+) -> reg ptr u64[25], reg ptr u64[25], reg ptr u64[25], reg ptr u64[25]
+/*
+/* safety */ requires
+ { is_arr_init(st4x,0,25*32) }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8) && is_arr_init(result.1,0,25*8)
+   && is_arr_init(result.2,0,25*8) && is_arr_init(result.3,0,25*8)
+ }
+*/
+{
+  inline int i;
+  reg u256 x0, x1, x2, x3;
+  reg u64 t0, t1, t2, t3;
+  for i = 0 to 6 {
+    x0 = st4x[:u256 4*i+0];
+    x1 = st4x[:u256 4*i+1];
+    x2 = st4x[:u256 4*i+2];
+    x3 = st4x[:u256 4*i+3];
+    x0, x1, x2, x3 = __4u64x4_u256x4(x0, x1, x2, x3);
+    st0.[:u256 4*8*i] = x0;
+    st1.[:u256 4*8*i] = x1;
+    st2.[:u256 4*8*i] = x2;
+    st3.[:u256 4*8*i] = x3;
+  }
+  t0 = st4x[:u64 4*24+0];
+  t1 = st4x[:u64 4*24+1];
+  t2 = st4x[:u64 4*24+2];
+  t3 = st4x[:u64 4*24+3];
+  st0[24] = t0;
+  st1[24] = t1;
+  st2[24] = t2;
+  st3[24] = t3;
+
+  return st0, st1, st2, st3;
+}
+
+
+/* For testing:
+export fn testF_avx2x4(reg mut ptr u256[25] st) -> reg ptr u256[25] {
+ st = _keccakf1600_avx2x4(st);
+ return st;
+}
+*/
+
+/* For the BDEP proof... */
+inline fn __keccakf1600_pround_unpacked
+( reg mut ptr u64[25] st0 st1 st2 st3
+) -> reg ptr u64[25], reg ptr u64[25], reg ptr u64[25], reg ptr u64[25] {
+  stack u256[25] st4x1, st4x2;
+  reg u256 r8 r56;
+
+  r8 = ROL8;
+  r56 = ROL56;
+  st4x1 = __st4x_pack( st4x1, st0, st1, st2, st3);
+  st4x2 = _keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
+  st0, st1, st2, st3 = __st4x_unpack(st0, st1, st2, st3, st4x2);
+
+  return st0, st1, st2, st3;
+}
+
+inline fn __keccakf1600_pround_equiv
+( reg mut ptr u256[25] e
+, reg const ptr u256[25] a
+) -> reg ptr u256[25] {
+  stack u64[25] st0, st1, st2, st3;
+
+  st0, st1, st2, st3 = __st4x_unpack(st0, st1, st2, st3, a);
+  st0, st1, st2, st3 = __keccakf1600_pround_unpacked(st0, st1, st2, st3);
+  e = __st4x_pack( e, st0, st1, st2, st3);
+
+  return e;
+}
+
+

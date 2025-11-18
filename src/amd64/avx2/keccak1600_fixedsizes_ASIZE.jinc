@@ -10,7 +10,7 @@ require "../common/subreadwrite_ASIZE.jinc"
    ==================================
 */
 
-inline fn __addstate_at_avx2
+inline fn __addstate_avx2
 ( reg u256[7] st
 , inline int AT
 , reg const ptr u8[ASIZE] buf

@@ -69,8 +69,8 @@ inline fn __addstate_ref
   AT += 8*(LEN/8);
   LEN = LEN%8;
   if ( 0 < LEN || TRAILB%256!= 0 ) {
-    AT += LEN+(TRAILB%256!=0?1:0);
-    DELTA, LEN, TRAILB, w = __a_ilen_read_upto8(buf, offset, 0, LEN, TRAILB);
+    //AT += LEN+(TRAILB%256!=0?1:0);
+    DELTA, LEN, TRAILB, AT, w = __a_ilen_read_upto8_at(buf, offset, 0, LEN, TRAILB, AT, AT);
     st[at] ^= w;
     offset += DELTA;
   }
@@ -82,7 +82,6 @@ inline fn __absorb_at_ref
 ( reg mut ptr u64[25] st
 , inline int AT
 , reg const ptr u8[ASIZE] buf
-//, inline int RATE8
 , inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
@@ -127,7 +126,7 @@ inline fn __absorb_at_ref
   if (TRAILB!=0) { st = __addratebit_ref(st, RATE8); }
 
   return st, AT;
-} 
+}
 
 
 /*

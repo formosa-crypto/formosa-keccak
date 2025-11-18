@@ -48,7 +48,9 @@ inline fn __state_init_avx2() -> reg u256[7]
 inline fn __pstate_init_avx2
 ( reg mut ptr u64[25] pst
 ) -> reg ptr u64[25], reg u256[7]
+/*
 ensures{is_arr_init(result.0,0,200) && is_arr_init(result.1,0,224)}
+*/
 {
   inline int i;
   reg u64 z64;
@@ -265,7 +267,9 @@ fn _addpstate_avx2
 */
 
 inline fn __stavx2_pos_avx2(inline int POS) -> inline int, inline int 
+/*
 ensures{0<=result.0 && result.0 < 7}
+*/
 {
   inline int R, L;
   //0: [ 0  0  0  0  ]
@@ -304,7 +308,7 @@ ensures{0<=result.0 && result.0 < 7}
 
 inline fn __addratebit_avx2
 ( reg u256[7] st
-, inline int RATE8
+, inline int RATE_8
 ) -> reg u256[7]
 {
   inline int R, L;
@@ -312,8 +316,8 @@ inline fn __addratebit_avx2
 
   reg u64 t64;
   t64 = 1;
-  t64 <<= (8*RATE8-1) % 64; // obs: should be 63 for all admissible rates!
-  R,L = __stavx2_pos_avx2((RATE8-1)/8);
+  t64 <<= (8*RATE_8-1) % 64; // obs: should be 63 for all admissible rates!
+  R,L = __stavx2_pos_avx2((RATE_8-1)/8);
   if (R==0) {
     t256 = #VPBROADCAST_4u64(t64);
   } else {

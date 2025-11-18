@@ -30,7 +30,7 @@ fn _add_updstate_ref
     len -= at; // len = upto-at (bytes to process)
     at >>= 3; at <<= 3; // at = 8*(at/8) (start of stword)
     off2, t64 = __a_rlen_read_upto8(buf, off, len);
-    len = len + (64ui)at; // bytes from the start of word
+    len = len + (64ui)at8; // bytes from the start of word
     sh = (8u) at8;
     sh <<= 3;   // bits to shift...
     t64 <<= (sh & 63);
