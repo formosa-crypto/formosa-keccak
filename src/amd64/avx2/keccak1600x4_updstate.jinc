@@ -50,7 +50,7 @@ fn _init_updstate_avx2x4
 */
 fn _ststatus_data_avx2x4
 ( reg u64 ststatus
-) -> reg u8    /* trailb */
+) -> reg u64    /* trailb */
    , reg ui64  /* r8 ; 8 %| r8 /\ 0 < r8 <= 200  */
    , reg ui64  /* at  ; 0 <= at < r8 */
 /* ensures:
@@ -58,9 +58,8 @@ fn _ststatus_data_avx2x4
     0 < r8 <= 200
     0 <= at < r8  */
 {
- reg u64 r8, at, c_0, c_200;
+ reg u64 trailb, r8, at, c_0, c_200;
  reg ui64 r8_ui, at_ui;
- reg u8 trailb;
 
  at = ststatus;
  at &= 0xFF;
@@ -74,7 +73,8 @@ fn _ststatus_data_avx2x4
  c_0 = 0;
  at = c_0 if r8 <= at;  // 0 <= at < r8
  ststatus >>= 8;
- trailb = (8u) ststatus;
+ ststatus &= 255;
+ trailb = ststatus;
 
  r8_ui = (64ui)r8;
  at_ui = (64ui)at;
@@ -85,14 +85,36 @@ fn _finish_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 ) -> reg ptr keccakx4_updstate /* st */
 {
-  reg u64 ststatus;
+  reg u64 ststatus, trailb, rbit;
   reg ui64 at, r8;
-  reg u8 trailb;
+  reg u8 t8;
+  reg u128 t128;
+  reg u256 t256;
+
   ststatus = st[:u64 4*25];
   trailb, r8, at = _ststatus_data_avx2x4(ststatus);
-  st.[:u8 at] ^= trailb;
-  st.[:u8 r8-1] ^= 0x80;
-  st.[:u32 8*25] &= 0xFF00FF00; // clear trail-byte and at-position
+  // add trailbyte
+  t8 = (8u) (64u) at;
+  at >>= 3;
+  at <<= 5;
+  t8 = t8 & 0x07;
+  t8 <<= 3;
+  trailb <<= (t8 & 63);
+  t128 = (128u) trailb;
+  t256 = #VPBROADCAST_4u64(t128);
+  t256 ^= st.[:u256 at];
+  st.[:u256 at] = t256;
+  // add ratebit
+  rbit = 1;
+  rbit <<= 63; // obs: 8 %| r8
+  r8 -= 1;
+  r8 >>= 3;    // r64
+  r8 <<= 5;
+  t128 = (128u) rbit;
+  t256 = #VPBROADCAST_4u64(t128);
+  t256 ^= st.[:u256 r8];
+  st.[:u256 r8] = t256;
+  st.[:u32 4*8*25] &= 0xFF00FF00; // clear trail-byte and at-position
   
   return st;
 }
