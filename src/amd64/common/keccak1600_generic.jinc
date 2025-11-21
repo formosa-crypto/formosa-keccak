@@ -10,3 +10,39 @@ param int RAWSHAKE = 0x07;
 param int SHAKE = 0x1F;
 
 type keccak_state = u64[25];
+
+
+/* UTILITY FUNCTIONS */
+
+inline fn __SHLQ
+( reg u64 x
+, inline int shbytes
+) -> reg u64
+{
+  if (shbytes != 0) {
+    x <<= (8*shbytes);
+  }
+  return x;
+}
+
+inline fn __SHLDQ
+( reg u128 x
+, inline int shbytes
+) -> reg u128
+{
+  if (shbytes != 0) {
+    x = #VPSLLDQ_128(x, shbytes);
+  }
+  return x;
+}
+
+inline fn __SHLQ_256
+( reg u256 x
+, inline int shbytes
+) -> reg u256
+{
+  if (shbytes != 0) {
+    x = #VPSLL_4u64(x, 8*shbytes);
+  }
+  return x;
+}

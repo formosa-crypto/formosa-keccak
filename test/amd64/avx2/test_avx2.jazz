@@ -54,11 +54,11 @@ namespace TEST_AT {
       for i = 0 to BIGSIZE/SIZE-1 {
 	() = #unspill(buf);
 	b = buf[i*ASIZE:ASIZE];
-	st, AT = __absorb_at_avx2(st, AT, b, 0);
+	st, AT = __absorb_avx2(st, AT, b, 0);
       }
       () = #unspill(buf);
       b = buf[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      st, AT = __absorb_at_avx2(st, AT, b, TRAIL);
+      st, AT = __absorb_avx2(st, AT, b, TRAIL);
       state = __stavx2_unpack(state, st);
       return state;
     }
@@ -78,7 +78,7 @@ namespace TEST_ONESHOT {
     reg u256[7] st;
     state = state; buf = buf;
     st = __stavx2_pack(state);
-    st = __absorb_avx2(st, buf, TRAIL);
+    st, _ = __absorb_avx2(st, 0, buf, TRAIL);
     state = __stavx2_unpack(state, st);
     return state;
   }

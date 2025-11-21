@@ -1,3 +1,16 @@
+/**************************************************************************** 
+
+  DEPENDENCIES:
+   =============
+
+  The loading of this file depends on the following context:
+
+ 1) "keccak1600_generic.jinc" (e.g. through "subreadwrite_imem.jinc")
+ 2) param int _ASIZE
+
+*****************************************************************************/
+
+
 /**
     READ A FIXED NUMBER OF BYTES FROM AN ARRAY INTO A WORD
 
@@ -5,42 +18,8 @@
 
 **/
 
-inline fn __SHLQ
-( reg u64 x
-, inline int shbytes
-) -> reg u64
-{
-  if (shbytes != 0) {
-    x <<= (8*shbytes);
-  }
-  return x;
-}
-
-inline fn __SHLDQ
-( reg u128 x
-, inline int shbytes
-) -> reg u128
-{
-  if (shbytes != 0) {
-    x = #VPSLLDQ_128(x, shbytes);
-  }
-  return x;
-}
-
-inline fn __SHLQ_256
-( reg u256 x
-, inline int shbytes
-) -> reg u256
-{
-  if (shbytes != 0) {
-    x = #VPSLL_4u64(x, 8*shbytes);
-  }
-  return x;
-}
-
-
 inline fn __a_ilen_read_upto8_at
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -112,7 +91,7 @@ inline fn __a_ilen_read_upto8_at
 }
 
 inline fn __a_ilen_read_upto16_at
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -155,7 +134,7 @@ inline fn __a_ilen_read_upto16_at
 }  
 
 inline fn __a_ilen_read_upto32_at
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -196,7 +175,7 @@ inline fn __a_ilen_read_upto32_at
 }  
 
 inline fn __a_ilen_read_bcast_upto8_at
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -239,9 +218,10 @@ inline fn __a_ilen_read_bcast_upto8_at
   return DELTA, LEN, TRAIL, AT, w256; 
 }
 
+/*
 // __aread_subu64
 inline fn __a_ilen_read_upto8
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -254,7 +234,7 @@ inline fn __a_ilen_read_upto8
 /* safety */ requires {
  (0 < LEN)
  ? is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA 
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= ASIZE
+   && 0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= _ASIZE
  : true
 }
 /* safety */ requires { 0 <= TRAIL && TRAIL < 256 }
@@ -311,7 +291,7 @@ inline fn __a_ilen_read_upto8
 
 // __aread_bcast_4subu64
 inline fn __a_ilen_read_bcast_upto8
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -324,7 +304,7 @@ inline fn __a_ilen_read_bcast_upto8
 /* safety */ requires {
  (0 < LEN)
  ? is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= ASIZE
+   && 0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= _ASIZE
  : true
 }
 /* safety */ requires { 0 <= TRAIL && TRAIL < 256 }
@@ -355,7 +335,7 @@ inline fn __a_ilen_read_bcast_upto8
 
 // __aread_subu128
 inline fn __a_ilen_read_upto16
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -368,7 +348,7 @@ inline fn __a_ilen_read_upto16
 /* safety */ requires {
  (0 < LEN)
  ? is_arr_init(buf,offset+DELTA,min(LEN,16)) && 0 <= DELTA
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,16) <= ASIZE
+   && 0 <= offset + DELTA && offset + DELTA + min(LEN,16) <= _ASIZE
  : true
 }
 /* safety */ requires { 0 <= TRAIL && TRAIL < 256 }
@@ -404,7 +384,7 @@ inline fn __a_ilen_read_upto16
 
 // __aread_subu256
 inline fn __a_ilen_read_upto32
-( reg const ptr u8[ASIZE] buf
+( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
@@ -417,7 +397,7 @@ inline fn __a_ilen_read_upto32
 /* safety */ requires {
  (0 < LEN)
  ? is_arr_init(buf,offset+DELTA,min(LEN,32)) && 0 <= DELTA
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,32) <= ASIZE
+   && 0 <= offset + DELTA && offset + DELTA + min(LEN,32) <= _ASIZE
  : true
 }
 /* safety */ requires { 0 <= TRAIL && TRAIL < 256 }         
@@ -450,7 +430,7 @@ inline fn __a_ilen_read_upto32
   }
   return DELTA, LEN, TRAIL, w;
 }
-
+*/
 
 /**
     WRITE A FIXED NUMBER OF BYTES FROM AN ARRAY INTO A WORD
@@ -458,19 +438,19 @@ inline fn __a_ilen_read_upto32
 
 // __awrite_subu64
 inline fn __a_ilen_write_upto8
-( reg mut ptr u8[ASIZE] buf
+( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , reg u64 w
-) -> reg ptr u8[ASIZE] /* buf */
+) -> reg ptr u8[_ASIZE] /* buf */
    , inline int /* DELTA */
    , inline int /* LEN */
 /*
 /* safety */ requires {
  (0 < LEN)
  ? 0 <= offset + DELTA && 0 <= DELTA
-   && offset + DELTA + min(LEN,8) <= ASIZE
+   && offset + DELTA + min(LEN,8) <= _ASIZE
  : true
 }
 /* safety */ ensures {
@@ -478,7 +458,7 @@ inline fn __a_ilen_write_upto8
  && result.2 == LEN - max(0,min(LEN,8))
 }
 /* safety */ ensures { 
- \all (k \in 0:ASIZE)
+ \all (k \in 0:_ASIZE)
    ( is_arr_init(result.0,k,1)
      == ( is_arr_init(buf,k,1)
           || offset + DELTA <= k 
@@ -516,19 +496,19 @@ inline fn __a_ilen_write_upto8
 
 // __awrite_subu128
 inline fn __a_ilen_write_upto16
-( reg mut ptr u8[ASIZE] buf
+( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , reg u128 w
-) -> reg ptr u8[ASIZE] /* buf */
+) -> reg ptr u8[_ASIZE] /* buf */
    , inline int        /* DELTA */
    , inline int        /* LEN */
 /*
 /* safety */ requires {
  (0 < LEN)
  ? 0 <= offset + DELTA && 0 <= DELTA
-   && offset + DELTA + min(LEN,16) <= ASIZE
+   && offset + DELTA + min(LEN,16) <= _ASIZE
  : true
 }
 /* safety */ ensures {
@@ -536,7 +516,7 @@ inline fn __a_ilen_write_upto16
  && result.2 == LEN - max(0,min(LEN,16))
 }
 /* safety */ ensures {
- \all (k \in 0:ASIZE)
+ \all (k \in 0:_ASIZE)
    ( is_arr_init(result.0,k,1)
      == ( is_arr_init(buf,k,1)
           || (offset + DELTA <= k 
@@ -566,24 +546,24 @@ inline fn __a_ilen_write_upto16
 
 // __awrite_subu256
 inline fn __a_ilen_write_upto32
-( reg mut ptr u8[ASIZE] buf
+( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int DELTA
 , inline int LEN
 , reg u256 w
-) -> reg ptr u8[ASIZE] /* buf */
+) -> reg ptr u8[_ASIZE] /* buf */
    , inline int /* DELTA */
    , inline int /* LEN */
 /*
 /* safety */ requires {
  (0 < LEN)
- ? 0 <= offset + DELTA && 0 <= DELTA && offset + DELTA + min(LEN,32) <= ASIZE
+ ? 0 <= offset + DELTA && 0 <= DELTA && offset + DELTA + min(LEN,32) <= _ASIZE
  : true
 }
 /* safety */ ensures {
  result.1 == DELTA + max(0,min(LEN,32)) && result.2 == LEN - max(0,min(LEN,32))}
 /* safety */ ensures {
- \all (k \in 0:ASIZE)
+ \all (k \in 0:_ASIZE)
    ( is_arr_init(result.0,k,1)
      == ( is_arr_init(buf,k,1)
           || (offset + DELTA <= k 
@@ -617,16 +597,16 @@ inline fn __a_ilen_write_upto32
 **/
 
 inline fn __a_rlen_read_upto8
-( reg const ptr u8[ASIZE] a
+( reg const ptr u8[_ASIZE] a
 , reg ui64 off 
-, reg ui64 len // off + len <= ASIZE
+, reg ui64 len // off + len <= _ASIZE
 ) -> reg ui64 /* off */
    , reg u64  /* data */
 /*
 /* safety */ requires {
  (0 < len)
  ? is_arr_init(a,off,min(len,8))
-   && 0 <= off && off + min(len,8) <= ASIZE
+   && 0 <= off && off + min(len,8) <= _ASIZE
  : true
 }
 /* safety */ ensures { result.0 == off + min(len,8) }
@@ -668,17 +648,18 @@ inline fn __a_rlen_read_upto8
   return off, w;
 }
 
+/*
 fn __a_rlen_read_upto8_noninline
-( reg const ptr u8[ASIZE] a
+( reg const ptr u8[_ASIZE] a
 , reg u64 off_ 
-, reg u64 len_ // off + len <= ASIZE
+, reg u64 len_ // off + len <= _ASIZE
 ) -> reg u64 /* off */
    , reg u64  /* data */
 /*
 /* safety */ requires {
  (0 < len)
  ? is_arr_init(a,off,min(len,8))
-   && 0 <= off && off + min(len,8) <= ASIZE
+   && 0 <= off && off + min(len,8) <= _ASIZE
  : true
 }
 /* safety */ ensures { result.0 == off + min(len,8) }
@@ -723,26 +704,27 @@ fn __a_rlen_read_upto8_noninline
   off_ = (64u) off;
   return off_, w;
 }
+*/
 
 /**
     WRITE A VARIABLE NUMBER OF BYTES FROM AN ARRAY INTO A WORD
 **/
 
 inline fn __a_rlen_write_upto8
-( reg mut ptr u8[ASIZE] buf
+( reg mut ptr u8[_ASIZE] buf
 , reg ui64 off
 , reg u64 data
-, reg ui64 len // off + len <= ASIZE
-) -> reg ptr u8[ASIZE] /* buf */
+, reg ui64 len // off + len <= _ASIZE
+) -> reg ptr u8[_ASIZE] /* buf */
    , reg ui64          /* off */
 /*
 /* safety */ requires {
  (0 < len)
- ? 0 <= off && off + min(len,8) <= ASIZE
+ ? 0 <= off && off + min(len,8) <= _ASIZE
  : true
 }
 /* safety */ ensures { 
- \all (k \in 0:ASIZE)
+ \all (k \in 0:_ASIZE)
    ( is_arr_init(result.0,k,1)
      == (is_arr_init(buf,k,1) || off <= k && k < off + min(len,8)) )
 }

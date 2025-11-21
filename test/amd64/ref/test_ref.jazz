@@ -1,7 +1,10 @@
 from Keccak require "ref/select_bmi1.jinc"
+
+
 from Keccak require "ref/keccak1600_fixedsizes.jinc"
 
-param int RATE8 = R168;
+
+param int RATE8 = 168;
 param int TRAIL = SHAKE;
 
 param int SIZE = RATE8+15; // 183
@@ -32,7 +35,7 @@ export fn init_state_ref
 
 namespace TEST_AT {
 
-  param int ASIZE = SIZE;
+  param int _ASIZE = SIZE;
 
   from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
 
@@ -42,18 +45,18 @@ namespace TEST_AT {
     ) -> reg ptr u64[25] /* st */
     {
       inline int i, AT;
-      reg ptr u8[ASIZE] b;
+      reg ptr u8[_ASIZE] b;
       st = st; buf = buf;
       () = #spill(buf);
       AT = 0;
       for i = 0 to BIGSIZE/SIZE-1 {
 	() = #unspill(buf);
-	b = buf[i*ASIZE:ASIZE];
-	st, AT = __absorb_at_ref(st, AT, b, 0);
+	b = buf[i*_ASIZE:_ASIZE];
+	st, AT = __absorb_ref(st, AT, b, 0, RATE8);
       }
       () = #unspill(buf);
-      b = buf[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      st, AT = __absorb_at_ref(st, AT, b, TRAIL);
+      b = buf[(BIGSIZE/SIZE-1)*_ASIZE:_ASIZE];
+      st, AT = __absorb_ref(st, AT, b, TRAIL, RATE8);
       st = st;
       return st;
     }
@@ -61,29 +64,29 @@ namespace TEST_AT {
 
 namespace TEST_ONESHOT {
 
-  param int ASIZE = BIGSIZE;
+  param int _ASIZE = BIGSIZE;
 
   from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
 
     export fn absorb_ref
     ( reg mut ptr u64[25] st
-    , reg const ptr u8[ASIZE] buf
+    , reg const ptr u8[_ASIZE] buf
     ) -> reg ptr u64[25] /* st */
     {
       st = st; buf = buf;
-      st, _ = __absorb_at_ref(st, 0, buf, TRAIL);
+      st, _ = __absorb_ref(st, 0, buf, TRAIL, RATE8);
       st = st;
       return st;
     }
 
   export fn squeeze_ref
-  ( reg mut ptr u8[ASIZE] buf
+  ( reg mut ptr u8[_ASIZE] buf
   , reg mut ptr u64[25] st
-  ) -> reg ptr u8[ASIZE] /* buf */
+  ) -> reg ptr u8[_ASIZE] /* buf */
      , reg ptr u64[25]   /* st */
   {
     buf = buf; st = st;
-    buf, st = __squeeze_array_ref(buf, st);
+    st, buf = __squeeze_ref(st, buf, RATE8);
     return buf, st;
   }
 
@@ -94,7 +97,7 @@ from Keccak require "ref/keccak1600_updstate.jinc"
 
 namespace TEST_UPD {
 
-  param int ASIZE = SIZE;
+  param int _ASIZE = SIZE;
 
   from Keccak require "ref/keccak1600_updstate_ASIZE.jinc"
 

@@ -1,212 +1,211 @@
-/* IMPORTANT:
- This file expects to be "required" after defining the function '__ANDN_64',
- itself defined in either 'select_nobmi1_ref.jinc' or 'select_bmi1_ref.jinc'
-*/
+/**************************************************************************** 
+
+   DEPENDENCIES:
+   =============
+
+  The loading of this file depends on the following context:
+
+ 1) "select_nobmi1.jinc" or "select_bmi1.jinc"
+
+*****************************************************************************/
+
 require "keccak1600.jinc"
-
-
-
-
-/*********** FIXME: BASE THIS ON THE PARAMETRIC VERSION
-
-
-
-
-/** IMPORTANT:
-  This file is expected to be loaded with one of the following files
-require "keccakf1600_ref.jinc"		// without BMI1 support
-require "keccakf1600_ref_bmi1.jinc"	// with BMI1 support
-*/
-
 require "../common/subreadwrite_imem.jinc"
 
 
+/*
+ *  REMARK: the remaining of this file is expected to be kept in sync. with its array version's
+ *  counterpart ("keccak1600_fixedsizes_ASIZE.jinc")
+ *
+ */
 
 
 /*
-   INCREMENTAL (FIXED-SIZE) MEMORY ABSORB
-   ======================================
+   INCREMENTAL ARRAY ABSORB
+   ========================
 */
-
-
-inline fn __addstate_imem_ref
+inline fn __addstate_m_ref
 ( reg mut ptr u64[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
-, reg u64 buf
-, inline int LEN
-, inline int TRAILB
+, reg ui64 buf
+, inline int _LEN
+, inline int _TRAILB
 ) -> reg ptr u64[25] /* st */
-   , inline int /* AT */
-   , reg u64 /* buf */
+   , inline int      /* AT */
+   , reg ui64        /* buf */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= _LEN &&  0<=AT  && AT < 200 && offset + _LEN <= ASIZE
+   && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
+   && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,25*8)
+   && 0 <= _TRAILB && _TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   && result.2 == offset + _LEN
+ }
+*/
 {
-  inline int LO, ALL;
-  reg u64 at, t;
+  inline int AT8;
+  reg ui64 at;
+  reg u64 w;
 
-  ALL = AT+LEN; // total bytes to process (excluding trail byte, if !=0)
-  LO = AT % 8; // leftover bytes
-  at = (AT / 8); // current pstate position (referencing u64 words)
-
-  if ( 0 < LO ) { // process first word...
-    if ( LO+LEN < 8) { // ...not enough to fill a word (just update it)
-      if ( TRAILB != 0 ) { ALL += 1; }
-      buf, _, _, t = __mread_subu64(buf, LEN, TRAILB);
-      t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
-      LO = 0;
-      AT = 0;
-      LEN = 0;
-      TRAILB = 0;
-    } else { // process first word
-      if ( 8 <= LEN ) {
-	t = (u64)[buf];
-	buf += 8-LO;
-      } else {
-        buf, _, _, t = __mread_subu64(buf, 8-LO, TRAILB);
-      }
-      LEN -= 8-LO;
-      AT += 8-LO;
-      t <<= 8*LO;
-      t ^= st[u64 at];
-      st[u64 at] = t;
-      at += 1;
-    }
+  // fill first word...
+  AT8 = AT;
+  AT = 8*(AT/8);
+  if ( AT8 != 0 ) {
+    buf, _LEN, _TRAILB, AT8, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT8);
+    st[AT/8] ^= w;
+    AT = AT8;
   }
 
-  // continue processing remaining bytes
-  if (8 <= LEN) {
-    while ( at < (AT/8)+(LEN/8)) {
-      t = (u64)[buf];
-      buf += 8;
-      t ^= st[u64 at];
-      st[u64 at] = t;
-      at += 1;
-    }
-    LEN = (AT+LEN) % 8;
+  // add complete words
+  at = AT/8;
+  while ( at < AT/8 + _LEN/8 ) {
+    w = [:u64 (64u) buf];
+    buf += 8;
+    st[at] ^= w;
+    at += 1;
   }
 
-  // process last word (possibly closing the state)
-  LO = (AT+LEN) % 8;
-  if ( 0 < LO || TRAILB != 0 ) {
-    buf, _, _, t = __mread_subu64(buf, LO, TRAILB);
-    if ( TRAILB != 0 ) { ALL += 1; TRAILB = 0; }
-    t ^= st[u64 at];
-    st[u64 at] = t;
+  // add last word...
+  AT += 8*(_LEN/8);
+  _LEN = _LEN%8;
+  if ( 0 < _LEN || _TRAILB%256!= 0 ) {
+    buf, _LEN, _TRAILB, AT, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT);
+    st[at] ^= w;
   }
-    
-  return st, ALL, buf;
-} 
 
+  return st, AT, buf;
+}
 
-inline fn __absorb_imem_ref
+inline fn __absorb_m_ref
 ( reg mut ptr u64[25] st
 , inline int AT
-, reg u64 buf
-, inline int LEN
-, inline int RATE8
-, inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
+, reg ui64 buf
+, inline int _LEN
+, inline int _TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
+, inline int _RATE8
 ) -> reg ptr u64[25] /* st */
-   , inline int /* AT */
-   , reg u64 /* buf */
+   , inline int      /* AT */
+   , reg ui64        /* buf */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= _LEN &&  0<=AT  && AT < _RATE8 && offset + _LEN <= ASIZE
+   && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 && 0 < _RATE8 && _RATE8 < 200
+   && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,25*8)
+   && 0 <= _TRAILB && _TRAILB < 256
+ }
+/* safety */ ensures
+ { is_arr_init(result.0,0,25*8)
+   && result.1 == (AT + _LEN) % _RATE8 + (_TRAILB != 0 ? 1 : 0)
+ }
+*/
 {
-  reg u64 i;
-  inline int ALL, ITERS;
+  reg ui64 i;
+  inline int ITERS;
 
-  ALL = AT + LEN;
-  if ( (AT+LEN) < RATE8 ) { // not enough to fill a block!
-    st, AT, buf
-      = __addstate_imem_ref(st, AT, buf, LEN, TRAILB);
-    if (TRAILB != 0) { // add pstate and closes the state
-      st = __addratebit_ref(st, RATE8);
-    }
-  } else { // at least a block is filled
-    if ( AT != 0 ) { // start by filling the first block
-      st, _, buf = __addstate_imem_ref(st, AT, buf, RATE8-AT, 0);
-      LEN = LEN - (RATE8-AT);
-      () = #spill(buf);
-      st = _keccakf1600_ref(st);
-      () = #unspill(buf);
-      AT = 0;
-    }
-
-    // continue by processing full blocks
-    ITERS = LEN / RATE8; // number of full blocks
+  if ( AT+_LEN >= _RATE8 ) { // more than one block...
+    st, _, buf = __addstate_m_ref(st, AT, buf, _RATE8-AT, 0);
+    _LEN = _LEN - (_RATE8-AT);
+    AT = 0;
+    () = #spill(buf);
+    st = _keccakf1600_ref(st);
+    () = #unspill(buf);
+    ITERS = _LEN/_RATE8;
     i = 0;
     while ( i < ITERS ) {
-      st, _, buf = __addstate_imem_ref(st, 0, buf, RATE8, 0);
+      st, _, buf = __addstate_m_ref(st, 0, buf, _RATE8, 0);
       () = #spill(buf,i);
       st = _keccakf1600_ref(st);
       () = #unspill(buf,i);
       i += 1;
     }
-
-    // last incomplete block
-    LEN = ALL % RATE8;
-    st, AT, buf = __addstate_imem_ref(st, 0, buf, LEN, TRAILB);
-    if (TRAILB!=0) { st = __addratebit_ref(st, RATE8); }
+    _LEN = _LEN % _RATE8;
   }
+  st, AT, buf = __addstate_m_ref(st, AT, buf, _LEN, _TRAILB);
+  if (_TRAILB!=0) { st = __addratebit_ref(st, _RATE8); }
+
   return st, AT, buf;
-} 
+}
 
 
 /*
    ONE-SHOT (FIXED-SIZE) MEMORY SQUEEZE
    ====================================
 */
-inline fn __dumpstate_imem_ref
-( reg u64 buf
-, inline int LEN
+inline fn __dumpstate_m_ref
+( reg ui64 buf
+, inline int _LEN
 , reg const ptr u64[25] st
-) -> reg u64 /* buf */
-{
-  reg u64 i, t;
-  i = 0;
-  while (i <s (LEN/8)) {
-    t = st[(int) i];
-    i += 1;
-    (u64)[buf] = t;
-    buf += 8;
-  }
+) -> reg ui64     /* buf */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= _LEN && is_arr_init(st,0,25*8) && offset + _LEN <= ASIZE && _LEN <= 200
+ }
+/* safety */ ensures
+ { (\all (k \in 0:ASIZE)
+       (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + _LEN))))
+   && result.1 == offset + _LEN
+ }
+*/
+{ 
+  reg ui64 i;
+  reg u64 t;
 
-  if (0 < LEN%8) {
-    t = st[(int) i];
-    buf, _ = __mwrite_subu64( buf, LEN%8, t);
+  i = 0;
+  while (i < _LEN/8) {
+    t = st[i];
+    [:u64 (64u) buf] = t;
+    buf += 8;
+    i += 1;
+  }
+  if (0 < _LEN%8) {
+    t = st[i];
+    buf, _ = __m_ilen_write_upto8( buf, _LEN%8, t);
   }
 
   return buf;
 }
 
-inline fn __squeeze_imem_ref
-( reg u64 buf
-, inline int LEN
-, reg mut ptr u64[25] st
-, inline int RATE8
-) -> reg u64 /* buf */
-   , reg ptr u64[25] /* st */
+inline fn __squeeze_m_ref
+( reg mut ptr u64[25] st
+, reg ui64 buf
+, inline int _LEN
+, inline int _RATE8
+) -> reg ptr u64[25] /* st */
+   , reg ui64        /* buf */
+/*
+/* safety */ requires
+ { 0 <= offset && 0 <= _LEN && is_arr_init(st,0,25*8) && offset + _LEN <= ASIZE
+   && 0 < _RATE8 && _RATE8 < 200
+ }
+/* safety */ ensures
+ { (\all (k \in 0:ASIZE)
+    (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + _LEN))))
+   && is_arr_init(result.2,0,25*8)
+ }
+*/
 {
-  reg u64 i;
-  inline int ITERS, LO;
-  ITERS = LEN/RATE8;
-  LO = LEN%RATE8;
-  if (0 <s LEN) {
-    if (0 < ITERS) {
-      i = 0;
-      while (i < ITERS) {
-	() = #spill(buf,i);
-        st = _keccakf1600_ref(st);
-	() = #unspill(buf,i);
-        buf = __dumpstate_imem_ref(buf, RATE8, st);
-        i += 1;
-      }
-    }
-    if (0 < LO) {
-	() = #spill(buf);
-        st = _keccakf1600_ref(st);
-	() = #unspill(buf);
-        buf = __dumpstate_imem_ref(buf, LO, st);
-    }
+  reg ui64 i;
+
+  i = 0;
+  while (i < _LEN/_RATE8) {
+    () = #spill(buf);
+    st = _keccakf1600_ref(st);
+    () = #unspill(buf);
+    buf = __dumpstate_m_ref(buf, _RATE8, st);
+    i += 1;
   }
-  return buf, st;
+  if (0 < _LEN%_RATE8) {
+    () = #spill(buf);
+    st = _keccakf1600_ref(st);
+    () = #unspill(buf);
+    buf = __dumpstate_m_ref(buf, _LEN%_RATE8, st);
+  }
+
+  return st, buf;
 }
 
-*/
+
+

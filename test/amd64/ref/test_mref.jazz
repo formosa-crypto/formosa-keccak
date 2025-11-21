@@ -1,0 +1,58 @@
+from Keccak require "ref/select_bmi1.jinc"
+
+
+from Keccak require "ref/keccak1600_fixedsizes.jinc"
+from Keccak require "ref/keccak1600_updstate.jinc"
+
+
+
+param int RATE8 = 168;
+param int TRAIL = SHAKE;
+
+param int SIZE = RATE8+15; // 183
+param int REPS = RATE8/15; // 11
+
+param int BIGSIZE = SIZE*(REPS+1); // 2196
+
+export fn get_params_ref
+( reg mut ptr u64[4] params
+) -> reg ptr u64[4]  /* params */
+{
+  params[0] = RATE8;
+  params[1] = TRAIL;
+  params[2] = SIZE;
+  params[3] = BIGSIZE;
+  return params;
+}
+
+export fn init_state_ref
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  st = st;
+  st = __state_init_ref(st);
+  return st;
+}
+
+export fn absorb_m_ref
+( reg mut ptr u64[25] st
+, reg ui64 buf
+) -> reg ptr u64[25] /* st */
+{
+  st = st; buf = buf;
+  st, _, _ = __absorb_m_ref(st, 0, buf, BIGSIZE, TRAIL, RATE8);
+  st = st;
+  return st;
+}
+
+export fn squeeze_m_ref
+( reg mut ptr u64[25] st
+, reg ui64 buf
+) -> reg ptr u64[25]   /* st */
+{
+  buf = buf; st = st;
+  st, buf = __squeeze_m_ref(st, buf, BIGSIZE, RATE8);
+  return st;
+}
+
+

@@ -1,9 +1,15 @@
-require "../common/keccakf1600_generic.jinc"
+/**************************************************************************** 
 
-/* IMPORTANT:
- This file expects to be "required" after defining the function '__ANDN_64',
- itself defined in either 'select_nobmi1_ref.jinc' or 'select_bmi1_ref.jinc'
-*/
+   DEPENDENCIES:
+   =============
+
+  The loading of this file depends on the following context:
+
+ 1) "select_nobmi1.jinc" or "select_bmi1.jinc"
+
+*****************************************************************************/
+
+require "../common/keccakf1600_generic.jinc"
 
 inline fn __rol_u64_ref
 ( reg u64 x

@@ -1,8 +1,14 @@
-/* IMPORTANT:
- This file expects to be "required" after defining the function '__ANDN_64',
- itself defined in either 'select_nobmi1_ref.jinc' or 'select_bmi1_ref.jinc'
-*/
-require "../common/keccak1600_generic.jinc"
+/**************************************************************************** 
+
+   DEPENDENCIES:
+   =============
+
+  The loading of this file depends on the following context:
+
+ 1) "select_nobmi1.jinc" or "select_bmi1.jinc"
+
+*****************************************************************************/
+
 require "keccakf1600.jinc"
 
 /*
@@ -31,14 +37,14 @@ inline fn __state_init_ref
 
 inline fn __addratebit_ref
 ( reg mut ptr u64[25] st
-, inline int RATE8
+, inline int _RATE8
 ) -> reg ptr u64[25]
 {
   reg u64 t64;
   t64 = 1;
-  t64 <<= (8*RATE8-1) % 64; // obs: should be 63 for all admissible rates!
-  t64 ^= st[(RATE8-1)/8];
-  st[(RATE8-1)/8] = t64;
+  t64 <<= (8*_RATE8-1) % 64; // obs: should be 63 for all admissible rates!
+  t64 ^= st[(_RATE8-1)/8];
+  st[(_RATE8-1)/8] = t64;
   return st;
 }
 
