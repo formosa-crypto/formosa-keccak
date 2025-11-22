@@ -300,11 +300,10 @@ fn _dump_m_updstate_ref
 }
 
 fn _squeeze_m_updstate_ref
-( reg ui64 buf
+( reg mut ptr keccak_updstate st
+, reg ui64 buf
 , reg ui64 len
-, reg mut ptr keccak_updstate st
-) -> reg ui64                 /* buf */
-   , reg ptr keccak_updstate  /* st */
+) -> reg ptr keccak_updstate  /* st */
 {
   reg u64 ststatus;
   reg ui64 r8, at;
@@ -341,7 +340,7 @@ fn _squeeze_m_updstate_ref
   // if ( at == r8 ) at = 0; // avoidable because r8_at() returns 0<=at<r8
   st.[:u8 8*25] = (8u) (64u) at;
 
-  return buf, st;
+  return st;
 }
 
 export fn absorb_m_updstate_ref
@@ -364,6 +363,6 @@ export fn squeeze_m_updstate_ref
 {
   st = st;
   buf = buf;
-  _, st = _squeeze_m_updstate_ref(buf, len, st);
+  st = _squeeze_m_updstate_ref(st, buf, len);
   return st;
 }

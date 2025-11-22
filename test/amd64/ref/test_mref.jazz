@@ -5,7 +5,6 @@ from Keccak require "ref/keccak1600_fixedsizes.jinc"
 from Keccak require "ref/keccak1600_updstate.jinc"
 
 
-
 param int RATE8 = 168;
 param int TRAIL = SHAKE;
 

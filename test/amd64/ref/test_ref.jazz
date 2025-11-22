@@ -80,14 +80,14 @@ namespace TEST_ONESHOT {
     }
 
   export fn squeeze_ref
-  ( reg mut ptr u8[_ASIZE] buf
-  , reg mut ptr u64[25] st
-  ) -> reg ptr u8[_ASIZE] /* buf */
-     , reg ptr u64[25]   /* st */
+  ( reg mut ptr u64[25] st
+  , reg mut ptr u8[_ASIZE] buf
+  ) -> reg ptr u64[25]   /* st */
+     , reg ptr u8[_ASIZE] /* buf */
   {
     buf = buf; st = st;
     st, buf = __squeeze_ref(st, buf, RATE8);
-    return buf, st;
+    return st, buf;
   }
 
 }

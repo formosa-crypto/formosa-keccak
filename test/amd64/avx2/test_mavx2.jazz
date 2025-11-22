@@ -1,0 +1,60 @@
+from Keccak require "avx2/keccak1600_fixedsizes.jinc"
+from Keccak require "avx2/keccak1600_updstate.jinc"
+
+
+param int RATE8 = R168;
+param int TRAIL = SHAKE;
+
+param int SIZE = RATE8+15; // 183
+param int REPS = RATE8/15; // 11
+
+param int BIGSIZE = SIZE*(REPS+1); // 2196
+
+export fn get_params_avx2
+( reg mut ptr u64[4] params
+) -> reg ptr u64[4]  /* params */
+{
+  params[0] = RATE8;
+  params[1] = TRAIL;
+  params[2] = SIZE;
+  params[3] = BIGSIZE;
+  return params;
+}
+
+export fn init_state_avx2
+( reg mut ptr u64[25] state
+) -> reg ptr u64[25]
+{
+  reg u256[7] st;
+  state = state;
+  st = __state_init_avx2();
+  state = __stavx2_unpack(state, st);
+  return state;
+}
+
+export fn absorb_m_avx2
+( reg mut ptr u64[25] state
+, reg ui64 buf
+) -> reg ptr u64[25] /* st */
+{
+  reg u256[7] st;
+  state = state; buf = buf;
+  st = __stavx2_pack(state);
+  st, _ = __absorb_m_avx2(st, 0, buf, BIGSIZE, TRAIL, RATE8);
+  state = __stavx2_unpack(state, st);
+  return state;
+}
+
+export fn squeeze_m_avx2
+( reg mut ptr u64[25] state
+, reg ui64 buf
+) -> reg ptr u64[25]   /* st */
+{
+  reg u256[7] st;
+  state = state; buf = buf;
+  st = __stavx2_pack(state);
+  st = __squeeze_m_avx2(st, buf, BIGSIZE, RATE8);
+  state = __stavx2_unpack(state, st);    
+  return state;
+}
+

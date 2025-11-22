@@ -8,6 +8,9 @@
  1) "keccak1600_updstate.jinc"
  2) param int _ASIZE
 
+OBS: the generated code is independent of the parameter _ASIZE, but the
+ instance cannot be avoided due to typechecking!!! :-(
+
 *****************************************************************************/
 
 require "../common/subreadwrite_ASIZE.jinc"
@@ -73,13 +76,14 @@ fn _add_updstate_ref
   return st, at, off;
 }
 
-fn _update_updstate_ref
+fn _absorb_updstate_ref
 ( reg mut ptr keccak_updstate st
 , reg const ptr u8[_ASIZE] buf
+, reg ui64 len
 ) -> reg ptr keccak_updstate /* st */
 {
   reg u64 ststatus;
-  reg ui64 off, r8, at, upto;
+  reg ui64 off, r8, at;
   reg ptr keccak_state stk;
 
   ststatus = st[25];
@@ -88,19 +92,18 @@ fn _update_updstate_ref
   () = #spill(st, buf);
 
   off = 0;
-  upto = _ASIZE;
-  upto += at;
-  while (r8 <= upto) {
+  len += at;
+  while (r8 <= len) {
     stk, at, off = _add_updstate_ref(stk, at, buf, off, r8);
-    () = #spill(r8, at, upto, off);
+    () = #spill(r8, at, len, off);
     stk = _keccakf1600_ref_(stk);
-    () = #unspill(r8, at, upto, off, buf);
-    upto -= r8;
+    () = #unspill(r8, at, len, off, buf);
+    len -= r8;
     at = 0;
   }
-  upto = upto;
+  len = len;
   () = #unspill(st);
-  stk, at, _ = _add_updstate_ref(stk, at, buf, off, upto);
+  stk, at, _ = _add_updstate_ref(stk, at, buf, off, len);
   st[0:25] = stk;
   st.[:u8 8*25] = (8u) (64u) at;
 
@@ -169,13 +172,14 @@ fn _dump_updstate_ref
 }
 
 fn _squeeze_updstate_ref
-( reg mut ptr u8[_ASIZE] buf
-, reg mut ptr keccak_updstate st
-) -> reg ptr u8[_ASIZE]         /* buf */
-   , reg ptr keccak_updstate   /* st */
+( reg mut ptr keccak_updstate st
+, reg mut ptr u8[_ASIZE] buf
+, reg ui64 len
+) -> reg ptr keccak_updstate   /* st */
+   , reg ptr u8[_ASIZE]        /* buf */
 {
   reg u64 ststatus;
-  reg ui64 off, len, r8, at;
+  reg ui64 off, r8, at;
   reg ptr keccak_state stk;
 
   ststatus = st[25];
@@ -191,8 +195,7 @@ fn _squeeze_updstate_ref
   }
 
   off = 0;
-  len = at;
-  len += _ASIZE;
+  len += at;
 
   while (r8 < len) {
     buf, off, at = _dump_updstate_ref(buf, off, stk, at, r8);
@@ -211,28 +214,32 @@ fn _squeeze_updstate_ref
   // if ( at == r8 ) at = 0; // avoidable because r8_at() returns 0<=at<r8
   st.[:u8 8*25] = (8u) (64u) at;
 
-  return buf, st;
+  return st, buf;
 }
 
-export fn update_updstate_ref
+export fn absorb_updstate_ref
 ( reg mut ptr keccak_updstate st
 , reg const ptr u8[_ASIZE] buf
+, reg ui64 len
 ) -> reg ptr keccak_updstate /* st */
 {
   st = st;
   buf = buf;
-  st = _update_updstate_ref(st, buf);
+  len = len;
+  st = _absorb_updstate_ref(st, buf, len);
   return st;
 }
 
 export fn squeeze_updstate_ref
-( reg mut ptr u8[_ASIZE] buf
-, reg mut ptr keccak_updstate st
-) -> reg ptr u8[_ASIZE] /* buf */
-   , reg ptr keccak_updstate /* st */
+( reg mut ptr keccak_updstate st
+, reg mut ptr u8[_ASIZE] buf
+, reg ui64 len
+) -> reg ptr keccak_updstate /* st */
+   , reg ptr u8[_ASIZE]      /* buf */
 {
   st = st;
   buf = buf;
-  buf, st = _squeeze_updstate_ref(buf, st);
-  return buf, st;
+  len = len;
+  st, buf = _squeeze_updstate_ref(st, buf, len);
+  return st, buf;
 }

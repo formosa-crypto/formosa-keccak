@@ -1,5 +1,223 @@
 require "keccak1600.jinc"
 
+/*
+   ONE-SHOT (FIXED-SIZE) ARRAY ABSORB
+   ==================================
+*/
+
+inline fn __addstate_m_avx2
+( reg u256[7] st
+, inline int AT
+, reg ui64 buf
+, inline int _LEN
+, inline int _TRAILB
+) -> reg u256[7] /* st */
+   , inline int  /* AT */
+   , reg ui64    /* buf */
+/*
+requires{0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,7*32) && _LEN <= 200}
+requires{0 <= _TRAILB && _TRAILB < 256}
+ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + _LEN}
+*/
+{
+  reg u64 t64_1, t64_2, t64_3, t64_4, t64_5 ;
+  reg u256 r0, r1, r2, r3, r4, r5, r6;
+  reg u128 t128_0, t128_1, t128_2;
+
+  buf, _LEN, _TRAILB, AT, t64_1 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 0, AT);
+  t128_0 = (128u) t64_1;
+  r0 = #VPBROADCAST_4u64(t128_0);
+  st[0] ^= r0;
+
+  buf, _LEN, _TRAILB, AT, r1 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 8, AT);
+  st[1] ^= r1;
+
+  buf, _LEN, _TRAILB, AT, t64_2 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 40, AT);
+  t128_1 = (128u) t64_2;
+  t128_2 = #set0_128();
+  if ( 0 < _LEN || _TRAILB != 0) {
+    buf, _LEN, _TRAILB, AT, r3 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 48, AT);
+    buf, _LEN, _TRAILB, AT, t64_3 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 80, AT);
+    t128_2 = (128u) t64_3;
+    buf, _LEN, _TRAILB, AT, r4 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 88, AT);
+    buf, _LEN, _TRAILB, AT, t64_4 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 120, AT);
+    t128_1 = #VPINSR_2u64(t128_1, t64_4, 1);
+    buf, _LEN, _TRAILB, AT, r5 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 128, AT);
+    buf, _LEN, _TRAILB, AT, t64_5 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 160, AT);
+    t128_2 = #VPINSR_2u64(t128_2, t64_5, 1);
+    buf, _LEN, _TRAILB, AT, r6 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 168, AT);
+    st = __addstate_r3456_avx2( st, r3, r4, r5, r6);
+  }
+  r2 = (2u128)[t128_1, t128_2];
+  st[2] ^= r2;
+  return st, AT, buf;
+}
+
+inline fn __absorb_m_avx2
+( reg u256[7] st
+, inline int AT
+, reg ui64 buf
+, inline int _LEN
+, inline int _TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
+, inline int _RATE8
+) -> reg u256[7] /* st */
+   , inline int  /* AT */
+/*
+requires{0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && 0<_RATE8 && _RATE8 < 200 &&
+         is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,7*32)}
+requires{0 <= _TRAILB && _TRAILB < 256}
+ensures{is_arr_init(result.0,0,7*32)}
+*/
+{
+  reg ui64 i;
+  inline int ITERS;
+
+  if ( AT+_LEN >= _RATE8 ) { // more than one block...
+    st, _, buf = __addstate_m_avx2(st, AT, buf, _RATE8-AT, 0);
+    _LEN = _LEN - (_RATE8-AT);
+    AT = 0;
+    st = _keccakf1600_avx2(st);
+    ITERS = _LEN/_RATE8;
+    i = 0;
+    while ( i < ITERS ) {
+      st, _, buf = __addstate_m_avx2(st, 0, buf, _RATE8, 0);
+      st = _keccakf1600_avx2(st);
+      i += 1;
+    }
+    _LEN = _LEN % _RATE8;
+  }
+  st, AT, _ = __addstate_m_avx2(st, AT, buf, _LEN, _TRAILB);
+  if (_TRAILB!=0) { st = __addratebit_avx2(st, _RATE8); }
+
+  return st, AT;
+}
+
+/*
+   ONE-SHOT (FIXED-SIZE) ARRAY SQUEEZE
+   ====================================
+*/
+
+inline fn __dumpstate_m_avx2
+( reg ui64 buf
+, inline int _LEN
+, reg u256[7] st
+) -> reg ui64 /* buf */
+/*
+requires{0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && is_arr_init(st,0,7*32) && _LEN <= 200}
+ensures{result.1 == offset + _LEN}
+ensures { \all (k \in 0:_ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + _LEN)))}
+*/
+{
+  reg u64 t;
+  reg u128 t128_0, t128_1;
+  reg u256 t256_0, t256_1, t256_2, t256_3, t256_4;
+
+  // reg0
+  if (8 <= _LEN) {
+    buf, _ = __m_ilen_write_upto32(buf, 8, st[0]);
+    _LEN -= 8;
+  } else {
+    buf, _LEN = __m_ilen_write_upto32(buf, _LEN, st[0]);
+  }
+
+
+  // reg1
+  buf, _LEN = __m_ilen_write_upto32(buf, _LEN, st[1]);
+
+  // reg2 (5)
+  if (0 < _LEN) {
+    t128_0 = (128u) st[2];
+    t128_1 = #VEXTRACTI128(st[2], 1);
+    t = (64u) t128_1;
+    buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
+    t128_1 = #VPUNPCKH_2u64(t128_1, t128_1);
+
+    if (0 < _LEN) { // regs 3,4,5,6
+      // [ 16, 7, 8, 19 ]
+      t256_0 = #VPBLEND_8u32(st[3], st[4], (8u1)[1,1,1,1,0,0,0,0]);
+      // [ 11, 22, 23, 14 ]
+      t256_1 = #VPBLEND_8u32(st[4], st[3], (8u1)[1,1,1,1,0,0,0,0]);
+      // [ 21, 17, 18, 24 ]
+      t256_2 = #VPBLEND_8u32(st[5], st[6], (8u1)[1,1,1,1,0,0,0,0]);
+      // [ 6, 12, 13, 9 ]
+      t256_3 = #VPBLEND_8u32(st[6], st[5], (8u1)[1,1,1,1,0,0,0,0]);
+
+      // [ 6, 7, 8, 9 ]
+      t256_4 = #VPBLEND_8u32(t256_0, t256_3, (8u1)[1,1,0,0,0,0,1,1]);
+      buf, _LEN = __m_ilen_write_upto32(buf, _LEN, t256_4);
+      
+      // reg2 (10)
+      if (0 < _LEN) {
+	t = (64u) t128_0;
+	buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
+	t128_0 = #VPUNPCKH_2u64(t128_0, t128_0);
+      }
+
+      if (0 < _LEN) { // [ 11, 12, 13, 14 ]
+	t256_4 = #VPBLEND_8u32(t256_3, t256_1, (8u1)[1,1,0,0,0,0,1,1]);
+	buf, _LEN = __m_ilen_write_upto32(buf, _LEN, t256_4);
+      }
+
+      // reg2 (15)
+      if (0 < _LEN) {
+	t = (64u) t128_1;
+	buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
+      }
+
+      if (0 < _LEN) { // [ 16, 17, 18, 19 ]
+	t256_4 = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,0,0,0,0,1,1]);
+	buf, _LEN = __m_ilen_write_upto32(buf, _LEN, t256_4);
+      }
+
+      // reg2 (20)
+      if (0 < _LEN) {
+	t = (64u) t128_0;
+	buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
+      }
+
+      if (0 < _LEN) { // [ 21, 22, 23, 24 ]
+	t256_4 = #VPBLEND_8u32(t256_1, t256_2, (8u1)[1,1,0,0,0,0,1,1]);
+	buf, _LEN = __m_ilen_write_upto32(buf, _LEN, t256_4);
+      }
+    }
+  }
+  return buf;
+}
+
+inline fn __squeeze_m_avx2
+( reg u256[7] st
+, reg ui64 buf
+, inline int _LEN
+, inline int _RATE8
+) -> reg u256[7] /* st */
+/*
+requires{0<= offset && 0<= _LEN && 0< _RATE8 && _RATE8 < 200 && offset + _LEN <= _ASIZE && is_arr_init(st,0,32*7)}
+ensures{is_arr_init(result.1,0,32*7)} 
+ensures { \all (k \in 0:_ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + _LEN)))}
+*/
+{
+  reg ui64 i;
+  inline int ITERS, LO;
+
+  ITERS = _LEN/_RATE8;
+  LO = _LEN%_RATE8;
+  i = 0;
+  while (i < ITERS) {
+    st = _keccakf1600_avx2(st);
+    buf = __dumpstate_m_avx2(buf, _RATE8, st);
+    i += 1;
+  }
+  if (0 < LO) {
+    st = _keccakf1600_avx2(st);
+    buf = __dumpstate_m_avx2(buf, LO, st);
+  }
+
+  return st;
+}
+
+
+
+
 /******** FIXME: rebase changes made on the parametric (ASIZE) version
 
 
