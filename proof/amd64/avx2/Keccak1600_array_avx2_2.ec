@@ -3809,31 +3809,82 @@ op addst_avx2 (st : W256.t Array7.t) (st25: W64.t Array25.t) =
 op stavx2_to_bits (stavx2: W256.t Array7.t) =
  flatten (map W256.w2bits (to_list stavx2)).
 
-(* FIXME! JWordList... *)
-op W256L_from_bits (bs: bool list): W256.t list.
+lemma size_stavx2_to_bits stavx2:
+ size (stavx2_to_bits stavx2) = 1792.
+admitted.
+
+(*
+lemma stavx2_to_bitsE stavx2:
+ stavx2_to_bits stavx2 = flatten (map W256.w2bits (to_list stavx2)).
+proof.
+rewrite /stavx2_to_bits map_mkseq /mkseq -iotaredE /(\o) /= !flatten_cons /= flatten_nil cats0 !catA.
+rewrite /state2bits /w64L_to_bits map_mkseq  /mkseq -iotaredE /(\o) /= !flatten_cons /= flatten_nil cats0 !catA.
+admitted.
+*)
+
 op stavx2_from_bits bs =
- Array7.of_list W256.zero (W256L_from_bits bs).
+ Array7.of_list W256.zero (map W256.bits2w (chunkify 256 bs)).
+
+lemma stavx2_from_bitsK bs:
+ size bs = 1792 =>
+ stavx2_to_bits (stavx2_from_bits bs) = bs.
+proof.
+admitted.
+
+lemma stavx2_to_bitsK st:
+ stavx2_from_bits (stavx2_to_bits st) = st.
+proof.
+admitted.
 
 
-lemma flatten_states (stavx2: W256.t Array7.t) llbytes l:
- stavx2INV stavx2 =>
- size l = 1600 =>
+
+
+lemma flatten_states_aux llbytes (stavx2: W256.t Array7.t) l:
+ size (flatten llbytes) = 200 =>
  l = List.map bytes_to_bits llbytes =>
  flatten (stavx2_to_bits stavx2 :: l)
- = state2bits (stavx2_to_st25 stavx2)
+ = stavx2_to_bits stavx2
    ++ state2bits (bytes2state (flatten llbytes)).
 proof.
-move=> Hinv Hsz El.
+move=> Hsz El.
 rewrite El flatten_cons; congr.
- admit
+rewrite -state2bytes2bits bytes2stateK //.
+by rewrite bytes_to_bits_flatten; congr.
+qed.
+
+print w64_to_bytes_to_bits.
+lemma w256_to_bytes_to_bits w:
+ bytes_to_bits (W32u8.to_list w) = w2bits w.
+admitted.
+
+lemma flatten_states st w1 w2 w3 w4 w5 w6 w7 w8 w9 w10:
+ flatten
+  ( stavx2_to_bits st ::
+   [ W64.w2bits w1; W256.w2bits w2
+   ; W64.w2bits w3; W256.w2bits w4
+   ; W64.w2bits w5; W256.w2bits w6
+   ; W64.w2bits w7; W256.w2bits w8
+   ; W64.w2bits w9; W256.w2bits w10
+   ])
+ = stavx2_to_bits st
+   ++ state2bits
+       (bytes2state (flatten [ u64_to_bytes w1; u256_to_bytes w2
+                             ; u64_to_bytes w3; u256_to_bytes w4
+                             ; u64_to_bytes w5; u256_to_bytes w6
+                             ; u64_to_bytes w7; u256_to_bytes w8
+                             ; u64_to_bytes w9; u256_to_bytes w10
+                             ])).
+proof.
+pose L:= u64_to_bytes _::_.
+rewrite (flatten_states_aux L); last done.
+ rewrite /L !flatten_cons flatten_nil cats0 !size_cat.
+ by rewrite !W8u8.size_to_list !W32u8.size_to_list.
+by rewrite /L /= !w64_to_bytes_to_bits !w256_to_bytes_to_bits.
+qed.
+
 (*
 stavx2_to_bits stavx2 = state2bits (stavx2_to_st25 stavx2)
-*).
-admit(* CANCELATION...
-flatten (map bytes_to_bits llbytes) =
-state2bits (bytes2state (flatten llbytes))
-*).
-qed.
+*)
 (* PARA INVOCAR LEMA
 [ u64_to_bytes t64_1; u256_to_bytes r1
 ; u64_to_bytes t64_2; u256_to_bytes r3
@@ -3879,6 +3930,162 @@ map
   (chunk 1792 (flatten [flatten (map W256.w2bits (to_list st))]))
 
 *)
+
+from JazzEC require import WArray800.
+op sliceget64_256_25 (arr: W256.t Array25.t) (offset: int) : W64.t = 
+ if 8 %| offset
+ then WArray800.get64_direct (WArray800.init256 (fun i => arr.[i])) (offset %/ 8)
+ else W64.bits2w (take 64 (drop offset (flatten (map W256.w2bits (to_list arr))))).
+
+bind op [W256.t & W64.t & Array25.t] sliceget64_256_25 "asliceget".
+realize bvaslicegetP.
+move => /= arr offset; rewrite /sliceget64_256_25 /= => H k kb. 
+case (8 %| offset) => /= *; last by smt(W64.get_bits2w).
+rewrite /get64_direct pack8E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
+rewrite nth_take 1,2:/# nth_drop 1,2:/#.
+rewrite (BitEncoding.BitChunking.nth_flatten false 256 _). 
+ by rewrite allP => x /=; rewrite mapP => He; elim He;smt(W256.size_w2bits).
+rewrite (nth_map W256.zero []); 1: smt(Array25.size_to_list).
+by rewrite nth_mkseq /#.
+qed.
+
+
+op sliceget256_64_25 (arr: W64.t Array25.t) (offset: int) : W256.t = 
+ if 8 %| offset
+ then  WArray200.get256_direct (WArray200.init64 (fun (i_0 : int) => arr.[i_0])) (offset %/ 8)
+ else W256.bits2w (take 256 (drop offset (flatten (map W64.w2bits (to_list arr))))).
+
+bind op [W64.t & W256.t & Array25.t] sliceget256_64_25 "asliceget".
+realize bvaslicegetP.
+move => /= arr offset; rewrite /sliceget256_64_25 /= => H k kb. 
+case (8 %| offset) => /= *; last by smt(W256.get_bits2w).
+rewrite /get256_direct pack32E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
+rewrite nth_take 1,2:/# nth_drop 1,2:/#.
+rewrite (BitEncoding.BitChunking.nth_flatten false 64 _). 
+ by rewrite allP => x /=; rewrite mapP => He; elim He;smt(W64.size_w2bits).
+rewrite (nth_map W64.zero []); 1: smt(Array25.size_to_list).
+by rewrite nth_mkseq /#.
+qed.
+
+op sliceset64_256_25 (arr: W256.t Array25.t) (offset: int) (bv: W64.t) : W256.t Array25.t =
+ if 8 %| offset
+ then Array25.init 
+       (fun i =>
+        WArray800.get256
+         (WArray800.set64_direct
+           (WArray800.init256 (fun j => arr.[j]))
+           (offset %/ 8)
+           bv)
+         i)
+ else Array25.of_list
+       witness
+       (map W256.bits2w
+            (chunk 256
+                   (take offset (flatten (map W256.w2bits (to_list arr)))
+                     ++ w2bits bv ++
+                     drop (offset+64) (flatten (map W256.w2bits (to_list arr)))))).
+
+lemma size_flatten_W256_w2bits (a : W256.t list) :
+  (size (flatten (map W256.w2bits (a))))  =  256 * size a.
+proof.
+rewrite (size_flatten' 256).
+ by move=> l /mapP [x [Hx ->]]; rewrite W256.size_w2bits.
+by rewrite size_map.
+qed.
+
+bind op [W256.t & W64.t & Array25.t] sliceset64_256_25 "asliceset".
+realize bvaslicesetP.
+move => arr offset bv H /= k kb; rewrite /sliceset64_256_25 /=.
+case (8 %| offset) => /= *; last first.
++ rewrite of_listK; 1: by rewrite size_map size_chunk 1:// !size_cat size_take;
+      by smt(size_take size_drop  W256.size_w2bits size_cat Array25.size_to_list size_flatten_W256_w2bits size_ge0). 
+  rewrite -(map_comp W256.w2bits W256.bits2w) /(\o). 
+  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W256)) idfun (chunk 256
+        (take offset (flatten (map W256.w2bits (to_list arr))) ++ w2bits bv ++
+         drop (offset + 64) (flatten (map W256.w2bits (to_list arr))))).
+  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W256.bits2wK).
+  rewrite map_id /= chunkK 1://;1: by rewrite !size_cat size_take;
+    by smt(size_take size_drop  W256.size_w2bits size_cat Array25.size_to_list size_flatten_W256_w2bits size_ge0). 
+  by rewrite !nth_cat !size_cat /=;
+     smt(nth_take nth_drop size_take size_drop  W256.size_w2bits size_cat Array25.size_to_list size_flatten_W256_w2bits size_ge0). 
+rewrite (nth_flatten _ 256); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W256.size_w2bits).
+rewrite (nth_map W256.zero []); 1: smt(Array25.size_to_list).
+rewrite nth_mkseq 1:/# /= initiE 1:/# /= get256E pack32E initiE 1:/# /= initiE 1:/# /= /set64_direct.
+rewrite initiE 1:/# /=.
+case (offset <= k && k < offset + 64) => *; 1: by 
+  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite (nth_flatten _ 256); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W256.size_w2bits).
+rewrite (nth_map W256.zero []); 1: smt(Array25.size_to_list).
+rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
+qed.
+
+op sliceset256_64_25 (arr: W64.t Array25.t) (offset: int) (bv: W256.t) : W64.t Array25.t =
+ if 8 %| offset
+ then Array25.init 
+       (fun i =>
+        WArray200.get64
+         (WArray200.set256_direct
+           (WArray200.init64 (fun j => arr.[j]))
+           (offset %/ 8)
+           bv)
+         i)
+ else Array25.of_list
+       witness
+       (map W64.bits2w
+            (chunk 64
+                   (take offset (flatten (map W64.w2bits (to_list arr)))
+                     ++ w2bits bv ++
+                     drop (offset+256) (flatten (map W64.w2bits (to_list arr)))))).
+
+lemma size_flatten_W64_w2bits (a : W64.t list) :
+  (size (flatten (map W64.w2bits (a))))  =  64 * size a.
+proof.
+rewrite (size_flatten' 64).
+ by move=> l /mapP [x [Hx ->]]; rewrite W64.size_w2bits.
+by rewrite size_map.
+qed.
+
+
+bind op [W64.t & W256.t & Array25.t] sliceset256_64_25 "asliceset".
+realize bvaslicesetP. 
+move => arr offset bv H /= k kb; rewrite /sliceset256_64_25 /=.
+case (8 %| offset) => /= *; last first.
++ rewrite of_listK; 1: by rewrite size_map size_chunk 1:// !size_cat size_take;
+      by smt(size_take size_drop  W64.size_w2bits size_cat Array25.size_to_list size_flatten_W64_w2bits size_ge0). 
+  rewrite -(map_comp W64.w2bits W64.bits2w) /(\o). 
+  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W64)) idfun (chunk 64
+        (take offset (flatten (map W64.w2bits (to_list arr))) ++ w2bits bv ++
+         drop (offset + 256) (flatten (map W64.w2bits (to_list arr))))).
+  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W64.bits2wK).
+  rewrite map_id /= chunkK 1://;1: by rewrite !size_cat size_take;
+    by smt(size_take size_drop  W64.size_w2bits size_cat Array25.size_to_list size_flatten_W64_w2bits size_ge0). 
+  by rewrite !nth_cat !size_cat /=;
+     smt(nth_take nth_drop size_take size_drop  W64.size_w2bits size_cat Array25.size_to_list size_flatten_W64_w2bits size_ge0). 
+rewrite (nth_flatten _ 64); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W64.size_w2bits).
+rewrite (nth_map W64.zero []); 1: smt(Array25.size_to_list).
+rewrite nth_mkseq 1:/# /= initiE 1:/# /= get64E pack8E initiE 1:/# /= initiE 1:/# /= /set256_direct.
+rewrite initiE 1:/# /=.
+case (offset <= k && k < offset + 256) => *; 1: by 
+  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite (nth_flatten _ 64); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W64.size_w2bits).
+rewrite (nth_map W64.zero []); 1: smt(Array25.size_to_list).
+rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
+qed.
+
+print sliceget256_64_25.
+
+op split_states (inp : W64.t Array53.t ): W256.t Array7.t * W64.t Array25.t =
+ ( init_7_256 (fun ii => u256_pack4 inp.[4*ii+0] inp.[4*ii+1] inp.[4*ii+2] inp.[4*ii+3])
+ , init_25_64 (fun ii => inp.[28+ii])
+ ).
+
+op F4 (inp : W64.t Array53.t ) : W256.t Array7.t =
+ let (stavx2, st) = split_states inp in addst_avx2 stavx2 st.
+op P4 (inp : W64.t Array53.t ) : bool =
+ stavx2INV (split_states inp).`1.
+
 
 hoare addstate_at_avx2_h _st _buf _off _len _tb _at:
  M(P).__addstate_at_avx2
@@ -3946,6 +4153,8 @@ bdep 3392 1792
  [_st;_w1;_w2;_w3;_w4;_w5;_w6;_w7;_w8;_w9;_w10]
  [st;t64_1;r1;t64_2;r3;t64_3;r4;t64_4;r5;t64_5;r6]
  [st]
+ F4 P4.
+locate sliceget64_256_25.
  F2 Pre2.
 move=> &m [#]->->->->->->->->->-> |> Hspec Hpre Hinv.
  rewrite allP /Pre2 /= => x /mapP [bs].
