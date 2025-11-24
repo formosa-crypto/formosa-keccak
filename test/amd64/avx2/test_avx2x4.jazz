@@ -49,7 +49,7 @@ export fn unpack_updstate_avx2x4
 
 namespace TEST_AT {
 
-  param int ASIZE = SIZE;
+  param int _ASIZE = SIZE;
 
   from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 
@@ -59,17 +59,17 @@ namespace TEST_AT {
     ) -> reg ptr u256[25] /* st */
     {
       inline int i, AT;
-      reg ptr u8[ASIZE] b;
+      reg ptr u8[_ASIZE] b;
 
       state = state;
       buf = buf;
       AT = 0;
       for i = 0 to BIGSIZE/SIZE-1 {
-	b = buf[i*ASIZE:ASIZE];
-	state, AT = __absorb_bcast_avx2x4(state, AT, b, 0);
+	b = buf[i*_ASIZE:_ASIZE];
+	state, AT = __absorb_bcast_avx2x4(state, AT, b, 0, RATE8);
       }
-      b = buf[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      state, AT = __absorb_bcast_avx2x4(state, AT, b, TRAIL);
+      b = buf[(BIGSIZE/SIZE-1)*_ASIZE:_ASIZE];
+      state, AT = __absorb_bcast_avx2x4(state, AT, b, TRAIL, RATE8);
       return state;
     }
 
@@ -79,7 +79,7 @@ namespace TEST_AT {
     ) -> reg ptr u256[25] /* st */
     {
       inline int i, AT;
-      reg ptr u8[ASIZE] b0, b1, b2, b3;
+      reg ptr u8[_ASIZE] b0, b1, b2, b3;
 
       state = state;
       buf0 = buf0;
@@ -88,49 +88,49 @@ namespace TEST_AT {
       buf3 = buf3;
       AT = 0;
       for i = 0 to BIGSIZE/SIZE-1 {
-	b0 = buf0[i*ASIZE:ASIZE];
-	b1 = buf1[i*ASIZE:ASIZE];
-	b2 = buf2[i*ASIZE:ASIZE];
-	b3 = buf3[i*ASIZE:ASIZE];
-	state, AT = __absorb_avx2x4(state, AT, b0, b1, b2, b3, 0);
+	b0 = buf0[i*_ASIZE:_ASIZE];
+	b1 = buf1[i*_ASIZE:_ASIZE];
+	b2 = buf2[i*_ASIZE:_ASIZE];
+	b3 = buf3[i*_ASIZE:_ASIZE];
+	state, AT = __absorb_avx2x4(state, AT, b0, b1, b2, b3, 0, RATE8);
       }
-      b0 = buf0[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      b1 = buf1[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      b2 = buf2[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      b3 = buf3[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      state, AT = __absorb_avx2x4(state, AT, b0, b1, b2, b3, TRAIL);
+      b0 = buf0[(BIGSIZE/SIZE-1)*_ASIZE:_ASIZE];
+      b1 = buf1[(BIGSIZE/SIZE-1)*_ASIZE:_ASIZE];
+      b2 = buf2[(BIGSIZE/SIZE-1)*_ASIZE:_ASIZE];
+      b3 = buf3[(BIGSIZE/SIZE-1)*_ASIZE:_ASIZE];
+      state, AT = __absorb_avx2x4(state, AT, b0, b1, b2, b3, TRAIL, RATE8);
       return state;
     }
 }
 
 namespace TEST_ONESHOT {
 
-  param int ASIZE = BIGSIZE;
+  param int _ASIZE = BIGSIZE;
 
   from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 
   export fn absorb_avx2x4
   ( reg mut ptr u256[25] state
-  , reg const ptr u8[ASIZE] buf0 buf1 buf2 buf3
+  , reg const ptr u8[_ASIZE] buf0 buf1 buf2 buf3
   ) -> reg ptr u256[25] /* st */
   {
     state = state; buf0 = buf0; buf1 = buf1; buf2 = buf2; buf3 = buf3;
-    state, _ = __absorb_avx2x4(state, 0, buf0, buf1, buf2, buf3, TRAIL);
+    state, _ = __absorb_avx2x4(state, 0, buf0, buf1, buf2, buf3, TRAIL, RATE8);
     return state;
   }
 
   export fn squeeze_avx2x4
-  ( reg mut ptr u8[ASIZE] buf0 buf1 buf2 buf3
-  , reg mut ptr u256[25] state
-  ) -> reg ptr u8[ASIZE] /* buf0 */
-     , reg ptr u8[ASIZE] /* buf1 */
-     , reg ptr u8[ASIZE] /* buf2 */
-     , reg ptr u8[ASIZE] /* buf3 */
-     , reg ptr u256[25]   /* st */
+  ( reg mut ptr u256[25] state
+  , reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3
+  ) -> reg ptr u256[25]   /* st */
+     , reg ptr u8[_ASIZE] /* buf0 */
+     , reg ptr u8[_ASIZE] /* buf1 */
+     , reg ptr u8[_ASIZE] /* buf2 */
+     , reg ptr u8[_ASIZE] /* buf3 */
   {
     state = state; buf0 = buf0; buf1 = buf1; buf2 = buf2; buf3 = buf3;
-    buf0, buf1, buf2, buf3, state = __squeeze_avx2x4(buf0, buf1, buf2, buf3, state);
-    return buf0, buf1, buf2, buf3, state;
+    state, buf0, buf1, buf2, buf3 = __squeeze_avx2x4(state, buf0, buf1, buf2, buf3, RATE8);
+    return state, buf0, buf1, buf2, buf3;
   }
 
 }
@@ -139,7 +139,7 @@ from Keccak require "avx2/keccak1600x4_updstate.jinc"
 
 namespace TEST_UPD {
 
-  param int ASIZE = SIZE;
+  param int _ASIZE = SIZE;
 
   from Keccak require "avx2/keccak1600x4_updstate_ASIZE.jinc"
 

@@ -1,15 +1,25 @@
-/* DEPENDENCIES: */
-//require "keccak1600x4_updstate.jinc"
-//param int ASIZE = 1001;
-//param int RATE8 = 136;
+/**************************************************************************** 
+
+   DEPENDENCIES:
+   =============
+
+  The loading of this file depends on the following context:
+
+ 1) "keccak1600x4_updstate.jinc"
+ 2) param int _ASIZE
+
+OBS: the generated code is independent of the parameter _ASIZE, but the
+ instance cannot be avoided due to typechecking!!! :-(
+
+*****************************************************************************/
 
 require "../common/subreadwrite_ASIZE.jinc"
 
 fn _add_bcast_updstate_avx2x4
 ( reg mut ptr keccakx4_state st
 , reg ui64 at               // 0 <= at < 200
-, reg const ptr u8[ASIZE] buf // at+ASIZE <= 200 (in fact, r8...)
-, reg ui64 off    // off + upto - at <= ASIZE
+, reg const ptr u8[_ASIZE] buf // at+_ASIZE <= 200 (in fact, r8...)
+, reg ui64 off    // off + upto - at <= _ASIZE
 , reg ui64 upto    // at <= upto <= 200 (in fact, r8...)
 ) -> reg ui64                 /* at */
    , reg ui64                 /* off */
@@ -75,13 +85,14 @@ fn _add_bcast_updstate_avx2x4
   return at, off, st;
 }
 
-fn _update_bcast_updstate_avx2x4
+fn _absorb_bcast_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
-, reg const ptr u8[ASIZE] buf
+, reg const ptr u8[_ASIZE] buf
+, reg ui64 len
 ) -> reg ptr keccakx4_updstate /* st */
 {
   reg u64 ststatus;
-  reg ui64 off, r8, at, upto;
+  reg ui64 off, r8, at;
   reg ptr keccakx4_state stk;
 
   ststatus = st[:u64 4*25];
@@ -89,16 +100,15 @@ fn _update_bcast_updstate_avx2x4
   stk = st[:u256 0:25];
 
   off = 0;
-  upto = ASIZE;
-  upto += at;
-  while (r8 <= upto) {
+  len += at;
+  while (r8 <= len) {
     at, off, stk = _add_bcast_updstate_avx2x4(stk, at, buf, off, r8);
     stk = _keccakf1600_avx2x4(stk);
-    upto -= r8;
+    len -= r8;
     at = 0;
   }
-  upto = upto;
-  at, _, stk = _add_bcast_updstate_avx2x4(stk, at, buf, off, upto);
+  len = len;
+  at, _, stk = _add_bcast_updstate_avx2x4(stk, at, buf, off, len);
   st[:u256 0:25] = stk;
   st.[:u8 32*25] = (8u) (64u) at;
 
@@ -108,8 +118,8 @@ fn _update_bcast_updstate_avx2x4
 fn _add_updstate_avx2x4
 ( reg mut ptr keccakx4_state st
 , reg ui64 at               // 0 <= at < 200
-, reg const ptr u8[ASIZE] buf0 buf1 buf2 buf3 // at+ASIZE <= 200 (in fact, r8...)
-, reg ui64 off    // off + upto - at <= ASIZE
+, reg const ptr u8[_ASIZE] buf0 buf1 buf2 buf3 // at+_ASIZE <= 200 (in fact, r8...)
+, reg ui64 off    // off + upto - at <= _ASIZE
 , reg ui64 upto    // at <= upto <= 200 (in fact, r8...)
 ) -> reg ui64                 /* at */
    , reg ui64                 /* off */
@@ -191,13 +201,14 @@ fn _add_updstate_avx2x4
   return at, off, st;
 }
 
-fn _update_updstate_avx2x4
+fn _absorb_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
-, reg const ptr u8[ASIZE] buf0 buf1 buf2 buf3
+, reg const ptr u8[_ASIZE] buf0 buf1 buf2 buf3
+, reg ui64 len
 ) -> reg ptr keccakx4_updstate /* st */
 {
   reg u64 ststatus;
-  reg ui64 off, r8, at, upto;
+  reg ui64 off, r8, at;
   reg ptr keccakx4_state stk;
 
   ststatus = st[:u64 4*25];
@@ -206,18 +217,17 @@ fn _update_updstate_avx2x4
   () = #spill(st);
 
   off = 0;
-  upto = ASIZE;
-  upto += at;
-  while (r8 <= upto) {
-    () = #spill(upto);
+  len += at;
+  while (r8 <= len) {
+    () = #spill(len);
     at, off, stk = _add_updstate_avx2x4(stk, at, buf0, buf1, buf2, buf3, off, r8);
-    () = #unspill(upto);
+    () = #unspill(len);
     stk = _keccakf1600_avx2x4(stk);
-    upto -= r8;
+    len -= r8;
     at = 0;
   }
-  upto = upto;
-  at, _, stk = _add_updstate_avx2x4(stk, at, buf0, buf1, buf2, buf3, off, upto);
+  len = len;
+  at, _, stk = _add_updstate_avx2x4(stk, at, buf0, buf1, buf2, buf3, off, len);
   () = #unspill(st);
   st[:u256 0:25] = stk;
   st.[:u8 32*25] = (8u) (64u) at;
@@ -226,17 +236,17 @@ fn _update_updstate_avx2x4
 }
 
 fn _dump_updstate_avx2x4
-( reg mut ptr u8[ASIZE] buf0 buf1 buf2 buf3
-, reg ui64 off    // off + upto - at <= ASIZE
+( reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3
+, reg ui64 off    // off + upto - at <= _ASIZE
 , reg const ptr keccakx4_state st
-, reg ui64 at     // at+ASIZE <= r8
+, reg ui64 at     // at+_ASIZE <= r8
 , reg ui64 upto   // at <= upto <= r8
 ) -> reg ui64        /* at */
    , reg ui64        /* off */
-   , reg ptr u8[ASIZE] /* buf0 */
-   , reg ptr u8[ASIZE] /* buf1 */
-   , reg ptr u8[ASIZE] /* buf2 */
-   , reg ptr u8[ASIZE] /* buf3 */
+   , reg ptr u8[_ASIZE] /* buf0 */
+   , reg ptr u8[_ASIZE] /* buf1 */
+   , reg ptr u8[_ASIZE] /* buf2 */
+   , reg ptr u8[_ASIZE] /* buf3 */
 {
   reg ui64 newat, off2, len;
   reg u64 t64, at8, upto8;
@@ -297,11 +307,11 @@ fn _dump_updstate_avx2x4
     upto8 = (64u) upto;
     upto8 &= 0x07;
     t64 = st.[:u64 4*at + 0 ];
-    buf0, off = __a_rlen_write_upto8(buf0, off, t64, (64ui) upto8);
+    buf0, _ = __a_rlen_write_upto8(buf0, off, t64, (64ui) upto8);
     t64 = st.[:u64 4*at + 8 ];
-    buf1, off = __a_rlen_write_upto8(buf1, off, t64, (64ui) upto8);
+    buf1, _ = __a_rlen_write_upto8(buf1, off, t64, (64ui) upto8);
     t64 = st.[:u64 4*at + 16];
-    buf2, off = __a_rlen_write_upto8(buf2, off, t64, (64ui) upto8);
+    buf2, _ = __a_rlen_write_upto8(buf2, off, t64, (64ui) upto8);
     t64 = st.[:u64 4*at + 24];
     buf3, off = __a_rlen_write_upto8(buf3, off, t64, (64ui) upto8);
   }
@@ -311,16 +321,17 @@ fn _dump_updstate_avx2x4
 }
 
 fn _squeeze_updstate_avx2x4
-( reg mut ptr u8[ASIZE] buf0 buf1 buf2 buf3
-, reg mut ptr keccakx4_updstate st
+( reg mut ptr keccakx4_updstate st
+, reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3
+, reg ui64 len
 ) -> reg ptr keccakx4_updstate /* st */
-   , reg ptr u8[ASIZE]             /* buf0 */
-   , reg ptr u8[ASIZE]             /* buf1 */
-   , reg ptr u8[ASIZE]             /* buf2 */
-   , reg ptr u8[ASIZE]             /* buf3 */
+   , reg ptr u8[_ASIZE]        /* buf0 */
+   , reg ptr u8[_ASIZE]        /* buf1 */
+   , reg ptr u8[_ASIZE]        /* buf2 */
+   , reg ptr u8[_ASIZE]        /* buf3 */
 {
   reg u64 ststatus;
-  reg ui64 off, len, r8, at;
+  reg ui64 off, r8, at;
   reg ptr keccakx4_state stk;
 
   ststatus = st[:u64 4*25];
@@ -332,8 +343,7 @@ fn _squeeze_updstate_avx2x4
   }
 
   off = 0;
-  len = at;
-  len += ASIZE;
+  len += at;
 
   while (r8 < len) {
     at, off, buf0, buf1, buf2, buf3 = _dump_updstate_avx2x4(buf0, buf1, buf2, buf3, off, stk, at, r8);
@@ -352,20 +362,23 @@ fn _squeeze_updstate_avx2x4
   return st, buf0, buf1, buf2, buf3;
 }
 
-export fn update_bcast_updstate_avx2x4
+export fn absorb_bcast_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
-, reg const ptr u8[ASIZE] buf
+, reg const ptr u8[_ASIZE] buf
+, reg ui64 len
 ) -> reg ptr keccakx4_updstate /* st */
 {
   st = st;
   buf = buf;
-  st = _update_bcast_updstate_avx2x4(st, buf);
+  len = len;
+  st = _absorb_bcast_updstate_avx2x4(st, buf, len);
   return st;
 }
 
-export fn update_updstate_avx2x4
+export fn absorb_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
-, reg const ptr u8[ASIZE] buf0 buf1 buf2 buf3
+, reg const ptr u8[_ASIZE] buf0 buf1 buf2 buf3
+, reg ui64 len
 ) -> reg ptr keccakx4_updstate /* st */
 {
   st = st;
@@ -373,24 +386,26 @@ export fn update_updstate_avx2x4
   buf1 = buf1;
   buf2 = buf2;
   buf3 = buf3;
-  st = _update_updstate_avx2x4(st, buf0, buf1, buf2, buf3);
+  len = len;
+  st = _absorb_updstate_avx2x4(st, buf0, buf1, buf2, buf3, len);
   return st;
 }
 
 export fn squeeze_updstate_avx2x4
-( reg mut ptr u8[ASIZE] buf0 buf1 buf2 buf3
-, reg mut ptr keccakx4_updstate st
-) -> reg ptr u8[ASIZE] /* buf0 */
-   , reg ptr u8[ASIZE] /* buf1 */
-   , reg ptr u8[ASIZE] /* buf2 */
-   , reg ptr u8[ASIZE] /* buf3 */
-   , reg ptr keccakx4_updstate /* st */
+( reg mut ptr keccakx4_updstate st
+, reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3
+, reg ui64 len
+) -> reg ptr keccakx4_updstate /* st */
+   , reg ptr u8[_ASIZE] /* buf0 */
+   , reg ptr u8[_ASIZE] /* buf1 */
+   , reg ptr u8[_ASIZE] /* buf2 */
+   , reg ptr u8[_ASIZE] /* buf3 */
 {
   st = st;
   buf0 = buf0;
   buf1 = buf1;
   buf2 = buf2;
   buf3 = buf3;
-  st, buf0, buf1, buf2, buf3 = _squeeze_updstate_avx2x4(buf0, buf1, buf2, buf3, st);
-  return buf0, buf1, buf2, buf3, st;
+  st, buf0, buf1, buf2, buf3 = _squeeze_updstate_avx2x4(st, buf0, buf1, buf2, buf3, len);
+  return st, buf0, buf1, buf2, buf3;
 }
