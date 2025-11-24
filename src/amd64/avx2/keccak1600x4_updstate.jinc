@@ -170,7 +170,7 @@ export fn finish_updstate_avx2x4
  *  counterpart ("keccak1600x4_updstate_ASIZE.jinc")
  *
  */
-
+/*
 
 
 
@@ -570,3 +570,6 @@ export fn squeeze_m_updstate_avx2x4
   st, buf0, buf1, buf2, buf3 = _squeeze_updstate_avx2x4(st, buf0, buf1, buf2, buf3, len);
   return st, buf0, buf1, buf2, buf3;
 }
+
+
+*/
