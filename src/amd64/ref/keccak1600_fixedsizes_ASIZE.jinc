@@ -194,9 +194,9 @@ inline fn __squeeze_ref
   offset = 0;
   i = 0;
   while (i < _ASIZE/_RATE8) {
-    () = #spill(buf,offset);
+    () = #spill(buf,offset,i);
     st = _keccakf1600_ref(st);
-    () = #unspill(buf,offset);
+    () = #unspill(buf,offset,i);
     buf, offset = __dumpstate_ref(buf, offset, _RATE8, st);
     i += 1;
   }
