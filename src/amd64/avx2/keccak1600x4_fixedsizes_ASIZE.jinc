@@ -54,7 +54,7 @@ inline fn __addstate_bcast_avx2x4
   // add complete words
   offset += DELTA;
   at = 32*(AT/8);
-  while ( at < AT/8 + _LEN/8 ) {
+  while ( at < 32*(AT/8 + _LEN/8) ) {
     w = #VPBROADCAST_4u64(buf.[:u64 offset]);
     offset += 8;
     w ^= st.[:u256 at];
