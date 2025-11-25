@@ -1,6 +1,35 @@
 require "keccakf1600_ref.jinc"
 require "keccak1600_imem_ref.jinc"
 
+namespace A32 {
+  param int ASIZE = 32;
+  require "keccak1600_array_ref_ASIZE.jinc"
+}
+
+namespace A1184 {
+  param int ASIZE = 1184;
+  require "keccak1600_array_ref_ASIZE.jinc"
+}
+
+/* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte
+   memory region */
+export fn _sha3_256A_M1184
+( reg mut ptr u8[32] out
+, reg ptr u8[1184] in
+) -> reg ptr u8[32]
+{ stack u64[25] st_s;
+  reg ptr u64[25] st;
+
+ () = #spill(out);
+   st = st_s;
+  st = __state_init_ref(st);
+  st, _, _ = A1184::__absorb_array_ref(st, 0, in, 0, 1184, R136, SHA3);
+  () = #unspill(out);
+  out, _, _ = A32::__squeeze_array_ref(out, 0, 32, st, R136);
+
+  return out;
+}
+
 export fn test_absorb1234(reg mut ptr u64[25] st, reg u64 in) -> reg ptr u64[25] {
   st = __state_init_ref(st);
   st, _, _ = __absorb_imem_ref(st, 0, in, 1234, R136, SHA3);

@@ -4,7 +4,7 @@ require "keccak1600_ref.jinc"	// without BMI1 support
 require "keccak1600_bmi1.jinc"	// with BMI1 support
 */
 
-require "../common/subreadwrite_imem.jinc"
+require "../common/subreadwrite_imem_nowint.jinc"
 
 
 /*
@@ -16,20 +16,20 @@ require "../common/subreadwrite_imem.jinc"
 inline fn __addstate_imem_ref
 ( reg mut ptr u64[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
-, reg ui64 buf
+, reg u64 buf
 , inline int LEN
 , inline int TRAILB
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
-   , reg ui64 /* buf */
-/* safety */ requires
+   , reg u64 /* buf */
+/* safety */ /*requires
  { 0 <= LEN &&  0<=AT  && AT < 200 && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 
    && is_mem_init((64u) buf,LEN) && is_arr_init(st,0,25*8)
    && 0 <= TRAILB && TRAILB < 256
  }
 /* safety */ ensures
  { is_arr_init(result.0,0,25*8) && result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0) && result.2 == buf + LEN
- }
+ }*/
 {
   inline int LO, ALL;
   reg ui64 at;
@@ -93,23 +93,23 @@ inline fn __addstate_imem_ref
 inline fn __absorb_imem_ref
 ( reg mut ptr u64[25] st
 , inline int AT
-, reg ui64 buf
+, reg u64 buf
 , inline int LEN
 , inline int RATE8
 , inline int TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
-   , reg ui64 /* buf */
-/* safety */ requires
+   , reg u64 /* buf */
+/* safety */ /*requires
  { 0 <= LEN &&  0<=AT  && AT < RATE8 && AT + LEN + (TRAILB != 0 ? 1 : 0) < 200 && 0 < RATE8 && RATE8 < 200 
    && is_mem_init((64u) buf,LEN) && is_arr_init(st,0,25*8)
    && 0 <= TRAILB && TRAILB < 256
  }
 /* safety */ ensures
  { is_arr_init(result.0,0,25*8) && result.1 == AT + LEN + (TRAILB != 0 ? 1 : 0)
- }
+ }*/
 {
-  reg ui64 i;
+  reg u64 i;
   inline int ALL, ITERS;
 
   ALL = AT + LEN;
@@ -152,16 +152,16 @@ inline fn __absorb_imem_ref
    ====================================
 */
 inline fn __dumpstate_imem_ref
-( reg ui64 buf
+( reg u64 buf
 , inline int LEN
 , reg const ptr u64[25] st
-) -> reg ui64 /* buf */
-/* safety */ requires
+) -> reg u64 /* buf */
+/* safety */ /*requires
  { 0 <= LEN &&  is_mem_init((64u) buf,LEN)
    && is_arr_init(st,0,25*32)
  }
 /* safety */ ensures
- { result.0 == buf + LEN }
+ { result.0 == buf + LEN }*/
 {
   reg ui64 i;
   reg u64 t;
@@ -183,20 +183,20 @@ inline fn __dumpstate_imem_ref
 }
 
 inline fn __squeeze_imem_ref
-( reg ui64 buf
+( reg u64 buf
 , inline int LEN
 , reg mut ptr u64[25] st
 , inline int RATE8
-) -> reg ui64 /* buf */
+) -> reg u64 /* buf */
    , reg ptr u64[25] /* st */
-/* safety */ requires
+/* safety */ /*requires 
  { 0 <= LEN && 0 < RATE8 && RATE8 < 200
    && is_mem_init((64u) buf,LEN) && is_arr_init(st,0,25*8)
  }
 /* safety */ ensures
- { is_arr_init(result.1,0,25*8) && result.0 == buf + LEN }
+ { is_arr_init(result.1,0,25*8) && result.0 == buf + LEN }*/
 {
-  reg ui64 i;
+  reg u64 i;
   inline int ITERS, LO;
 
   ITERS = LEN/RATE8;

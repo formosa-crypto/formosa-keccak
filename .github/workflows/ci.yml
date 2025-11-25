@@ -31,8 +31,7 @@ jobs:
         - uses: cachix/install-nix-action@v31
           with:
             nix_path: nixpkgs=channel:nixos-unstable
-        - run: apt-get update && apt-get install xsltproc
-        - run: "make -C submodules/XKCP/ x86-64/libXKCP.so"
+        - run: nix-shell --arg full false --run "make -C submodules/XKCP/ x86-64/libXKCP.so"
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
         - run: nix-shell --arg full false --run "make -C src/amd64/${{matrix.dir}}/ test"
     

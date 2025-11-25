@@ -13,8 +13,8 @@ let jasmin =
     src = fetchFromGitLab {
       owner = "jasmin-lang";
       repo = "jasmin-compiler";
-      rev = "v2025.06.1";
-      hash = "sha256-6E6lTrR6lxMKbVHLnjxML8rbLyu4bJxeqOxHwBOszxk=";
+      rev = "445ff30d41d53e012ae5f008cd3e739863b642f4";
+      hash = "sha256-UaSFSdCRcaUoCBUaGDtIokjwRYMzZ4madGDkEchWKug=";
     };
   })
 ; in
@@ -65,6 +65,11 @@ mkShell ({
   JASMINC = "${jasmin.bin}/bin/jasminc";
   JASMINCT = "${jasmin.bin}/bin/jasmin-ct";
   JASMIN2EC = "${jasmin.bin}/bin/jasmin2ec";
+
+  packages = [
+    libxslt
+  ];
+
 } // lib.optionalAttrs full {
   packages = [
     ec
