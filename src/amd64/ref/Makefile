@@ -27,8 +27,10 @@ test: run-test
 
 JINC = keccak1600_array_ref_ASIZE.jinc keccak1600_ref.jinc ../common/subreadwrite_array_ASIZE.jinc
 
-SOURCES =  $(CKP)/KeccakSponge.c $(CKP)/FIPS202/SimpleFIPS202.c 
-
+SOURCES  := $(CKP)/FIPS202/SimpleFIPS202.c\
+			 $(CKP)/KeccakSponge.c \
+			 ../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2/KeccakP-1600-AVX2.s
+			 
 test/test_sha3: test/test_sha3.c $(SOURCES) sha3.s
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SOURCES) sha3.s $<
 
