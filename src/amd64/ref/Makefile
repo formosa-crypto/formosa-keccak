@@ -5,11 +5,13 @@
 
 CKP    := ../../../submodules/XKCP/lib/high/Keccak
 CC     ?= /usr/bin/gcc
-CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer \
-          -Wno-implicit-function-declaration \
-          -I$(CKP) \
-          -I../../../submodules/XKCP/lib/common \
-          -I../../../submodules/XKCP/bin/x86-64/libXKCP.so.headers
+CFLAGS   := -Wall -Wextra -O3 -fomit-frame-pointer \
+             -I$(CKP) \
+			 -I$(CKP)/FIPS202 \
+			 -I../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2/SnP \
+             -I../../../submodules/XKCP/lib/common \
+             -I../../../submodules/XKCP/bin/x86-64/libXKCP.so.headers \
+			 -I ../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2
 LDFLAGS := -L../../../submodules/XKCP/bin/x86-64 -lXKCP
 JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)

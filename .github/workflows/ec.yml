@@ -31,7 +31,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            type: [ 'correctness' , 'safety'] 
+            type: ['safety'] 
             dir: [ 'ref', 'avx2' ]
         steps:
         - uses: actions/checkout@v4

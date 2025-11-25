@@ -26,7 +26,6 @@ export fn _sha3_256A_A1184
   st, _, _ = A1184::__absorb_array_ref(st, 0, in, 0, 1184, R136, SHA3);
   () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, 0, 32, st, R136);
-
   return out;
 }
 
