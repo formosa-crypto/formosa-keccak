@@ -198,6 +198,7 @@ inline fn __squeeze_ref
     st = _keccakf1600_ref(st);
     () = #unspill(buf,offset,i);
     buf, offset = __dumpstate_ref(buf, offset, _RATE8, st);
+    () = #unspill(i);
     i += 1;
   }
   if (0 < _ASIZE%_RATE8) {
