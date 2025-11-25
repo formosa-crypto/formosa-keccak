@@ -1,10 +1,29 @@
 
-JASMINC2EC ?= jasmin2ec --arch x86 --array-model=old
+# -*- Makefile -*-
 
-SRCDIR = ../../src/amd64
+# --------------------------------------------------------------------
+ECCONF := ./../config/tests.config 
+
+# --------------------------------------------------------------------
+
+JASMINC2EC ?= ./../../jasmin2ec --arch x86 --array-model=old
+
+SRCDIR = ./../../src/amd64
 OUTDIR = extracted
 
 all: Jazz_ref.ec Jazz_avx2.ec Jazz_ref_ASIZE.ec Jazz_avx2_ASIZE.ec
+checkec_correctness_avx2:
+	easycrypt runtest $(ECCONF) keccak_correctness_avx2
+
+checkec_correctness_ref:
+	easycrypt runtest $(ECCONF) keccak_correctness_ref
+
+checkec_safety_avx2:
+	easycrypt runtest $(ECCONF) keccak_safety_avx2
+
+checkec_safety_ref:
+	easycrypt runtest $(ECCONF) keccak_safety_ref
+
 
 Jazz_ref.ec : $(SRCDIR)/ref/toEC.jazz
 	$(JASMINC2EC) -o $(OUTDIR)/$@ $^

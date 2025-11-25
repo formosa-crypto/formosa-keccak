@@ -2,3 +2,6 @@
 	path = submodules/crypto-specs
 	url = git@github.com:formosa-crypto/crypto-specs.git
 	branch = bdep
+[submodule "submodules/XKCP"]
+	path = submodules/XKCP
+	url = https://github.com/XKCP/XKCP
