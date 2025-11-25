@@ -6,5 +6,5 @@ int XKCP_sha3_256(
   uint8_t *out,
   uint8_t *in
 ){
-  return SHA3_256(out, in, 32);
+  return SHA3_256(out, in, 1184);
 }

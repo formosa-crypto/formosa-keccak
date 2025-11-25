@@ -7,16 +7,21 @@ namespace A32 {
   require "keccak1600_array_avx2_ASIZE.jinc"
 }
 
+namespace A1184 {
+  param int ASIZE = 1184;
+  require "keccak1600_array_ref_ASIZE.jinc"
+}
+
 /* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte
    memory region */
-export fn _sha3_256A_M1184
+export fn _sha3_256A_A1184
 ( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg ui64 in
+, #spill_to_mmx reg ptr u8[1184] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   reg ui64 offset;
   st = __state_init_avx2();
-  st, _ = __absorb_imem_avx2(st, in, 1184, R136, SHA3);
+  st, _,_ = A1184::__absorb_array_avx2(st, 0, in, 0, 1184, R136, SHA3);
   offset = 0;
   out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
   return out;

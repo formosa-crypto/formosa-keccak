@@ -4,6 +4,7 @@
 
 #include "../../../../submodules/XKCP/lib/high/Keccak/FIPS202/SimpleFIPS202.h"
 
+extern void _sha3_256A_A1184(unsigned char *output, const unsigned char *input);
 int main(void)
 {
   unsigned char out0[32];
@@ -19,7 +20,7 @@ int main(void)
 
   /* TEST SHA3 */
   SHA3_256(out0, in0, 1184);
-  _sha3_256A_M1184(out1, in1);
+  _sha3_256A_A1184(out1, in1);
 
 
   for(int i=0;i<32;i++)

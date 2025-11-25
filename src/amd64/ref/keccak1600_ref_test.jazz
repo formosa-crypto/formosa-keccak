@@ -13,7 +13,7 @@ namespace A1184 {
 
 /* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte
    memory region */
-export fn _sha3_256A_M1184
+export fn _sha3_256A_A1184
 ( reg mut ptr u8[32] out
 , reg ptr u8[1184] in
 ) -> reg ptr u8[32]

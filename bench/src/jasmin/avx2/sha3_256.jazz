@@ -4,6 +4,6 @@ export fn jasmin_avx2_sha3_256
 ( #spill_to_mmx reg mut ptr u8[32] out
 , #spill_to_mmx reg ui64 in
 ) -> reg ptr u8[32] {
-   out = _sha3_256A_M1184(out, in);
+   out = _sha3_256A_A1184(out, in);
    return out;
 }

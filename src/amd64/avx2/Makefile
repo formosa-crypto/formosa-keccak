@@ -5,11 +5,13 @@
 
 CKP    := ../../../submodules/XKCP/lib/high/Keccak
 CC     ?= /usr/bin/gcc
-CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer \
-          -Wno-implicit-function-declaration \
-          -I$(CKP) \
-          -I../../../submodules/XKCP/lib/common \
-          -I../../../submodules/XKCP/bin/x86-64/libXKCP.so.headers
+CFLAGS   := -Wall -Wextra -O3 -fomit-frame-pointer \
+             -I$(CKP) \
+			 -I$(CKP)/FIPS202 \
+			 -I../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2/SnP \
+             -I../../../submodules/XKCP/lib/common \
+             -I../../../submodules/XKCP/bin/x86-64/libXKCP.so.headers \
+			 -I ../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2
 LDFLAGS := -L../../../submodules/XKCP/bin/x86-64 -lXKCP
 JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
@@ -27,11 +29,18 @@ test: run-test
 
 JINC = keccak1600_array_avx2_ASIZE.jinc keccak1600_avx2.jinc ../common/subreadwrite_array_ASIZE.jinc
 
-SOURCES =  $(CKP)/KeccakSponge.c $(CKP)/FIPS202/SimpleFIPS202.c 
+SOURCES  := $(CKP)/FIPS202/SimpleFIPS202.c\
+			 $(CKP)/KeccakSponge.c \
+			 ../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2/KeccakP-1600-AVX2.s
 
 
-test/test_sha3: test/test_sha3.c $(SOURCES) sha3.s
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SOURCES) sha3.s $<
+
+test/test_sha3: test/test_sha3.c $(SOURCES) sha3.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ test/test_sha3.c $(SOURCES) sha3.a
+
+sha3.a: sha3.s
+	$(CC) $(CFLAGS) -c sha3.s
+	$(AR) -r $@ sha3.o
 
 run-test: test/test_sha3
 	@LD_LIBRARY_PATH=../../../submodules/XKCP/bin/x86-64 ./test/test_sha3
