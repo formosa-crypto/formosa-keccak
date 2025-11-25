@@ -21,7 +21,7 @@ export fn _sha3_256A_A1184
 { reg u256[7] st;
   reg ui64 offset;
   st = __state_init_avx2();
-  st, _,_ = A1184::__absorb_array_avx2(st, 0, in, 0, 1184, R136, SHA3);
+  st, _ = A1184::__absorb_array_avx2(st, 0, in, 0, 1184, R136, SHA3);
   offset = 0;
   out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
   return out;
