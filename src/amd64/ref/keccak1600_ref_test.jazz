@@ -1,8 +1,33 @@
-require "keccakf1600_ref.jinc"
-require "keccak1600_imem_ref.jinc"
+require "select_bmi1.jinc"
+require "../common/keccak1600_generic.jinc"
+require "keccak1600.jinc"
 
+namespace A32 {
+  param int _ASIZE = 32;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+}
 
+namespace A1184 {
+  param int _ASIZE = 1184;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+}
 
+export fn _sha3_256A_A1184
+( reg mut ptr u8[32] out
+, reg ptr u8[1184] in
+) -> reg ptr u8[32]
+{ stack u64[25] st_s;
+  reg ptr u64[25] st;
+
+ () = #spill(out);
+   st = st_s;
+  st = __state_init_ref(st);
+  st, _ = A1184::__absorb_ref(st, 0, in, SHA3, R136);
+  () = #unspill(out);
+  _ , out = A32::__squeeze_ref(st,out, R136);
+  return out;
+}
+/*
 export fn test_absorb1234(reg mut ptr u64[25] st, reg u64 in) -> reg ptr u64[25] {
   st = __state_init_ref(st);
   st, _, _ = __absorb_imem_ref(st, 0, in, 1234, R136, SHA3);
@@ -12,6 +37,6 @@ export fn test_absorb1234(reg mut ptr u64[25] st, reg u64 in) -> reg ptr u64[25]
 export fn test_squeeze1234(reg mut ptr u64[25] st, reg u64 out) -> reg ptr u64[25] {
   out, st = __squeeze_imem_ref(out, 1234, st, R136);
   return st;
-}
+}*/
 
 

@@ -1,0 +1,23 @@
+require "../common/keccak1600_generic.jinc"
+require "keccak1600.jinc"
+
+namespace A32 {
+  param int _ASIZE = 32;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+}
+
+namespace A1184 {
+  param int _ASIZE = 1184;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+}
+
+export fn _sha3_256A_A1184
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg ptr u8[1184] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1184::__absorb_avx2(st, 0, in, SHA3, R136);
+  _, out = A32::__squeeze_avx2(st,out, R136);
+  return out;
+}
