@@ -5,7 +5,7 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches: ["safety-assert2", "main"]
+    branches: ["ci_tests", "main"]
   pull_request:
     branches: ["main"]
     
