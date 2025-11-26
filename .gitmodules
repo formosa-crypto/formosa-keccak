@@ -6,3 +6,6 @@
 	path = submodules/jasmin
 	url = git@github.com:jasmin-lang/jasmin.git
 	branch = safety-assert2
+[submodule "submodules/XKCP"]
+	path = submodules/XKCP
+	url = https://github.com/XKCP/XKCP
