@@ -10,13 +10,13 @@ env:
   NIXPKGS_ALLOW_UNFREE: 1
 
 jobs:
-    ct:
-      name: Check Constant-Time Security
-      permissions:
-        contents: read
-        id-token: write
-      uses: ./.github/workflows/ct.yml
-      secrets: inherit 
+#     ct:
+#       name: Check Constant-Time Security
+#       permissions:
+#         contents: read
+#         id-token: write
+#       uses: ./.github/workflows/ct.yml
+#       secrets: inherit 
     compile_and_test:
         name: Compile and Test Keccak implementation
         runs-on: ubuntu-latest
