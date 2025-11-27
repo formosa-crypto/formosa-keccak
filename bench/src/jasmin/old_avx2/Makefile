@@ -1,5 +1,7 @@
 .PHONY: jasmin_old_avx2.a clean distclean
 
+CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2 -march=native
+
 all: jasmin_old_avx2.a
 
 jasmin_old_avx2.a: bench_old_avx2.s

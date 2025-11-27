@@ -1,5 +1,7 @@
 .PHONY: jasmin_old_ref.a clean distclean
 
+CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2 -march=native
+
 all: jasmin_old_ref.a
 
 jasmin_old_ref.a: bench_old_ref.s
