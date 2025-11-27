@@ -99,7 +99,7 @@ int main(int argc, char**argv)
 
    for(run = 0; run < RUNS; run++)
   {
-    printf("%" PRIu64 ",%" PRIu64 ",%"  PRIu64 "\n",
+    printf("|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|\n",
       cycles_sha[run],
       cycles_shake[run],
       cycles_shakex4[run]);
