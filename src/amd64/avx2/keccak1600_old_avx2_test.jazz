@@ -1,0 +1,84 @@
+require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_avx2.jinc"
+require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_avx2x4.jinc"
+require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_imem_avx2.jinc"
+
+namespace A32 {
+  param int ASIZE = 32;
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+}
+
+namespace A1184 {
+  param int ASIZE = 1184;
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2x4_ASIZE.jinc"}
+
+namespace A128 {
+  param int ASIZE = 128;
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+}
+
+namespace A1 {
+  param int ASIZE =  1;
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+}
+
+export fn _sha3_256A_A1184
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg ptr u8[1184] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1184::__absorb_array_avx2(st, in, 0, 1184, R136, SHA3);
+  out, _ = A32::__squeeze_array_avx2(out, 0, 32, st, R136);
+  return out;
+}
+
+fn _shake256_A128__A32_A1
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ reg u256[7] st;
+  stack u64[25] pst_s;
+  reg ptr u64[25] pst;
+  reg ui64 offset;
+  pst = pst_s;
+  pst, st = __pstate_init_avx2(pst);
+  offset = 0;
+  pst, _, st, _ = A32::__pabsorb_array_avx2(pst, 0, st, seed, offset, 32, R136, UNFINISHED);
+  offset = 0;
+  pst, _, st, _ = A1::__pabsorb_array_avx2(pst, 32, st, nonce, offset, 1, R136, SHAKE);
+  offset = 0;
+  out, _ = A128::__squeeze_array_avx2(out, offset, 128, st, R136);
+
+  return out;
+}
+
+fn _shake256x4_A128__A32_A1
+( reg mut ptr u8[128] out0 out1 out2 out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+   , reg ptr u8[128] /* out1 */
+   , reg ptr u8[128] /* out2 */
+   , reg ptr u8[128] /* out3 */
+{ stack u256[25] st_s;
+  reg ptr u256[25] st;
+  reg ui64 offset;
+  () = #spill(out0, out1, out2, out3);
+  st = st_s;
+  st = __state_init_avx2x4(st);
+  offset = 0;
+  st, _, _ = A32::__absorb_bcast_array_avx2x4(st, 0, seed, offset, 32, R136, UNFINISHED);
+  offset = 0;
+  st, _, _ = A1::__absorb_array_avx2x4(st, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], offset, 1, R136, SHAKE);
+  offset = 0;
+  () = #unspill(out0, out1, out2, out3);
+  out0, out1, out2, out3, _, st
+    = A128::__squeeze_array_avx2x4(out0, out1, out2, out3, offset, 128, st, R136);
+
+  return out0, out1, out2, out3;
+}

@@ -1,0 +1,44 @@
+require "../../../../src/amd64/ref/keccak1600_old_ref_test.jazz"
+
+export fn jasmin_old_ref_sha3_256
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg ptr u8[1184] in
+)-> reg ptr u8[32] {
+    out = _sha3_256A_A1184(out, in);
+    return out;
+}
+
+export fn jasmin_old_ref_shake256
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128] {
+    seed = seed; out = out; nonce = nonce;
+    out = _shake256_A128__A32_A1(out, seed, nonce);
+    return out;
+}
+
+export fn jasmin_old_ref_shake256x4
+( reg mut ptr u8[128] out1 out2 out3 out4
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+    , reg ptr u8[128] /* out1 */
+    , reg ptr u8[128] /* out2 */
+    , reg ptr u8[128] /* out3 */
+    {
+     seed =  seed; out1 = out1; out2 = out2; out3 = out3; out4 = out4; nonces = nonces;
+     () = #spill(out2, out3, out4, seed);
+     out1 = _shake256_A128__A32_A1(out1, seed, nonces[0:1]);
+     () = #spill(out1);
+     () = #unspill(out2,seed);
+     out2 = _shake256_A128__A32_A1(out2, seed, nonces[1:1]);
+    () = #spill(out2);
+    () = #unspill(out3, seed);
+     out3 = _shake256_A128__A32_A1(out3, seed, nonces[2:1]);
+    () = #spill(out3);
+    () = #unspill(out4,seed);
+     out4 = _shake256_A128__A32_A1(out4, seed, nonces[3:1]);
+     () = #unspill(out1, out2, out3);
+     return out1, out2, out3, out4;
+    }
