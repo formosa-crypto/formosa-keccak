@@ -2,11 +2,11 @@
 
 all: jasmin_ref.a
 
-jasmin_ref.a: sha3_256.s
-	$(CC) $(CFLAGS) -c sha3_256.s
-	$(AR) -r $@ sha3_256.o
+jasmin_ref.a: bench_ref.s
+	$(CC) $(CFLAGS) -c bench_ref.s
+	$(AR) -r $@ bench_ref.o
 
-sha3_256.s: sha3_256.jazz
+bench_ref.s: bench_ref.jazz
 	$(JASMINC) -nowarning -lea $< -o $@
 
 clean:

@@ -4,7 +4,7 @@
 
 CKP      := ../../../submodules/XKCP/lib/high/Keccak
 
-HEADERS  := api.h sha3.h \
+HEADERS  := api.h \
              $(CKP)/FIPS202/SimpleFIPS202.h \
              $(CKP)/KeccakSponge.h \
 			 ../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2/SnP/KeccakP-1600-SnP.h \
@@ -35,7 +35,7 @@ CFLAGS   := -Wall -Wextra -O3 -fomit-frame-pointer \
 
 .PHONY: all clean
 
-all: 256sha_xkcp.a
+all: bench_xkcp.a
 
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $< 
@@ -43,9 +43,9 @@ all: 256sha_xkcp.a
 %.o: %.s $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-256sha_xkcp.a: $(OBJECTS)
+bench_xkcp.a: $(OBJECTS)
 	$(AR) -r $@ $(OBJECTS)
 
 clean:
 	$(RM) $(OBJECTS)
-	$(RM) 256sha_xkcp.a
+	$(RM) bench_xkcp.a

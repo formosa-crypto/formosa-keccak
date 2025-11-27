@@ -1,14 +1,27 @@
-require "../common/keccak1600_generic.jinc"
-require "keccak1600.jinc"
+require "keccak1600_fixedsizes.jinc"
+require "keccak1600x4_fixedsizes.jinc"
 
 namespace A32 {
   param int _ASIZE = 32;
   require "keccak1600_fixedsizes_ASIZE.jinc"
+  require "keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A1184 {
   param int _ASIZE = 1184;
   require "keccak1600_fixedsizes_ASIZE.jinc"
+}
+
+namespace A128 {
+  param int _ASIZE = 128;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+  require "keccak1600x4_fixedsizes_ASIZE.jinc"
+}
+
+namespace A1 {
+  param int _ASIZE =  1;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+  require "keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 export fn _sha3_256A_A1184
@@ -20,4 +33,38 @@ export fn _sha3_256A_A1184
   st, _ = A1184::__absorb_avx2(st, 0, in, SHA3, R136);
   _, out = A32::__squeeze_avx2(st,out, R136);
   return out;
+}
+
+fn _shake256_A128__A32_A1
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2(st, 32, nonce, SHAKE, R136);
+  _, out = A128::__squeeze_avx2(st, out, R136);
+
+  return out;
+}
+
+fn _shake256x4_A128__A32_A1
+( reg mut ptr u8[128] out0 out1 out2 out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+   , reg ptr u8[128] /* out1 */
+   , reg ptr u8[128] /* out2 */
+   , reg ptr u8[128] /* out3 */
+{ stack u256[25] st_s;
+  reg ptr u256[25] st;
+  st = st_s;
+  st = __state_init_avx2x4(st);
+  st, _ = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2x4(st, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], SHAKE, R136);
+  st, out0, out1, out2, out3
+    = A128::__squeeze_avx2x4(st, out0, out1, out2, out3, R136);
+
+  return out0, out1, out2, out3;
 }
