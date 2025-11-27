@@ -97,10 +97,13 @@ int main(int argc, char**argv)
   qsort(cycles_shakex4,RUNS,sizeof(uint64_t),cmp_uint64);
 
 
-  printf("|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|",
-      median_runs(cycles_sha),
-      median_runs(cycles_shake),
-      median_runs(cycles_shakex4));
+   for(run = 0; run < RUNS; run++)
+  {
+    printf("%" PRIu64 ",%" PRIu64 ",%"  PRIu64 "\n",
+      cycles_sha[run],
+      cycles_shake[run],
+      cycles_shakex4[run]);
+  }
 
 
   free(_ps32);
