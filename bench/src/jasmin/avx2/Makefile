@@ -1,5 +1,7 @@
 .PHONY: jasmin_avx2.a clean distclean
 
+CFLAGS := -Wall -Wextra -O3 -fomit-frame-pointer -mavx2 -march=native 
+
 all: jasmin_avx2.a
 
 jasmin_avx2.a: sha3_256.s
