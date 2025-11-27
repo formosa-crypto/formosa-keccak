@@ -2,11 +2,11 @@
 
 all: jasmin_avx2.a
 
-jasmin_avx2.a: sha3_256.s
-	$(CC) $(CFLAGS) -c sha3_256.s
-	$(AR) -r $@ sha3_256.o
+jasmin_avx2.a: bench_avx2.s
+	$(CC) $(CFLAGS) -c bench_avx2.s
+	$(AR) -r $@ bench_avx2.o
 
-sha3_256.s: sha3_256.jazz
+bench_avx2.s: bench_avx2.jazz
 	$(JASMINC) -nowarning -lea $< -o $@
 
 clean:

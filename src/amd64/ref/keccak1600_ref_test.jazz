@@ -12,6 +12,16 @@ namespace A1184 {
   require "keccak1600_fixedsizes_ASIZE.jinc"
 }
 
+namespace A128 {
+  param int _ASIZE = 128;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+}
+
+namespace A1 {
+  param int _ASIZE =  1;
+  require "keccak1600_fixedsizes_ASIZE.jinc"
+}
+
 export fn _sha3_256A_A1184
 ( reg mut ptr u8[32] out
 , reg ptr u8[1184] in
@@ -25,6 +35,23 @@ export fn _sha3_256A_A1184
   st, _ = A1184::__absorb_ref(st, 0, in, SHA3, R136);
   () = #unspill(out);
   _ , out = A32::__squeeze_ref(st,out, R136);
+  return out;
+}
+
+fn _shake256_A128__A32_A1
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ stack u64[25] st_s;
+  reg ptr u64[25] st;
+   () = #spill(out);
+   st = st_s;
+  st = __state_init_ref(st);
+  st, _ = A32::__absorb_ref(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_ref(st, 32, nonce, SHAKE, R136);
+  () = #unspill(out);
+  _, out = A128::__squeeze_ref(st, out, R136);
   return out;
 }
 /*

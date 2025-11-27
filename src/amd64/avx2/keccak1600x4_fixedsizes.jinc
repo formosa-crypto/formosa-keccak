@@ -1,5 +1,5 @@
 require "keccak1600x4.jinc"
-from Keccak require "common/subreadwrite_imem.jinc"
+require "../common/subreadwrite_imem.jinc"
 
 /*
  *  REMARK: the remaining of this file is expected to be kept in sync. with its array version's
