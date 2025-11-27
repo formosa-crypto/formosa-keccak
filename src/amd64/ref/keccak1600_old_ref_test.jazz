@@ -1,0 +1,57 @@
+require "../../../submodules/old-implementation/src/amd64/ref/keccakf1600_ref.jinc"
+require "../../../submodules/old-implementation/src/amd64/ref/keccak1600_imem_ref.jinc"
+
+namespace A32 {
+  param int ASIZE = 32;
+require "../../../submodules/old-implementation/src/amd64/ref/keccak1600_array_ref_ASIZE.jinc"
+}
+
+namespace A1184 {
+  param int ASIZE = 1184;
+require "../../../submodules/old-implementation/src/amd64/ref/keccak1600_array_ref_ASIZE.jinc"
+}
+
+namespace A128 {
+  param int ASIZE = 128;
+require "../../../submodules/old-implementation/src/amd64/ref/keccak1600_array_ref_ASIZE.jinc"
+}
+
+namespace A1 {
+  param int ASIZE =  1;
+require "../../../submodules/old-implementation/src/amd64/ref/keccak1600_array_ref_ASIZE.jinc"
+}
+
+export fn _sha3_256A_A1184
+( reg mut ptr u8[32] out
+, reg ptr u8[1184] in
+) -> reg ptr u8[32]
+{ stack u64[25] st_s;
+  reg ptr u64[25] st;
+
+ () = #spill(out);
+   st = st_s;
+  st = __state_init_ref(st);
+  st, _,_ = A1184::__absorb_array_ref(st, 0, in, 0 , 1184, R136, SHA3);
+  () = #unspill(out);
+  out ,_, _ = A32::__squeeze_array_ref(out,0,32,st, R136);
+  return out;
+}
+
+fn _shake256_A128__A32_A1
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ stack u64[25] st_s;
+  reg ptr u64[25] st;
+   () = #spill(out);
+   st = st_s;
+  st = __state_init_ref(st);
+  st, _,_ = A32::__absorb_array_ref(st, 0, seed, 0, 32, R136, UNFINISHED);
+  st, _,_ = A1::__absorb_array_ref(st,0,nonce, 0,1, R136,SHAKE);
+  () = #unspill(out);
+  out,_, _ = A128::__squeeze_array_ref(out,0,128,st, R136);
+  return out;
+}
+
+
