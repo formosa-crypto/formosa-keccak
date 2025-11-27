@@ -5,7 +5,7 @@
 
 CKP    := ../../../submodules/XKCP/lib/high/Keccak
 CC     ?= /usr/bin/gcc
-CFLAGS   := -Wall -Wextra -O3 -fomit-frame-pointer \
+CFLAGS   := -Wall -Wextra -O3 -fomit-frame-pointer -mavx2 -march=native \
              -I$(CKP) \
 			 -I$(CKP)/FIPS202 \
 			 -I../../../submodules/XKCP/lib/low/KeccakP-1600/AVX2/SnP \
