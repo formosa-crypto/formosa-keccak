@@ -1,5 +1,5 @@
 
-require "../common/keccakf1600_generic.jinc"
+require "../../common/keccakf1600_generic.jinc"
 
 /*
 u256[24] KECCAK1600_RC_AVX2 =
