@@ -1,0 +1,23 @@
+
+require "../../src/amd64/avx2/keccakf1600x4.jinc"
+
+u256 ROL56 = 0x181F1E1D1C1B1A191017161514131211080F0E0D0C0B0A090007060504030201;
+u256 ROL8  = 0x1E1D1C1B1A19181F16151413121110170E0D0C0B0A09080F0605040302010007;
+
+export fn __keccakf1600_avx2x4_A(reg mut ptr u256[25] state_in_out) -> reg ptr u256[25] {
+   state_in_out = state_in_out;
+   state_in_out = _keccakf1600_avx2x4(state_in_out);
+   return state_in_out;
+}
+
+export fn _keccakf1600_4x_round_A(reg ptr u256[25] e a, reg u256 rc) -> reg ptr u256[25]
+{
+   reg u256 t, r8, r56;
+   r8 = ROL8;
+   r56 = ROL56;
+   e = e; a=a; rc=rc;
+   e = _keccakf1600_4x_pround(e, a,r8, r56);
+   t = rc ^ e[0];
+   e[0] = t;
+   return e;
+}
