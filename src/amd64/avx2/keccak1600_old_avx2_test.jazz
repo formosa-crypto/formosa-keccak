@@ -44,7 +44,7 @@ fn _shake256_A128__A32_A1
 { reg u256[7] st;
   stack u64[25] pst_s;
   reg ptr u64[25] pst;
-  reg ui64 offset;
+  reg u64 offset;
   pst = pst_s;
   pst, st = __pstate_init_avx2(pst);
   offset = 0;
@@ -67,7 +67,7 @@ fn _shake256x4_A128__A32_A1
    , reg ptr u8[128] /* out3 */
 { stack u256[25] st_s;
   reg ptr u256[25] st;
-  reg ui64 offset;
+  reg u64 offset;
   () = #spill(out0, out1, out2, out3);
   st = st_s;
   st = __state_init_avx2x4(st);
