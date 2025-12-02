@@ -5,7 +5,7 @@
 
 
 #define RUNS 10          
-#define LOOPS 5        
+#define LOOPS 100        
 #define TIMINGS 1000     
 #define OP 6             
 
