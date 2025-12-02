@@ -6,6 +6,8 @@ u256 ROL8  = 0x1E1D1C1B1A19181F16151413121110170E0D0C0B0A09080F0605040302010007;
 require "../../submodules/old-implementation/src/amd64/avx2/keccak1600_avx2.jinc"
 require "../../submodules/old-implementation/src/amd64/avx2/keccak1600_avx2x4.jinc"
 require "../../submodules/old-implementation/src/amd64/avx2/keccak1600_imem_avx2.jinc"
+require "../../src/amd64/avx2/keccakf1600x4_pround_inlined.jinc"
+
 
 namespace A32 {
   param int ASIZE = 32;
@@ -13,9 +15,56 @@ namespace A32 {
   require "../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
+inline fn __keccakf1600_avx2x4_mix(reg ptr u256[25] a) -> reg ptr u256[25]
+{
+  reg ptr u64[24] RC;
+
+  stack u256[25] s_e;
+  reg ptr u256[25] e;
+
+  reg u256 rc r8 r56 t;
+  reg u64 c;
+
+  RC = KECCAK1600_RC;
+  e = s_e;
+  r8 = ROL8;
+  r56 = ROL56;
+
+  c = 0;
+  while(c < KECCAK_ROUNDS)
+  {
+    //rc = RC.[c];
+    rc = #VPBROADCAST_4u64(RC[c]);
+
+    e = _keccakf1600_4x_pround(e, a, r8, r56);
+    t = rc ^ e[0];
+    e[0] = t;
+
+    a, e = #swap(e, a);
+
+    //rc = RC.[(uint) c + 32];
+    rc = #VPBROADCAST_4u64(RC[(uint) c+1]);
+    a = _keccakf1600_4x_pround(a, e, r8, r56);
+    t = rc ^ a[0];
+    a[0] = t;
+
+    a, e = #swap(e, a);
+
+    c += 2;
+  } 
+
+  return a;
+}
+
+fn _keccakf1600_avx2x4_mix(reg ptr u256[25] a) -> reg ptr u256[25]
+{
+  a = __keccakf1600_avx2x4_mix(a);
+  return a;
+}
+
 export fn __keccakf1600_avx2x4_B(reg mut ptr u256[25] state_in_out) -> reg ptr u256[25] {
    state_in_out = state_in_out;
-   state_in_out = _keccakf1600_avx2x4(state_in_out);
+   state_in_out = _keccakf1600_avx2x4_mix(state_in_out);
    return state_in_out;
 }
 

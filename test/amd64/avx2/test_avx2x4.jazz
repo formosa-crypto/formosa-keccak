@@ -122,30 +122,6 @@ namespace TEST_ONESHOT {
       return state;
     }
   
-  export fn addstate_bcast_avx2x4
-  ( reg mut ptr u256[25] state
-  , reg const ptr u8[_ASIZE] buf) -> reg ptr u256[25] /* st */
-  {
-    inline int AT;
-    state = state; buf = buf;
-    AT = 0;
-    state,_,_ = __addstate_bcast_avx2x4(state, AT, buf, 0, _ASIZE, TRAIL);
-    return state;
-  }
-
-
-  export fn dumpstate_avx2x4
-  ( reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3,
-    reg const ptr u256[25] state
-  ) -> reg ptr u8[_ASIZE] /* buf0 */
-     , reg ptr u8[_ASIZE] /* buf1 */
-     , reg ptr u8[_ASIZE] /* buf2 */
-     , reg ptr u8[_ASIZE] /* buf3 */
-  {
-    state = state; buf0 = buf0; buf1 = buf1; buf2 = buf2; buf3 = buf3;
-    buf0, buf1, buf2, buf3,_ = __dumpstate_avx2x4(buf0, buf1, buf2, buf3, 0, _ASIZE, state);
-    return buf0, buf1, buf2, buf3;
-  }
 
   export fn absorb_avx2x4
   ( reg mut ptr u256[25] state
