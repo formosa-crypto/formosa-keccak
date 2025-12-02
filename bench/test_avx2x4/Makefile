@@ -14,7 +14,7 @@ $(TARGET): bench_permut.c jasmin_new_avx2.a jasmin_old_avx2.a | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./../common/ new_permut.s old_permut.s $<
 
 run: $(TARGET)
-	./$(TARGET)
+	./$(TARGET) > $(TARGET).out
 
 $(BIN): ; @mkdir -p $@
 
