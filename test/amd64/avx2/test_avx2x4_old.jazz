@@ -49,7 +49,7 @@ namespace TEST_AT {
 	state, AT,_ = __absorb_bcast_array_avx2x4(state, AT, b, 0, ASIZE, RATE8,0);
       }
       b = buf[(BIGSIZE/SIZE-1)*ASIZE:ASIZE];
-      state, AT,_ = __absorb_bcast_array_avx2x4(state, AT, b, 0, ASIZE, TRAIL, RATE8);
+      state, AT,_ = __absorb_bcast_array_avx2x4(state, AT, b, 0, ASIZE, RATE8,TRAIL);
       return state;
     }
 
@@ -88,6 +88,43 @@ namespace TEST_ONESHOT {
   param int ASIZE = BIGSIZE;
 
   require "../../../submodules/old-implementation/src/amd64/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+
+  export fn absorb_bcast_avx2x4
+    ( reg mut ptr u256[25] state
+    , reg const ptr u8[ASIZE] buf
+    ) -> reg ptr u256[25] /* st */
+    {
+      inline int AT;
+      state = state;
+      buf = buf;
+      AT = 0;
+	    state, AT,_ = __absorb_bcast_array_avx2x4(state, AT, buf, 0, ASIZE, RATE8,TRAIL);
+      return state;
+    }
+  
+  export fn addstate_bcast_avx2x4
+  ( reg mut ptr u256[25] state
+  , reg const ptr u8[ASIZE] buf) -> reg ptr u256[25] /* st */
+  {
+    inline int AT;
+    state = state; buf = buf;
+    AT = 0;
+    state,_,_ = __addstate_bcast_array_avx2x4(state, AT, buf, 0, ASIZE, TRAIL);
+    return state;
+  }
+
+  export fn dumpstate_avx2x4
+  ( reg mut ptr u8[ASIZE] buf0 buf1 buf2 buf3,
+    reg const ptr u256[25] state
+  ) -> reg ptr u8[ASIZE] /* buf0 */
+     , reg ptr u8[ASIZE] /* buf1 */
+     , reg ptr u8[ASIZE] /* buf2 */
+     , reg ptr u8[ASIZE] /* buf3 */
+  {
+    state = state; buf0 = buf0; buf1 = buf1; buf2 = buf2; buf3 = buf3;
+    buf0, buf1, buf2, buf3,_ = __dumpstate_array_avx2x4(buf0, buf1, buf2, buf3, 0, ASIZE, state);
+    return buf0, buf1, buf2, buf3;
+  }
 
   export fn absorb_avx2x4
   ( reg mut ptr u256[25] state
