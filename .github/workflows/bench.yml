@@ -23,7 +23,8 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             filter-syscalls = false
-      - run: nix-shell --arg full false --run "make -C bench/test_avx2x4 run"
+      - run: nix-shell --arg full false --run "make -C bench/test_avx2x4 run >> $GITHUB_STEP_SUMMARY"
+          
     benchmark:
         name: Benchmarks
         runs-on: ubuntu-latest

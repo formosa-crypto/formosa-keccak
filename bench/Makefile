@@ -1,6 +1,6 @@
 # --------------------------------------------------------------------
 CC ?= clang-14
-CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2 -march=native
+CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2
 
 BIN ?= bin
 
