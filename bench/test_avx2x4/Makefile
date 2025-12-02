@@ -4,7 +4,6 @@ CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2 -march=native
 
 BIN ?= bin
 TARGET = $(BIN)/bench_permut
-JASMINC ?= ~/Desktop/Work/jasmin_branches/safety_assert2/jasmin/compiler/jasminc
 
 .PHONY: all run clean
 
