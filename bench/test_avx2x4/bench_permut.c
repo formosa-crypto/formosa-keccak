@@ -50,7 +50,6 @@ int main(void)
   p_state_A = alignedcalloc(&_p_state_A, len_keccak * TIMINGS);
   p_state_B = alignedcalloc(&_p_state_B, len_keccak * TIMINGS);
 
-  printf("Running benchmark for %d runs, %d loops, and %d timings...\n", RUNS, LOOPS, TIMINGS);
   printf("|    __keccakf1600_avx2x4_new  |  __keccakf1600_avx2x4_old   |  _keccakf1600_4x_round_new |  _keccakf1600_4x_round_old |\n");
   printf("|------------------------|------------------------|-------------------------|-------------------------|\n");
 
