@@ -27,7 +27,26 @@ jobs:
       - run: |
           echo "## AVX2x4 Permutation Test Output" >> $GITHUB_STEP_SUMMARY
           cat bench/test_avx2x4/bin/bench_permut.out >> $GITHUB_STEP_SUMMARY
-
+    test-avx2x4:
+      name: Test AVX2x4 Permutations
+      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+      steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive           
+      - uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            filter-syscalls = false
+      - run: nix-shell --arg full false --run "make -C bench/compare_old/avx2 run"
+      - run: |
+          echo "## AVX2x4 Test Output" >> $GITHUB_STEP_SUMMARY
+          cat bench/compare_old/avx2/bin/bench_avx2x4.out >> $GITHUB_STEP_SUMMARY
+          echo "## AVX2x4 Old Test Output" >> $GITHUB_STEP_SUMMARY
+          cat bench/compare_old/avx2/bin/bench_old_avx2x4.out >> $GITHUB_STEP_SUMMARY
     benchmark:
         name: Benchmarks
         runs-on: ubuntu-latest
