@@ -62,14 +62,14 @@ fn _keccakf1600_avx2x4_mix(reg ptr u256[25] a) -> reg ptr u256[25]
   return a;
 }
 
-export fn __keccakf1600_avx2x4_B(reg mut ptr u256[25] state_in_out) -> reg ptr u256[25] {
+export fn __keccakf1600_avx2x4_C(reg mut ptr u256[25] state_in_out) -> reg ptr u256[25] {
    state_in_out = state_in_out;
    state_in_out = _keccakf1600_avx2x4_mix(state_in_out);
    return state_in_out;
 }
 
 
-export fn __keccakf1600_avx2x4_C(reg mut ptr u256[25] state_in_out) -> reg ptr u256[25] {
+export fn __keccakf1600_avx2x4_B(reg mut ptr u256[25] state_in_out) -> reg ptr u256[25] {
    state_in_out = state_in_out;
    state_in_out = _keccakf1600_avx2x4(state_in_out);
    return state_in_out;
