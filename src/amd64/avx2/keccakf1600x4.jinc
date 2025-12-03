@@ -18,7 +18,7 @@ inline fn __keccakf1600_avx2x4
   reg ptr u256[25] e;
 
   reg u256 rc r8 r56 t;
-  reg u64 c;
+  reg ui64 c;
 
   RC = KECCAK1600_RC;
   e = s_e;
@@ -36,7 +36,7 @@ inline fn __keccakf1600_avx2x4
 
     a, e = #swap(e, a);
 
-    rc = #VPBROADCAST_4u64(RC[(uint)c+1]);
+    rc = #VPBROADCAST_4u64(RC[c+1]);
     a = _keccakf1600_4x_pround(a, e, r8, r56);
     t = rc ^ a[0];
     a[0] = t;
