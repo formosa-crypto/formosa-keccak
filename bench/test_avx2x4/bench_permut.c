@@ -10,7 +10,7 @@
 #define RUNS 10          
 #define LOOPS 3        
 #define TIMINGS 10000     
-#define OP 4             
+#define OP 5             
 
 #define LEN_KECCAK 800 
 
@@ -22,6 +22,7 @@
 
 extern void __keccakf1600_avx2x4_A(uint8_t state[LEN_KECCAK]);
 extern void __keccakf1600_avx2x4_B(uint8_t state[LEN_KECCAK]);
+extern void __keccakf1600_avx2x4_C(uint8_t state[LEN_KECCAK]);
 
 extern void _keccakf1600_4x_round_A(uint8_t e[LEN_KECCAK],uint8_t a[LEN_KECCAK], uint8_t rc);
 extern void _keccakf1600_4x_round_B(uint8_t e[LEN_KECCAK],uint8_t a[LEN_KECCAK], uint8_t rc);
@@ -35,6 +36,7 @@ int main(void)
 
   uint64_t cycles_A[RUNS];
   uint64_t cycles_B[RUNS];
+  uint64_t cycles_C[RUNS];
   uint64_t cycles_round_A[RUNS];
   uint64_t cycles_round_B[RUNS];
 
@@ -50,8 +52,8 @@ int main(void)
   p_state_A = alignedcalloc(&_p_state_A, len_keccak * TIMINGS);
   p_state_B = alignedcalloc(&_p_state_B, len_keccak * TIMINGS);
 
-  printf("|    __keccakf1600_avx2x4_new  |  __keccakf1600_avx2x4_old   |  _keccakf1600_4x_round_new |  _keccakf1600_4x_round_old |\n");
-  printf("|------------------------|------------------------|-------------------------|-------------------------|\n");
+  printf("|    __keccakf1600_avx2x4_new  |  __keccakf1600_avx2x4_old   |  __keccakf1600_avx2x4_mix   |  _keccakf1600_4x_round_new |  _keccakf1600_4x_round_old |\n");
+  printf("|------------------------|------------------------|-------------------------|-------------------------|-------------------------|\n");
 
   for(run = 0; run < RUNS; run++)
   {
@@ -74,6 +76,15 @@ int main(void)
         __keccakf1600_avx2x4_B(current_state_B); 
       }
       results[1][loop] = cpucycles_median(cycles, TIMINGS);
+      
+      current_state_A = p_state_A;
+
+      for (i = 0; i < TIMINGS; i++, current_state_A += len_keccak)
+      { 
+        cycles[i] = cpucycles();
+        __keccakf1600_avx2x4_C(current_state_A); 
+      }
+      results[2][loop] = cpucycles_median(cycles, TIMINGS);
 
       current_state_A = p_state_A;
       current_state_B = p_state_B;
@@ -83,7 +94,7 @@ int main(void)
         cycles[i] = cpucycles();
         _keccakf1600_4x_round_A(current_state_A,current_state_B, 0x01); 
       }
-      results[2][loop] = cpucycles_median(cycles, TIMINGS); 
+      results[3][loop] = cpucycles_median(cycles, TIMINGS); 
 
       current_state_A = p_state_A;
       current_state_B = p_state_B;
@@ -93,7 +104,7 @@ int main(void)
         cycles[i] = cpucycles();
         _keccakf1600_4x_round_B(current_state_A,current_state_B, 0x01); 
       }
-      results[3][loop] = cpucycles_median(cycles, TIMINGS);
+      results[4][loop] = cpucycles_median(cycles, TIMINGS);
       
     }
     
@@ -101,21 +112,24 @@ int main(void)
     median_fr(results);
     cycles_A[run] = results[0][0];
     cycles_B[run] = results[1][0];
-    cycles_round_A[run] = results[2][0];
-    cycles_round_B[run] = results[3][0];
+    cycles_C[run] = results[2][0];
+    cycles_round_A[run] = results[3][0];
+    cycles_round_B[run] = results[4][0];
   }
 
 
   qsort(cycles_A, RUNS, sizeof(uint64_t), cmp_uint64);
   qsort(cycles_B, RUNS, sizeof(uint64_t), cmp_uint64);
+  qsort(cycles_C, RUNS, sizeof(uint64_t), cmp_uint64);
   qsort(cycles_round_A, RUNS, sizeof(uint64_t), cmp_uint64);
   qsort(cycles_round_B, RUNS, sizeof(uint64_t), cmp_uint64);
   
 
    for(run = 0; run < RUNS; run++)
   {
-    printf("| %20" PRIu64 " | %20" PRIu64 " |  %20" PRIu64 " |  %20" PRIu64 " | \n",
+    printf("| %20" PRIu64 " | %20" PRIu64 " |  %20" PRIu64 " |  %20" PRIu64 " |  %20" PRIu64 " | \n",
       cycles_A[run],
+      cycles_B[run],
       cycles_B[run],
       cycles_round_A[run],
       cycles_round_B[run]);
