@@ -8,8 +8,8 @@
 
 
 #define RUNS 10          
-#define LOOPS 100        
-#define TIMINGS 1000     
+#define LOOPS 3        
+#define TIMINGS 10000     
 #define OP 4             
 
 #define LEN_KECCAK 800 
