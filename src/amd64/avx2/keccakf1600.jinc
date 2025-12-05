@@ -302,6 +302,7 @@ fn _keccakf1600_st25_avx2
   return st25;
 }
 
+/* for testing:
 export fn keccakf1600_st25_avx2
 ( reg ptr u64[25] st
 ) -> reg ptr u64[25]
@@ -310,6 +311,7 @@ export fn keccakf1600_st25_avx2
   st = _keccakf1600_st25_avx2(st);
   return st;
 }
+*/
 
 /* for testing:
 export fn testF(reg ptr u256[7] state) -> reg ptr u256[7] {
