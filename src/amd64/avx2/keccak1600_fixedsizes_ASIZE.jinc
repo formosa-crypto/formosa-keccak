@@ -40,32 +40,43 @@ ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + _LEN}
 
   DELTA = 0;
 
-  DELTA, _LEN, _TRAILB, AT, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 0, AT);
-  t128_0 = (128u) t64_1;
-  r0 = #VPBROADCAST_4u64(t128_0);
-  st[0] ^= r0;
-
-  DELTA, _LEN, _TRAILB, AT, r1 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 8, AT);
-  st[1] ^= r1;
-
-  DELTA, _LEN, _TRAILB, AT, t64_2 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 40, AT);
-  t128_1 = (128u) t64_2;
-  t128_2 = #set0_128();
-  if ( 0 < _LEN || _TRAILB != 0) {
-    DELTA, _LEN, _TRAILB, AT, r3 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 48, AT);
-    DELTA, _LEN, _TRAILB, AT, t64_3 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 80, AT);
-    t128_2 = (128u) t64_3;
-    DELTA, _LEN, _TRAILB, AT, r4 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 88, AT);
-    DELTA, _LEN, _TRAILB, AT, t64_4 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 120, AT);
-    t128_1 = #VPINSR_2u64(t128_1, t64_4, 1);
-    DELTA, _LEN, _TRAILB, AT, r5 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 128, AT);
-    DELTA, _LEN, _TRAILB, AT, t64_5 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 160, AT);
-    t128_2 = #VPINSR_2u64(t128_2, t64_5, 1);
-    DELTA, _LEN, _TRAILB, AT, r6 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 168, AT);
-    st = __addstate_r3456_avx2( st, r3, r4, r5, r6);
+  if (AT < 8) {
+    if (AT==0 && 8<=_LEN) {
+      r0 = #VPBROADCAST_4u64(buf.[:u64 (64u) offset+DELTA]);
+      DELTA += 8;
+    } else {
+      DELTA, _LEN, _TRAILB, AT, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 0, AT);
+      t128_0 = (128u) t64_1;
+      r0 = #VPBROADCAST_4u64(t128_0);
+    }
+    st[0] ^= r0;
   }
-  r2 = (2u128)[t128_1, t128_2];
-  st[2] ^= r2;
+
+  if (AT < 40 && (0 < _LEN || _TRAILB != 0)) {
+    DELTA, _LEN, _TRAILB, AT, r1 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 8, AT);
+    st[1] ^= r1;
+  }
+
+  if (0 < _LEN || _TRAILB != 0) {
+    DELTA, _LEN, _TRAILB, AT, t64_2 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 40, AT);
+    t128_1 = (128u) t64_2;
+    t128_2 = #set0_128();
+    if ( 0 < _LEN || _TRAILB != 0) {
+      DELTA, _LEN, _TRAILB, AT, r3 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 48, AT);
+      DELTA, _LEN, _TRAILB, AT, t64_3 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 80, AT);
+      t128_2 = (128u) t64_3;
+      DELTA, _LEN, _TRAILB, AT, r4 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 88, AT);
+      DELTA, _LEN, _TRAILB, AT, t64_4 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 120, AT);
+      t128_1 = #VPINSR_2u64(t128_1, t64_4, 1);
+      DELTA, _LEN, _TRAILB, AT, r5 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 128, AT);
+      DELTA, _LEN, _TRAILB, AT, t64_5 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 160, AT);
+      t128_2 = #VPINSR_2u64(t128_2, t64_5, 1);
+      DELTA, _LEN, _TRAILB, AT, r6 = __a_ilen_read_upto32_at(buf, offset, DELTA, _LEN, _TRAILB, 168, AT);
+      st = __addstate_r3456_avx2( st, r3, r4, r5, r6);
+    }
+    r2 = (2u128)[t128_1, t128_2];
+    st[2] ^= r2;
+  }
   offset += DELTA;
   return st, AT, offset;
 }
