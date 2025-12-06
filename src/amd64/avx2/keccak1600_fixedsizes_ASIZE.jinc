@@ -44,6 +44,8 @@ ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + _LEN}
     if (AT==0 && 8<=_LEN) {
       r0 = #VPBROADCAST_4u64(buf.[:u64 (64u) offset+DELTA]);
       DELTA += 8;
+      LEN -= 8;
+      AT = 8;
     } else {
       DELTA, _LEN, _TRAILB, AT, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, _LEN, _TRAILB, 0, AT);
       t128_0 = (128u) t64_1;
