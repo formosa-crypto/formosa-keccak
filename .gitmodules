@@ -1,0 +1,4 @@
+[submodule "submodules/crypto-specs"]
+	path = submodules/crypto-specs
+	url = ../crypto-specs.git
+	branch = bdep_prune
