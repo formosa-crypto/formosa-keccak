@@ -11,14 +11,15 @@ endif
 ifneq ($(filter %86,$(UNAME_P)),)
  GCC ?= gcc
 endif
-ifneq ($(filter arm%,$(UNAME_P)),)
+ifneq ($(filter arm,$(UNAME_P)),)
  GCC ?= arch -x86_64 gcc
 endif
 
 PWD = $(shell pwd)
 SRCDIR = $(PWD)/../../../src/amd64
 
-JASMINC ?= jasminc -I Keccak=$(SRCDIR)
+JOPTS   ?= "-lazy-regalloc"
+JASMINC ?= jasminc $(JOPTS) -I Keccak=$(SRCDIR)
 
 
 .DEFAULT_GOAL := all

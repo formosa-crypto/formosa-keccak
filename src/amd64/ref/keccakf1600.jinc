@@ -177,7 +177,6 @@ fn _pround_ref
   { b = __rol_sum_ref(a, d, y);
     e = __set_row_ref(e, b, y);
   }
-//  e[0] ^= rc;
 
   return e;
 }
@@ -187,42 +186,29 @@ inline fn __keccakf1600_ref
 ) -> reg ptr u64[25]
 {
   reg ptr u64[24] RC;
-//  stack ptr u64[24] s_RC;
   stack u64[25] s_e;
   reg ptr u64[25] e;
   reg ui64 c;
-//  stack ui64 s_c;
   reg u64 rc;
-//  stack u64 s_rc;
 
-//  RC = KECCAK1600_RC;
-//  s_RC = RC;
   e = s_e;
 
   c = 0;
   while
   {
+    () = #spill(c);
     e = _pround_ref(e, a);
     a, e = #swap(e, a);
-//    s_c = c;
-
-//    RC = s_RC;
-//    rc = RC[(uint) c];
     RC = KECCAK1600_RC;
     rc = RC[c];
     e[0] ^= rc;
-//    s_rc = rc;
 
     a = _pround_ref(a, e);
     a, e = #swap(e, a);
-//    RC = s_RC;
-//    rc = RC[(uint) c + 1];
     RC = KECCAK1600_RC;
     rc = RC[c+1];
     a[0] ^= rc;
-//    s_rc = rc;
-
-//    c = s_c;
+    () = #unspill(c);
     c += 2;
   } (c < KECCAK_ROUNDS - 1)
 

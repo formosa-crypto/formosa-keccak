@@ -191,9 +191,9 @@ inline fn __squeeze_m_ref
 
   i = 0;
   while (i < _LEN/_RATE8) {
-    () = #spill(buf);
+    () = #spill(buf,i);
     st = _keccakf1600_ref(st);
-    () = #unspill(buf);
+    () = #unspill(buf,i);
     buf = __dumpstate_m_ref(buf, _RATE8, st);
     i += 1;
   }
