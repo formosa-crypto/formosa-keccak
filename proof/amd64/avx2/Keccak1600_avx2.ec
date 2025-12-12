@@ -18,15 +18,9 @@ from CryptoSpecs require import JWordList.
 from CryptoSpecs require import Keccakf1600_Spec FIPS202_SHA3_Spec.
 from CryptoSpecs require export Keccak1600_Spec.
 
-from JazzEC require import Jazz_avx2.
-
+from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import WArray200.
 from JazzEC require import Array25 Array7.
-
-(*
-from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
-from CryptoSpecs require import Keccakf1600_Spec Keccak1600_Spec FIPS202_SHA3_Spec.
-*)
 
 require import Avx2_extra.
 
@@ -174,13 +168,12 @@ u64_to_u256
 *)
 
 
-lemma state_init_avx2_ll:
- islossless M.__state_init_avx2.
+lemma state_init_avx2_ll: islossless M.__state_init_avx2.
 proof.
 proc.
 while true (7-i).
  by move=> z; auto => /> /#.
-auto => /#.
+by auto => /#.
 qed.
 
 hoare state_init_avx2_h:
@@ -200,6 +193,7 @@ phoare state_init_avx2_ph:
  ] = 1%r.
 proof. by conseq state_init_avx2_ll state_init_avx2_h. qed.
 
+(*
 lemma pstate_init_avx2_ll:
  islossless M.__pstate_init_avx2.
 proof.
@@ -228,6 +222,7 @@ phoare pstate_init_avx2_ph _r8:
  ==> pabsorb_spec_avx2 _r8 [] res.`1 res.`2
  ] = 1%r.
 proof. by conseq pstate_init_avx2_ll (pstate_init_avx2_h _r8). qed.
+*)
 
 (*
 perm_reg3456_avx2
@@ -240,6 +235,8 @@ unperm_reg3456_avx2
 (*
 state_from_pstate_avx2
 *)
+
+(*
 lemma state_from_pstate_avx2_ll: islossless M.__state_from_pstate_avx2
 by islossless.
 
@@ -257,7 +254,7 @@ phoare state_from_pstate_avx2_ph _pst:
  ==> res = stavx2_from_st25 _pst
  ] = 1%r.
 proof. by conseq state_from_pstate_avx2_ll (state_from_pstate_avx2_h _pst). qed.
-
+*)
 (*
 addstate_r3456_avx2
 *)
@@ -265,6 +262,8 @@ addstate_r3456_avx2
 (*
 addpst01_avx2
 *)
+
+(*
 lemma addpst01_avx2_ll: islossless M.__addpst01_avx2
  by islossless.
 
@@ -294,10 +293,12 @@ phoare addpst01_avx2_ph _pst _stavx2:
   /\ res.[6] = _stavx2.[6]
  ] = 1%r.
 proof. by conseq addpst01_avx2_ll (addpst01_avx2_h _pst _stavx2). qed.
+*)
 
 (*
 addpst23456_avx2
 *)
+(*
 lemma addpst23456_avx2_ll: islossless M.__addpst23456_avx2
  by islossless.
 
@@ -327,10 +328,12 @@ phoare addpst23456_avx2_ph _pst _stavx2:
   /\ res.[6] = _stavx2.[6] `^` u256_pack4 _pst.[6]  _pst.[12] _pst.[18] _pst.[24]
  ] = 1%r.
 proof. by conseq addpst23456_avx2_ll (addpst23456_avx2_h _pst _stavx2). qed.
+*)
 
 (*
 addpstate_avx2
 *)
+(*
 lemma addpstate_avx2_ll: islossless M._addpstate_avx2
 by islossless.
 
@@ -348,6 +351,7 @@ phoare addpstate_avx2_ph _pst _stavx2:
  ==> res = stavx2_from_st25 (addstate _pst (stavx2_to_st25 _stavx2))
  ] = 1%r.
 proof. by conseq addpstate_avx2_ll (addpstate_avx2_h _pst _stavx2). qed.
+*)
 
 (*
 stavx2_pos_avx2
@@ -361,15 +365,16 @@ lemma addratebit_avx2_ll: islossless M.__addratebit_avx2
 
 hoare addratebit_avx2_h _r8 _stavx2:
  M.__addratebit_avx2
- : st = _stavx2 /\ rATE8=_r8
+ : st = _stavx2 /\ rATE_8=_r8
  ==> res = stavx2_from_st25 (addratebit _r8 (stavx2_to_st25 _stavx2)).
 proof.
+proc.
 admit (*BDEP*).
 qed.
 
 phoare addratebit_avx2_ph _r8 _stavx2:
  [ M.__addratebit_avx2
- : st = _stavx2 /\ rATE8=_r8
+ : st = _stavx2 /\ rATE_8=_r8
  ==> res = stavx2_from_st25 (addratebit _r8 (stavx2_to_st25 _stavx2))
  ] = 1%r.
 proof. by conseq addratebit_avx2_ll (addratebit_avx2_h _r8 _stavx2). qed.

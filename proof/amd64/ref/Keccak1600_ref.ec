@@ -17,7 +17,7 @@ from CryptoSpecs require import JWordList.
 from CryptoSpecs require export Keccakf1600_Spec Keccak1600_Spec.
 from CryptoSpecs require import Bindings.
 
-from JazzEC require import Jazz_ref.
+from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import WArray200.
 from JazzEC require import Array25.
 
@@ -93,10 +93,9 @@ lemma state_init_ref_ll:
  islossless M.__state_init_ref.
 proof.
 proc.
-while true (25-to_uint i).
- move=> z; auto => /> &m; rewrite ultE of_uintK /= => Hi.
- by rewrite to_uintD_small /#.
-by auto => /> i Hi; rewrite ultE of_uintK /#.
+while true (25- i).
+ by move=> z; auto => /> &m Hi /#.
+by auto => /> i Hi /#.
 qed.
 
 hoare state_init_ref_h _r8:
@@ -107,12 +106,11 @@ proof.
 proc.
 conseq (:_ ==> st=st0) => //=.
  by move=> ? st ->; apply (pabsorb_spec_ref_nil _r8).
-while (0 <= to_uint i <= 25 /\ forall k, 0 <= k < to_uint i => st.[k] = z64).
- auto => /> &m Hi1 _ IH; rewrite ultE of_uintK /= => Hi2.
- rewrite to_uintD_small 1:/# /=; split; first smt().
- by move => k Hk1 Hk2; case: (k=to_uint i{m}) => C; rewrite get_setE /#.
+while (0 <= i <= 25 /\ forall k, 0 <= k < i => st.[k] = z64).
+ auto => /> &m Hi1 _ IH Hi2; split; first smt().
+ by move => k Hk1 Hk2; case: (k=i{m}) => C; rewrite get_setE /#.
 auto => /> &m Hr1 Hr2; split; first smt().
-move=> i st; rewrite ultE of_uintK /= => ???; have->: to_uint i=25 by smt().
+move=> i st ???; have->: i=25 by smt().
 move=> H; rewrite tP /st0 => j Hj.
 by rewrite createiE 1:// H.
 qed.
@@ -124,13 +122,12 @@ phoare state_init_ref_ph _r8:
  ] = 1%r.
 proof. by conseq state_init_ref_ll (state_init_ref_h _r8). qed.
 
-
 lemma addratebit_ref_ll: islossless M.__addratebit_ref
  by islossless.
 
 hoare addratebit_ref_h _r8 _st:
  M.__addratebit_ref
- : st = _st /\ rATE8=_r8
+ : st = _st /\ _RATE8=_r8
  ==> res = addratebit _r8 _st.
 proof.
 admit (* BDEP? *).
@@ -138,7 +135,7 @@ qed.
 
 phoare addratebit_ref_ph _r8 _st:
  [ M.__addratebit_ref
- : st = _st /\ rATE8=_r8
+ : st = _st /\ _RATE8=_r8
  ==> res = addratebit _r8 _st
  ] = 1%r.
 proof. by conseq addratebit_ref_ll (addratebit_ref_h _r8 _st). qed.

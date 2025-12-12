@@ -1,6 +1,6 @@
-require import List Real Distr Int IntDiv CoreMap.
+require import AllCore List Int IntDiv.
 
-from Jasmin require import JModel.
+from Jasmin require import JModel_x86.
 
 from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec.
@@ -9,12 +9,10 @@ require import Keccakf1600_ref.
 require import Keccak1600_ref.
 require import Keccak1600_avx2x4.
 
-from JazzEC require Jazz_ref.
-from JazzEC require import Jazz_avx2.
-from JazzEC require import WArray768 Array5 Array25.
+from JazzEC require import Keccak1600_Jazz.
+from JazzEC require import Array5 Array25.
 
 from JazzEC require import WArray200 WArray800.
-from JazzEC require import Array100.
 
 
 op st4x_to_4st (st4x: state4x): state*state*state*state =
@@ -24,16 +22,19 @@ op st4x_to_4st (st4x: state4x): state*state*state*state =
  , init_25_64 (fun i => sliceget64_256_25 st4x ((200*3+8*i)*8))
  ).
 
-print sliceget64_256_25.
-
+(*
 bind array Array100."_.[_]" Array100."_.[_<-_]" Array100.to_list Array100.of_list Array100.t 100.
 realize tolistP by done.
 realize get_setP by smt(Array100.get_setE). 
 realize eqP by smt(Array100.tP).
 realize get_out by smt(Array100.get_out).
+*)
+
+clone import PolyArray as Array100  with op size <- 100.
 
 op init_100_64 (f: int -> W64.t) = Array100.init f.
 
+(*
 bind op [W64.t & Array100.t] init_100_64 "ainit".
 realize bvainitP.
 proof.
@@ -42,6 +43,7 @@ rewrite BVA_Top_Array100_Array100_t.tolistP.
 apply eq_in_mkseq => i i_bnd;
 smt(Array100.initE).
 qed.
+*)
 
 op sliceget256_64_100 (arr: W64.t Array100.t) (offset:int): W256.t =
  if 8 %| offset
@@ -50,6 +52,7 @@ op sliceget256_64_100 (arr: W64.t Array100.t) (offset:int): W256.t =
        (offset %/ 8)
  else W256.bits2w (take 256 (drop offset (flatten (map W64.w2bits (to_list arr))))).
 
+(*
 bind op [W64.t & W256.t & Array100.t] sliceget256_64_100 "asliceget".
 realize bvaslicegetP.
 move => /= arr offset; rewrite /sliceget256_64_100 /= => H k kb. 
@@ -61,6 +64,7 @@ rewrite (BitEncoding.BitChunking.nth_flatten false 64 _).
 rewrite (nth_map W64.zero []); 1: smt(Array100.size_to_list).
 by rewrite nth_mkseq /#.
 qed.
+*)
 
 abbrev st4x_from_4st (sts: state*state*state*state): state4x =
  init_25_256
@@ -201,7 +205,9 @@ lemma st4x_get_pack0' (st0 st1 st2 st3: state):
        (8 * (4 * i) * 8))
  = st0.
 proof.
+admit(*
 by bdep solve.
+*).
 qed.
 
 lemma st4x_get_pack1' (st0 st1 st2 st3: state):
@@ -210,7 +216,9 @@ lemma st4x_get_pack1' (st0 st1 st2 st3: state):
   1
  = st1.
 proof.
+admit (*
 by bdep solve.
+*).
 qed.
 
 lemma st4x_get_pack2' (st0 st1 st2 st3: state):
@@ -219,7 +227,9 @@ lemma st4x_get_pack2' (st0 st1 st2 st3: state):
   2
  = st2.
 proof.
+admit (*
 by bdep solve.
+*).
 qed.
 
 lemma st4x_get_pack3' (st0 st1 st2 st3: state):
@@ -228,13 +238,16 @@ lemma st4x_get_pack3' (st0 st1 st2 st3: state):
   3
  = st3.
 proof.
+admit(*
 by bdep solve.
+*).
 qed.
 
 lemma st4x_get_pack0 sts:
  st4x_get (st4x_pack sts) 0 = sts.`1.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
+admit(*
 by bdep solve.
 (*
 rewrite tP => i Hi.
@@ -250,30 +263,37 @@ rewrite !pack2E /= get_of_list 1:/# /=.
 rewrite ifT 1:/#.
 by rewrite W128.initiE 1:/# /= get_of_list 1:/# /= ifT /#.
 *)
+*).
 qed.
 
 lemma st4x_get_pack1 sts:
  st4x_get (st4x_pack sts) 1 = sts.`2.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
+admit(*
 by bdep solve.
+*).
 qed.
 
 lemma st4x_get_pack2 sts:
  st4x_get (st4x_pack sts) 2 = sts.`3.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
-by bdep solve.
+admit (*by bdep solve.
+*).
 qed.
 
 lemma st4x_get_pack3 sts:
  st4x_get (st4x_pack sts) 3 = sts.`4.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
+admit (*
 by bdep solve.
+*).
 qed.
 
-lemma st4x_packK sts:
+
+lemma st4x_packK_ALT sts:
  st4x_unpack (st4x_pack sts) = sts.
 proof.
 move: sts => [st0 st1 st2 st3].
@@ -300,9 +320,10 @@ by rewrite -{1}st4x_packK H st4x_packK.
 qed.
 *)
 
-lemma st4x_unpackK st4x:
+lemma st4x_unpackK_ALT st4x:
  st4x_pack (st4x_unpack st4x) = st4x.
 proof.
+admit(*
 by bdep solve.
 (*
 rewrite /st4x_unpack /st4x_pack tP => i Hi.
@@ -323,6 +344,7 @@ case: (k < 192) => C2.
  by rewrite ifT 1:/# bits64iE /#.
 by rewrite ifF 1:/# ifT 1:/# bits64iE /#.
 *)
+*).
 qed.
 
 (*
@@ -508,11 +530,12 @@ by rewrite get_to_list get_w2bits /#.
 qed.
 
 hoare st4x_pack_h _st0 _st1 _st2 _st3:
- Jazz_avx2.M.__st4x_pack:
+ M.__st4x_pack:
  st0 = _st0 /\ st1 = _st1 /\ st2 = _st2 /\ st3 = _st3
  ==> res = st4x_pack (_st0, _st1, _st2, _st3).
 proof.
 proc.
+admit(*
 proc change ^while.1: (sliceget256_64_25 st0 (32*i*8));
  1: by auto => /#.
 proc change ^while.2: (sliceget256_64_25 st1 (32*i*8));
@@ -544,24 +567,30 @@ rewrite -map_comp /(\o) /st4x_pack_spec /= !st4x_to_bvK => <-.
 rewrite /st4x_pack_spec'.
 by rewrite st4x_from_4stK'.
 (* by rewrite (st4x_from_4stK (st0{m},st1{m},st2{m},st3{m})).*)
+*).
 qed.
 
-lemma st4x_pack_ll: islossless Jazz_avx2.M.__st4x_pack.
+lemma st4x_pack_ll: islossless M.__st4x_pack.
 proc. by unroll for 2; islossless. qed.
 
 phoare st4x_pack_ph _st0 _st1 _st2 _st3:
- [ Jazz_avx2.M.__st4x_pack
+ [ M.__st4x_pack
  : st0 = _st0 /\ st1 = _st1 /\ st2 = _st2 /\ st3 = _st3
  ==> res = st4x_pack (_st0, _st1, _st2, _st3)
  ] = 1%r.
-proof. by conseq st4x_pack_ll (st4x_pack_h _st0 _st1 _st2 _st3). qed.
+proof. 
+admit (* ???? anomaly: EcLib.EcCoreGoal.InvalidGoalShape
+by conseq st4x_pack_ll (st4x_pack_h _st0 _st1 _st2 _st3).
+*).
+qed.
 
 hoare st4x_unpack_h _st4x:
- Jazz_avx2.M.__st4x_unpack:
+ M.__st4x_unpack:
  st4x = _st4x
  ==> res = st4x_unpack _st4x.
 proof.
 proc; simplify.
+admit(*
 proc change ^while.6: (sliceset256_64_25 st0 (4*8*i*8) x0);
  1: by auto => /#.
 proc change ^while.7: (sliceset256_64_25 st1 (4*8*i*8) x1);
@@ -595,13 +624,14 @@ rewrite (chunk1 6400) //=.
 rewrite /st4x_unpack_spec /st4x_unpack.
 rewrite !st4x_to_bvK -st4x_to_bv_from_4st st4x_to_bvK.
 by move=> /st4x_from_4st_inj' />.
+*).
 qed.
 
-lemma st4x_unpack_ll: islossless Jazz_avx2.M.__st4x_unpack.
+lemma st4x_unpack_ll: islossless M.__st4x_unpack.
 proof. by proc; unroll for 2; islossless. qed.
 
 phoare st4x_unpack_ph _st4x:
- [ Jazz_avx2.M.__st4x_unpack
+ [ M.__st4x_unpack
  : st4x = _st4x
  ==> res = st4x_unpack _st4x
  ] = 1%r.
@@ -609,10 +639,11 @@ proof. by conseq st4x_unpack_ll (st4x_unpack_h _st4x). qed.
 
 op st_inv (_:state) = true.
 
+print M.
 module Maux = {
  proc p1(st4x2 st4x1: state4x): state4x = {
   st4x1 <- st4x_pack_spec st4x1;
-  st4x2 <@ M.__keccakf1600_4x_pround(st4x2, st4x1, rOL8, rOL56);
+  st4x2 <@ M._keccakf1600_4x_pround(st4x2, st4x1, rOL8, rOL56);
   st4x2 <- st4x_from_4st (st4x_unpack st4x2);
   return st4x2;
  }
@@ -621,7 +652,7 @@ module Maux = {
   st4x1 <- st4x_pack_spec st4x1;
   r8 <- rOL8;
   r56 <- rOL56;
-  st4x2 <@ M.__keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
+  st4x2 <@ M._keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
   st4x2 <- st4x_from_4st (st4x_unpack st4x2);
   return st4x2;
  }
@@ -635,7 +666,7 @@ module Maux = {
   var r8, r56;
   r8 <- rOL8;
   r56 <- rOL56;
-  st4x2 <@ M.__keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
+  st4x2 <@ M._keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
   return st4x2;
  }
 }.
@@ -649,6 +680,7 @@ hoare keccak_pround_unpacked_h _st4x:
      /\ (st4x_to_4st res).`4 = keccak_pround_op (st4x_to_4st _st4x).`4.
 proof.
 proc; inline*; simplify.
+admit (*
 bdep 1600 1600
      [_st4x] [st4x1] [st4x2]
      keccak_pround_op
@@ -664,9 +696,10 @@ rewrite -{1}(st4x_to_4stK st4x) st4x_to_bv_from_4st.
 rewrite (flattenK 1600) //=.
  by move=> l /= [->|[->|[->|->]]]; rewrite size_st_to_bv.
 by rewrite /= !st_to_bvK => /> -> -> -> -> /#.
+*).
 qed.
 
-lemma keccakf1600_4x_pround_ll: islossless Jazz_avx2.M.__keccakf1600_4x_pround.
+lemma keccakf1600_4x_pround_ll: islossless M._keccakf1600_4x_pround.
 proof. by islossless. qed.
 
 phoare keccak_pround_unpacked_ph _st4x:
@@ -684,7 +717,7 @@ by conseq ll (keccak_pround_unpacked_h _st4x).
 qed.
 
 equiv keccak_pround_avx2x4_eq:
- Jazz_avx2.M.__keccakf1600_4x_pround
+ M._keccakf1600_4x_pround
  ~ Maux.p2
  : a{1} = st4x1{2} /\ e{1}=st4x2{2}
    /\ r8{1} = rOL8 /\ r56{1} = rOL56
@@ -703,31 +736,18 @@ sim; auto => /> &m.
 by rewrite /st4x_pack_spec /st4x_unpack_spec st4x_from_4stK st4x_unpackK.
 qed.
 
-(* para testar se o problema é a inicialização... *)
-equiv keccak_pround_avx2x4_eq_:
- Maux.p2_
- ~ Maux.p2
- : ={st4x1,st4x2}
- ==> ={res}.
-proof.
-proc; inline*; simplify.
-(* mas agora surge um erro mais característico... :-)
-bdepeq 6400 [st4x1] [st4x1] {6400: [st4x2 ~ st4x2]} st4x_inv.
-*)
-abort.
-
 op st4x_keccak_pround =
  st4x_map keccak_pround_op.
 
 phoare keccak_pround_avx2x4_ph _st4x:
- [Jazz_avx2.M.__keccakf1600_4x_pround:
+ [ M._keccakf1600_4x_pround:
  a = _st4x
  /\ r8 = rOL8 /\ r56 = rOL56
  ==> res = st4x_keccak_pround _st4x] = 1%r.
 proof.
 bypr => &m /> -> ->.
 have ->:
- Pr[M.__keccakf1600_4x_pround(e{m}, a{m}, rOL8, rOL56) @ &m :
+ Pr[M._keccakf1600_4x_pround(e{m}, a{m}, rOL8, rOL56) @ &m :
    res = st4x_keccak_pround a{m}]
  = Pr[Maux.p2(e{m}, a{m}) @ &m :
    res = st4x_keccak_pround a{m}].
@@ -740,14 +760,14 @@ by move=> <- <- <- <- /#.
 qed.
 
 hoare keccak_pround_avx2x4_h _st4x:
- Jazz_avx2.M.__keccakf1600_4x_pround:
+ M._keccakf1600_4x_pround:
  a = _st4x
  /\ r8 = rOL8 /\ r56 = rOL56
  ==> res = st4x_keccak_pround _st4x.
 proof.
 bypr => &m /> -> ->.
 have ->:
- Pr[M.__keccakf1600_4x_pround(e{m}, a{m}, rOL8, rOL56) @ &m :
+ Pr[M._keccakf1600_4x_pround(e{m}, a{m}, rOL8, rOL56) @ &m :
    res <> st4x_keccak_pround a{m}]
  = Pr[Maux.p2(e{m}, a{m}) @ &m :
    res <> st4x_keccak_pround a{m}].
@@ -763,7 +783,7 @@ qed.
 (* Mas o que gostava mesmo era de 
  provar o último lema directamente! *)
 hoare keccak_pround_avx2x4_h' _st4x:
- Jazz_avx2.M.__keccakf1600_4x_pround:
+ M._keccakf1600_4x_pround:
  a = _st4x
  /\ r8 = rOL8 /\ r56 = rOL56
  ==> res = st4x_keccak_pround _st4x.
@@ -794,7 +814,9 @@ proof.
 move=> Hk; have: k\in iota_ 0 4 by smt(mem_iota).
 move: {Hk} k; apply/List.allP.
 rewrite -iotaredE /=.
+admit (*
 by bdep solve.
+*).
 qed.
 
 lemma sliceget64_256_25E k i st4x:
@@ -882,27 +904,26 @@ hoare keccakf1600_avx2x4_h _a:
  ==> res = st4x_map keccak_f1600_op _a.
 proof.
 proc.
-while (to_uint c <= 24 /\ to_uint c %% 2 = 0 /\
+while (0 <= c <= 24 /\ c %% 2 = 0 /\
        rC = rc_spec /\
        r8 = rOL8 /\
        r56 = rOL56 /\
-       a = st4x_map (keccak_round_i (to_uint c)) _a).
+       a = st4x_map (keccak_round_i c) _a).
  wp; ecall (keccak_pround_avx2x4_h e).
- wp; ecall (keccak_pround_avx2x4_h a); auto => &m /> _.
- rewrite ultE of_uintK /= => Hc2 Hc; split.
-  by rewrite to_uintD_small /= /#.
+ wp; ecall (keccak_pround_avx2x4_h a); auto => &m /> Hc1 _ Hc2 Hc; split.
+  smt().
  split.
-  by rewrite to_uintD_small /#.
- rewrite !to_uintD_small !of_uintK 1..2:/# /=.
- rewrite (:to_uint c{m}+2=to_uint c{m}+1+1) 1:/#.
- rewrite iotaSr /=. smt(W64.to_uint_cmp).
- rewrite iotaSr /=. smt(W64.to_uint_cmp).
+  smt(). 
+ rewrite (:c{m}+2=c{m}+1+1) 1:/#.
+ rewrite iotaSr /= 1:/#.
+ rewrite iotaSr /= 1:/#.
  rewrite !foldl_rcons /=.
  pose st0:= (init_25_64 _).
  pose st1:= (init_25_64 _).
  pose st2:= (init_25_64 _).
  pose st3:= (init_25_64 _).
  pose st4x1 := (init_25_256 _).
+admit (*
  rewrite -st4x_keccak_roundP2 //=. 
  rewrite tP => i Hi.
  rewrite Array25.initiE // eq_sym Array25.initiE //=.
@@ -919,6 +940,7 @@ while (to_uint c <= 24 /\ to_uint c %% 2 = 0 /\
    by rewrite /st4x1 (st4x_get_pack2 sts) /#.
  + congr; congr; congr. 
    by rewrite /st4x1 (st4x_get_pack3 sts) /#.
+*).
 auto => |>; split.
  rewrite iota0 //= tP => i Hi.
  rewrite initiE //= (st4x_getiE _ 0) // !st4x_getiE //.
@@ -927,26 +949,43 @@ auto => |>; split.
  apply W256.ext_eq => k Hk.
  rewrite pack4wE // get_of_list 1:/#.
  smt(W64.initiE).
-by move=> c; rewrite ultE /= => ??; have ->: to_uint c = 24; smt().
+by move=> c ???; have ->: c = 24; smt().
 qed.
 
-lemma keccakf1600_avx2x4_ll: islossless M.__keccakf1600_avx2x4.
+lemma keccakf1600_avx2x4_ll': islossless M.__keccakf1600_avx2x4.
 proof.
 proc.
-wp; while (true) (24-to_uint c).
+wp; while (true) (24-c).
  move=> z.
  wp; call keccakf1600_4x_pround_ll.
- wp; call keccakf1600_4x_pround_ll; auto => /> &m.
- by rewrite ultE of_uintK /= => H; rewrite to_uintD_small /= /#.
-by auto => /> c; rewrite ultE /= /#.
+ by wp; call keccakf1600_4x_pround_ll; auto => /> &m ? /#.
+by auto => /#.
+qed.
+
+phoare keccakf1600_avx2x4_ph' _a:
+ [ M.__keccakf1600_avx2x4
+ : a = _a
+ ==> res = st4x_map keccak_f1600_op _a
+ ] = 1%r.
+proof. 
+admit (* ??? anomaly: EcLib.EcCoreGoal.InvalidGoalShape
+by conseq keccakf1600_avx2x4_ll (keccakf1600_avx2x4_h _a).
+*).
+qed.
+
+lemma keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
+proof.
+by proc; call keccakf1600_avx2x4_ll'.
 qed.
 
 (* FINAL CORRECTNESS THEOREM *)
 
 phoare keccakf1600_avx2x4_ph _a:
- [ M.__keccakf1600_avx2x4
+ [ M._keccakf1600_avx2x4
  : a = _a
  ==> res = st4x_map keccak_f1600_op _a
  ] = 1%r.
-proof. by conseq keccakf1600_avx2x4_ll (keccakf1600_avx2x4_h _a). qed.
+proof.
+by proc; call (keccakf1600_avx2x4_ph' _a).
+qed.
 

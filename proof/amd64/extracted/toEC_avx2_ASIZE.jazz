@@ -1,7 +1,0 @@
-from Keccak require "avx2/keccak1600_fixedsizes.jinc"
-from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
-
-param int _RATE8=199;
-param int _ASIZE=999;
-from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
-from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"

@@ -1,2 +1,0 @@
-from Keccak require "avx2/keccak1600_fixedsizes.jinc"
-// from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"

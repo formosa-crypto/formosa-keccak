@@ -1,2 +1,0 @@
-from Keccak require "ref/select_bmi1.jinc"
-from Keccak require "ref/keccak1600_fixedsizes.jinc"

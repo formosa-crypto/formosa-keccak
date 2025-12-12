@@ -7,22 +7,20 @@
 
 ******************************************************************************)
 
-require import List Real Distr Int IntDiv CoreMap.
+require import AllCore List Real Int IntDiv StdOrder.
 
-from Jasmin require import JModel.
+from Jasmin require import JModel_x86.
 
 from CryptoSpecs require import Bindings.
 from CryptoSpecs require export FIPS202_SHA3 FIPS202_Keccakf1600.
 from CryptoSpecs require import Keccakf1600_Spec Keccak1600_Spec FIPS202_SHA3_Spec.
 
-from JazzEC require import Jazz_avx2.
+from JazzEC require import Keccak1600_Jazz.
 
 
-from JazzEC require import WArray768 WArray200.
+from JazzEC require import WArray200.
 from JazzEC require import Array25 Array24 Array5.
 
-
-require import StdOrder.
 import IntOrder.
 
 lemma nth_SQUEEZE1600 r8 len st i:
@@ -46,60 +44,6 @@ rewrite nth_iota; split; first smt().
 move=> _; rewrite ltzE; smt(leq_div2r).
 qed.
 
-
-(*
-import Ring.IntID.
-
-lemma bits8_bits (w: W256.t) (k: int):
- w \bits8 k = W8.bits2w (bits w (8*k) 8).
-proof.
-by rewrite -all_eqP /all_eq /bits /mkseq -iotaredE /= /#.
-qed.
-
-lemma bits64_bits (w: W256.t) (k: int):
- w \bits64 k = W64.bits2w (bits w (64*k) 64).
-proof.
-by rewrite -all_eqP /all_eq /bits /mkseq -iotaredE /= /#.
-qed.
-
-(* useful to eval constants... *)
-lemma bits8_red (w: W256.t) (k: int):
- 0 <= k =>
- w \bits8 k
- = W8.of_int (to_uint w %/ (2^(8*k)) %% 2^8).
-proof.
-move=> Hk; rewrite bits8_bits.
-apply W8.word_modeqP.
-rewrite of_uintK !modz_mod.
-rewrite W8.to_uintE bits2wK 1:size_bits //.
-by rewrite bits_divmod 1..2:/# modz_mod.
-qed.
-
-lemma bits64_red (w: W256.t) (k: int):
- 0 <= k =>
- w \bits64 k
- = W64.of_int (to_uint w %/ (2^(64*k)) %% 2^64).
-proof.
-move=> Hk; rewrite bits64_bits.
-apply W64.word_modeqP.
-rewrite of_uintK !modz_mod.
-rewrite W64.to_uintE bits2wK 1:size_bits //.
-by rewrite bits_divmod 1..2:/# modz_mod.
-qed.
-
-lemma get256_init256 (a: W256.t Array24.t) i:
- 0 <= i < 24 =>
- get256 (WArray768.init256 ("_.[_]" a)) i = a.[i].
-proof.
-move=> Hi; rewrite /get256_direct /init256 -(unpack8K a.[i]).
-congr; apply W32u8.Pack.ext_eq => x Hx.
-rewrite initiE //= unpack8E !initiE 1..2:/# /=; congr.
- congr; smt().
-smt().
-qed.
-*)
-
-
 require import Avx2_extra.
 
 import BitEncoding BitChunking.
@@ -111,6 +55,7 @@ op sliceget64_256_25 (arr: W256.t Array25.t) (offset: int) : W64.t =
  then WArray800.get64_direct (WArray800.init256 (fun i => arr.[i])) (offset %/ 8)
  else W64.bits2w (take 64 (drop offset (flatten (map W256.w2bits (to_list arr))))).
 
+(*
 bind op [W256.t & W64.t & Array25.t] sliceget64_256_25 "asliceget".
 realize bvaslicegetP.
 move => /= arr offset; rewrite /sliceget64_256_25 /= => H k kb. 
@@ -122,13 +67,14 @@ rewrite (BitEncoding.BitChunking.nth_flatten false 256 _).
 rewrite (nth_map W256.zero []); 1: smt(Array25.size_to_list).
 by rewrite nth_mkseq /#.
 qed.
-
+*)
 
 op sliceget256_64_25 (arr: W64.t Array25.t) (offset: int) : W256.t = 
  if 8 %| offset
  then  WArray200.get256_direct (WArray200.init64 (fun (i_0 : int) => arr.[i_0])) (offset %/ 8)
  else W256.bits2w (take 256 (drop offset (flatten (map W64.w2bits (to_list arr))))).
 
+(*
 bind op [W64.t & W256.t & Array25.t] sliceget256_64_25 "asliceget".
 realize bvaslicegetP.
 move => /= arr offset; rewrite /sliceget256_64_25 /= => H k kb. 
@@ -140,6 +86,7 @@ rewrite (BitEncoding.BitChunking.nth_flatten false 64 _).
 rewrite (nth_map W64.zero []); 1: smt(Array25.size_to_list).
 by rewrite nth_mkseq /#.
 qed.
+*)
 
 op sliceset64_256_25 (arr: W256.t Array25.t) (offset: int) (bv: W64.t) : W256.t Array25.t =
  if 8 %| offset
@@ -167,6 +114,7 @@ rewrite (size_flatten' 256).
 by rewrite size_map.
 qed.
 
+(*
 bind op [W256.t & W64.t & Array25.t] sliceset64_256_25 "asliceset".
 realize bvaslicesetP.
 move => arr offset bv H /= k kb; rewrite /sliceset64_256_25 /=.
@@ -193,6 +141,7 @@ rewrite (nth_flatten _ 256); 1: by rewrite allP => i;rewrite mapP => He; elim He
 rewrite (nth_map W256.zero []); 1: smt(Array25.size_to_list).
 rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
 qed.
+*)
 
 op sliceset256_64_25 (arr: W64.t Array25.t) (offset: int) (bv: W256.t) : W64.t Array25.t =
  if 8 %| offset
@@ -220,7 +169,7 @@ rewrite (size_flatten' 64).
 by rewrite size_map.
 qed.
 
-
+(*
 bind op [W64.t & W256.t & Array25.t] sliceset256_64_25 "asliceset".
 realize bvaslicesetP. 
 move => arr offset bv H /= k kb; rewrite /sliceset256_64_25 /=.
@@ -247,6 +196,7 @@ rewrite (nth_flatten _ 64); 1: by rewrite allP => i;rewrite mapP => He; elim He;
 rewrite (nth_map W64.zero []); 1: smt(Array25.size_to_list).
 rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
 qed.
+*)
 
 (** Packed 4x-state *)
 
@@ -266,6 +216,7 @@ lemma st4x_getiE x k i:
  (st4x_get x k).[i] = x.[i] \bits64 k.
 proof.  admit(*by move=> Hk Hi; rewrite initiE //= u256_bits64E*). qed.
 
+op init_25_256 (f : int -> W256.t) : W256.t Array25.t = Array25.init f.
 abbrev st4x_pack (sts: state*state*state*state): state4x =
  init_25_256 (fun i => u256_pack4 sts.`1.[i] sts.`2.[i] sts.`3.[i] sts.`4.[i]).
 
@@ -472,7 +423,7 @@ admitted.
 ******************************************************************************)
 
 hoare state_init_avx2x4_h:
- Jazz_avx2.M.__state_init_avx2x4
+ M.__state_init_avx2x4
  : true
  ==> res = st4x0.
 proof.
@@ -484,14 +435,13 @@ lemma state_init_avx2x4_ll:
  islossless M.__state_init_avx2x4.
 proof.
 proc.
-while true (32*25-to_uint i).
- move=> z; auto => /> &m; rewrite ultE of_uintK /= => Hi.
- by rewrite to_uintD_small /#.
-by auto => /> i Hi; rewrite ultE of_uintK /#.
+while true (32*25-i).
+ by move=> z; auto => /> &m /#.
+by auto => /#.
 qed.
 
 phoare state_init_avx2x4_ph:
- [ Jazz_avx2.M.__state_init_avx2x4
+ [ M.__state_init_avx2x4
  : true
  ==> res = st4x0
  ] = 1%r.

@@ -9,7 +9,7 @@ from Jasmin require import JModel.
 
 from CryptoSpecs require import FIPS202_Keccakf1600 Keccakf1600_Spec.
 
-from JazzEC require import Jazz_ref.
+from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import Array5 Array24 Array25.
 
 (** lemmata (move?) *)
@@ -160,46 +160,36 @@ phoare ANDN_64_ph _a _b:
    a = _a /\ b = _b ==> res = invw _a `&` _b ] = 1%r.
 proof. by proc; auto. qed.
 
-hoare set_row_ref_h _a _e _b _y _c:
+hoare set_row_ref_h _a _e _b _y:
  M.__set_row_ref :
-  e = _e /\ b = _b /\ y = _y /\ s_rc = _c /\ 0 <= y < 5
+  e = _e /\ b = _b /\ y = _y /\ 0 <= y < 5
   /\ (forall x, 0 <= x < 5 =>
       _b.[x] = (keccak_pi_op (keccak_rho_op (keccak_theta_op _a))).[idx(x,_y)])
-  /\ (forall k, 0 <= k < 5*_y => e.[k] = (keccak_round_op _c _a).[k])
-  ==> forall k, 0 <= k < 5*_y + 5 => res.[k] = (keccak_round_op _c _a).[k].
+  /\ (forall k, 0 <= k < 5*_y => e.[k] = (keccak_pround_op _a).[k])
+  ==> forall k, 0 <= k < 5*_y + 5 => res.[k] = (keccak_pround_op _a).[k].
 proof.
 proc; simplify.
-while (#[/2:7]pre /\ 0 <= x <= 5 /\ 
-       forall k, 0 <= k < x+5*_y => e.[k] = (keccak_round_op _c _a).[k]).
+while (#[/2:6]pre /\ 0 <= x <= 5 /\ 
+       forall k, 0 <= k < x+5*_y => e.[k] = (keccak_pround_op _a).[k]).
  wp; ecall (ANDN_64_h b.[x1] b.[x2]).
- auto => /> &m Hy1 Hy2 Hb Hx1 _ IH Hx2; split.
-  move => Ex Ey k ??; have ->: k=0 by smt().
-  rewrite get_setE 1:/# ifT 1:/#.
-  rewrite /keccak_round_op /keccak_iota_op /keccak_chi_op /=.
-  rewrite !Hb // /invidx /idx Ey /=.
-  by congr; rewrite W64.xorwC.
- move => E0; split; first smt().
+ auto => /> &m Hy1 Hy2 Hb Hx1 _ IH Hx2; split; first smt().
  move=> k Hk1 Hk2.
- case: (k = x{m}+5*_y) => E.
-  rewrite /keccak_round_op /keccak_iota_op /keccak_chi_op /=.
-  rewrite eq_sym get_setE 1:/# ifF 1:/#.
-  rewrite get_setE 1:/# ifT 1:/#.
-  rewrite !Hb 1..3:/# /=.
-  rewrite initiE 1:/# E /= xorwC; congr; congr; smt().
+ case: (k = x{m}+_y*5) => E.
+  by rewrite !Hb 1..3:/# eq_sym initiE 1:/# /= get_setE 1:/# E /= xorwC /#.
  by rewrite get_setE 1:/# ifF 1:/# -IH /#.
 by auto => /> Hy1 Hy2 _ H e k ???; have ->: k=5; smt().
 qed.
 
-hoare round_ref_h _a _c:
- M.__round_ref :
-  a = _a /\ s_rc = _c ==> res = keccak_round_op _c _a.
+hoare pround_ref_h _a:
+ M._pround_ref :
+  a = _a ==> res = keccak_pround_op _a.
 proof.
 proc; simplify.
 while (0 <= y <= 5 /\ #pre /\
        d = keccak_D (keccak_C _a) /\
        forall k, 0 <= k < 5*y => 
-        e.[k] = (keccak_round_op _c _a).[k]).
- wp; ecall (set_row_ref_h a e b y s_rc).
+        e.[k] = (keccak_pround_op _a).[k]).
+ wp; ecall (set_row_ref_h a e b y).
  simplify; ecall (rol_sum_ref_h a y); simplify.
  auto => /> &m Hy1 _ IH Hy2 b Hb e He; split; smt().
 wp; ecall (theta_rol_ref_h c).
@@ -209,7 +199,7 @@ move=> e y ???; have ->: y=5 by smt().
 by move=> /= H; apply Array25.ext_eq => k Hk; apply H.
 qed.
 
-lemma round_ref_ll: islossless M.__round_ref.
+lemma pround_ref_ll: islossless M._pround_ref.
 proof.
 proc; inline*.
 do 43! unroll for ^while.
@@ -227,41 +217,36 @@ hoare __keccakf1600_ref_h _a:
   a = _a ==> res = keccak_f1600_op _a.
 proof.
 proc.
-while (2 <= to_uint c <= 24 /\ 2 %| to_uint c /\
-       s_RC = kECCAK1600_RC /\
-       keccak_f1600_op _a = foldl keccak_double_round a (range (to_uint c %/ 2) 12)).
- wp; ecall (round_ref_h e s_rc).
- wp; ecall (round_ref_h a s_rc).
+while (2 <= c <= 24 /\ 2 %| c /\
+       keccak_f1600_op _a = foldl keccak_double_round a (range (c %/ 2) 12)).
+ wp; ecall (pround_ref_h e).
+ wp; ecall (pround_ref_h a).
  auto => /> &m Hc1 _ Hc_2 IH.
- rewrite ultE of_uintK /= => Hc2; split.
-  by rewrite to_uintD_small /#.
- rewrite to_uintD_small 1:/#.
- move: IH; rewrite (range_cat (to_uint c{m} %/ 2 + 1)) 1..2:/#.
+ move => Hc2; split; first smt().
+ split; first smt().
+ move: IH; rewrite (range_cat (c{m} %/ 2 + 1)) 1..2:/#.
  by rewrite /rc_spec rangeS foldl_cat /= => -> /#.
-wp; ecall (round_ref_h e s_rc).
-wp; ecall (round_ref_h a s_rc).
+wp; ecall (pround_ref_h e).
+wp; ecall (pround_ref_h a).
 auto => />; split.
  by rewrite /keccak_f1600_op /range /rc_spec -iotaredE.
-move => a c; rewrite ultE /= => ????.
-have ->/=: to_uint c = 24 by smt().
+move => a c /= ????.
+have ->/=: c = 24 by smt().
 by rewrite range_geq /=.
 qed.
 
 lemma __keccakf1600_ref_ll: islossless M.__keccakf1600_ref.
 proof.
 proc.
-have Hll:= round_ref_ll.
-wp; while (0 <= to_uint c <= 24) (23 - to_uint c).
+have Hll:= pround_ref_ll.
+wp; while (0 <= c <= 24) (23 - c).
  move=> z.
- wp; call round_ref_ll.
- wp; call round_ref_ll.
- auto => /> &m ?_.
- rewrite ultE of_uintK /= => ?.
- by rewrite to_uintD_small of_uintK /= /#.
-wp; call round_ref_ll.
-wp; call round_ref_ll.
-auto => /> c ???.
-by rewrite ultE of_uintK /= /#.
+ wp; call pround_ref_ll.
+ wp; call pround_ref_ll.
+ by auto => /> &m ?_ ? /#.
+wp; call pround_ref_ll.
+wp; call pround_ref_ll.
+by auto => /> c ??? /#.
 qed.
 
 phoare __keccakf1600_ref_ph _a:
@@ -284,4 +269,3 @@ proof.
 proc; inline _keccakf1600_ref.
 by call (__keccakf1600_ref_h _a).
 qed.
-

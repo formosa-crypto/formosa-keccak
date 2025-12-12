@@ -17,20 +17,25 @@ apply W64.ext_eq => i Hi.
 by rewrite bits64E initiE 1://= initiE 1://= /#.
 qed.
 
-
 op u256_pack4 (w0 w1 w2 w3 : W64.t) : W256.t =
- concat_2u128 (concat_2u64 w0 w1) (concat_2u64 w2 w3).
+ W256.init (fun i => if i < 64 then w0.[i]
+                     else if i < 128 then w1.[i-64]
+                     else if i < 192 then w2.[i-128]
+                     else w3.[i-192]). 
 
 lemma u256_pack4E w0 w1 w2 w3:
  u256_pack4 w0 w1 w2 w3 = pack4 [w0; w1; w2; w3].
 proof.
 rewrite /u256_pack4; apply W256.ext_eq => k Hk.
-rewrite /concat_2u128 /concat_2u64 !pack2E pack4E.
-rewrite initiE 1://= initiE 1:// /=.
+rewrite pack4E initiE 1://= initiE 1:// /=.
 rewrite get_of_list 1:/# /=.
-case: (k < 128) => C1.
-+ rewrite ifT 1:/# initiE 1:/# /= /of_list initiE 1:/# /= initiE /#.
-+ rewrite ifF 1:/# ifT 1:/# initiE 1:/# /= /of_list initiE 1:/# /= initiE /#.
+case: (k < 64) => C1.
++ by rewrite ifT /#.
+case: (k < 128) => C2.
++ by rewrite ifF 1:/# ifT /#.
+case: (k < 192) => C3.
++ by rewrite ifF 1:/# ifF 1:/# ifT /#.
+by rewrite ifF 1:/# ifF 1:/# ifF 1:/# ifT /#.
 qed.
 
 lemma u256_pack4_zero:
