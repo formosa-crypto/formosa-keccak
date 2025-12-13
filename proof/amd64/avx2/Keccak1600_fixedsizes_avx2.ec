@@ -608,11 +608,7 @@ phoare dumpstate_avx2_ph _buf _off _len _st:
   /\ res.`2 = _off + _len
  ] = 1%r.
 proof.
-have ?:= dumpstate_avx2_ll.
-have ?:= (dumpstate_avx2_h _buf _off _len _st).
-admit (* ????? anomaly: EcLib.EcCoreGoal.InvalidGoalShape ????
 by conseq dumpstate_avx2_ll (dumpstate_avx2_h _buf _off _len _st).
-*).
 qed.
 
 lemma squeeze_avx2_ll: islossless MM.__squeeze_avx2.

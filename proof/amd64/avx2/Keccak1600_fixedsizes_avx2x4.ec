@@ -812,9 +812,7 @@ phoare dumpstate_avx2x4_ph _buf0 _buf1 _buf2 _buf3 _off _len _st:
   /\ res.`5 = _off + _len
   ] = 1%r.
 proof.
-admit (* ??? anomaly: EcLib.EcCoreGoal.InvalidGoalShape 
 by conseq dumpstate_avx2x4_ll (dumpstate_avx2x4_h _buf0 _buf1 _buf2 _buf3 _off _len _st).
-*).
 qed.
 
 lemma squeeze_avx2x4_ll: islossless MM.__squeeze_avx2x4.
@@ -859,9 +857,7 @@ phoare squeeze_avx2x4_ph _buf0 _buf1 _buf2 _buf3 _st _r8:
  /\ to_list res.`5 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 3)
  ] = 1%r.
 proof.
-admit (* ??? anomaly: EcLib.EcCoreGoal.InvalidGoalShape
 by conseq squeeze_avx2x4_ll (squeeze_avx2x4_h _buf0 _buf1 _buf2 _buf3 _st _r8).
-*).
 qed.
 
 end KeccakArrayAvx2x4.

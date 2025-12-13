@@ -487,11 +487,7 @@ phoare dumpstate_ref_ph _buf _off _len _st:
   /\ res.`2 = _off + _len
  ] = 1%r.
 proof.
-have ?:= dumpstate_ref_ll.
-have ?:= (dumpstate_ref_h _buf _off _len _st).
-admit (* ????? anomaly: EcLib.EcCoreGoal.InvalidGoalShape ????
 by conseq dumpstate_ref_ll (dumpstate_ref_h _buf _off _len _st).
-*).
 qed.
 
 lemma squeeze_ref_ll: islossless MM.__squeeze_ref.

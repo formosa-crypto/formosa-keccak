@@ -579,9 +579,7 @@ phoare st4x_pack_ph _st0 _st1 _st2 _st3:
  ==> res = st4x_pack (_st0, _st1, _st2, _st3)
  ] = 1%r.
 proof. 
-admit (* ???? anomaly: EcLib.EcCoreGoal.InvalidGoalShape
 by conseq st4x_pack_ll (st4x_pack_h _st0 _st1 _st2 _st3).
-*).
 qed.
 
 hoare st4x_unpack_h _st4x:
@@ -968,9 +966,7 @@ phoare keccakf1600_avx2x4_ph' _a:
  ==> res = st4x_map keccak_f1600_op _a
  ] = 1%r.
 proof. 
-admit (* ??? anomaly: EcLib.EcCoreGoal.InvalidGoalShape
-by conseq keccakf1600_avx2x4_ll (keccakf1600_avx2x4_h _a).
-*).
+by conseq keccakf1600_avx2x4_ll' (keccakf1600_avx2x4_h _a).
 qed.
 
 lemma keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
