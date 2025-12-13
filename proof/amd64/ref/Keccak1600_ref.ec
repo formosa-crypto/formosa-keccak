@@ -15,7 +15,7 @@ from Jasmin require import JModel.
 
 from CryptoSpecs require import JWordList.
 from CryptoSpecs require export Keccakf1600_Spec Keccak1600_Spec.
-from CryptoSpecs require import Bindings.
+(* from CryptoSpecs require import Bindings. *)
 
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import WArray200.
