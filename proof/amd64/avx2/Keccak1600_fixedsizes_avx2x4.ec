@@ -655,7 +655,7 @@ if => //.
 by call addratebit_avx2x4_ll.
 qed.
 
-hoare absorb_bcast_avx2x4_h _l0 _l1 _l2 _l3 _st _buf _r8 _tb:
+hoare absorb_bcast_avx2x4_h _l0 _l1 _l2 _l3 _st _buf _tb _r8:
  MM.__absorb_bcast_avx2x4
  : st=_st /\ buf=_buf /\ _RATE8 = _r8 /\ _TRAILB=_tb
  /\ aT = size _l0 %% _r8 /\ size _l1 = size _l0 /\ size _l2 = size _l0 /\ size _l3 = size _l0
@@ -678,7 +678,7 @@ proof.
 proc.
 admitted.
 
-phoare absorb_bcast_avx2x4_ph _l0 _l1 _l2 _l3 _st _buf _r8 _tb:
+phoare absorb_bcast_avx2x4_ph _l0 _l1 _l2 _l3 _st _buf _tb _r8:
  [ MM.__absorb_bcast_avx2x4
  : st=_st /\ buf=_buf /\ _RATE8 = _r8 /\ _TRAILB=_tb
  /\ aT = size _l0 %% _r8 /\ size _l1 = size _l0 /\ size _l2 = size _l0 /\ size _l3 = size _l0
@@ -699,7 +699,7 @@ phoare absorb_bcast_avx2x4_ph _l0 _l1 _l2 _l3 _st _buf _r8 _tb:
            /\ res.`2 = (size _l0 + _ASIZE) %% _r8
   ] = 1%r.
 proof.
-by conseq absorb_bcast_avx2x4_ll (absorb_bcast_avx2x4_h _l0 _l1 _l2 _l3 _st _buf _r8 _tb).
+by conseq absorb_bcast_avx2x4_ll (absorb_bcast_avx2x4_h _l0 _l1 _l2 _l3 _st _buf _tb _r8).
 qed.
 
 lemma absorb_avx2x4_ll: islossless MM.__absorb_avx2x4.
@@ -719,7 +719,7 @@ if => //.
 by call addratebit_avx2x4_ll.
 qed.
 
-hoare absorb_avx2x4_h _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _r8 _tb:
+hoare absorb_avx2x4_h _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _tb _r8:
  MM.__absorb_avx2x4
  : st=_st /\ buf0=_buf0 /\ buf1=_buf1 /\ buf2=_buf2 /\ buf3=_buf3 /\
  _RATE8 = _r8 /\ _TRAILB=_tb
@@ -741,7 +741,7 @@ hoare absorb_avx2x4_h _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _r8 _tb:
            /\ res.`2 = (size _l0 + _ASIZE) %% _r8.
 admitted.
 
-phoare absorb_avx2x4_ph _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _r8 _tb:
+phoare absorb_avx2x4_ph _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _tb _r8:
  [ MM.__absorb_avx2x4
  : st=_st /\ buf0=_buf0 /\ buf1=_buf1 /\ buf2=_buf2 /\ buf3=_buf3 /\
  _RATE8 = _r8 /\ _TRAILB=_tb
@@ -763,7 +763,7 @@ phoare absorb_avx2x4_ph _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _r8 _tb:
            /\ res.`2 = (size _l0 + _ASIZE) %% _r8
   ] = 1%r.
 proof.
-by conseq absorb_avx2x4_ll (absorb_avx2x4_h _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _r8 _tb).
+by conseq absorb_avx2x4_ll (absorb_avx2x4_h _l0 _l1 _l2 _l3 _st _buf0 _buf1 _buf2 _buf3 _tb _r8).
 qed.
 
 (*
@@ -838,10 +838,10 @@ hoare squeeze_avx2x4_h _buf0 _buf1 _buf2 _buf3 _st _r8:
  /\ 0 < _r8 <= 200
  ==>
     res.`1 = iter ((_ASIZE - 1) %/ _r8 + 1) keccak_f1600_x4 _st
- /\ to_list res.`2 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 0)
- /\ to_list res.`3 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 1)
- /\ to_list res.`4 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 2)
- /\ to_list res.`5 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 3).
+ /\ res.`2 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 0))
+ /\ res.`3 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 1))
+ /\ res.`4 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 2))
+ /\ res.`5 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 3)).
 admitted.
 
 phoare squeeze_avx2x4_ph _buf0 _buf1 _buf2 _buf3 _st _r8:
@@ -851,10 +851,10 @@ phoare squeeze_avx2x4_ph _buf0 _buf1 _buf2 _buf3 _st _r8:
  /\ 0 < _r8 <= 200
  ==>
     res.`1 = iter ((_ASIZE - 1) %/ _r8 + 1) keccak_f1600_x4 _st
- /\ to_list res.`2 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 0)
- /\ to_list res.`3 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 1)
- /\ to_list res.`4 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 2)
- /\ to_list res.`5 = SQUEEZE1600 _r8 _ASIZE (st4x_get _st 3)
+ /\ res.`2 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 0))
+ /\ res.`3 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 1))
+ /\ res.`4 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 2))
+ /\ res.`5 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 3))
  ] = 1%r.
 proof.
 by conseq squeeze_avx2x4_ll (squeeze_avx2x4_h _buf0 _buf1 _buf2 _buf3 _st _r8).

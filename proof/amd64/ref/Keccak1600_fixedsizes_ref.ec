@@ -91,7 +91,7 @@ if => //.
 by call addratebit_ref_ll.
 qed.
 
-hoare absorb_m_ref_h _l _mem _buf _len _r8 _tb:
+hoare absorb_m_ref_h _l _mem _buf _len _tb _r8:
  M.__absorb_m_ref
  : Glob.mem=_mem /\ aT=size _l %% _r8 /\ buf=_buf /\ _LEN=_len /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
@@ -108,7 +108,7 @@ proof.
 proc.
 admitted.
 
-phoare absorb_m_ref_ph _l _mem _buf _len _r8 _tb:
+phoare absorb_m_ref_ph _l _mem _buf _len _tb _r8:
  [ M.__absorb_m_ref
  : Glob.mem=_mem /\ aT=size _l %% _r8 /\ buf=_buf /\ _LEN=_len /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
@@ -123,7 +123,7 @@ phoare absorb_m_ref_ph _l _mem _buf _len _r8 _tb:
        /\ res.`3 = _buf + _len
  ] = 1%r.
 proof.
-by conseq absorb_m_ref_ll (absorb_m_ref_h _l _mem _buf _len _r8 _tb) => /> /#.
+by conseq absorb_m_ref_ll (absorb_m_ref_h _l _mem _buf _len _tb _r8) => /> /#.
 qed.
 
 (*
@@ -427,7 +427,7 @@ if => //.
 by call addratebit_ref_ll.
 qed.
 
-hoare absorb_ref_h _l _buf _r8 _tb:
+hoare absorb_ref_h _l _buf _tb _r8:
  MM.__absorb_ref
  : aT=size _l %% _r8 /\ buf=_buf /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
@@ -439,7 +439,7 @@ proof.
 proc.
 admitted.
 
-phoare absorb_ref_ph _l _buf _r8 _tb:
+phoare absorb_ref_ph _l _buf _tb _r8:
  [ MM.__absorb_ref
  : aT=size _l %% _r8 /\ buf=_buf /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
@@ -449,7 +449,7 @@ phoare absorb_ref_ph _l _buf _r8 _tb:
        /\ res.`2 = (size _l + _ASIZE) %% _r8
  ] = 1%r.
 proof.
-by conseq absorb_ref_ll (absorb_ref_h _l _buf _r8 _tb); smt(ge0_size).
+by conseq absorb_ref_ll (absorb_ref_h _l _buf _tb _r8); smt(ge0_size).
 qed.
 
 (*

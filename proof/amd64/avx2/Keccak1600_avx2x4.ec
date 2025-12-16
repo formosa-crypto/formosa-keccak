@@ -206,7 +206,7 @@ type state4x = W256.t Array25.t.
 abbrev st4x_get (a: state4x) (k: int): state =
  init_25_64 (fun i => u256_bits64 a.[i] k).
 *)
-abbrev st4x_get a k=
+op (*abbrev*) st4x_get a k=
  init_25_64 (fun i => sliceget64_256_25 a (8*(4*i+k)*8)).
 
 
@@ -214,10 +214,17 @@ lemma st4x_getiE x k i:
  0 <= k < 4 =>
  0 <= i < 25 =>
  (st4x_get x k).[i] = x.[i] \bits64 k.
-proof.  admit(*by move=> Hk Hi; rewrite initiE //= u256_bits64E*). qed.
+proof.  
+move=> Hk Hi; rewrite initiE //= /sliceget64_256_25 ifT 1:/#.
+rewrite get64E pack8E.
+apply W64.ext_eq => b Hb.
+rewrite bits64iE // initiE //= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
+by congr; smt().
+qed.
 
 op init_25_256 (f : int -> W256.t) : W256.t Array25.t = Array25.init f.
-abbrev st4x_pack (sts: state*state*state*state): state4x =
+
+op (*abbrev*) st4x_pack (sts: state*state*state*state): state4x =
  init_25_256 (fun i => u256_pack4 sts.`1.[i] sts.`2.[i] sts.`3.[i] sts.`4.[i]).
 
 lemma st4x_packiE (sts: state*state*state*state) i:
@@ -253,7 +260,7 @@ congr;
      rewrite st4x_getiE //= initiE //= u256_pack4E pack4bE //).
 qed.
 
-abbrev st4x_map (f:W64.t Array25.t->W64.t Array25.t) (st4x:W256.t Array25.t): W256.t Array25.t =
+op (*abbrev*) st4x_map (f:W64.t Array25.t->W64.t Array25.t) (st4x:W256.t Array25.t): W256.t Array25.t =
  st4x_pack (f (st4x_get st4x 0), f (st4x_get st4x 1), f (st4x_get st4x 2), f (st4x_get st4x 3)).
 
 lemma st4x_mapE (f: state->state) (st4x: state4x):
@@ -261,15 +268,13 @@ lemma st4x_mapE (f: state->state) (st4x: state4x):
  = st4x_pack (f (st4x_get st4x 0), f (st4x_get st4x 1), f (st4x_get st4x 2), f (st4x_get st4x 3)).
 proof.
 apply Array25.ext_eq => i Hi.
-by rewrite initiE //. 
+by rewrite initiE //= st4x_packiE. 
 qed.
 
 (*op st4x_match (st4x: state4x) (st0 st1 st2 st3: state) =
  st4x = st4x_pack (st0,st1,st2,st3).
 *)
-abbrev st4x_match st4x sts = (st4x = st4x_pack sts).
-
-
+op (*abbrev*) st4x_match st4x sts = (st4x = st4x_pack sts).
 
 
 (*
@@ -389,7 +394,7 @@ op st4x0 = Array25.create W256.zero.
 
 lemma st4x0E: st4x_match st4x0 (st0,st0,st0,st0).
 proof.
-rewrite tP => i Hi.
+rewrite /st4x_match tP => i Hi.
 rewrite createiE // st4x_packiE //; iota.
 by rewrite !createiE // u256_pack4_zero.
 qed.
@@ -422,15 +427,6 @@ admitted.
    
 ******************************************************************************)
 
-hoare state_init_avx2x4_h:
- M.__state_init_avx2x4
- : true
- ==> res = st4x0.
-proof.
-proc.
-admitted (* BDEP? *).
-
-
 lemma state_init_avx2x4_ll:
  islossless M.__state_init_avx2x4.
 proof.
@@ -440,12 +436,37 @@ while true (32*25-i).
 by auto => /#.
 qed.
 
-phoare state_init_avx2x4_ph:
+hoare state_init_avx2x4_h':
+ M.__state_init_avx2x4
+ : true
+ ==> res = st4x0.
+proof.
+proc.
+admitted (* BDEP? *).
+
+
+phoare state_init_avx2x4_ph':
  [ M.__state_init_avx2x4
  : true
  ==> res = st4x0
  ] = 1%r.
 admitted.
+
+hoare state_init_avx2x4_h _r8:
+ M.__state_init_avx2x4
+ : 0 < _r8 <= 200
+ ==> pabsorb_spec_avx2x4 _r8 [] [] [] [] res.
+proof.
+conseq state_init_avx2x4_h' => _ Hr8 st ->.
+exact pabsorb_spec_avx2x4_nil.
+qed.
+
+phoare state_init_avx2x4_ph _r8:
+ [ M.__state_init_avx2x4
+ : 0 < _r8 <= 200
+ ==> pabsorb_spec_avx2x4 _r8 [] [] [] [] res
+ ] = 1%r.
+proof. by conseq state_init_avx2x4_ll (state_init_avx2x4_h _r8). qed.
 
 
 lemma addratebit_avx2x4_ll: islossless M.__addratebit_avx2x4

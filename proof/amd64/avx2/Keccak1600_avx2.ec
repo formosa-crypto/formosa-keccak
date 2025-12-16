@@ -115,27 +115,25 @@ op stavx2_keccakf1600 = stF_avx2 keccak_f1600_op.
 op absorb_spec_avx2 (r8: int) (tb: int) (l: W8.t list) st =
  st = stavx2_from_st25 (ABSORB1600 (W8.of_int tb) r8 l).
 
-op pabsorb_spec_avx2 r8 l (pst: W64.t Array25.t) (st: W256.t Array7.t): bool =
+op PABSORB1600 r8 m =
+ stateabsorb (stateabsorb_iblocks (chunk r8 m) st0) (chunkremains r8 m).
+
+op pabsorb_spec_avx2 r8 l (st: W256.t Array7.t): bool =
  0 < r8 <= 200 /\
- st=stavx2_from_st25 (stateabsorb_iblocks (chunk r8 l) st0) /\
- sub (stbytes pst) 0 (size l %% r8) = chunkremains r8 l
- /\
- sub (stbytes pst) r8 (200-r8) = nseq (200-r8) W8.zero.
+ st=stavx2_from_st25 (PABSORB1600 r8 l).
 
 lemma pabsorb_spec_avx2_nil r8:
  0 < r8 <= 200 =>
- pabsorb_spec_avx2 r8 [] st0 stavx2_st0.
+ pabsorb_spec_avx2 r8 [] stavx2_st0.
 proof.
 move=> Hr; rewrite /stavx2_st0 /pabsorb_spec_avx2 => />.
-rewrite chunk0 /= 1:/#.
-rewrite /stateabsorb_iblocks /= /chunkremains /= /sub mkseq0 -mkseq_nseq /=.
-apply eq_in_mkseq => i Hi /=.
-by rewrite initiE 1:/# /= /st0 createiE 1:/# W8u8.get_zero.
+rewrite /PABSORB1600 chunk0 /= 1:/#.
+by rewrite /stateabsorb_iblocks /= /chunkremains /= /stateabsorb bytes2state0 addstate_st0.
 qed.
 
 (*
 lemma pabsorb_spec_avx2_cat r8 l1 l2 pst1 st1 pst2 st2:
- pabsorb_spec_avx2 r8 l1 pst1 st1 =>
+ pabsorb_spec_avx2 r8 l1 st1 =>
  pabsorb_spec_avx2 r8 st1 l22 st2 (l12++l2)=>
  pabsorb_spec_avx2 r8 st0 l22 st2 (l1++l2).
 proof.
@@ -176,7 +174,7 @@ while true (7-i).
 by auto => /#.
 qed.
 
-hoare state_init_avx2_h:
+hoare state_init_avx2_h':
  M.__state_init_avx2
  : true
  ==> res = stavx2_st0.
@@ -186,12 +184,29 @@ unroll for ^while; auto => />.
 by apply Array7.all_eq_eq; rewrite /all_eq /= !stavx2_st0P.
 qed.
 
-phoare state_init_avx2_ph:
+phoare state_init_avx2_ph':
  [ M.__state_init_avx2
  : true
  ==> res = stavx2_st0
  ] = 1%r.
-proof. by conseq state_init_avx2_ll state_init_avx2_h. qed.
+proof. by conseq state_init_avx2_ll state_init_avx2_h'. qed.
+
+hoare state_init_avx2_h _r8:
+ M.__state_init_avx2
+ :  0 < _r8 <= 200
+ ==> pabsorb_spec_avx2 _r8 [] res.
+proof.
+conseq state_init_avx2_h'.
+move=> _ Hr8 st ->.
+by apply pabsorb_spec_avx2_nil.
+qed.
+
+phoare state_init_avx2_ph _r8:
+ [ M.__state_init_avx2
+ :  0 < _r8 <= 200
+ ==> pabsorb_spec_avx2 _r8 [] res
+ ] = 1%r.
+proof. by conseq state_init_avx2_ll (state_init_avx2_h _r8). qed.
 
 (*
 lemma pstate_init_avx2_ll:

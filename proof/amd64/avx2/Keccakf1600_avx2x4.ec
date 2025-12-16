@@ -66,7 +66,7 @@ by rewrite nth_mkseq /#.
 qed.
 *)
 
-abbrev st4x_from_4st (sts: state*state*state*state): state4x =
+op (*abbrev*) st4x_from_4st (sts: state*state*state*state): state4x =
  init_25_256
   (fun i =>
     sliceget256_64_100
@@ -98,6 +98,7 @@ do split;
  by rewrite !bits8iE /#.
 qed.
 
+(*
 lemma st4x_from_4stK' st0 st1 st2 st3:
  st4x_to_4st
   (init_25_256
@@ -112,7 +113,7 @@ lemma st4x_from_4stK' st0 st1 st2 st3:
           (32 * i * 8)))
  = (st0, st1, st2, st3).
 proof. by apply (st4x_from_4stK (st0,st1,st2,st3)). qed.
-
+*)
 
 lemma st4x_to_4stK st4x:
  st4x_from_4st (st4x_to_4st st4x) = st4x.
@@ -144,6 +145,7 @@ move=> H.
 by rewrite -(st4x_from_4stK sts1) H st4x_from_4stK.
 qed.
 
+(*
 lemma st4x_from_4st_inj' (st0a st1a st2a st3a st0b st1b st2b st3b: state):
  (* st4x_from_4st (st0a,st1a,st2a,st3a)
     = st4x_from_4st (st0b,st1b,st2b,st3b) => *)
@@ -172,6 +174,7 @@ proof.
 move=> H. 
 by rewrite -(st4x_from_4stK' st0a st1a st2a st3a) H st4x_from_4stK'.
 qed.
+*)
 
 require import Avx2_extra.
 
@@ -298,7 +301,7 @@ lemma st4x_packK_ALT sts:
 proof.
 move: sts => [st0 st1 st2 st3].
 rewrite /st4x_unpack.
-by rewrite st4x_get_pack0' st4x_get_pack1' st4x_get_pack2' st4x_get_pack3'.
+by rewrite st4x_get_pack0 st4x_get_pack1 st4x_get_pack2 st4x_get_pack3.
 qed.
 
 (*
@@ -754,6 +757,7 @@ byphoare (_: st4x1=a{m} ==> _) => //.
 proc; simplify.
 wp; call (keccak_pround_unpacked_ph (st4x_unpack_spec a{m})).
 auto => /> st4x; rewrite /st4x_unpack_spec !st4x_from_4stK /st4x_keccak_pround.
+rewrite /st4x_map.
 by move=> <- <- <- <- /#.
 qed.
 
@@ -775,6 +779,7 @@ hoare.
 proc; simplify.
 wp; ecall (keccak_pround_unpacked_h st4x1).
 auto => /> st4x; rewrite /st4x_unpack_spec !st4x_from_4stK /st4x_keccak_pround.
+rewrite /st4x_map.
 by move=> <- <- <- <- /#.
 qed.
 
@@ -859,10 +864,10 @@ lemma st4x_get_map f st4x k:
 proof.
 move=> Hk.
 have: k=0 \/ k=1 \/ k=2 \/ k=3 by smt().
-move=> [->|]; first by rewrite st4x_get_pack0'.
-move=> [->|]; first by rewrite st4x_get_pack1'.
-move=> [->|]; first by rewrite st4x_get_pack2'.
-move=> ->; by rewrite st4x_get_pack3'.
+move=> [->|]; first by rewrite st4x_get_pack0.
+move=> [->|]; first by rewrite st4x_get_pack1.
+move=> [->|]; first by rewrite st4x_get_pack2.
+move=> ->; by rewrite st4x_get_pack3.
 qed.
 
 lemma st4x_keccak_roundP2 rc1 rc2 st4x:
@@ -889,14 +894,13 @@ rewrite !st4x_keccak_iotaE /keccak_round_op /keccak_iota_op.
 rewrite st4x_packK /=.
 rewrite tP => i Hi.
 rewrite initiE //= eq_sym initiE //=.
-rewrite st4x_get_pack0' st4x_get_pack1' st4x_get_pack2' st4x_get_pack3' /=.
-rewrite st4x_get_pack0' st4x_get_pack1' st4x_get_pack2' st4x_get_pack3' /=. 
-rewrite st4x_get_pack0' st4x_get_pack1' st4x_get_pack2' st4x_get_pack3' /=. 
-rewrite st4x_get_pack2' st4x_get_pack3' st4x_get_pack0' st4x_get_pack1' /=.
-by rewrite st4x_get_pack3' /=.
+rewrite !st4x_get_pack0 /=.
+rewrite !st4x_get_pack1 /=.
+rewrite !st4x_get_pack2 /=.
+by rewrite !st4x_get_pack3 /=.
 qed.
 
-hoare keccakf1600_avx2x4_h _a:
+hoare keccakf1600_avx2x4_h' _a:
  M.__keccakf1600_avx2x4 :
  a = _a
  ==> res = st4x_map keccak_f1600_op _a.
@@ -915,13 +919,18 @@ while (0 <= c <= 24 /\ c %% 2 = 0 /\
  rewrite (:c{m}+2=c{m}+1+1) 1:/#.
  rewrite iotaSr /= 1:/#.
  rewrite iotaSr /= 1:/#.
- rewrite !foldl_rcons /=.
+ rewrite /st4x_map !foldl_rcons /= /swap_.
+ pose st0:= (st4x_get _ _).
+ pose st1:= (st4x_get _ _).
+ pose st2:= (st4x_get _ _).
+ pose st3:= (st4x_get _ _).
+ pose st4x1 := (st4x_pack _).
+admit (*
  pose st0:= (init_25_64 _).
  pose st1:= (init_25_64 _).
  pose st2:= (init_25_64 _).
  pose st3:= (init_25_64 _).
  pose st4x1 := (init_25_256 _).
-admit (*
  rewrite -st4x_keccak_roundP2 //=. 
  rewrite tP => i Hi.
  rewrite Array25.initiE // eq_sym Array25.initiE //=.
@@ -966,7 +975,7 @@ phoare keccakf1600_avx2x4_ph' _a:
  ==> res = st4x_map keccak_f1600_op _a
  ] = 1%r.
 proof. 
-by conseq keccakf1600_avx2x4_ll' (keccakf1600_avx2x4_h _a).
+by conseq keccakf1600_avx2x4_ll' (keccakf1600_avx2x4_h' _a).
 qed.
 
 lemma keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
@@ -975,6 +984,14 @@ by proc; call keccakf1600_avx2x4_ll'.
 qed.
 
 (* FINAL CORRECTNESS THEOREM *)
+
+hoare keccakf1600_avx2x4_h _a:
+  M._keccakf1600_avx2x4
+ : a = _a
+ ==> res = st4x_map keccak_f1600_op _a.
+proof.
+by proc; call (keccakf1600_avx2x4_h' _a).
+qed.
 
 phoare keccakf1600_avx2x4_ph _a:
  [ M._keccakf1600_avx2x4

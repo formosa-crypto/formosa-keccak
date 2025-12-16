@@ -51,14 +51,14 @@ qed.
 require BitEncoding.
 import BitEncoding.BitChunking.
 
-
+(*
 op pabsorb_spec_avx2 (r8 : int) (l : W8.t list) (st : W256.t Array7.t) : bool =
   0 < r8 <= 200 /\
   st = stavx2_from_st25 
         (addstate
           (stateabsorb_iblocks (chunk r8 l) st0)
           (bytes2state (chunkremains r8 l))).
-
+*)
 
 hoare absorb_m_avx2_h _mem _l _buf _len _r8 _tb:
  M.__absorb_m_avx2
@@ -557,7 +557,7 @@ wp; call addstate_avx2_ll.
 by auto => /#.
 qed.
 
-hoare absorb_avx2_h _l _buf _r8 _tb:
+hoare absorb_avx2_h _l _buf _tb _r8:
  MM.__absorb_avx2
  : aT = size _l %% _r8 /\ buf=_buf /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_avx2 _r8 _l st
@@ -569,7 +569,7 @@ proof.
 proc => /=.
 admitted.
 
-phoare absorb_avx2_ph _l _buf _r8 _tb:
+phoare absorb_avx2_ph _l _buf _tb _r8:
  [ MM.__absorb_avx2
  : aT = size _l %% _r8 /\ buf=_buf /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_avx2 _r8 _l st
@@ -579,7 +579,7 @@ phoare absorb_avx2_ph _l _buf _r8 _tb:
           /\ res.`2 = (size _l + _ASIZE) %% _r8
  ] = 1%r.
 proof.
-by conseq absorb_avx2_ll (absorb_avx2_h _l _buf _r8 _tb).
+by conseq absorb_avx2_ll (absorb_avx2_h _l _buf _tb _r8).
 qed.
 
 (*
@@ -632,7 +632,7 @@ hoare squeeze_avx2_h _buf _st _r8:
  : buf=_buf /\ st=_st /\ _RATE8=_r8
  /\ 0 < _r8 <= 200
  ==> res.`1 = stavx2_from_st25 (st_i (stavx2_to_st25 _st) ((_ASIZE-1) %/ _r8 + 1))
-     /\ to_list res.`2 = (SQUEEZE1600 _r8 _ASIZE (stavx2_to_st25 _st)).
+     /\ res.`2 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (stavx2_to_st25 _st)).
 proof.
 proc.
 admitted.
@@ -642,7 +642,7 @@ phoare squeeze_avx2_ph _buf _st _r8:
  : buf=_buf /\ st=_st /\ _RATE8=_r8
  /\ 0 < _r8 <= 200
  ==> res.`1 = stavx2_from_st25 (st_i (stavx2_to_st25 _st) ((_ASIZE-1) %/ _r8 + 1))
-     /\ to_list res.`2 = (SQUEEZE1600 _r8 _ASIZE (stavx2_to_st25 _st))
+     /\ res.`2 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (stavx2_to_st25 _st))
  ] = 1%r.
 proof.
 by conseq squeeze_avx2_ll (squeeze_avx2_h _buf _st _r8).

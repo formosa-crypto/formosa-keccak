@@ -61,6 +61,9 @@ qed.
 
 (** Actual correctness proof *)
 
+lemma keccakf1600_pround_avx2_ll: islossless M.__keccakf1600_pround_avx2 
+by islossless.
+
 hoare keccak_pround_avx2_h _a:
  M.__keccakf1600_pround_avx2 :
  state = _a /\ stavx2INV _a ==> res = stavx2_keccak_pround _a.
@@ -77,52 +80,130 @@ by rewrite !stavx2_bvP /=.
 *) admit.
 qed.
 
-hoare keccakf1600_avx2_h _a:
- M._keccakf1600_avx2 :
- state = stavx2_from_st25 _a ==> res = stavx2_from_st25 (keccak_f1600_op _a).
+lemma keccakf1600_avx2_ll': islossless M.__keccakf1600_avx2.
 proof.
-proc; inline 1.
-wp; while (0 < r <= 24 /\
-           round_constants = rc_spec /\
-           stavx2INV state0 /\
-           state0 = stavx2_from_st25 (keccak_round_i r _a)).
- wp; ecall (keccak_pround_avx2_h state0); auto => |> &m ? _.
- rewrite !stavx2INV_from_st25 /= => Hr; split; first smt().
- rewrite -andaE; split.
-  rewrite stavx2INV_iota.
-   by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
-  by rewrite u256_broadcastP_VPBROADCAST.
- move=> Hinv; rewrite (*/=. 1:/#*) iotaSr /= 1:/#. 
- rewrite foldl_rcons /stavx2_keccak_pround /=. 
- pose st:= foldl _ _ _.
- rewrite !stavx2_from_st25K stavx2_from_st25_iota; congr.
- by rewrite/keccak_round_op /keccak_iota_op.
-wp; ecall (keccak_pround_avx2_h state); auto => |>.
-rewrite !stavx2INV_from_st25 /=; split.
- rewrite stavx2INV_iota.
-   by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
-  by rewrite u256_broadcastP_VPBROADCAST.
- rewrite /= /stavx2_keccak_pround !stavx2_from_st25K /keccak_round_op /keccak_iota_op iota1 /=.
- by rewrite stavx2_from_st25_iota get_of_list //.
-move => r ???; have ->: r = 24 by smt().
-smt().
-qed.
-
-lemma keccakf1600_pround_avx2_ll: islossless M.__keccakf1600_pround_avx2 
-by islossless.
-
-lemma keccakf1600_avx2_ll: islossless M._keccakf1600_avx2.
-proof.
-proc; inline 1.
+proc.
 wp; while (true) (24-r).
  by move=> z; wp; call keccakf1600_pround_avx2_ll; auto => /> &m H /#.
 by wp; call keccakf1600_pround_avx2_ll; auto => /> r H /#.
 qed.
 
+hoare keccakf1600_avx2_h' _a:
+ M.__keccakf1600_avx2 :
+ state = _a /\ stavx2INV _a 
+ ==> res = stavx2_from_st25 (keccak_f1600_op (stavx2_to_st25 _a)).
+proof.
+proc.
+wp; while (0 < r <= 24 /\
+           round_constants = rc_spec /\
+           stavx2INV state /\
+           state = stavx2_from_st25 (keccak_round_i r (stavx2_to_st25 _a))).
+ wp; ecall (keccak_pround_avx2_h state); auto => |> &m ? _.
+ rewrite !stavx2INV_from_st25 /= => Hr; split; first smt().
+ rewrite -andaE; split.
+  rewrite stavx2INV_iota.
+   by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
+  by rewrite u256_broadcastP_VPBROADCAST.
+ move=> Hinv; rewrite iotaSr /= 1:/#. 
+ rewrite foldl_rcons /stavx2_keccak_pround /=. 
+ pose st:= foldl _ _ _.
+ rewrite !stavx2_from_st25K stavx2_from_st25_iota; congr.
+ by rewrite/keccak_round_op /keccak_iota_op.
+wp; ecall (keccak_pround_avx2_h state); auto => |> stINV.
+split.
+ rewrite stavx2INV_iota /=.
+   by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
+  by rewrite u256_broadcastP_VPBROADCAST.
+ rewrite /= /stavx2_keccak_pround /keccak_round_op /keccak_iota_op iota1 /=.
+ by rewrite stavx2_from_st25_iota get_of_list //.
+move => r ???; have ->: r = 24 by smt().
+smt().
+qed.
+
+phoare keccakf1600_avx2_ph' _a:
+ [ M.__keccakf1600_avx2 :
+ state = _a /\ stavx2INV _a 
+ ==> res = stavx2_from_st25 (keccak_f1600_op (stavx2_to_st25 _a))
+ ] = 1%r.
+proof. by conseq keccakf1600_avx2_ll' (keccakf1600_avx2_h' _a). qed.
+
+lemma keccakf1600_avx2_ll: islossless M._keccakf1600_avx2.
+proof. by proc; call keccakf1600_avx2_ll'. qed.
+
+hoare keccakf1600_avx2_h _a:
+ M._keccakf1600_avx2 :
+ state = stavx2_from_st25 _a ==> res = stavx2_from_st25 (keccak_f1600_op _a).
+proof.
+proc.
+ecall (keccakf1600_avx2_h' state); auto => |>; split.
+ by rewrite stavx2INV_from_st25.
+by move=> ?; rewrite stavx2_from_st25K.
+qed.
+
 (* FINAL CORRECTNESS THEOREM *)
 phoare keccakf1600_avx2_ph _a:
- [ M._keccakf1600_avx2
- : state = stavx2_from_st25 _a ==> res = stavx2_from_st25 (keccak_f1600_op _a)
+ [ M._keccakf1600_avx2 :
+ state = stavx2_from_st25 _a ==> res = stavx2_from_st25 (keccak_f1600_op _a)
  ] = 1%r.
 proof. by conseq keccakf1600_avx2_ll (keccakf1600_avx2_h _a). qed.
+
+
+lemma stavx2_pack_ll: islossless M.__stavx2_pack by islossless.
+
+hoare stavx2_pack_h _st:
+ M.__stavx2_pack
+ : st=_st ==> res = stavx2_from_st25 _st.
+proof.
+proc.
+admit (* BDEP *).
+qed.
+
+phoare stavx2_pack_ph _st:
+ [ M.__stavx2_pack
+ : st=_st ==> res = stavx2_from_st25 _st
+ ] = 1%r.
+proof. by conseq stavx2_pack_ll (stavx2_pack_h _st). qed.
+
+lemma stavx2_unpack_ll: islossless M.__stavx2_unpack by islossless.
+
+hoare stavx2_unpack_h _st:
+ M.__stavx2_unpack
+ : state=_st ==> res = stavx2_to_st25 _st.
+proof.
+proc.
+admit (* BDEP *).
+qed.
+
+phoare stavx2_unpack_ph _st:
+ [ M.__stavx2_unpack
+ : state=_st ==> res = stavx2_to_st25 _st
+ ] = 1%r.
+proof. by conseq stavx2_unpack_ll (stavx2_unpack_h _st). qed.
+
+lemma keccakf1600_st25_avx2_ll: islossless M._keccakf1600_st25_avx2.
+proof.
+proc.
+call stavx2_unpack_ll.
+call keccakf1600_avx2_ll'.
+by call stavx2_pack_ll; auto.
+qed.
+
+hoare keccakf1600_st25_avx2_h _a:
+ M._keccakf1600_st25_avx2 :
+ st25=_a ==> res = keccak_f1600_op _a.
+proof.
+proc.
+ecall (stavx2_unpack_h state).
+ecall (keccakf1600_avx2_h' state).
+ecall (stavx2_pack_h st25).
+auto => |>; split => *.
+ by rewrite stavx2INV_from_st25.
+by rewrite !stavx2_from_st25K.
+qed.
+
+phoare keccakf1600_st25_avx2_ph _a:
+ [ M._keccakf1600_st25_avx2 :
+ st25=_a ==> res = keccak_f1600_op _a
+ ] = 1%r.
+proof. by conseq keccakf1600_st25_avx2_ll (keccakf1600_st25_avx2_h _a). qed.
 
