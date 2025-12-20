@@ -1,13 +1,12 @@
 [general]
 
-# provers = Alt-Ergo@2.5
 provers = CVC5@1.0
 provers = Z3@4.12
 
-#rdirs = Jasmin:~/src/jasmin/main/eclib
+spec = eclib/specs/avx2.spec
+
 idirs = CryptoSpecs:../submodules/crypto-specs/common
 rdirs = CryptoSpecs:../submodules/crypto-specs/fips202
-#idirs = ../common
 idirs = JazzEC:../submodules/crypto-specs/arrays
 idirs = JazzEC:amd64/extracted
 idirs = amd64/common
