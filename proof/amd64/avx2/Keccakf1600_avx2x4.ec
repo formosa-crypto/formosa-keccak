@@ -640,7 +640,6 @@ proof. by conseq st4x_unpack_ll (st4x_unpack_h _st4x). qed.
 
 op st_inv (_:state) = true.
 
-print M.
 module Maux = {
  proc p1(st4x2 st4x1: state4x): state4x = {
   st4x1 <- st4x_pack_spec st4x1;

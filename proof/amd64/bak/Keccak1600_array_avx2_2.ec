@@ -3802,7 +3802,6 @@ by rewrite -map_comp /(\o) /= map_id to_listK.
 qed.
 *)
 
-print addstate_avx2.
 op addst_avx2 (st : W256.t Array7.t) (st25: W64.t Array25.t) =
  stavx2_from_st25 (addstate (stavx2_to_st25 st) st25).
 
@@ -3852,7 +3851,6 @@ rewrite -state2bytes2bits bytes2stateK //.
 by rewrite bytes_to_bits_flatten; congr.
 qed.
 
-print w64_to_bytes_to_bits.
 lemma w256_to_bytes_to_bits w:
  bytes_to_bits (W32u8.to_list w) = w2bits w.
 admitted.
@@ -4074,7 +4072,6 @@ rewrite (nth_map W64.zero []); 1: smt(Array25.size_to_list).
 rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
 qed.
 
-print sliceget256_64_25.
 
 op split_states (inp : W64.t Array53.t ): W256.t Array7.t * W64.t Array25.t =
  ( init_7_256 (fun ii => u256_pack4 inp.[4*ii+0] inp.[4*ii+1] inp.[4*ii+2] inp.[4*ii+3])
