@@ -3,7 +3,7 @@
 provers = CVC5@1.0
 provers = Z3@4.12
 
-spec = eclib/specs/avx2.spec
+spec = amd64/common/avx2.spec
 
 idirs = CryptoSpecs:../submodules/crypto-specs/common
 rdirs = CryptoSpecs:../submodules/crypto-specs/fips202

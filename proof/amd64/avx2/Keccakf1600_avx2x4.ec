@@ -14,7 +14,6 @@ from JazzEC require import Array5 Array25.
 
 from JazzEC require import WArray200 WArray800.
 
-
 op st4x_to_4st (st4x: state4x): state*state*state*state =
  ( init_25_64 (fun i => sliceget64_256_25 st4x ((200*0+8*i)*8))
  , init_25_64 (fun i => sliceget64_256_25 st4x ((200*1+8*i)*8))
@@ -22,19 +21,45 @@ op st4x_to_4st (st4x: state4x): state*state*state*state =
  , init_25_64 (fun i => sliceget64_256_25 st4x ((200*3+8*i)*8))
  ).
 
+from JazzEC require import Array100.
+ 
+bind array Array25."_.[_]" Array25."_.[_<-_]" Array25.to_list Array25.of_list Array25.t 25.
+realize gt0_size by done.
+realize tolistP by done.
+realize get_setP by smt(Array25.get_setE). 
+realize eqP by smt(Array25.tP).
+realize get_out by smt(Array25.get_out).
+
 (*
+op init_25_64 (f: int -> W64.t) = Array25.init f.
+*)
+bind op [W64.t & Array25.t] init_25_64 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_25_64 => f.
+rewrite BVA_Top_Array25_Array25_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array25.initE).
+qed.
+bind op [W256.t & Array25.t] init_25_256 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_25_256 => f.
+rewrite BVA_Top_Array25_Array25_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array25.initE).
+qed.
+
+
 bind array Array100."_.[_]" Array100."_.[_<-_]" Array100.to_list Array100.of_list Array100.t 100.
+realize gt0_size by done.
 realize tolistP by done.
 realize get_setP by smt(Array100.get_setE). 
 realize eqP by smt(Array100.tP).
 realize get_out by smt(Array100.get_out).
-*)
-
-clone import PolyArray as Array100  with op size <- 100.
-
+    
 op init_100_64 (f: int -> W64.t) = Array100.init f.
 
-(*
 bind op [W64.t & Array100.t] init_100_64 "ainit".
 realize bvainitP.
 proof.
@@ -43,7 +68,7 @@ rewrite BVA_Top_Array100_Array100_t.tolistP.
 apply eq_in_mkseq => i i_bnd;
 smt(Array100.initE).
 qed.
-*)
+
 
 op sliceget256_64_100 (arr: W64.t Array100.t) (offset:int): W256.t =
  if 8 %| offset
@@ -52,8 +77,8 @@ op sliceget256_64_100 (arr: W64.t Array100.t) (offset:int): W256.t =
        (offset %/ 8)
  else W256.bits2w (take 256 (drop offset (flatten (map W64.w2bits (to_list arr))))).
 
-(*
 bind op [W64.t & W256.t & Array100.t] sliceget256_64_100 "asliceget".
+realize le_size by done.       
 realize bvaslicegetP.
 move => /= arr offset; rewrite /sliceget256_64_100 /= => H k kb. 
 case (8 %| offset) => /= *; last by smt(W256.get_bits2w).
@@ -64,7 +89,19 @@ rewrite (BitEncoding.BitChunking.nth_flatten false 64 _).
 rewrite (nth_map W64.zero []); 1: smt(Array100.size_to_list).
 by rewrite nth_mkseq /#.
 qed.
-*)
+
+bind op [W256.t & W64.t & Array25.t] sliceget64_256_25 "asliceget".
+realize le_size by done.       
+realize bvaslicegetP.
+admit.
+qed.
+
+bind op [W64.t & W256.t & Array25.t] sliceget256_64_25 "asliceget".
+realize le_size by done.       
+realize bvaslicegetP.
+admit.
+qed.
+
 
 op (*abbrev*) st4x_from_4st (sts: state*state*state*state): state4x =
  init_25_256
@@ -98,7 +135,6 @@ do split;
  by rewrite !bits8iE /#.
 qed.
 
-(*
 lemma st4x_from_4stK' st0 st1 st2 st3:
  st4x_to_4st
   (init_25_256
@@ -113,7 +149,6 @@ lemma st4x_from_4stK' st0 st1 st2 st3:
           (32 * i * 8)))
  = (st0, st1, st2, st3).
 proof. by apply (st4x_from_4stK (st0,st1,st2,st3)). qed.
-*)
 
 lemma st4x_to_4stK st4x:
  st4x_from_4st (st4x_to_4st st4x) = st4x.
@@ -145,7 +180,6 @@ move=> H.
 by rewrite -(st4x_from_4stK sts1) H st4x_from_4stK.
 qed.
 
-(*
 lemma st4x_from_4st_inj' (st0a st1a st2a st3a st0b st1b st2b st3b: state):
  (* st4x_from_4st (st0a,st1a,st2a,st3a)
     = st4x_from_4st (st0b,st1b,st2b,st3b) => *)
@@ -174,7 +208,6 @@ proof.
 move=> H. 
 by rewrite -(st4x_from_4stK' st0a st1a st2a st3a) H st4x_from_4stK'.
 qed.
-*)
 
 require import Avx2_extra.
 
@@ -208,9 +241,7 @@ lemma st4x_get_pack0' (st0 st1 st2 st3: state):
        (8 * (4 * i) * 8))
  = st0.
 proof.
-admit(*
-by bdep solve.
-*).
+by circuit.
 qed.
 
 lemma st4x_get_pack1' (st0 st1 st2 st3: state):
@@ -219,9 +250,7 @@ lemma st4x_get_pack1' (st0 st1 st2 st3: state):
   1
  = st1.
 proof.
-admit (*
-by bdep solve.
-*).
+circuit.
 qed.
 
 lemma st4x_get_pack2' (st0 st1 st2 st3: state):
@@ -230,9 +259,7 @@ lemma st4x_get_pack2' (st0 st1 st2 st3: state):
   2
  = st2.
 proof.
-admit (*
-by bdep solve.
-*).
+circuit.
 qed.
 
 lemma st4x_get_pack3' (st0 st1 st2 st3: state):
@@ -241,17 +268,14 @@ lemma st4x_get_pack3' (st0 st1 st2 st3: state):
   3
  = st3.
 proof.
-admit(*
-by bdep solve.
-*).
+circuit.
 qed.
 
 lemma st4x_get_pack0 sts:
  st4x_get (st4x_pack sts) 0 = sts.`1.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
-admit(*
-by bdep solve.
+circuit.
 (*
 rewrite tP => i Hi.
 rewrite initiE //= /init_25_256 /sliceget64_256_25 ifT 1:/#.
@@ -266,33 +290,27 @@ rewrite !pack2E /= get_of_list 1:/# /=.
 rewrite ifT 1:/#.
 by rewrite W128.initiE 1:/# /= get_of_list 1:/# /= ifT /#.
 *)
-*).
 qed.
 
 lemma st4x_get_pack1 sts:
  st4x_get (st4x_pack sts) 1 = sts.`2.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
-admit(*
-by bdep solve.
-*).
+circuit.
 qed.
 
 lemma st4x_get_pack2 sts:
  st4x_get (st4x_pack sts) 2 = sts.`3.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
-admit (*by bdep solve.
-*).
+circuit.
 qed.
 
 lemma st4x_get_pack3 sts:
  st4x_get (st4x_pack sts) 3 = sts.`4.
 proof.
 move: sts => [st0 st1 st2 st3] /=.
-admit (*
-by bdep solve.
-*).
+circuit.
 qed.
 
 
@@ -312,7 +330,6 @@ rewrite /st4x_unpack.
 by rewrite st4x_get_pack0' st4x_get_pack1' st4x_get_pack2' st4x_get_pack3'.
 qed.
 *)
-
 (*
 lemma st4x_pack_inj sts1 sts2:
  st4x_pack sts1 = st4x_pack sts2
@@ -326,8 +343,7 @@ qed.
 lemma st4x_unpackK_ALT st4x:
  st4x_pack (st4x_unpack st4x) = st4x.
 proof.
-admit(*
-by bdep solve.
+circuit.
 (*
 rewrite /st4x_unpack /st4x_pack tP => i Hi.
 rewrite st4x_packiE //; iota.
@@ -347,10 +363,8 @@ case: (k < 192) => C2.
  by rewrite ifT 1:/# bits64iE /#.
 by rewrite ifF 1:/# ifT 1:/# bits64iE /#.
 *)
-*).
 qed.
 
-(*
 lemma st4x_unpack_inj st4x1 st4x2:
  st4x_unpack st4x1 = st4x_unpack st4x2
  => st4x1 = st4x2.
@@ -358,7 +372,6 @@ proof.
 move=> H.
 by rewrite -{1}st4x_unpackK H st4x_unpackK.
 qed.
-*)
 
 import BitEncoding BitChunking.
 lemma chunk1 ['a] n (l: 'a list):
@@ -532,45 +545,38 @@ rewrite (nth_map witness).
 by rewrite get_to_list get_w2bits /#.
 qed.
 
+bind op [W256.t & W64.t & Array25.t] sliceset64_256_25 "asliceset".
+realize le_size by done.
+realize bvaslicesetP.
+admitted. 
+
+
 hoare st4x_pack_h _st0 _st1 _st2 _st3:
  M.__st4x_pack:
  st0 = _st0 /\ st1 = _st1 /\ st2 = _st2 /\ st3 = _st3
  ==> res = st4x_pack (_st0, _st1, _st2, _st3).
 proof.
 proc.
-admit(*
-proc change ^while.1: (sliceget256_64_25 st0 (32*i*8));
+proc change ^while.1: { x0 <- sliceget256_64_25 st0 (32*i*8); };
  1: by auto => /#.
-proc change ^while.2: (sliceget256_64_25 st1 (32*i*8));
+proc change ^while.2: { x1 <- sliceget256_64_25 st1 (32*i*8); };
  1: by auto => /#.
-proc change ^while.3: (sliceget256_64_25 st2 (32*i*8));
+proc change ^while.3: { x2 <- sliceget256_64_25 st2 (32*i*8); };
  1: by auto => /#.
-proc change ^while.4: (sliceget256_64_25 st3 (32*i*8));
+proc change ^while.4: { x3 <- sliceget256_64_25 st3 (32*i*8); };
  1: by auto => /#.
 unroll for 2.
-proc change 60: (sliceset64_256_25 st4x (8*(4 * 24 + 0)*8) t0);
+proc change 60: { st4x <- sliceset64_256_25 st4x (8*(4 * 24 + 0)*8) t0; };
  1: by auto => /#.
-proc change 61: (sliceset64_256_25 st4x (8*(4 * 24 + 1)*8) t1);
+proc change 61: { st4x <- sliceset64_256_25 st4x (8*(4 * 24 + 1)*8) t1; };
  1: by auto => /#.
-proc change 62: (sliceset64_256_25 st4x (8*(4 * 24 + 2)*8) t2);
+proc change 62: { st4x <- sliceset64_256_25 st4x (8*(4 * 24 + 2)*8) t2; };
  1: by auto => /#.
-proc change 63: (sliceset64_256_25 st4x (8*(4 * 24 + 3)*8) t3);
+proc change 63: { st4x <- sliceset64_256_25 st4x (8*(4 * 24 + 3)*8) t3; };
  1: by auto => /#.
 inline*; simplify.
 swap 127 8; wp 134.
-bdep 6400 6400
-     [_st0;_st1;_st2;_st3] [st0;st1;st2;st3] [st4x]
-     st4x_pack_spec
-     st4x_inv.
-+ by move=> &m /> *; rewrite all_predT.
-move=> &m /> st4x /=; rewrite -st4x_to_bv_from_4st.
-rewrite chunk1 1:size_st4x_to_bv //.
-rewrite chunk1 // flatten1 1:size_st4x_to_bv //.
-rewrite -map_comp /(\o) /st4x_pack_spec /= !st4x_to_bvK => <-.
-rewrite /st4x_pack_spec'.
-by rewrite st4x_from_4stK'.
-(* by rewrite (st4x_from_4stK (st0{m},st1{m},st2{m},st3{m})).*)
-*).
+circuit.
 qed.
 
 lemma st4x_pack_ll: islossless M.__st4x_pack.
@@ -680,23 +686,7 @@ hoare keccak_pround_unpacked_h _st4x:
      /\ (st4x_to_4st res).`4 = keccak_pround_op (st4x_to_4st _st4x).`4.
 proof.
 proc; inline*; simplify.
-admit (*
-bdep 1600 1600
-     [_st4x] [st4x1] [st4x2]
-     keccak_pround_op
-     st_inv.
-move=> &m />.
- by apply/List.allP => *; rewrite /st_inv /=.
-move=> &m /> st4x.
-rewrite -map_comp /(\o) /= !flatten1.
-rewrite -{1}(st4x_to_4stK st4x1{!m}) st4x_to_bv_from_4st.
-rewrite (flattenK 1600) //.
- by move=> l /= [->|[->|[->|->]]]; rewrite size_st_to_bv.
-rewrite -{1}(st4x_to_4stK st4x) st4x_to_bv_from_4st.
-rewrite (flattenK 1600) //=.
- by move=> l /= [->|[->|[->|->]]]; rewrite size_st_to_bv.
-by rewrite /= !st_to_bvK => /> -> -> -> -> /#.
-*).
+circuit.
 qed.
 
 lemma keccakf1600_4x_pround_ll: islossless M._keccakf1600_4x_pround.
