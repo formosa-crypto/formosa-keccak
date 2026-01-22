@@ -2,3 +2,6 @@
 	path = submodules/crypto-specs
 	url = ../crypto-specs.git
 	branch = bdep_prune
+[submodule "submodules/jasmin"]
+	path = submodules/jasmin
+	url = git@github.com:jasmin-lang/jasmin.git
