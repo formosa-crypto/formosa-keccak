@@ -2,7 +2,7 @@
 # added for keccakf_avx2
 VMOVLPD(w@128) -> @64 = w[@64|0]
 VMOVHPD(w@128) -> @64 = w[@64|1]
-#VMOV_64(w@64) -> @128 = uextend<64, 128>(w)
+VMOV_64(w@64) -> @128 = uextend<64, 128>(w)
 
 
 # Intel intrinsic: _mm256_permutexvar_epi32
