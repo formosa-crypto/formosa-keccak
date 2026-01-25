@@ -15,7 +15,8 @@ from Jasmin require import JModel.
 
 from CryptoSpecs require import JWordList.
 from CryptoSpecs require export Keccakf1600_Spec Keccak1600_Spec.
-(* from CryptoSpecs require import Bindings. *)
+
+require import Keccak_bindings.
 
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import WArray200.
@@ -130,6 +131,7 @@ hoare addratebit_ref_h _r8 _st:
  : st = _st /\ _RATE8=_r8
  ==> res = addratebit _r8 _st.
 proof.
+proc; simplify.
 admit (* BDEP? *).
 qed.
 

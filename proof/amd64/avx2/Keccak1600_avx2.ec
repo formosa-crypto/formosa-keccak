@@ -22,6 +22,7 @@ from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import WArray200.
 from JazzEC require import Array25 Array7.
 
+require import Keccak_bindings.
 require import Avx2_extra.
 
 op stavx2_from_st25 (st: W64.t Array25.t): W256.t Array7.t =

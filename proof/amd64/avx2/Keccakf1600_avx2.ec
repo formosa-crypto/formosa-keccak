@@ -5,9 +5,9 @@ from Jasmin require import JModel.
 
 from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600 Keccak1600_arrays.
 
-require import Keccak_bindings Keccak1600_avx2.
+require import Keccak_bindings.
 
-
+require import  Keccak1600_avx2.
 
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import Array4 Array5 Array7 Array24 Array25.
@@ -73,14 +73,8 @@ hoare keccak_pround_avx2_h _a:
  state = _a /\ stavx2INV _a ==> res = stavx2_keccak_pround _a.
 proof.
 proc.
-admit (*
+admit(*
 circuit.
-bdep 1792 1792 [_a] [state] [state] stavx2_keccak_pround stavx2INV.
-+ move=> |> Hinv.
-  rewrite stavx2_bvP allP => l.
-  by rewrite mem_seq1.
-move => |> Hinv st.
-by rewrite !stavx2_bvP /=.
 *).
 qed.
 
@@ -194,18 +188,9 @@ proc change 7: { state <- state.[4 <- sliceget25_64_256 st (11*8*8)]; };
  1: by auto => /#.
 proc change 10: { state <- state.[5 <- sliceget25_64_256 st (16*8*8)]; };
  1: by auto => /#.
-proc change 14: { state <- state.[6 <- sliceget25_64_256 st (21*8*8)]; };
+proc change 16: { state <- state.[6 <- sliceget25_64_256 st (21*8*8)]; };
  1: by auto => /#.
-admit(*
-circuit.
-print VMOV_64.
-proc change 4: { t128_0 <- W2u64.zeroextu128 st.[5]; }.
- admit.
-proc change 6: { t128_1 <- W2u64.zeroextu128 st.[10]; }.
- admit.
-circuit.
-
-*).
+by circuit.
 qed.
 
 phoare stavx2_pack_ph _st:
@@ -265,7 +250,6 @@ rewrite (nth_flatten _ 64); 1: by rewrite allP => i;rewrite mapP => He; elim He;
 rewrite (nth_map W64.zero []); 1: smt(Array25.size_to_list).
 rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
 qed.
- 
 
 hoare stavx2_unpack_h _st:
  M.__stavx2_unpack
@@ -282,7 +266,7 @@ proc change 18: { st <- sliceset25_64_256 st (16*8*8) t256_4; };
  1: by auto => /#.
 proc change 21: { st <- sliceset25_64_256 st (21*8*8) t256_4; };
  1: by auto => /#.
-circuit.
+by circuit.
 qed.
 
 phoare stavx2_unpack_ph _st:

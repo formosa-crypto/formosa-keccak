@@ -8,17 +8,17 @@ require import
 Array5 Array6 Array7 Array24 Array25 WArray40 WArray160 WArray192 WArray200
 WArray224 WArray800.
 
-abbrev rOL8 =
+abbrev [-printing] rOL8 =
 (W256.of_int
 13620818001941277694121380808605999856886653716761013959207994299728839901191
 ).
 
-abbrev rOL56 =
+abbrev [-printing] rOL56 =
 (W256.of_int
 10910488462195273559651782724632284871561478246514020268633800075540923875841
 ).
 
-abbrev kECCAK_RHOTATES_RIGHT =
+abbrev  kECCAK_RHOTATES_RIGHT =
 ((Array6.of_list witness)
 [(W256.of_int 144373339913893657577751063007562604548177214458152943091773);
 (W256.of_int 232252764209307188274174373867837442080505530800860351692863);
@@ -27,7 +27,7 @@ abbrev kECCAK_RHOTATES_RIGHT =
 (W256.of_int 276192476357013953622045746931053922384479139705868246843454);
 (W256.of_int 313855086769334038206421612937983674734430261968315659321364)]).
 
-abbrev kECCAK_RHOTATES_LEFT =
+abbrev  kECCAK_RHOTATES_LEFT =
 ((Array6.of_list witness)
 [(W256.of_int 257361171150853911329517531560668107745210100483895842570243);
 (W256.of_int 169481746855440380633094220700393270212881784141188433969153);
@@ -36,7 +36,7 @@ abbrev kECCAK_RHOTATES_LEFT =
 (W256.of_int 125542034707733615285222847637176789908908175236180538818562);
 (W256.of_int 87879424295413530700846981630247037558957052973733126340652)]).
 
-abbrev kECCAK1600_RC =
+abbrev  kECCAK1600_RC =
 ((Array24.of_list witness)
 [(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
 (W64.of_int (-9223372034707259392)); (W64.of_int 32907);
@@ -1450,8 +1450,8 @@ module M = {
   }
   proc __stavx2_pack (st:W64.t Array25.t) : W256.t Array7.t = {
     var state:W256.t Array7.t;
-    var t128_0:W128.t;
     var t128_1:W128.t;
+    var t128_0:W128.t;
     var r:W64.t;
     var t256_0:W256.t;
     var t256_1:W256.t;
@@ -1462,22 +1462,21 @@ module M = {
     (get64_direct (WArray200.init64 (fun i => st.[i])) (8 * 0)));
     state.[1] <-
     (get256_direct (WArray200.init64 (fun i => st.[i])) (1 * 8));
-    t128_0 <- (VMOV_64 st.[5]);
+    t128_1 <- (VMOV_64 st.[5]);
     state.[3] <-
     (get256_direct (WArray200.init64 (fun i => st.[i])) (6 * 8));
-    t128_1 <- (VMOV_64 st.[10]);
+    t128_0 <- (VMOV_64 st.[10]);
     state.[4] <-
     (get256_direct (WArray200.init64 (fun i => st.[i])) (11 * 8));
     r <- st.[15];
-    t128_0 <- (VPINSR_2u64 t128_0 r (W8.of_int 1));
+    t128_1 <- (VPINSR_2u64 t128_1 r (W8.of_int 1));
     state.[5] <-
     (get256_direct (WArray200.init64 (fun i => st.[i])) (16 * 8));
     r <- st.[20];
-    t128_1 <- (VPINSR_2u64 t128_1 r (W8.of_int 1));
-    state.[2] <-
-    (W256.of_int
-    (((W128.to_uint t128_1) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_0))));
+    t128_0 <- (VPINSR_2u64 t128_0 r (W8.of_int 1));
+    t256_0 <- (zeroextu256 t128_0);
+    t256_0 <- (VINSERTI128 t256_0 t128_1 (W8.of_int 1));
+    state.[2] <- t256_0;
     state.[6] <-
     (get256_direct (WArray200.init64 (fun i => st.[i])) (21 * 8));
     t256_0 <-
