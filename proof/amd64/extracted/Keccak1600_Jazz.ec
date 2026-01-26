@@ -8,17 +8,17 @@ require import
 Array5 Array6 Array7 Array24 Array25 WArray40 WArray160 WArray192 WArray200
 WArray224 WArray800.
 
-abbrev [-printing] rOL8 =
+abbrev rOL8 =
 (W256.of_int
 13620818001941277694121380808605999856886653716761013959207994299728839901191
 ).
 
-abbrev [-printing] rOL56 =
+abbrev rOL56 =
 (W256.of_int
 10910488462195273559651782724632284871561478246514020268633800075540923875841
 ).
 
-abbrev  kECCAK_RHOTATES_RIGHT =
+abbrev kECCAK_RHOTATES_RIGHT =
 ((Array6.of_list witness)
 [(W256.of_int 144373339913893657577751063007562604548177214458152943091773);
 (W256.of_int 232252764209307188274174373867837442080505530800860351692863);
@@ -27,7 +27,7 @@ abbrev  kECCAK_RHOTATES_RIGHT =
 (W256.of_int 276192476357013953622045746931053922384479139705868246843454);
 (W256.of_int 313855086769334038206421612937983674734430261968315659321364)]).
 
-abbrev  kECCAK_RHOTATES_LEFT =
+abbrev kECCAK_RHOTATES_LEFT =
 ((Array6.of_list witness)
 [(W256.of_int 257361171150853911329517531560668107745210100483895842570243);
 (W256.of_int 169481746855440380633094220700393270212881784141188433969153);
@@ -36,7 +36,7 @@ abbrev  kECCAK_RHOTATES_LEFT =
 (W256.of_int 125542034707733615285222847637176789908908175236180538818562);
 (W256.of_int 87879424295413530700846981630247037558957052973733126340652)]).
 
-abbrev  kECCAK1600_RC =
+abbrev kECCAK1600_RC =
 ((Array24.of_list witness)
 [(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
 (W64.of_int (-9223372034707259392)); (W64.of_int 32907);
@@ -257,11 +257,13 @@ module M = {
     return st;
   }
   proc __addratebit_ref (st:W64.t Array25.t, _RATE8:int) : W64.t Array25.t = {
-    var t64:W64.t;
-    t64 <- (W64.of_int 1);
-    t64 <- (t64 `<<` (W8.of_int (((8 * _RATE8) - 1) %% 64)));
-    t64 <- (t64 `^` st.[((_RATE8 - 1) %/ 8)]);
-    st.[((_RATE8 - 1) %/ 8)] <- t64;
+    
+    st <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)
+    ((get8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)) `^`
+    (W8.of_int 128)))));
     return st;
   }
   proc __SHLQ (x:W64.t, shbytes:int) : W64.t = {
@@ -3084,11 +3086,7 @@ module M = {
     z256 <- (set0_256);
     i <- 0;
     while ((i < (32 * 25))) {
-      st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set256_direct (WArray800.init256 (fun i_0 => st.[i_0])) 
-      i z256)));
+      st.[i] <- z256;
       i <- (i + 32);
     }
     return st;

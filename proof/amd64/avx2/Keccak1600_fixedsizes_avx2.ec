@@ -19,7 +19,7 @@ from CryptoSpecs require import FIPS202_Keccakf1600.
 from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec Keccak1600_Spec.
 
 
-require export Keccak1600_avx2 Keccakf1600_avx2.
+require import Keccak1600_avx2 Keccakf1600_avx2.
 require import Keccak1600_subreadwrite.
 
 (*

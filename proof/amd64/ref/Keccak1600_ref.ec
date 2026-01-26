@@ -132,7 +132,7 @@ hoare addratebit_ref_h _r8 _st:
  ==> res = addratebit _r8 _st.
 proof.
 proc; simplify.
-admit (* BDEP? *).
+by auto => />.
 qed.
 
 phoare addratebit_ref_ph _r8 _st:

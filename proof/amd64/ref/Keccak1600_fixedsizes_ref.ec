@@ -54,6 +54,7 @@ hoare addstate_m_ref_h _mem _st _at _buf _len _tb:
   /\ res.`2 = _at + size l
   /\ res.`3 = _buf + _len.
 proof.
+proc; simplify.
 admitted.
 
 phoare addstate_m_ref_ph _mem _st _at _buf _len _tb:

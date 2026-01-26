@@ -53,7 +53,7 @@ inline fn __addstate_m_ref
   // fill first word...
   AT8 = AT;
   AT = 8*(AT/8);
-  if ( AT8 != 0 ) {
+  if ( AT8%8 != 0 ) {
     buf, _LEN, _TRAILB, AT8, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT8);
     st[AT/8] ^= w;
     AT = AT8;

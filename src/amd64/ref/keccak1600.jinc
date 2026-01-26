@@ -40,11 +40,13 @@ inline fn __addratebit_ref
 , inline int _RATE8
 ) -> reg ptr u64[25]
 {
-  reg u64 t64;
+/*  reg u64 t64;
   t64 = 1;
   t64 <<= (8*_RATE8-1) % 64; // obs: should be 63 for all admissible rates!
   t64 ^= st[(_RATE8-1)/8];
   st[(_RATE8-1)/8] = t64;
+*/
+  st.[:u8 _RATE8-1] ^= 0x80;
   return st;
 }
 
