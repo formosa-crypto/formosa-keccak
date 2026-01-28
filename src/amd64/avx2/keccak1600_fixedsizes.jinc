@@ -27,16 +27,7 @@ ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + _LEN}
   reg u128 t128_0, t128_1, t128_2;
 
   if (AT < 8) {
-    if (AT==0 && 8<=_LEN) {
-      r0 = #VPBROADCAST_4u64([:u64 (64u) buf]);
-      buf += 8;
-      _LEN -= 8;
-      AT = 8;
-    } else {
-      buf, _LEN, _TRAILB, AT, t64_1 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 0, AT);
-      t128_0 = (128u) t64_1;
-      r0 = #VPBROADCAST_4u64(t128_0);
-    }
+    buf, _LEN, _TRAILB, AT, r0 = __m_ilen_read_bcast_upto8_at(buf, _LEN, _TRAILB, 0, AT);
     st[0] ^= r0;
   }
 
@@ -62,7 +53,8 @@ ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + _LEN}
       buf, _LEN, _TRAILB, AT, r6 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 168, AT);
       st = __addstate_r3456_avx2( st, r3, r4, r5, r6);
     }
-    r2 = (2u128)[t128_1, t128_2];
+    r2 = (256u) t128_2;
+    r2 = #VINSERTI128(r2, t128_1, 1);
     st[2] ^= r2;
   }
   return st, AT, buf;

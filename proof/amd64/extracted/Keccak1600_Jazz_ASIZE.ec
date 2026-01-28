@@ -3248,8 +3248,6 @@ module M = {
                         offset:int, _LEN:int, _TRAILB:int) : W256.t Array7.t *
                                                              int * int = {
     var dELTA:int;
-    var t64_1:W64.t;
-    var t128_0:W128.t;
     var r0:W256.t;
     var r1:W256.t;
     var t64_2:W64.t;
@@ -3265,20 +3263,8 @@ module M = {
     var r2:W256.t;
     dELTA <- 0;
     if ((aT < 8)) {
-      if (((aT = 0) /\ (8 <= _LEN))) {
-        r0 <-
-        (VPBROADCAST_4u64
-        (get64_direct (WArray999.init8 (fun i => buf.[i]))
-        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
-        dELTA <- (dELTA + 8);
-        _LEN <- (_LEN - 8);
-        aT <- 8;
-      } else {
-        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ __a_ilen_read_upto8_at (
-        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-        t128_0 <- (zeroextu128 t64_1);
-        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-      }
+      (dELTA, _LEN, _TRAILB, aT, r0) <@ __a_ilen_read_bcast_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
       st.[0] <- (st.[0] `^` r0);
     } else {
       
@@ -3317,10 +3303,8 @@ module M = {
       } else {
         
       }
-      r2 <-
-      (W256.of_int
-      (((W128.to_uint t128_2) %% (2 ^ 128)) +
-      ((2 ^ 128) * (W128.to_uint t128_1))));
+      r2 <- (zeroextu256 t128_2);
+      r2 <- (VINSERTI128 r2 t128_1 (W8.of_int 1));
       st.[2] <- (st.[2] `^` r2);
     } else {
       

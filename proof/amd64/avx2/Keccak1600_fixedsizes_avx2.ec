@@ -6,7 +6,7 @@
 
 ******************************************************************************)
 
-require import AllCore List Int IntDiv.
+require import AllCore List Int IntDiv StdOrder.
 
 from Jasmin require import JModel_x86.
 
@@ -21,6 +21,16 @@ from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec Keccak1600_Sp
 
 require import Keccak1600_avx2 Keccakf1600_avx2.
 require import Keccak1600_subreadwrite.
+
+
+
+
+(* TODO: to be moved elsewhere... *)
+op addstate_avx2 (st: W256.t Array7.t, l: W8.t list): W256.t Array7.t =
+ stavx2_from_st25 (addstate (stavx2_to_st25 st) (bytes2state l)).
+
+
+
 
 (*
    INCREMENTAL (FIXED-SIZE) MEMORY ABSORB
@@ -207,20 +217,8 @@ module MM = {
     var r2:W256.t;
     dELTA <- 0;
     if ((aT < 8)) {
-      if (((aT = 0) /\ (8 <= _LEN))) {
-        r0 <-
-        (VPBROADCAST_4u64
-        (get64_direct (WA.init8 (fun i => buf.[i]))
-        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
-        dELTA <- (dELTA + 8);
-        _LEN <- (_LEN - 8);
-        aT <- 8;
-      } else {
-        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ RW.MM.__a_ilen_read_upto8_at (
-        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-        t128_0 <- (zeroextu128 t64_1);
-        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-      }
+      (dELTA, _LEN, _TRAILB, aT, r0) <@ RW.MM.__a_ilen_read_bcast_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
       st.[0] <- (st.[0] `^` r0);
     } else {
       
@@ -259,10 +257,8 @@ module MM = {
       } else {
         
       }
-      r2 <-
-      (W256.of_int
-      (((W128.to_uint t128_2) %% (2 ^ 128)) +
-      ((2 ^ 128) * (W128.to_uint t128_1))));
+      r2 <- (zeroextu256 t128_2);
+      r2 <- (VINSERTI128 r2 t128_1 (W8.of_int 1));
       st.[2] <- (st.[2] `^` r2);
     } else {
       
@@ -536,8 +532,717 @@ module MM = {
 }.
 
 
+module MMaux = {
+  proc __addstate_avx2_aux (st:W256.t Array7.t, aT:int, buf:W8.t A.t,
+                        offset:int, _LEN:int, _TRAILB:int) : W256.t Array7.t *
+                                                             int * int = {
+    var dELTA:int;
+    var t64_1:W64.t;
+    var t128_0:W128.t;
+    var r0:W256.t;
+    var r1:W256.t;
+    var t64_2:W64.t;
+    var t128_1:W128.t;
+    var t128_2:W128.t;
+    var r3:W256.t;
+    var t64_3:W64.t;
+    var r4:W256.t;
+    var t64_4:W64.t;
+    var r5:W256.t;
+    var t64_5:W64.t;
+    var r6:W256.t;
+    var r2:W256.t;
+    t64_1 <- W64.zero;
+    r0 <- W256.zero;
+    r1 <- W256.zero;
+    t64_2 <- W64.zero;
+    t64_3 <- W64.zero;
+    t64_4 <- W64.zero;
+    t64_5 <- W64.zero;
+    r2 <- W256.zero;
+    r3 <- W256.zero;
+    r4 <- W256.zero;
+    r5 <- W256.zero;
+    r6 <- W256.zero;
+    dELTA <- 0;
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+      st.[0] <- (st.[0] `^` r0);
+    } else {
+      
+    }
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ RW.MM.__a_ilen_read_upto32_at (buf, 
+      offset, dELTA, _LEN, _TRAILB, 8, aT);
+      st.[1] <- (st.[1] `^` r1);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ RW.MM.__a_ilen_read_upto8_at (buf,
+      offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 168, aT);
+        st <@ M.__addstate_r3456_avx2 (st, r3, r4, r5, r6);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+    } else {
+      
+    }
+    offset <- (offset + dELTA);
+    return (st, aT, offset);
+  }
+  proc __addstate_avx2_aux2 (st:W256.t Array7.t, aT:int, buf:W8.t A.t,
+                        offset:int, _LEN:int, _TRAILB:int) : W256.t Array7.t *
+                                                             int * int = {
+    var dELTA:int;
+    var t64_1:W64.t;
+    var t128_0:W128.t;
+    var r0:W256.t;
+    var r1:W256.t;
+    var t64_2:W64.t;
+    var t128_1:W128.t;
+    var t128_2:W128.t;
+    var r3:W256.t;
+    var t64_3:W64.t;
+    var r4:W256.t;
+    var t64_4:W64.t;
+    var r5:W256.t;
+    var t64_5:W64.t;
+    var r6:W256.t;
+    var r2:W256.t;
+    t64_1 <- W64.zero;
+    r0 <- W256.zero;
+    r1 <- W256.zero;
+    t64_2 <- W64.zero;
+    t64_3 <- W64.zero;
+    t64_4 <- W64.zero;
+    t64_5 <- W64.zero;
+    r2 <- W256.zero;
+    r3 <- W256.zero;
+    r4 <- W256.zero;
+    r5 <- W256.zero;
+    r6 <- W256.zero;
+    dELTA <- 0;
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+    } else {
+      
+    }
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ RW.MM.__a_ilen_read_upto32_at (buf, 
+      offset, dELTA, _LEN, _TRAILB, 8, aT);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ RW.MM.__a_ilen_read_upto8_at (buf,
+      offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 168, aT);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+    } else {
+      
+    }
+    st.[0] <- (st.[0] `^` r0);
+    st.[1] <- (st.[1] `^` r1);
+    st <@ M.__addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    st.[2] <- (st.[2] `^` r2);
+    offset <- (offset + dELTA);
+    return (st, aT, offset);
+  }
+  proc __addstate_avx2_aux3 (st:W256.t Array7.t, aT:int, buf:W8.t A.t,
+                        offset:int, _LEN:int, _TRAILB:int) : W256.t Array7.t *
+                                                             int * int = {
+    var dELTA:int;
+    var t64_1:W64.t;
+    var t128_0:W128.t;
+    var r0:W256.t;
+    var r1:W256.t;
+    var t64_2:W64.t;
+    var t128_1:W128.t;
+    var t128_2:W128.t;
+    var r3:W256.t;
+    var t64_3:W64.t;
+    var r4:W256.t;
+    var t64_4:W64.t;
+    var r5:W256.t;
+    var t64_5:W64.t;
+    var r6:W256.t;
+    var r2:W256.t;
+    t64_1 <- W64.zero;
+    r0 <- W256.zero;
+    r1 <- W256.zero;
+    t64_2 <- W64.zero;
+    t64_3 <- W64.zero;
+    t64_4 <- W64.zero;
+    t64_5 <- W64.zero;
+    r2 <- W256.zero;
+    r3 <- W256.zero;
+    r4 <- W256.zero;
+    r5 <- W256.zero;
+    r6 <- W256.zero;
+    dELTA <- 0;
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WA.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+    } else {
+      
+    }
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ RW.MM.__a_ilen_read_upto32_at (buf, 
+      offset, dELTA, _LEN, _TRAILB, 8, aT);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ RW.MM.__a_ilen_read_upto8_at (buf,
+      offset, dELTA, _LEN, _TRAILB, 40, aT);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 168, aT);
+      } else {
+        
+      }
+    } else {
+      
+    }
+    st.[0] <- (st.[0] `^` r0);
+    st.[1] <- (st.[1] `^` r1);
+    st <@ M.__addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    t128_1 <- (zeroextu128 t64_2);
+    t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+    t128_2 <- (zeroextu128 t64_3);
+    t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+    r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+    st.[2] <- (st.[2] `^` r2);
+    offset <- (offset + dELTA);
+    return (st, aT, offset);
+  }
+  proc __addstate_avx2_aux4 (st:W256.t Array7.t, aT:int, buf:W8.t A.t,
+                        offset:int, _LEN:int, _TRAILB:int) : W256.t Array7.t *
+                                                             int * int = {
+    var dELTA:int;
+    var t64_1:W64.t;
+    var t128_0:W128.t;
+    var r0:W256.t;
+    var r1:W256.t;
+    var t64_2:W64.t;
+    var t128_1:W128.t;
+    var t128_2:W128.t;
+    var r3:W256.t;
+    var t64_3:W64.t;
+    var r4:W256.t;
+    var t64_4:W64.t;
+    var r5:W256.t;
+    var t64_5:W64.t;
+    var r6:W256.t;
+    var r2:W256.t;
+    dELTA <- 0;
+
+    t64_1 <- W64.zero;
+    if ((aT < 8)) {
+      (dELTA, _LEN, _TRAILB, aT, t64_1) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+    } else { }
+
+    r1 <- W256.zero;
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ RW.MM.__a_ilen_read_upto32_at (buf, 
+      offset, dELTA, _LEN, _TRAILB, 8, aT);
+    } else { }
+
+    t64_2 <- W64.zero;
+    t64_3 <- W64.zero;
+    t64_4 <- W64.zero;
+    t64_5 <- W64.zero;
+    r3 <- W256.zero;
+    r4 <- W256.zero;
+    r5 <- W256.zero;
+    r6 <- W256.zero;
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ RW.MM.__a_ilen_read_upto8_at (buf,
+      offset, dELTA, _LEN, _TRAILB, 40, aT);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ RW.MM.__a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ RW.MM.__a_ilen_read_upto32_at (buf,
+        offset, dELTA, _LEN, _TRAILB, 168, aT);
+      } else { }
+    } else { }
+    offset <- (offset + dELTA);
+
+    t128_0 <- (zeroextu128 t64_1);
+    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+    st.[0] <- (st.[0] `^` r0);
+
+    st.[1] <- (st.[1] `^` r1);
+
+    st <@ M.__addstate_r3456_avx2 (st, r3, r4, r5, r6);
+
+    t128_1 <- (zeroextu128 t64_2);
+    t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+    t128_2 <- (zeroextu128 t64_3);
+    t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+    r2 <- zeroextu256 t128_2;
+    r2 <- VINSERTI128 r2 t128_1 (W8.of_int 1);
+    st.[2] <- (st.[2] `^` r2);
+
+    return (st, aT, offset);
+  }
+}.
+
 lemma addstate_avx2_ll: islossless MM.__addstate_avx2
  by islossless.
+
+
+
+
+lemma subread_specP N buf off dlt len trail cur at dlt' at' w':
+ 0 <= N =>
+ cur <= at =>
+ subread_pre cur at len trail =>
+ subread_spec N buf off dlt len trail cur at dlt' 0 0 at' w' =>
+ at' = at + len + b2i (trail%%256<>0)
+ /\
+ dlt' = dlt + len
+ /\
+ bytes2state (nseq at W8.zero ++ sub buf (off+dlt) len ++ [W8.of_int trail])
+ = bytes2state (nseq cur W8.zero++w').
+proof.
+move=> Hn Hcur Hpre Hspec.
+move: (Hpre) (Hspec Hn Hpre) => {Hspec} /> ???? H1 H2 H3 H4 H5 *.
+split; first smt().
+rewrite tP => i Hi.
+rewrite !initiE //= !nth_w64L_from_bytes 1..2:/#.
+congr; apply W8u8.Pack.ext_eq => k Hk.
+rewrite !get_of_list //.
+rewrite eq_sym !nth_take 1..4:/# !nth_drop 1..4:/# -catA nth_cat 1:size_nseq ?Eat.
+case: (8 * i + k < max 0 cur) => Ccur //.
+ rewrite nth_cat ?size_nseq ifT 1:/#.
+ by rewrite !nth_nseq_if /#.
+rewrite eq_sym nth_cat size_nseq /=.
+case: (8*i+k < max 0 at) => C1.
+ by rewrite nth_nseq_if nth_wat /#.
+have ->: max 0 at = at by smt().
+have ->: max 0 cur = cur by smt().
+case: (len=0) => C2.
+ by rewrite C2 nth_wat 1..2:/# sub0 /#.
+by rewrite nth_cat ifF 1:size_sub /#.
+qed.
+
+
+
+op addst_avx2 (st : W256.t Array7.t) (st25: W64.t Array25.t) =
+ stavx2_from_st25 (addstate (stavx2_to_st25 st) st25).
+
+(*
+op stavx2_to_bits (stavx2: W256.t Array7.t) =
+ flatten (map W256.w2bits (to_list stavx2)).
+
+lemma size_stavx2_to_bits stavx2:
+ size (stavx2_to_bits stavx2) = 1792.
+admitted.
+*)
+
+(*
+lemma stavx2_to_bitsE stavx2:
+ stavx2_to_bits stavx2 = flatten (map W256.w2bits (to_list stavx2)).
+proof.
+rewrite /stavx2_to_bits map_mkseq /mkseq -iotaredE /(\o) /= !flatten_cons /= flatten_nil cats0 !catA.
+rewrite /state2bits /w64L_to_bits map_mkseq  /mkseq -iotaredE /(\o) /= !flatten_cons /= flatten_nil cats0 !catA.
+admitted.
+*)
+
+(*
+op stavx2_from_bits bs =
+ Array7.of_list W256.zero (map W256.bits2w (chunkify 256 bs)).
+
+lemma stavx2_from_bitsK bs:
+ size bs = 1792 =>
+ stavx2_to_bits (stavx2_from_bits bs) = bs.
+proof.
+admitted.
+
+lemma stavx2_to_bitsK st:
+ stavx2_from_bits (stavx2_to_bits st) = st.
+proof.
+admitted.
+
+
+
+
+lemma flatten_states_aux llbytes (stavx2: W256.t Array7.t) l:
+ size (flatten llbytes) = 200 =>
+ l = List.map bytes_to_bits llbytes =>
+ flatten (stavx2_to_bits stavx2 :: l)
+ = stavx2_to_bits stavx2
+   ++ state2bits (bytes2state (flatten llbytes)).
+proof.
+move=> Hsz El.
+rewrite El flatten_cons; congr.
+rewrite -state2bytes2bits bytes2stateK //.
+by rewrite bytes_to_bits_flatten; congr.
+qed.
+
+lemma w256_to_bytes_to_bits w:
+ bytes_to_bits (W32u8.to_list w) = w2bits w.
+admitted.
+
+lemma flatten_states st w1 w2 w3 w4 w5 w6 w7 w8 w9 w10:
+ flatten
+  ( stavx2_to_bits st ::
+   [ W64.w2bits w1; W256.w2bits w2
+   ; W64.w2bits w3; W256.w2bits w4
+   ; W64.w2bits w5; W256.w2bits w6
+   ; W64.w2bits w7; W256.w2bits w8
+   ; W64.w2bits w9; W256.w2bits w10
+   ])
+ = stavx2_to_bits st
+   ++ state2bits
+       (bytes2state (flatten [ u64_to_bytes w1; u256_to_bytes w2
+                             ; u64_to_bytes w3; u256_to_bytes w4
+                             ; u64_to_bytes w5; u256_to_bytes w6
+                             ; u64_to_bytes w7; u256_to_bytes w8
+                             ; u64_to_bytes w9; u256_to_bytes w10
+                             ])).
+proof.
+pose L:= u64_to_bytes _::_.
+rewrite (flatten_states_aux L); last done.
+ rewrite /L !flatten_cons flatten_nil cats0 !size_cat.
+ by rewrite !W8u8.size_to_list !W32u8.size_to_list.
+by rewrite /L /= !w64_to_bytes_to_bits !w256_to_bytes_to_bits.
+qed.
+
+(*
+stavx2_to_bits stavx2 = state2bits (stavx2_to_st25 stavx2)
+*)
+(* PARA INVOCAR LEMA
+[ u64_to_bytes t64_1; u256_to_bytes r1
+; u64_to_bytes t64_2; u256_to_bytes r3
+; u64_to_bytes t64_3; u256_to_bytes r4
+; u64_to_bytes t64_4; u256_to_bytes r5
+; u64_to_bytes t64_5; u256_to_bytes r6
+]
+*)
+*)
+
+
+
+(*
+clone import PolyArray as Array53 with
+        op size = 53.
+
+bind array Array53."_.[_]" Array53."_.[_<-_]" Array53.to_list Array53.of_list Array53.t 53.
+realize tolistP by done.
+realize get_setP by smt(Array53.get_setE). 
+realize eqP by smt(Array53.tP).
+realize get_out by smt(Array53.get_out).
+realize gt0_size by done.
+
+require import Avx2_extra.
+
+op split_states (inp : W64.t Array53.t ): W256.t Array7.t * W64.t Array25.t =
+ ( init_7_256 (fun ii => u256_pack4 inp.[4*ii+0] inp.[4*ii+1] inp.[4*ii+2] inp.[4*ii+3])
+ , init_25_64 (fun ii => inp.[28+ii])
+ ).
+
+op F4 (inp : W64.t Array53.t ) : W256.t Array7.t =
+ let (stavx2, st) = split_states inp in addst_avx2 stavx2 st.
+op P4 (inp : W64.t Array53.t ) : bool =
+ stavx2INV (split_states inp).`1.
+*)
+op st_pack (_at _sz:int) w1 w2 w3 w4 w5 w6 w7 w8 w9 w10 =
+ bytes2state (flatten [ u64_to_bytes w1; u256_to_bytes w2
+                      ; u64_to_bytes w3; u256_to_bytes w4
+                      ; u64_to_bytes w5; u256_to_bytes w6
+                      ; u64_to_bytes w7; u256_to_bytes w8
+                      ; u64_to_bytes w9; u256_to_bytes w10
+                      ]).
+
+phoare addstate_r3456_avx2_0_ph _st:
+ [ M.__addstate_r3456_avx2
+ : st=_st /\ r3=W256.zero /\ r3=W256.zero /\ r3=W256.zero /\ r3=W256.zero
+ ==> res=_st
+ ] = 1%r.
+admitted.
+
+equiv addstate_aux_eq:
+ MM.__addstate_avx2 ~ MMaux.__addstate_avx2_aux4
+ : ={arg} ==> ={res}.
+proc; simplify.
+swap {2} [16..18] -12.
+seq 2 6: (#pre /\ ={dELTA}).
+ sp; if => //=.
+  admit.
+ auto => /> &m _.
+ rewrite tP => i Hi; rewrite get_setE //.
+ case: (i=0) => //.
+ admit (* OK *).
+swap {2} 13 -10.
+seq 1 3: (#pre); simplify.
+ sp; if => //=; first by sim.
+ auto => /> &m _.
+ rewrite tP => i Hi; rewrite get_setE //.
+ by case: (i=1) => //.
+sp; if => //=. 
+ seq 1 1: (#[/2:-2]pre /\ ={t64_2}) => //=. 
+  call (: ={arg} ==> ={res}); first by sim.
+  by auto => />.
+ sp; if => //=.
+  swap {2} 10 -9; sp 0 1.
+  swap {1} 3 3; swap {1} [5..6] 2.
+  swap {1} [7..9] 2.
+  swap {1} 15 -7.
+  by sim.
+ wp; ecall {2} (addstate_r3456_avx2_0_ph st{2}).
+ auto => />.
+ admit (* OK *).
+wp; ecall {2} (addstate_r3456_avx2_0_ph st{2}).
+auto => /> &m *.
+rewrite tP => i Hi; rewrite get_setE //.
+case: (i=2) => //.
+admit (* OK *).
+qed.
+
+
+op stt_pack w0 w1 w2 w3 w4 w5 w6 w7 w8 w9 =
+ sliceset256_64_25 
+  (sliceset256_64_25 
+   (sliceset256_64_25 
+    (sliceset256_64_25 
+     (sliceset256_64_25 (init_25_64 (fun i=>W64.zero)).[0 <- w0] (8*8) w1).[2 <- w2]
+     (8*48)
+     w3).[4 <- w4]
+    (8 * 88)
+    w5).[6 <- w6]
+   (8*128)
+   w7).[8 <- w8]
+  (8*168)
+  w9.
+
+print addst_avx2. 
+op addst (st1 st2: W64.t Array25.t) = init_25_64 (fun i => st1.[i] `^` st2.[i]).
+print addst_avx2.
+op addst_avx2_ st st25 = stavx2_from_st25 (addst (stavx2_to_st25 st) st25).
+
+hoare addstate_at_avx2_h _st _buf _off _len _tb _at:
+ MM.__addstate_avx2
+ : st=_st /\ buf=_buf /\ offset=_off /\ _LEN=_len /\ _TRAILB=_tb /\ aT=_at
+ /\ 0 <= _at <= _at+_len <= 200 - b2i (_tb<>0) 
+ /\ 0<= offset /\ offset + _len <= _ASIZE /\ 0 <= _tb < 256
+ /\  stavx2INV _st
+ ==> let l = nseq _at W8.zero ++ sub _buf _off _len ++ [W8.of_int _tb]
+     in res.`1 = addst_avx2_ _st (bytes2state l)
+     /\ res.`2 = _at + _len + b2i (_tb<>0)
+     /\ res.`3 = _off + _len.
+proof.
+bypr => &m' |> *.
+have ->:
+ Pr[MM.__addstate_avx2(st{m'}, aT{m'}, buf{m'}, offset{m'}, _LEN{m'},
+                          _TRAILB{m'}) @ &m' :
+   ! (res.`1 =
+      addst_avx2_ st{m'}
+        (bytes2state
+           (nseq aT{m'} W8.zero ++ sub buf{m'} offset{m'} _LEN{m'} ++
+            [W8.of_int _TRAILB{m'}])) /\
+      res.`2 = aT{m'} + _LEN{m'} + b2i (_TRAILB{m'} <> 0) /\
+      res.`3 = offset{m'} + _LEN{m'})]
+ = Pr[MMaux.__addstate_avx2_aux4(st{m'}, aT{m'}, buf{m'}, offset{m'}, _LEN{m'},
+                              _TRAILB{m'}) @ &m' :
+   ! (res.`1 =
+      addst_avx2_ st{m'}
+        (bytes2state
+           (nseq aT{m'} W8.zero ++ sub buf{m'} offset{m'} _LEN{m'} ++
+            [W8.of_int _TRAILB{m'}])) /\
+      res.`2 = aT{m'} + _LEN{m'} + b2i (_TRAILB{m'} <> 0) /\
+      res.`3 = offset{m'} + _LEN{m'})].
+byequiv addstate_aux_eq => /#.
+clear _st _buf _off _len _tb _at.
+pose _st := st{m'}; pose _buf := buf{m'}; pose _off := offset{m'}.
+pose _len := _LEN{m'}; pose _tb := _TRAILB{m'}; pose _at := aT{m'}.
+byphoare (_: st=_st /\ buf=_buf /\ offset=_off /\ _LEN=_len /\ _TRAILB=_tb /\ aT=_at
+ /\ 0 <= _at <= _at+_len <= 200 - b2i (_tb<>0) 
+ /\ 0<= offset /\ offset + _len <= _ASIZE /\ 0 <= _tb < 256
+ /\  stavx2INV _st ==> _) => //; last by smt().
+hoare.
+clear; proc; simplify.
+pose _astate := (bytes2state (nseq _at W8.zero ++ sub _buf _off _len ++ [W8.of_int _tb])).
+seq 15: ( st=_st /\ _astate = stt_pack t64_1 r1 t64_2 r3 t64_3 r4 t64_4 r5 t64_5 r6 /\ aT = _at + _len + b2i (_tb <> 0) /\ offset = _off + _len /\ stavx2INV _st).
+ seq 3: ( #[1:3,8:]pre
+        /\ subread_pre 0 _at _len _tb
+        /\ subread_spec 8 _buf _off 0 _len _tb 0 _at dELTA _LEN _TRAILB aT (u64_to_bytes t64_1)).
+  case: (aT < 8).
+   rcondt 3; first by auto.
+   admit.
+  rcondf 3; first by auto.
+  auto => |>.
+  admit.
+ seq 2: ( #[/:-2]pre
+        /\ subread_spec 40 _buf _off 0 _len _tb 0 _at dELTA _LEN _TRAILB aT (u64_to_bytes t64_1++u256_to_bytes r1)).
+  case: (aT < 40 /\ (0 < _LEN \/ _TRAILB <> 0)).
+   rcondt 2; first by auto.
+   admit.
+  rcondf 2; first by auto.
+  auto => |> &m.
+  admit.
+ case: (0 < _LEN \/ _TRAILB <> 0).
+  rcondt 9; first by auto.
+  swap [2..8] 1.
+  seq 2: ( #[/:-3]pre
+         /\ subread_spec 48 _buf _off 0 _len _tb 0 _at dELTA _LEN _TRAILB aT
+             (u64_to_bytes t64_1++u256_to_bytes r1++u64_to_bytes t64_2)).
+   admit.
+  sp; if => //=.
+   wp; ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 168 aT).
+   ecall (a_ilen_read_upto8_at_h buf offset dELTA _LEN _TRAILB 160 aT).
+   ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 128 aT).
+   ecall (a_ilen_read_upto8_at_h buf offset dELTA _LEN _TRAILB 120 aT).
+   ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 88 aT).
+   ecall (a_ilen_read_upto8_at_h buf offset dELTA _LEN _TRAILB 80 aT).
+   ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 48 aT).
+   auto => |> &m ????? Hpre H Hc.
+   move=> [] /= dlt3 len3 tb3 at3 r3 H3.
+   move=> [] /= dlt2b len2b tb2b at2b t64_3 H2b.
+   move=> [] /= dlt4 len4 tb4 at4 r4 H4.
+   move=> [] /= dlt2c len2c tb2c at2c t64_4 H2c.
+   move=> [] /= dlt5 len5 tb5 at5 r5 H5.
+   move=> [] /= dlt2d len2d tb2d at2d t64_5 H2d.
+   move=> [] /= dlt6 len6 tb6 at6 r6 H6.
+   have {H H3} H3:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H H3) => //.
+   have {H3 H2b} H2b:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H3 H2b) => //.
+   have {H2b H4} H4:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2b H4) => //.
+   have {H4 H2c} H2c:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H4 H2c) => //.
+   have {H2c H5} H5:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2c H5) => //.
+   have {H5 H2d} H2d:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H5 H2d) => //.
+   have {H2d H6} H6:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2d H6) => //.
+   have H:= subread_finish 200 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H6 => //. 
+   admit.
+  auto => |> &m ????????.
+  admit (* st_pack... *).
+ rcondf 9; first by auto.
+ auto => |> &m ????????.
+ admit (* st_pack... *).
+(* handling the permutation part with 'circuit' *)
+conseq (: st = _st /\ _astate = stt_pack t64_1 r1 t64_2 r3 t64_3 r4 t64_4 r5 t64_5 r6 /\ stavx2INV _st ==> st = addst_avx2_ _st _astate) => //=.
+inline *. 
+move: _astate _st => _astate _st; clear. 
+admit (* ??? anomaly: File "src/ecCircuits.ml", line 817, characters 2-8: Assertion failed
+circuit.
+*).
+qed.
+
 
 lemma absorb_avx2_ll: islossless MM.__absorb_avx2.
 proof.

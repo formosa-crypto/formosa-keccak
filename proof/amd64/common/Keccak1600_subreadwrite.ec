@@ -524,4 +524,187 @@ lemma a_rlen_write_upto8_ll: islossless MM.__a_rlen_write_upto8
 by islossless.
 
 
+
+op subread_pre cur at len tb =
+ 0 <= cur && 0 <= at && 0 <= len && 0 <= tb < 256
+ && at+len+b2i (tb<>0) <= 200
+ && (cur<=at || len=0 && tb=0).
+
+op wat size cur at l=
+ take size (drop cur (nseq at W8.zero++l)++nseq size W8.zero).
+
+lemma size_wat sz cur at l:
+ 0 <= sz =>
+ size (wat sz cur at l) = sz.
+proof.
+move=> Hsz; rewrite size_take // size_cat size_nseq.
+smt(size_ge0).
+qed.
+
+lemma sub0 (buf: W8.t A.t) off:
+ sub buf off 0 = [].
+proof. by rewrite -size_eq0 size_sub /#. qed.
+
+lemma nth_wat sz cur at buf off len tb i:
+ 0 <= sz =>
+ subread_pre cur at len tb =>
+ nth W8.zero (wat sz cur at (A.sub buf off len++[W8.of_int tb])) i
+ = if 0 <= at-cur <= i < sz
+   then nth W8.zero (sub buf off len++[W8.of_int tb]) (cur+i-at)
+   else W8.zero.
+proof.
+move=> /> ???????[H|H].
++ case: (0 <= i < sz) => C; last first.
+   by rewrite nth_out 1:size_wat // ifF /#.
+  case: (i < at-cur) => C1.
+   rewrite ifF 1:/# nth_take 1..2:/# nth_cat ifT.
+    by rewrite size_drop // !size_cat size_sub //= size_nseq /#.
+   rewrite nth_drop 1..2:/# nth_cat ifT 1:size_nseq 1:/#.
+   by rewrite nth_nseq 1:/#.
+  rewrite ifT 1:/# nth_take 1..2:/# nth_cat.
+  rewrite size_drop 1:/# !size_cat size_sub //= size_nseq //=.
+  case: (i < at + (len + 1) - cur) => C2.
+   by rewrite ifT 1:/# nth_drop 1..2:/# nth_cat size_nseq ifF /#.
+  rewrite ifF 1:/# nth_nseq 1:/# nth_out //.
+  by rewrite size_cat size_sub /#.
+move=> []->->; rewrite sub0 /= /wat.
+case: (0 <= i < sz) => C; last first.
+ rewrite nth_out // size_take // size_cat.
+ by rewrite size_drop // size_cat !size_nseq /#.
+rewrite nth_take 1..2:/# nth_cat nth_drop 1..2:/#.
+rewrite nth_cat !size_drop // !size_cat !size_nseq /=.
+case: (cur+i<at) => C1.
+ by rewrite !nth_nseq /#.
+rewrite nth_out 1:size_nseq 1:/#.
+by rewrite nth_nseq /#.
+qed.
+
+op subread_spec
+ (size: int)
+ (buf: W8.t A.t) (off dlt len tb cur at: int)
+ (dlt' len' tb' at': int) (w: W8.t list)
+ : bool =
+ 0 <= size =>
+ subread_pre cur at len tb =>
+ subread_pre (cur+size) at' len' tb'
+ /\ w = wat size cur at (sub buf (off+dlt) len ++ [W8.of_int tb])
+ /\ at+len+b2i(tb<>0)=at'+len'+b2i(tb'<>0)
+ /\ (tb'=tb || len'=0 && tb'=0)
+ /\ dlt+len = dlt'+len'
+ /\ at' = max at
+              (min (cur+size)
+                   (at+len+b2i (tb<>0)))
+ /\ len' = max 0 (len - (min 0 (cur+size-at)))
+ .
+
+lemma subread_finish R size buf off dlt len tb cur at dlt' len' tb' at' wl:
+ 0 <= size =>
+ subread_pre cur at len tb => 
+ subread_spec size buf off dlt len tb cur at dlt' len' tb' at' wl =>
+ at+len+b2i (tb<>0) <= R =>
+ R <= cur+size =>
+ len' = 0 /\ tb' = 0
+ /\ at'=at+len+b2i(tb<>0) /\ dlt'=dlt+len.
+proof.
+move=> Hsize Hpre Hspec.
+move: (Hspec Hsize Hpre).
+move: {Hspec} Hpre => /> ??? Hinv Hend _ _ ?? Hat HH.
+by move=> H1 H2 /#.
+qed.
+
+lemma subread_spec_cat N1 N2 buf off dlt dlt' dlt'' len len' len'' tb tb' tb'' cur at at' at'' w' w'':
+ 0 <= N1 => 0 <= N2 =>
+ subread_spec N1 buf off dlt len tb cur at dlt' len' tb' at' w' =>
+ subread_spec N2 buf off dlt' len' tb' (cur+N1) at' dlt'' len'' tb'' at'' w'' =>
+ subread_spec (N1+N2) buf off dlt len tb cur at dlt'' len'' tb'' at'' (w'++w'').
+proof.
+move=> HN1 HN2 H1 H2 _ Hpre1.
+move: (H1 HN1 Hpre1) => []Hpre2 {H1} [#]->*.
+move: (H2 HN2 Hpre2) => []Hpre3 {H2} [#]->*.
+split; first smt().
+split; last smt().
+apply (eq_from_nth W8.zero).
+ by rewrite size_cat !size_wat /#.
+rewrite size_cat !size_wat 1..2:/# => i Hi.
+rewrite nth_cat size_wat 1:/#.
+case: (i<N1) => Ci.
+ by rewrite !nth_wat /#.
+case: (at<cur) => Hcur.
+ by rewrite !nth_wat /#.
+rewrite !nth_wat 1..4:/#.
+rewrite (:cur+N1+(i-N1)-at'=cur+i-at') 1:/#.
+case: (at'<cur+N1) => Cat'.
+ have ->: len'=0 by smt().
+ have ->: tb'=0 by smt().
+ have ?: len < N1 by smt().
+ rewrite ifF 1:/# ifT 1:/#.
+ by rewrite nth_out // size_cat size_sub /#.
+case: (at<=cur+N1) => Cat.
+ rewrite ifT 1:/# ifT 1:/#.
+ have ->: at'=cur+N1 by smt().
+ case: (tb'=tb) => Ctb; first smt().
+ have ->: len'=0 by smt().
+ have ->: tb'=0 by smt().
+ have ?: len < cur-at+N1 by smt().
+ rewrite sub0 /= nth_cat size_sub 1:/#.
+ by rewrite ifF 1:/# nth_out /#.
+smt().
+qed.
+
+
+op u64_to_bytes w = W8u8.to_list w.
+op u128_to_bytes w = W16u8.to_list w.
+op u256_to_bytes w = W32u8.to_list w.
+
+
+hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
+ MM.__a_ilen_read_upto8_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64_to_bytes res.`5).
+admitted.
+
+phoare a_ilen_read_upto8_at_ph _buf _off _dlt _len _trail _cur _at:
+ [ MM.__a_ilen_read_upto8_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64_to_bytes res.`5)
+ ] = 1%r.
+proof.
+by conseq a_ilen_read_upto8_at_ll
+          (a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at).
+qed.
+
+hoare a_ilen_read_upto16_at_h _buf _off _dlt _len _trail _cur _at:
+ MM.__a_ilen_read_upto16_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ ==> subread_spec 16 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u128_to_bytes res.`5).
+admitted.
+
+phoare a_ilen_read_upto16_at_ph _buf _off _dlt _len _trail _cur _at:
+ [ MM.__a_ilen_read_upto16_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ ==> subread_spec 16 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u128_to_bytes res.`5)
+ ] = 1%r.
+proof.
+by conseq a_ilen_read_upto16_at_ll
+          (a_ilen_read_upto16_at_h _buf _off _dlt _len _trail _cur _at).
+qed.
+
+hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
+ MM.__a_ilen_read_upto32_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256_to_bytes res.`5).
+admitted.
+
+phoare a_ilen_read_upto32_at_ph _buf _off _dlt _len _trail _cur _at:
+ [ MM.__a_ilen_read_upto32_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256_to_bytes res.`5)
+ ] = 1%r.
+proof.
+by conseq a_ilen_read_upto32_at_ll
+          (a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at).
+qed.
+
+
+
 end ReadWriteArray.
