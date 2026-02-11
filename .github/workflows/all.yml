@@ -21,13 +21,13 @@ jobs:
       id-token: write
     uses: ./.github/workflows/ci.yml
     secrets: inherit 
-  # ec:
-  #   name: EasyCrypt
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #   uses: ./.github/workflows/ec.yml
-  #   secrets: inherit 
+  ec:
+    name: EasyCrypt
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/ec.yml
+    secrets: inherit 
   bench:
     name: Benchmarks
     permissions:

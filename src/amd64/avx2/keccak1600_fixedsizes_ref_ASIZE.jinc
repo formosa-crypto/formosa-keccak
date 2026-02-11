@@ -16,6 +16,12 @@ require "../common/subreadwrite_ASIZE.jinc"
    INCREMENTAL ARRAY ABSORB
    ========================
 */
+#[safety =
+   { requires = 0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,7*32),
+   , requires = AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200  && 0 <= _TRAILB && _TRAILB < 256 && 0<=AT && AT < 200 
+   , ensures = is_arr_init(result.0,0,25*8) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && result.2 == offset + _LEN
+   }
+ ]
 inline fn __addstate_avx2ref
 ( reg mut ptr u64[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
@@ -26,18 +32,6 @@ inline fn __addstate_avx2ref
 ) -> reg ptr u64[25] /* st */
    , inline int      /* AT */
    , reg ui64        /* offset */
-/*
-/* safety */ requires
- { 0 <= offset && 0 <= _LEN &&  0<=AT  && AT < 200 && offset + _LEN <= _ASIZE
-   && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
-   && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,25*8)
-   && 0 <= _TRAILB && _TRAILB < 256
- }
-/* safety */ ensures
- { is_arr_init(result.0,0,25*8) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
-   && result.2 == offset + _LEN
- }
-*/
 {
   inline int DELTA, AT8;
   reg ui64 at;
@@ -86,6 +80,14 @@ inline fn __addstate_avx2ref
   return st, AT, offset;
 }
 
+#[safety =
+{ requires = 0<=AT  && AT < _RATE8
+   && 0 < _RATE8 && _RATE8 < 200
+   && is_arr_init(buf,0,_ASIZE) && is_arr_init(st,0,25*8)
+   && 0 <= _TRAILB && _TRAILB < 256,
+   ensures = is_arr_init(result.0,0,25*8)
+   && result.1 == (AT + _ASIZE) % _RATE8 + (_TRAILB != 0 ? 1 : 0)
+}]
 inline fn __absorb_avx2ref
 ( reg mut ptr u64[25] st
 , inline int AT
@@ -94,18 +96,6 @@ inline fn __absorb_avx2ref
 , inline int _RATE8
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
-/*
-/* safety */ requires
- { 0 <= offset && 0 <= _LEN &&  0<=AT  && AT < _RATE8 && offset + _LEN <= _ASIZE
-   && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 && 0 < _RATE8 && _RATE8 < 200
-   && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,25*8)
-   && 0 <= _TRAILB && _TRAILB < 256
- }
-/* safety */ ensures
- { is_arr_init(result.0,0,25*8)
-   && result.1 == (AT + _LEN) % _RATE8 + (_TRAILB != 0 ? 1 : 0)
- }
-*/
 {
   reg ui64 offset, i;
   inline int ITERS, _LEN;
@@ -138,6 +128,12 @@ inline fn __absorb_avx2ref
    ONE-SHOT (FIXED-SIZE) MEMORY SQUEEZE
    ====================================
 */
+#[safety =
+   { requires = 0<= offset && 0<= _LEN && is_arr_init(st,0,25*8) && offset + _LEN <= _ASIZE && _LEN <= 200 && is_arr_init(buf,0,offset)
+   , ensures = is_arr_init(result.0,0,offset + _LEN)
+   , ensures = result.1 == offset + _LEN
+   }
+ ]
 inline fn __dumpstate_avx2ref
 ( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -145,16 +141,6 @@ inline fn __dumpstate_avx2ref
 , reg const ptr u64[25] st
 ) -> reg ptr u8[_ASIZE] /* buf */
    , reg ui64 /* offset */
-/*
-/* safety */ requires
- { 0 <= offset && 0 <= _LEN && is_arr_init(st,0,25*8) && offset + _LEN <= _ASIZE && _LEN <= 200
- }
-/* safety */ ensures
- { (\all (k \in 0:_ASIZE)
-       (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + _LEN))))
-   && result.1 == offset + _LEN
- }
-*/
 { 
   reg ui64 i;
   reg u64 t;
@@ -184,23 +170,18 @@ inline fn __dumpstate_avx2ref
   return buf, offset;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,25*8) && 0 < _RATE8 && _RATE8 < 200
+   , ensures = is_arr_init(result.1,0,_ASIZE)
+     && is_arr_init(result.0,0,25*8)
+   }
+ ]
 inline fn __squeeze_avx2ref
 ( reg mut ptr u64[25] st
 , reg mut ptr u8[_ASIZE] buf
 , inline int _RATE8
 ) -> reg ptr u64[25] /* st */
    , reg ptr u8[_ASIZE] /* buf */
-/*
-/* safety */ requires
- { 0 <= offset && 0 <= _LEN && is_arr_init(st,0,25*8) && offset + _LEN <= _ASIZE
-   && 0 < _RATE8 && _RATE8 < 200
- }
-/* safety */ ensures
- { (\all (k \in 0:_ASIZE)
-    (is_arr_init(result.0,k,1) == (is_arr_init(buf,k,1) || (offset <= k && k< offset + _LEN))))
-   && is_arr_init(result.2,0,25*8)
- }
-*/
 {
   reg ui64 offset, i;
 

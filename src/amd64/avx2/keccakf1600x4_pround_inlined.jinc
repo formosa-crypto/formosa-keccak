@@ -1,6 +1,11 @@
 /* -------------------------------------------------------------------- */
 /* After add assignments before and after call to ensure that arguments and results are "reg ptr" */
 
+#[safety =
+   { requires = is_arr_init(a,0,800)
+   , ensures = is_arr_init(result.0,0,800) 
+   }
+ ]
 fn _keccakf1600_4x_pround
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25] a

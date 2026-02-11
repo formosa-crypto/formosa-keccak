@@ -1,4 +1,5 @@
 [general]
+timeout = 1
 
 provers = CVC5@1.0
 provers = Z3@4.12

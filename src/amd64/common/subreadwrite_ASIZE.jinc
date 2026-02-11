@@ -18,6 +18,21 @@
 
 **/
 
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures =  (CUR <= AT && AT < CUR + 8) ?
+       ( result.0 == DELTA + max(0,min(LEN,8 - (AT-CUR)))
+     && result.1 == LEN - max(0,min(LEN,8- (AT-CUR)))
+     && result.2 == (8 <=s AT-CUR + LEN ? TRAIL : 0)
+     && result.3 == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (result.0 == DELTA
+      && result.1 == LEN
+      && result.2 == TRAIL
+      && result.3 == AT)
+   }
+ ]
 inline fn __a_ilen_read_upto8_at
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -40,14 +55,14 @@ inline fn __a_ilen_read_upto8_at
   } else {
     AT8 = AT-CUR;
     if (8 <= LEN) {
-      w = buf.[:u64 (64u) offset + DELTA];
+      w = buf.[:u64 offset + DELTA];
       w = __SHLQ(w, AT8);
       DELTA += 8-AT8;
       LEN -= 8-AT8;
       AT8 = 8; 
     } else {
       if (4 <= LEN) {
-	w = (64u) buf.[:u32 (64u) offset + DELTA];
+	w = (64u) buf.[:u32 offset + DELTA];
 	w = __SHLQ(w, AT8);
 	DELTA += (4+AT8 >= 8 ? 8-AT8 : 4);
 	LEN -= (4+AT8 >= 8 ? 8-AT8 : 4);
@@ -56,7 +71,7 @@ inline fn __a_ilen_read_upto8_at
 	w = 0;
       }
       if (AT8 < 8 && 2 <= LEN) {
-	t16 = (64u) buf.[:u16 (64u) offset + DELTA];
+	t16 = (64u) buf.[:u16 offset + DELTA];
 	DELTA += (2+AT8 >= 8 ? 8-AT8 : 2);
 	LEN -= (2+AT8 >= 8 ? 8-AT8 : 2);
 	t16 = __SHLQ(t16, AT8);
@@ -65,7 +80,7 @@ inline fn __a_ilen_read_upto8_at
       }
       if (AT8 < 8) {
 	if ( 1 <= LEN ) {
-	  t8 = (64u) buf.[:u8 (64u) offset + DELTA];
+	  t8 = (64u) buf.[:u8 offset + DELTA];
 	  t8 |= 256*(TRAIL%256);
 	  DELTA += 1;
 	  LEN -= 1;
@@ -90,6 +105,21 @@ inline fn __a_ilen_read_upto8_at
   return DELTA, LEN, TRAIL, AT, w; 
 }
 
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,16)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,16) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures =  (CUR <= AT && AT < CUR + 16) ?
+       ( result.0 == DELTA + max(0,min(LEN,16 - (AT-CUR)))
+     && result.1 == LEN - max(0,min(LEN,16- (AT-CUR)))
+     && result.2 == (16 <=s AT-CUR + LEN ? TRAIL : 0)
+     && result.3 == CUR + max(0,min(AT-CUR + LEN,16) + (16 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (result.0 == DELTA
+      && result.1 == LEN
+      && result.2 == TRAIL
+      && result.3 == AT)
+   }
+ ]
 inline fn __a_ilen_read_upto16_at
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -113,7 +143,7 @@ inline fn __a_ilen_read_upto16_at
   } else {
     AT16 = AT-CUR;
     if ( 16 <= LEN ) {
-      w = buf.[:u128 (64u) offset + DELTA];
+      w = buf.[:u128 offset + DELTA];
       w = __SHLDQ(w, AT16);
       DELTA += 16-AT16;
       LEN -= 16-AT16;
@@ -133,6 +163,21 @@ inline fn __a_ilen_read_upto16_at
   return DELTA, LEN, TRAIL, AT, w; 
 }  
 
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,32)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,32) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures =  (CUR <= AT && AT < CUR + 32) ?
+       ( result.0 == DELTA + max(0,min(LEN,32 - (AT-CUR)))
+     && result.1 == LEN - max(0,min(LEN,32- (AT-CUR)))
+     && result.2 == (32 <=s AT-CUR + LEN ? TRAIL : 0)
+     && result.3 == CUR + max(0,min(AT-CUR + LEN,32) + (32 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (result.0 == DELTA
+      && result.1 == LEN
+      && result.2 == TRAIL
+      && result.3 == AT)
+   }
+ ]
 inline fn __a_ilen_read_upto32_at
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -174,6 +219,21 @@ inline fn __a_ilen_read_upto32_at
   return DELTA, LEN, TRAIL, AT, w; 
 }  
 
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures =  (CUR <= AT && AT < CUR + 8) ?
+       ( result.0 == DELTA + max(0,min(LEN,8 - (AT-CUR)))
+     && result.1 == LEN - max(0,min(LEN,8 - (AT-CUR)))
+     && result.2 == (8 <=s AT-CUR + LEN ? TRAIL : 0)
+     && result.3 == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (result.0 == DELTA
+      && result.1 == LEN
+      && result.2 == TRAIL
+      && result.3 == AT)
+   }
+ ]
 inline fn __a_ilen_read_bcast_upto8_at
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -202,24 +262,29 @@ inline fn __a_ilen_read_bcast_upto8_at
       w256 = __SHLQ_256(w256, AT8);
       DELTA += 8-AT8;
       LEN -= 8-AT8;
-      AT8 = 8;
+      AT = CUR + 8;
     } else {
       AT8 = AT-CUR;
       DELTA, LEN, TRAIL, AT, w = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
       t128 = (128u) w;
       w256 = #VPBROADCAST_4u64(t128);
       w256 = __SHLQ_256(w256, AT8);
-      DELTA += 8-AT8;
-      LEN -= 8-AT8;
-      AT8 = 8;
     }
-    AT = CUR + AT8;
   }
   return DELTA, LEN, TRAIL, AT, w256; 
 }
 
 /*
 // __aread_subu64
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures = result.0 == DELTA + max(0,min(LEN,8))
+     && result.1 == LEN - max(0,min(LEN,8))
+     && result.2 == (8 <=s LEN ? TRAIL : 0)
+   }
+ ]
 inline fn __a_ilen_read_upto8
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -230,20 +295,6 @@ inline fn __a_ilen_read_upto8
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u64 /* w */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA 
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= _ASIZE
- : true
-}
-/* safety */ requires { 0 <= TRAIL && TRAIL < 256 }
-/* safety */ ensures {
- result.0 == DELTA + max(0,min(LEN,8))
- && result.1 == LEN - max(0,min(LEN,8))
- && result.2 == (8 <=s LEN ? TRAIL : 0)
-}
-*/
 {
   reg u64 w, t16, t8;
   inline int ILEN;
@@ -290,6 +341,15 @@ inline fn __a_ilen_read_upto8
 }
 
 // __aread_bcast_4subu64
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures = result.0 == DELTA + max(0,min(LEN,8))
+     && result.1 == LEN - max(0,min(LEN,8))
+     && result.2 == (8 <=s LEN ? TRAIL : 0)
+   }
+ ]
 inline fn __a_ilen_read_bcast_upto8
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -300,19 +360,6 @@ inline fn __a_ilen_read_bcast_upto8
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u256 /* w */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,8) <= _ASIZE
- : true
-}
-/* safety */ requires { 0 <= TRAIL && TRAIL < 256 }
-/* safety */ ensures {
- result.0 == DELTA + max(0,min(LEN,8))
- && result.1 == LEN - max(0,min(LEN,8))
- && result.2 == (8 <= LEN ? TRAIL : 0)}
-*/
 {
   reg u64 t64;
   reg u128 t128;
@@ -334,6 +381,15 @@ inline fn __a_ilen_read_bcast_upto8
 }
 
 // __aread_subu128
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,16)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,16) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures = result.0 == DELTA + max(0,min(LEN,16))
+     && result.1 == LEN - max(0,min(LEN,16))
+     && result.2 == (16 <=s LEN ? TRAIL : 0)
+   }
+ ]
 inline fn __a_ilen_read_upto16
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -344,20 +400,6 @@ inline fn __a_ilen_read_upto16
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u128 /* w */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? is_arr_init(buf,offset+DELTA,min(LEN,16)) && 0 <= DELTA
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,16) <= _ASIZE
- : true
-}
-/* safety */ requires { 0 <= TRAIL && TRAIL < 256 }
-/* safety */ ensures {
- result.0 == DELTA + max(0,min(LEN,16))
- && result.1 == LEN - max(0,min(LEN,16))
- && result.2 == (16 <=s LEN ? TRAIL : 0)
-}
-*/
 {
   reg u128 w;
   reg u64 t64;
@@ -383,6 +425,15 @@ inline fn __a_ilen_read_upto16
 }
 
 // __aread_subu256
+#[safety =
+   { requires = is_arr_init(buf,offset+DELTA,min(LEN,32)) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,32) <= _ASIZE
+     && 0 <= TRAIL && TRAIL < 256
+   , ensures = result.0 == DELTA + max(0,min(LEN,32))
+     && result.1 == LEN - max(0,min(LEN,32))
+     && result.2 == (32 <=s LEN ? TRAIL : 0)
+   }
+ ]
 inline fn __a_ilen_read_upto32
 ( reg const ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -393,19 +444,6 @@ inline fn __a_ilen_read_upto32
    , inline int /* LEN */
    , inline int /* TRAIL */
    , reg u256 /* w */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? is_arr_init(buf,offset+DELTA,min(LEN,32)) && 0 <= DELTA
-   && 0 <= offset + DELTA && offset + DELTA + min(LEN,32) <= _ASIZE
- : true
-}
-/* safety */ requires { 0 <= TRAIL && TRAIL < 256 }         
-/* safety */ ensures {
- result.0 == DELTA + max(0,min(LEN,32))
- && result.1 == LEN - max(0,min(LEN,32))
- && result.2 == (32 <= LEN ? TRAIL : 0)}
-*/
 {
   reg u256 w;
   reg u128 t128_0, t128_1;
@@ -437,6 +475,14 @@ inline fn __a_ilen_read_upto32
 **/
 
 // __awrite_subu64
+#[safety =
+   { requires = is_arr_init(buf,0,offset+DELTA) && 0 <= DELTA
+    && offset + DELTA + min(LEN,8) <= _ASIZE
+   , ensures = result.1 == DELTA + max(0,min(LEN,8))
+     && result.2 == LEN - max(0,min(LEN,8))
+     && is_arr_init(result.0,0,offset + DELTA + max(0,min(LEN,8)))
+   }
+ ]
 inline fn __a_ilen_write_upto8
 ( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -446,25 +492,6 @@ inline fn __a_ilen_write_upto8
 ) -> reg ptr u8[_ASIZE] /* buf */
    , inline int /* DELTA */
    , inline int /* LEN */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? 0 <= offset + DELTA && 0 <= DELTA
-   && offset + DELTA + min(LEN,8) <= _ASIZE
- : true
-}
-/* safety */ ensures {
- result.1 == DELTA + max(0,min(LEN,8))
- && result.2 == LEN - max(0,min(LEN,8))
-}
-/* safety */ ensures { 
- \all (k \in 0:_ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == ( is_arr_init(buf,k,1)
-          || offset + DELTA <= k 
-             && k < offset + DELTA + max(0,min(LEN,8))) )
-}
-*/
 {
   if (0 < LEN) {
     if (8 <=s LEN) {
@@ -495,6 +522,14 @@ inline fn __a_ilen_write_upto8
 }
 
 // __awrite_subu128
+#[safety =
+   { requires = is_arr_init(buf,0,offset+DELTA) && 0 <= DELTA
+     && offset + DELTA + min(LEN,16) <= _ASIZE
+   , ensures = result.1 == DELTA + max(0,min(LEN,16))
+     && result.2 == LEN - max(0,min(LEN,16))
+     && is_arr_init(result.0,0,offset + DELTA + max(0,min(LEN,16)))
+   }
+ ]
 inline fn __a_ilen_write_upto16
 ( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -504,25 +539,6 @@ inline fn __a_ilen_write_upto16
 ) -> reg ptr u8[_ASIZE] /* buf */
    , inline int        /* DELTA */
    , inline int        /* LEN */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? 0 <= offset + DELTA && 0 <= DELTA
-   && offset + DELTA + min(LEN,16) <= _ASIZE
- : true
-}
-/* safety */ ensures {
- result.1 == DELTA + max(0,min(LEN,16))
- && result.2 == LEN - max(0,min(LEN,16))
-}
-/* safety */ ensures {
- \all (k \in 0:_ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == ( is_arr_init(buf,k,1)
-          || (offset + DELTA <= k 
-             && k < offset + DELTA + max(0,min(LEN,16)))) )
-}
-*/
 {
   reg u64 t64;
   if (0 < LEN) {
@@ -545,6 +561,14 @@ inline fn __a_ilen_write_upto16
 }
 
 // __awrite_subu256
+#[safety =
+   { requires = is_arr_init(buf,0,offset+DELTA) && 0 <= DELTA
+     && 0 <= offset && offset + DELTA + min(LEN,32) <= _ASIZE
+   , ensures = result.1 == DELTA + max(0,min(LEN,32))
+     && result.2 == LEN - max(0,min(LEN,32))
+     && is_arr_init(result.0,0,offset + DELTA + max(0,min(LEN,32)))
+   }
+ ]
 inline fn __a_ilen_write_upto32
 ( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
@@ -554,22 +578,6 @@ inline fn __a_ilen_write_upto32
 ) -> reg ptr u8[_ASIZE] /* buf */
    , inline int /* DELTA */
    , inline int /* LEN */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? 0 <= offset + DELTA && 0 <= DELTA && offset + DELTA + min(LEN,32) <= _ASIZE
- : true
-}
-/* safety */ ensures {
- result.1 == DELTA + max(0,min(LEN,32)) && result.2 == LEN - max(0,min(LEN,32))}
-/* safety */ ensures {
- \all (k \in 0:_ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == ( is_arr_init(buf,k,1)
-          || (offset + DELTA <= k 
-              && k < offset + DELTA + max(0,min(LEN,32)))) )
-}
-*/
 {
   reg u128 t128;
   if (0 < LEN) {
@@ -596,21 +604,18 @@ inline fn __a_ilen_write_upto32
     READ A VARIABLE NUMBER OF BYTES FROM AN ARRAY INTO A WORD
 **/
 
+#[safety =
+   { requires = is_arr_init(a,off,min(len,8))
+     && 0 <= off && off + min(len,8) <= _ASIZE
+   , ensures = result.0 == off + max(0,min(len,8))
+   }
+ ]
 inline fn __a_rlen_read_upto8
 ( reg const ptr u8[_ASIZE] a
 , reg ui64 off 
 , reg ui64 len // off + len <= _ASIZE
 ) -> reg ui64 /* off */
    , reg u64  /* data */
-/*
-/* safety */ requires {
- (0 < len)
- ? is_arr_init(a,off,min(len,8))
-   && 0 <= off && off + min(len,8) <= _ASIZE
- : true
-}
-/* safety */ ensures { result.0 == off + min(len,8) }
-*/
 {
   reg u64 w, x;
   reg u8 sh;
@@ -648,22 +653,18 @@ inline fn __a_rlen_read_upto8
   return off, w;
 }
 
-/*
+#[safety =
+   { requires = is_arr_init(a,off_,min(len_,8))
+     && 0 <= off_ && off_ + min(len_,8) <= _ASIZE
+   , ensures = result.0 == off_ + max(0,min(len_,8))
+   }
+]
 fn __a_rlen_read_upto8_noninline
 ( reg const ptr u8[_ASIZE] a
-, reg u64 off_ 
-, reg u64 len_ // off + len <= _ASIZE
-) -> reg u64 /* off */
+, reg ui64 off_ 
+, reg ui64 len_ // off + len <= _ASIZE
+) -> reg ui64 /* off */
    , reg u64  /* data */
-/*
-/* safety */ requires {
- (0 < len)
- ? is_arr_init(a,off,min(len,8))
-   && 0 <= off && off + min(len,8) <= _ASIZE
- : true
-}
-/* safety */ ensures { result.0 == off + min(len,8) }
-*/
 {
   reg ui64 off, len;
   reg u64 w, x;
@@ -701,15 +702,21 @@ fn __a_rlen_read_upto8_noninline
       off += 1;
     }
   }
-  off_ = (64u) off;
+  off_ = off;
   return off_, w;
 }
-*/
 
 /**
     WRITE A VARIABLE NUMBER OF BYTES FROM AN ARRAY INTO A WORD
 **/
 
+#[safety =
+   { requires = is_arr_init(buf,0,off)
+     && 0 <= off && off + min(len,8) <= _ASIZE
+   , ensures = is_arr_init(result.0,0,off + max(0,min(len,8)))
+     && result.1 == off + max(0,min(len,8))
+   }
+]
 inline fn __a_rlen_write_upto8
 ( reg mut ptr u8[_ASIZE] buf
 , reg ui64 off
@@ -717,18 +724,6 @@ inline fn __a_rlen_write_upto8
 , reg ui64 len // off + len <= _ASIZE
 ) -> reg ptr u8[_ASIZE] /* buf */
    , reg ui64          /* off */
-/*
-/* safety */ requires {
- (0 < len)
- ? 0 <= off && off + min(len,8) <= _ASIZE
- : true
-}
-/* safety */ ensures { 
- \all (k \in 0:_ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == (is_arr_init(buf,k,1) || off <= k && k < off + min(len,8)) )
-}
-*/
 {
   reg bool zf;
 
@@ -756,5 +751,3 @@ inline fn __a_rlen_write_upto8
   }
   return buf, off;
 }
-
-

@@ -15,6 +15,12 @@ require "../common/subreadwrite_imem.jinc"
    ==================================
 */
 
+#[safety =
+   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
+                && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,25*32) 
+   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   }
+ ]
 inline fn __addstate_m_bcast_avx2x4
 ( reg mut ptr keccakx4_state st
 , inline int AT /* bytes (0 <= AT < 200) */
@@ -23,19 +29,6 @@ inline fn __addstate_m_bcast_avx2x4
 , inline int _TRAILB
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
-/*
-/* safety */ requires
-{ 0 <= offset && 0 <= _LEN &&  0<=AT  && AT < 200 && offset + _LEN <= ASIZE
-  && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
-  && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,25*32)
-}
-/* safety */ requires {0 <= _TRAILB && _TRAILB < 256}
-/* safety */ ensures
-{ is_arr_init(result.0,0,25*32)
-  && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
-  && result.2 == offset + _LEN
-}
-*/
 {
   inline int AT8;
   reg ui64 at;
@@ -74,6 +67,13 @@ inline fn __addstate_m_bcast_avx2x4
   return st, AT;
 }
 
+#[safety =
+   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<_RATE8 && _RATE8< 200 && 
+                AT < _RATE8 && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 &&
+                is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,25*32) && 0<= AT
+   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   }
+ ]
 inline fn __absorb_m_bcast_avx2x4
 ( reg mut ptr u256[25] st
 , inline int AT
@@ -83,18 +83,6 @@ inline fn __absorb_m_bcast_avx2x4
 , inline int _RATE8
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
-/*
-/* safety */ requires {
- 0 <= offset && 0 <= _LEN &&  0<=AT  && AT < _RATE8 && offset + _LEN <= ASIZE
- && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
- && 0 < _RATE8 && _RATE8 < 200 && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,25*32)
-}
-/* safety */ requires { 0 <= _TRAILB && _TRAILB < 256 }
-/* safety */ ensures {
- is_arr_init(result.0,0,25*32)
- && result.1 == (AT + _LEN) % _RATE8 + (_TRAILB != 0 ? 1 : 0)
-}
-*/
 {
   reg ui64 i;
   inline int ITERS;
@@ -125,6 +113,15 @@ inline fn __absorb_m_bcast_avx2x4
    ============================================
 */
 
+#[safety =
+   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<= AT  && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
+               && is_mem_init((64u) buf0,_LEN) && is_mem_init((64u) buf1,_LEN) && 
+               is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN) && is_arr_init(st,0,25*32) 
+   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0) &&
+               result.2 == buf0 + _LEN && result.3 == buf0 + _LEN &&
+               result.4 == buf0 + _LEN && result.5 == buf0 + _LEN
+   }
+ ]
 inline fn __addstate_m_avx2x4
 ( reg mut ptr u256[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
@@ -137,21 +134,6 @@ inline fn __addstate_m_avx2x4
    , reg ui64 /* buf1 */
    , reg ui64 /* buf2 */
    , reg ui64 /* buf3 */
-/*
-/* safety */ requires {
- 0 <= offset && 0 <= _LEN && 0<=AT && AT < 200
- && offset + _LEN <= ASIZE && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200
- && is_arr_init(buf0,offset,_LEN) && is_arr_init(buf1,offset,_LEN)
- && is_arr_init(buf2,offset,_LEN) && is_arr_init(buf3,offset,_LEN)
- && is_arr_init(st,0,25*32)
-}
-/* safety */ requires { 0 <= _TRAILB && _TRAILB < 256 }
-/* safety */ ensures {
- is_arr_init(result.0,0,25*32)
- && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
- && result.2 == offset + _LEN
-}
-*/
 {
 
   inline int AT8;
@@ -208,6 +190,13 @@ inline fn __addstate_m_avx2x4
   return st, AT, buf0, buf1, buf2, buf3;
 }
 
+#[safety =
+   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<_RATE8 && _RATE8< 200 && 
+                AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200  && 0<= AT && is_arr_init(st,0,25*32) &&
+                is_mem_init((64u) buf0,_LEN) && is_mem_init((64u) buf1,_LEN) && is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN)
+   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   }
+ ]
 inline fn __absorb_m_avx2x4
 ( reg mut ptr u256[25] st
 , inline int AT
@@ -217,15 +206,6 @@ inline fn __absorb_m_avx2x4
 , inline int _RATE8
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
-/*
-requires{0 <= offset && 0 <= _LEN && 0<=AT && AT < _RATE8 && 0 < _RATE8 && _RATE8 < 200 &&
-         offset + _LEN <= ASIZE && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 &&
-         is_arr_init(buf0,offset,_LEN) && is_arr_init(buf1,offset,_LEN) && 
-         is_arr_init(buf2,offset,_LEN) && is_arr_init(buf3,offset,_LEN) && 
-         is_arr_init(st,0,25*32)}
-requires{0 <= _TRAILB && _TRAILB < 256}
-ensures{is_arr_init(result.0,0,25*32)}
-*/
 {
   reg ui64 i;
   inline int ITERS;
@@ -254,6 +234,12 @@ ensures{is_arr_init(result.0,0,25*32)}
    ONE-SHOT (FIXED-SIZE) MEMORY SQUEEZE
    ====================================
 */
+#[safety =
+   { requires = 0<= _LEN && _LEN <= 200 && is_arr_init(st,0,25*32) && is_mem_init((64u) buf0,_LEN) && 
+              is_mem_init((64u) buf1,_LEN) && is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN)
+   , ensures = result.0 == buf0 + _LEN && result.1 == buf1 + _LEN && result.2 == buf2 + _LEN && result.3 == buf3 + _LEN 
+   }
+ ]
 inline fn __dumpstate_m_avx2x4
 ( reg ui64 buf0 buf1 buf2 buf3
 , inline int _LEN
@@ -262,14 +248,6 @@ inline fn __dumpstate_m_avx2x4
    , reg ui64 /* buf1 */
    , reg ui64 /* buf2 */
    , reg ui64 /* buf3 */
-/*
-requires{0 <= offset && 0 <= _LEN && is_arr_init(st,0,25*32) && offset + _LEN <= ASIZE && _LEN <= 200}
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf0,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.1,k,1) == (is_arr_init(buf1,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.2,k,1) == (is_arr_init(buf2,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.3,k,1) == (is_arr_init(buf3,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures{ result.4 == offset + _LEN}
-*/
 { 
   reg u256 x0, x1, x2, x3;
   reg ui64 i;
@@ -321,20 +299,18 @@ ensures{ result.4 == offset + _LEN}
   return buf0, buf1, buf2, buf3;
 }
 
+#[safety =
+   { requires = 0<= _LEN && 0< _RATE8 && _RATE8 < 200 && is_arr_init(st,0,32*25) && is_mem_init((64u) buf0,_LEN) &&
+                is_mem_init((64u) buf1,_LEN) && is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN) 
+   , ensures = is_arr_init(result.0,0,32*25)
+   }
+ ]
 inline fn __squeeze_m_avx2x4
 ( reg mut ptr u256[25] st
 , reg ui64 buf0 buf1 buf2 buf3
 , inline int _LEN
 , inline int _RATE8
 ) -> reg ptr u256[25] /* st */
-/*
-requires{0 <= offset && 0 <= _LEN && is_arr_init(st,0,25*32) && offset + _LEN <= ASIZE && 0 < _RATE8 && _RATE8 < 200 }
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.0,k,1) == (is_arr_init(buf0,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.1,k,1) == (is_arr_init(buf1,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.2,k,1) == (is_arr_init(buf2,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures { \all (k \in 0:ASIZE) (is_arr_init(result.3,k,1) == (is_arr_init(buf3,k,1) || (offset <= k && k< offset + _LEN)))}
-ensures{ is_arr_init(result.5,0,25*32)}
-*/
 {
   reg ui64 i;
   inline int ITERS, LO;

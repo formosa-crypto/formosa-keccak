@@ -229,15 +229,17 @@ inline fn __stavx2_pack
   return state;
 }
 
+
 // recovers a (plain) keccak state (st25) from an avx2-encoded one
+#[safety =
+   { requires = is_arr_init(state,0,7*32)
+   , ensures = is_arr_init(result.0,0,25*8)
+   }
+ ]
 inline fn __stavx2_unpack
 ( reg mut ptr u64[25] st
 , reg u256[7] state
 ) -> reg ptr u64[25] 
-/*
-requires{is_arr_init(state,0,7*32)}
-ensures{is_arr_init(result.0,0,25*8)}
-*/
 {
   // 5*r256 + 2*r128(evitáveis) (+7*r256)
   reg u256 t256_0 t256_1 t256_2 t256_3 t256_4;

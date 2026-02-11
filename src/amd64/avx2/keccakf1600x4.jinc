@@ -89,18 +89,16 @@ inline fn __u256x4_4u64x4
   return x0, x1, x2, x3;
 }
 
+#[safety =
+   { requires = is_arr_init(st0,0,25*8) && is_arr_init(st1,0,25*8)
+             && is_arr_init(st2,0,25*8) && is_arr_init(st3,0,25*8)
+   , ensures = is_arr_init(result.0,0,25*32)
+   }
+ ]
 inline fn __st4x_pack
 ( reg mut ptr u256[25] st4x
 , reg const ptr u64[25] st0 st1 st2 st3
 ) -> reg ptr u256[25]
-/*
-/* safety */ requires
- { is_arr_init(st0,0,25*8) && is_arr_init(st1,0,25*8)
-   && is_arr_init(st2,0,25*8) && is_arr_init(st3,0,25*8)
- }
-/* safety */ ensures
- { is_arr_init(result.0,0,25*32) }
-*/
 {
   inline int i;
   reg u256 x0, x1, x2, x3;
@@ -152,18 +150,16 @@ inline fn __4u64x4_u256x4
   return y0, y1, y2, y3;
 }
 
+#[safety =
+   { requires = is_arr_init(st4x,0,25*32)
+   , ensures = is_arr_init(result.0,0,25*8) && is_arr_init(result.1,0,25*8)
+            && is_arr_init(result.2,0,25*8) && is_arr_init(result.3,0,25*8)
+   }
+ ]
 inline fn __st4x_unpack
 ( reg mut ptr u64[25] st0 st1 st2 st3
 , reg const ptr u256[25] st4x
 ) -> reg ptr u64[25], reg ptr u64[25], reg ptr u64[25], reg ptr u64[25]
-/*
-/* safety */ requires
- { is_arr_init(st4x,0,25*32) }
-/* safety */ ensures
- { is_arr_init(result.0,0,25*8) && is_arr_init(result.1,0,25*8)
-   && is_arr_init(result.2,0,25*8) && is_arr_init(result.3,0,25*8)
- }
-*/
 {
   inline int i;
   reg u256 x0, x1, x2, x3;
@@ -215,6 +211,11 @@ inline fn __keccakf1600_pround_unpacked
   return st0, st1, st2, st3;
 }
 
+#[safety =
+   { requires = is_arr_init(a,0,32*25)
+   , ensures = is_arr_init(result.0,0,32*25)
+   }
+ ]
 inline fn __keccakf1600_pround_equiv
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25] a

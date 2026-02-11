@@ -101,7 +101,6 @@ inline fn __unperm_reg3456_avx2
 }
 
 
-
 inline fn __addstate_r3456_avx2
 ( reg u256[7] st
 , reg u256 r3 r4 r5 r6
@@ -122,9 +121,12 @@ inline fn __addstate_r3456_avx2
    ============
 */
 
+#[safety =
+   {ensures = 0<=result.0 && result.0 < 7}
+ ]
 inline fn __stavx2_pos_avx2(inline int POS) -> inline int, inline int 
 /*
-ensures{0<=result.0 && result.0 < 7}
+ensures
 */
 {
   inline int R, L;
