@@ -18593,8 +18593,10 @@ seq 3: (#pre /\ valid trace___a_ilen_read_upto8_at). auto.
     inline *. auto. 
   case(lEN = 7).
   +  auto. if.
-    + auto. inline *. auto. rewrite /is_init /valid /= => &m /> *. split. move => *. split.  smt(List.all_cat). move => *. smt(List.all_cat). move => *. split. rewrite !List.all_cat /=. move => *.  smt(). smt(List.all_cat).
-    inline *. auto. 
+     + auto. inline *. auto. rewrite /is_init /valid /= => &m /> *.
+       split. move => *. split. move => *. split. move => * . split.  move => *.  split.  rewrite !List.all_cat /=. smt().  rewrite !List.all_cat /=. smt().  rewrite !List.all_cat /=. smt().   rewrite !List.all_cat /=. smt(). 
+       rewrite !List.all_cat /=.  smt().  rewrite !List.all_cat /=. smt(). 
+    inline *. by auto. 
   inline *. auto.
   smt(List.all_cat).
 qed .
@@ -18825,27 +18827,28 @@ proof.
 rewrite /__addstate_avx2_spec .
   proc; have:= inbounds_size => /= ?.
   seq 29: (valid trace___addstate_avx2 /\ offset = _offset /\ BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 8) ? (min __LEN (8 - _aT)) : 0 /\
+          dELTA = (_aT < 8) ? (( __LEN < (8 - _aT)) ? __LEN : (8-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((8 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 8 <= _aT  || (8 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
   + sp. if.  
-    + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=; smt(List.all_cat).
+    + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=. smt().  split. smt().  smt().
       auto. ecall (__a_ilen_read_upto8_at_proof param_5 b_param_8 param_4 param_3  param_2 param_1 param_0 param). auto. 
-      rewrite /valid /is_init /= => &m /> *. split.  smt(). move => /> *. admit. (*instruction invalid -  W4u64.VPBROADCAST_4u64 (W2u64.truncateu64 t128_0)    *)
+      rewrite /valid /is_init /= => &m /> *. split.  split. smt(). split. smt(). split. smt(). smt().  move => /> *. admit. (*instruction invalid -  W4u64.VPBROADCAST_4u64 (W2u64.truncateu64 t128_0)    *)
     auto. rewrite /valid /is_init /= => &m /> *. smt(List.all_cat).
   seq 1: (valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 40) ? (min  __LEN (40-_aT)) :  0   /\
+          dELTA = (_aT < 40) ? (( __LEN < (40 - _aT)) ? __LEN : (40-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((40 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 40 <= _aT  || (40 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
   + if.
     + auto. ecall (__a_ilen_read_upto32_at_proof param_12 b_param_7 param_11 param_10  param_9 param_8 param_7 param_6). auto.
-      rewrite /valid /is_init /= => &m /> *.  split. smt(List.all_cat). move => *. split. rewrite !List.all_cat /=. smt(). smt().
+  rewrite /valid /is_init /= => &m /> *.  split. split. smt(). split. smt(). split. smt().  split. smt(). split. smt(). split. smt(). split. smt().  smt(). move => 16? r *. 
+      split. rewrite !List.all_cat /=. smt(). split.  smt(). split. smt(). split. smt(). smt().
     auto. rewrite /valid /is_init => &m /> *. smt(List.all_cat).
   if. 
   + seq 18:(valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 48) ? (min  __LEN (48-_aT)) :  0 /\
+           dELTA = (_aT < 48) ? (( __LEN < (48 - _aT)) ? __LEN : (48-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((48 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 48 <= _aT  || (48 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256). 
@@ -18855,7 +18858,7 @@ rewrite /__addstate_avx2_spec .
     + auto. ecall (__addstate_r3456_avx2_proof param_73 (BArray224.init_arr (W8.of_int 255)) param_72 param_71 param_70 param_69).
       auto .
       seq 33:(valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 88) ? (min  __LEN (88-_aT)) :  0 /\
+           dELTA = (_aT < 88) ? (( __LEN < (88 - _aT)) ? __LEN : (88-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((88 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 88 <= _aT  || (88 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
@@ -18865,23 +18868,23 @@ rewrite /__addstate_avx2_spec .
         ecall (__a_ilen_read_upto32_at_proof param_26 b_param_5 param_25 param_24 param_23 param_22 param_21 param_20). auto.
         rewrite /is_init /valid /= => &m /> *.   split. smt(List.all_cat). move => *. split. smt(List.all_cat). move => *. split. rewrite !List.all_cat /=. smt(). split. smt(). split. smt(). split. smt(). smt().
       seq 33:(valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 128) ? (min  __LEN (128-_aT)) :  0 /\
+           dELTA = (_aT < 128) ? (( __LEN < (128 - _aT)) ? __LEN : (128-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((128 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 128 <= _aT  || (128 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
       + auto.
         ecall (__a_ilen_read_upto8_at_proof param_47 b_param_2 param_46 param_45 param_44 param_43 param_42 param_41). auto .
         ecall (__a_ilen_read_upto32_at_proof param_40 b_param_3 param_39 param_38 param_37 param_36 param_35 param_34). auto.
-        rewrite /is_init /valid /= => &m /> *.   split. smt(List.all_cat). move => *. split. smt(List.all_cat). move => *. split. rewrite !List.all_cat /=. smt(). split. smt(). split. smt(). split. smt(). smt().
+        rewrite /is_init /valid /= => &m /> *.   split. smt(List.all_cat). move => *. split. smt().  move => *. split. rewrite !List.all_cat /=. smt(). split. smt(). split. smt(). split. smt(). smt().
       ecall (__a_ilen_read_upto32_at_proof param_68 b_param param_67 param_66 param_65 param_64 param_63 param_62). auto .
       ecall (__a_ilen_read_upto8_at_proof param_61 b_param_0 param_60 param_59 param_58 param_57 param_56 param_55). auto.
       ecall (__a_ilen_read_upto32_at_proof param_54 b_param_1 param_53 param_52 param_51 param_50 param_49 param_48). auto.
       rewrite /is_init /valid /= => &m /> *. split. split. smt(). smt().
-      move => *. split. smt().  move => *. split. smt(). move => *. split. smt(BArray224.init_arrP). move => *.  rewrite !List.all_cat /=. split.  smt(). smt().
+      move => *. split. move => /> *. split. smt(). split. smt(). split. smt(). smt().  move => *. split. smt(). move => *. split. smt(BArray224.init_arrP). move => *.  rewrite !List.all_cat /=. split.  smt(). smt().
     auto. rewrite /is_init /valid /= => &m /> *. rewrite !List.all_cat /=. smt(BArray224.init_arrP).
   auto .
-  rewrite /is_init /valid /=.
-  smt (List.all_cat BArray224.init_arrP). 
+  rewrite /is_init /valid /= => &m /> *. rewrite !List.all_cat /=. 
+  smt  (BArray224.init_arrP). 
 qed .
 
 lemma __absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :
