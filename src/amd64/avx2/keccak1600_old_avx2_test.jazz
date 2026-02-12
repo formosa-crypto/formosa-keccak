@@ -26,8 +26,8 @@ namespace A1 {
 }
 
 export fn _sha3_256A_A1184
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg ptr u8[1184] in
+(  reg mut ptr u8[32] out
+,  reg ptr u8[1184] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   st = __state_init_avx2();

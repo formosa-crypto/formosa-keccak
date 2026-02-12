@@ -1,8 +1,8 @@
 require "../../../../src/amd64/ref/keccak1600_old_ref_test.jazz"
 
 export fn jasmin_old_ref_sha3_256
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg ptr u8[1184] in
+(  reg mut ptr u8[32] out
+,  reg ptr u8[1184] in
 )-> reg ptr u8[32] {
     out = _sha3_256A_A1184(out, in);
     return out;
