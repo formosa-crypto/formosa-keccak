@@ -5,6 +5,7 @@
 
 CKP    := ../../../submodules/XKCP/lib/high/Keccak
 CC     ?= /usr/bin/gcc
+EXTRACTED ?= ../../../proof/amd64/extracted
 CFLAGS   := -Wall -Wextra -O3 -fomit-frame-pointer -mavx2 \
              -I$(CKP) \
 			 -I$(CKP)/FIPS202 \
@@ -52,48 +53,44 @@ ct: ct_keccak_array ct_keccak_mem
 
 
 ct_keccak_array:
-	$(JASMINCT) --infer ./toEC_ASIZE.jazz
+	$(JASMINCT) --infer $(EXTRACTED)/toEC_keccak1600_ASIZE_avx2.jazz
 
 ct_keccak_mem:
-	$(JASMINCT) --infer ./toEC.jazz
+	$(JASMINCT) --infer $(EXTRACTED)/toEC_keccak1600_avx2.jazz
 
 ec: ec_keccak_array_avx2 ec_keccak_array_avx2x4 ec_keccak_mem_avx2 ec_keccak_mem_avx2x4
 
 ec_keccak_array_avx2:
-	$(JASMIN2EC) ./toEC_ASIZE.jazz --array-model=old -o keccak_amd64_avx2.ec \
-				-f __addstate_array_avx2 \
-				-f __absorb_array_avx2 \
-				-f __pstate_array_avx2 \
-				-f __pabsorb_array_avx2 \
-				-f __dumpstate_array_avx2 \
-				-f __squeeze_array_avx2
+	$(JASMIN2EC) $(EXTRACTED)/toEC_keccak1600_ASIZE_avx2.jazz --array-model=old -o keccak_amd64_avx2.ec \
+				-f __addstate_avx2 \
+				-f __absorb_avx2 \
+				-f __dumpstate_avx2 \
+				-f __squeeze_avx2
 
 ec_keccak_array_avx2x4:
-	$(JASMIN2EC) ./toEC_ASIZE.jazz --array-model=old -o keccak_amd64_avx2x4.ec \
-				-f  __addstate_bcast_array_avx2x4 \
-				-f  __absorb_bcast_array_avx2x4 \
-				-f  __addstate_array_avx2x4 \
-				-f  __absorb_array_avx2x4 \
-				-f  __dumpstate_array_avx2x4 \
-				-f  __squeeze_array_avx2x4
+	$(JASMIN2EC) $(EXTRACTED)/toEC_keccak1600_ASIZE_avx2.jazz --array-model=old -o keccak_amd64_avx2x4.ec \
+				-f  __addstate_bcast_avx2x4 \
+				-f  __absorb_bcast_avx2x4 \
+				-f  __addstate_avx2x4 \
+				-f  __absorb_avx2x4 \
+				-f  __dumpstate_avx2x4 \
+				-f  __squeeze_avx2x4
 
 ec_keccak_mem_avx2:
-	$(JASMIN2EC) ./toEC.jazz --array-model=old -o keccak_amd64_mem_avx2.ec \
-				-f __addstate_imem_avx2 \
-				-f __absorb_imem_avx2 \
-				-f __pstate_imem_avx2 \
-				-f __pabsorb_imem_avx2 \
-				-f __dumpstate_imem_avx2 \
-				-f __squeeze_imem_avx2
+	$(JASMIN2EC) $(EXTRACTED)/toEC_keccak1600_avx2.jazz --array-model=old -o keccak_amd64_mem_avx2.ec \
+				-f __addstate_avx2 \
+				-f __absorb_avx2 \
+				-f __dumpstate_avx2 \
+				-f __squeeze_avx2
 
 ec_keccak_mem_avx2x4:
-	$(JASMIN2EC) ./toEC.jazz --array-model=old -o keccak_amd64_mem_avx2x4.ec \
-				-f  __addstate_bcast_imem_avx2x4 \
-				-f  __absorb_bcast_imem_avx2x4 \
-				-f  __addstate_imem_avx2x4 \
-				-f  __absorb_imem_avx2x4 \
-				-f  __dumpstate_imem_avx2x4 \
-				-f  __squeeze_imem_avx2x4
+	$(JASMIN2EC) $(EXTRACTED)/toEC_keccak1600_avx2.jazz --array-model=old -o keccak_amd64_mem_avx2x4.ec \
+				-f  __addstate_m_bcast_avx2x4 \
+				-f  __absorb_m_bcast_avx2x4 \
+				-f  __addstate_m_avx2x4 \
+				-f  __absorb_m_avx2x4 \
+				-f  __dumpstate_m_avx2x4 \
+				-f  __squeeze_m_avx2x4
 
 clean:
 	rm -f *.ec
