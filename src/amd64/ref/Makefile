@@ -5,6 +5,7 @@
 
 CKP    := ../../../submodules/XKCP/lib/high/Keccak
 CC     ?= /usr/bin/gcc
+EXTRACTED ?= ../../../proof/amd64/extracted
 CFLAGS   := -Wall -Wextra -O3 -fomit-frame-pointer -mavx2 \
              -I$(CKP) \
 			 -I$(CKP)/FIPS202 \
@@ -43,27 +44,27 @@ sha3.s: keccak1600_ref_test.jazz $(JINC)
 ct: ct_keccak_array ct_keccak_mem
 
 ct_keccak_array:
-	$(JASMINCT) --infer toEC_ASIZE.jazz
+	$(JASMINCT) --infer $(EXTRACTED)/toEC_keccak1600_ASIZE_ref.jazz
 
 ct_keccak_mem:
-	$(JASMINCT) --infer toEC.jazz
+	$(JASMINCT) --infer $(EXTRACTED)/toEC_keccak1600_ref.jazz
 
 
 ec: ec_keccak_array ec_keccak_mem
 
 ec_keccak_array: 
-	$(JASMIN2EC) ./toEC_ASIZE.jazz --array-model=old -o keccak_amd64_ref.ec \
-				-f __addstate_array_ref \
-				-f __absorb_array_ref \
-				-f __dumpstate_array_ref \
-				-f __squeeze_array_ref
+	$(JASMIN2EC) $(EXTRACTED)/toEC_keccak1600_ASIZE_ref.jazz --array-model=old -o keccak_amd64_ref.ec \
+				-f __addstate_ref \
+				-f __absorb_ref \
+				-f __dumpstate_ref \
+				-f __squeeze_ref
 
 ec_keccak_mem:
-	$(JASMIN2EC) ./toEC.jazz --array-model=old -o keccak_amd64_mem_ref.ec \
-				-f __addstate_imem_ref \
- 				-f __absorb_imem_ref \
- 				-f __dumpstate_imem_ref \
- 				-f __squeeze_imem_ref
+	$(JASMIN2EC) $(EXTRACTED)/toEC_keccak1600_ref.jazz --array-model=old -o keccak_amd64_mem_ref.ec \
+				-f __addstate_m_ref \
+ 				-f __absorb_m_ref \
+ 				-f __dumpstate_m_ref \
+ 				-f __squeeze_m_ref
 
 
 clean:
