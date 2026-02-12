@@ -8,10 +8,10 @@ ECCONF := ./../config/tests.config
 
 JASMIN2EC ?= ./../../jasmin2ec --arch x86 --array-model=old
 
-SRCDIR = ./../../src/amd64
+# SRCDIR = ./../../src/amd64
 OUTDIR = extracted
 
-all: Jazz_ref.ec Jazz_avx2.ec Jazz_ref_ASIZE.ec Jazz_avx2_ASIZE.ec
+all: Jazz_keccak.ec Jazz_keccak_ASIZE.ec
 checkec_correctness_avx2:
 	easycrypt runtest $(ECCONF) keccak_correctness_avx2
 
@@ -25,10 +25,10 @@ checkec_safety_ref:
 	easycrypt runtest $(ECCONF) keccak_safety_ref
 
 
-Jazz_ref.ec : $(SRCDIR)/ref/toEC.jazz
-	$(JASMIN2EC) -o $(OUTDIR)/$@ $^
+# Jazz_ref.ec : $(SRCDIR)/ref/toEC.jazz
+# 	$(JASMIN2EC) -o $(OUTDIR)/$@ $^
 
-Jazz_avx2.ec : $(SRCDIR)/avx2/toEC.jazz
+Jazz_keccak.ec : $(OUTDIR)/toEC_keccak1600.jazz
 	$(JASMIN2EC) -o $(OUTDIR)/$@ $^
 
 #rmglobals --after unroll  
@@ -43,10 +43,10 @@ Jazz_avx2.ec : $(SRCDIR)/avx2/toEC.jazz
 #inlined pround proc generated (and hand-edited) by:
 #jasminc -pmakeref keccakf1600_pround_avx2x4.jinc > keccakf1600_pround_inlined_avx2x4.jinc
 
-Jazz_ref_ASIZE.ec : $(SRCDIR)/ref/toEC_ASIZE.jazz
-	$(JASMIN2EC) -o $(OUTDIR)/$@ $^
+# Jazz_ref_ASIZE.ec : $(SRCDIR)/ref/toEC_ASIZE.jazz
+# 	$(JASMIN2EC) -o $(OUTDIR)/$@ $^
 
-Jazz_avx2_ASIZE.ec : $(SRCDIR)/avx2/toEC_ASIZE.jazz
+Jazz_keccak_ASIZE.ec : $(OUTDIR)/toEC_keccak1600_ASIZE.jazz
 	$(JASMIN2EC) -o $(OUTDIR)/$@ $^
 
 #Jazz_avx2x4_ASIZE.ec : $(SRCDIR)/avx2/toEC_ASIZE.jazz

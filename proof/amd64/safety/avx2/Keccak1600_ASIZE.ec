@@ -6,7 +6,7 @@ import SLH64.
 
 from Jasmin require import Jcheck JSafety.
 
-require import
+from JazzEC require import
 Array5 Array6 Array7 Array24 Array25 Array40 Array160 Array200 Array224
 Array800  WArray192 BArray40 BArray160 BArray192 BArray200 BArray224
 BArray800.
@@ -18038,8 +18038,39 @@ qed .
 
 import JWord JUtils.
 
-lemma test_64_zf k (x:W64.t): (W64.ALU.TEST_64 (x) (W64.of_int (2^k))).`5 <=> !(x.[k]).
-admitted.
+lemma and_shlwE (x y: W64.t) k:
+ x `&` (y `<<<` k) = ((x `>>>` k) `&` y) `<<<` k.
+proof.
+apply W64.ext_eq => i Hi.
+rewrite andwE !shlwE andwE !shrwE !Hi /=.
+case: (0 <= i - k < 64 ) => C/=; first smt().
+by  rewrite (W64.get_out y) //.
+qed.
+
+lemma test_64_zf k x:
+ 0 <= k < 64 =>
+ (TEST_64 x (W64.of_int (2^k))).`5 <=> !(x.[k]).
+proof.
+move => Hk; rewrite /TEST_64 /rflags_of_bwop /= /ZF_of get_to_uint Hk /=.
+have ->: W64.of_int (2 ^ k) = W64.one `<<<` k by rewrite shlMP 1:/#.
+rewrite and_shlwE to_uint_eq /= (:1=2^1-1) 1:/# and_mod //= to_uint_shl 1:/# of_uintK.
+rewrite (modz_small (to_uint (x `>>>` k)%%2)) 1:/# modz_small.
+ move: (modz_cmp (to_uint (x `>>>` k)) 2 _) => //.
+ have ?: 0 <= 2^k < W64.modulus.
+  split => *; first smt(gt0_pow2).
+  rewrite ltz_def; split.
+   apply (contra (W64.modulus = 2^k) (64=k) ).
+    by apply (StdOrder.IntOrder.ieexprIn 2) => /#.
+   smt().
+  by apply StdOrder.IntOrder.ler_weexpn2l => /#.
+ move=> ?.
+ have: to_uint (x `>>>` k) %% 2 = 0 \/ to_uint (x `>>>` k) %% 2 = 1 by smt().
+ by move=> [->|->] //=.
+rewrite to_uint_shr 1:/#.
+case: (to_uint x %/ 2 ^ k %% 2 = 0) => ?.
+ smt().
+smt(gt0_pow2).
+qed.
 
 lemma __m_rlen_read_upto8_proof _buf _len :
       (__m_rlen_read_upto8_spec _buf _len).
@@ -18048,20 +18079,20 @@ proof.
   proc. auto .
   rewrite /is_init /valid /= => &m /> *.
   split. smt().
-  case(len{m} = 0). move => len. rewrite !len /=.  by rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
-  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
  smt().
 qed.
@@ -18070,24 +18101,24 @@ qed.
 lemma __m_rlen_write_upto8_proof _buf _data _len :
       (__m_rlen_write_upto8_spec _buf _data _len).
 proof.
-rewrite /__m_rlen_write_upto8_spec .
-proc; auto .
-rewrite /is_init /valid /= => &m /> *.
- split. smt().
-  case(len{m} = 0). move => len. rewrite !len /=.  by rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
-  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  rewrite /__m_rlen_write_upto8_spec .
+  proc; auto .
+  rewrite /is_init /valid /= => &m /> *.
+  split. smt().
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
  smt().
 qed .
@@ -18720,22 +18751,22 @@ proof.
 rewrite /__a_rlen_read_upto8_spec .
   proc; auto. rewrite /is_init /valid /= => &m /> *.
   split. smt().
-  case(len{m} = 0). move => len. rewrite !len /=.  by rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
-  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  smt().
+ smt().
 qed .
 
 lemma __a_rlen_read_upto8_noninline_proof _a _b_a _off_ _len_ :
@@ -18745,22 +18776,22 @@ rewrite /__a_rlen_read_upto8_noninline_spec .
 proc; auto .
   rewrite /is_init /valid /= => &m /> *.
   split. smt().
-  case(len_{m} = 0). move => len. rewrite !len /=.  by rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
-  case(len_{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len_{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len_{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len_{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len_{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len_{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len_{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len_{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len_{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len_{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len_{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len_{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len_{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len_{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len_{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  smt().
+ smt().
 qed .
 
 lemma __a_rlen_write_upto8_proof _buf _b_buf _off _data _len :
@@ -18770,22 +18801,22 @@ rewrite /__a_rlen_write_upto8_spec .
 proc; auto .
 rewrite /is_init /valid /= => &m /> *.
   split. smt().
-  case(len{m} = 0). move => len. rewrite !len /=.  by rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
-  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2)  (test_64_zf 1)  (test_64_zf 0) /=.
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
   + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
-  smt().
+ smt().
 qed .
 
 lemma __addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :
