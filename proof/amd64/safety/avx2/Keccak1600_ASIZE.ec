@@ -18832,7 +18832,7 @@ rewrite /__addstate_avx2_spec .
           aT = _aT + dELTA +  (( 8 <= _aT  || (8 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
   + sp. if.  
-    + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=. smt().  split. smt().  smt().
+    + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=. smt().  split. split. smt(). smt().  smt().
       auto. ecall (__a_ilen_read_upto8_at_proof param_5 b_param_8 param_4 param_3  param_2 param_1 param_0 param). auto. 
       rewrite /valid /is_init /= => &m /> *. split.  split. smt(). split. smt(). split. smt(). smt().  move => /> *. admit. (*instruction invalid -  W4u64.VPBROADCAST_4u64 (W2u64.truncateu64 t128_0)    *)
     auto. rewrite /valid /is_init /= => &m /> *. smt(List.all_cat).
