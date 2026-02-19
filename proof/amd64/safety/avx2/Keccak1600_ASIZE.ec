@@ -51,12 +51,17 @@ abbrev  kECCAK_RHOTATES_LEFT =
 
 abbrev  kECCAK1600_RC =
 (BArray192.of_list64
-[(W64.of_int 1); (W64.of_int 130); (W64.of_int 138); (W64.of_int 0);
-(W64.of_int 139); (W64.of_int 1); (W64.of_int 129); (W64.of_int 9);
-(W64.of_int 138); (W64.of_int 136); (W64.of_int 9); (W64.of_int 10);
-(W64.of_int 139); (W64.of_int 139); (W64.of_int 137); (W64.of_int 3);
-(W64.of_int 2); (W64.of_int 128); (W64.of_int 10); (W64.of_int 10);
-(W64.of_int 129); (W64.of_int 128); (W64.of_int 1); (W64.of_int 8)]).
+[(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
+(W64.of_int (-9223372034707259392)); (W64.of_int 32907);
+(W64.of_int 2147483649); (W64.of_int (-9223372034707259263));
+(W64.of_int (-9223372036854743031)); (W64.of_int 138); (W64.of_int 136);
+(W64.of_int 2147516425); (W64.of_int 2147483658); (W64.of_int 2147516555);
+(W64.of_int (-9223372036854775669)); (W64.of_int (-9223372036854742903));
+(W64.of_int (-9223372036854743037)); (W64.of_int (-9223372036854743038));
+(W64.of_int (-9223372036854775680)); (W64.of_int 32778);
+(W64.of_int (-9223372034707292150)); (W64.of_int (-9223372034707259263));
+(W64.of_int (-9223372036854742912)); (W64.of_int 2147483649);
+(W64.of_int (-9223372034707259384))]).
 
 module M = {
   var tmp__trace : trace
@@ -1454,8 +1459,6 @@ module M = {
         aT <- result_1;
         w <- result_0;
         t128 <- (zeroextu128 w);
-        trace___m_ilen_read_bcast_upto8_at <-
-        (trace___m_ilen_read_bcast_upto8_at ++ [(Assert, false)]);
         w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
         param_7 <- w256;
         param_6 <- aT8;
@@ -1586,8 +1589,6 @@ module M = {
         lEN <- (lEN - 16);
       } else {
         if ((8 <= lEN)) {
-          trace___m_ilen_write_upto16 <-
-          (trace___m_ilen_write_upto16 ++ [(Assert, false)]);
           trace___m_ilen_write_upto16 <-
           (trace___m_ilen_write_upto16 ++
           [(Assert, ((0 <= buf) /\ (buf <= 18446744073709551615)))]);
@@ -6469,8 +6470,6 @@ module M = {
     t64 <- (W64.of_int 1);
     t64 <- (t64 `<<` (W8.of_int (((8 * rATE8) - 1) %% 64)));
     t128 <- (zeroextu128 t64);
-    trace___addratebit_avx2x4 <-
-    (trace___addratebit_avx2x4 ++ [(Assert, false)]);
     t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
     trace___addratebit_avx2x4 <-
     (trace___addratebit_avx2x4 ++
@@ -7763,8 +7762,6 @@ module M = {
         aT <- result_1;
         w <- result_0;
         t128 <- (zeroextu128 w);
-        trace___a_ilen_read_bcast_upto8_at <-
-        (trace___a_ilen_read_bcast_upto8_at ++ [(Assert, false)]);
         w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
         param_9 <- w256;
         param_8 <- aT8;
@@ -7957,8 +7954,6 @@ module M = {
           [(Assert,
            ((0 <= (offset + dELTA)) /\
            ((offset + dELTA) <= 18446744073709551615)))]);
-          trace___a_ilen_write_upto16 <-
-          (trace___a_ilen_write_upto16 ++ [(Assert, false)]);
           trace___a_ilen_write_upto16 <-
           (trace___a_ilen_write_upto16 ++
           [(Assert,
@@ -9586,8 +9581,6 @@ module M = {
         aT <- result_0;
         t64_1 <- result;
         t128_0 <- (zeroextu128 t64_1);
-        trace___addstate_avx2 <-
-        (trace___addstate_avx2 ++ [(Assert, false)]);
         r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
       }
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
@@ -17979,8 +17972,7 @@ proof.
   auto .
   ecall (__m_ilen_read_upto8_at_proof param_5 param_4 param_3 param_2 param_1).
   auto .
-  rewrite /is_init /valid /=.
-  admit. (*assert false - waiting for compiler fix*)
+  rewrite /is_init /valid /= => &m /> *.  smt(List.all_cat).
 qed .
 
 lemma __m_ilen_write_upto8_proof _buf _lEN _w :
@@ -18007,8 +17999,9 @@ auto .
 ecall (__m_ilen_write_upto8_proof param_1 param_0 param).
 if. 
   auto .
-  rewrite /is_init /valid /= => &m /> *. split. move => *.  split.  smt().  move => *.  smt(List.all_cat).
-admit.  (*assert false - waiting for compiler fix*) auto.
+  rewrite /is_init /valid /= => &m /> *. split. move => *.  split.  smt().  move => *.  smt(List.all_cat). move => *.
+  smt(List.all_cat).  
+auto.
 smt (List.all_cat).
 auto .
 rewrite /is_init /valid /=.
@@ -18532,8 +18525,8 @@ lemma __addratebit_avx2x4_proof _st _b_st _rATE8 :
 proof.
 rewrite /__addratebit_avx2x4_spec .
 proc; auto .
-rewrite /is_init /valid /= . admit. (*assert false - fix in the compiler*)
-(*smt (List.all_cat BArray800.init_arrP).*)
+rewrite /is_init /valid /= .
+smt (BArray800.init_arrP).
 qed .
 
 lemma __a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :
@@ -18694,7 +18687,7 @@ auto .
 ecall (__a_ilen_read_upto8_at_proof param_7 b_param param_6 param_5 param_4 
        param_3 param_2 param_1).
 auto .
-  rewrite /is_init /valid /= => &m /> *. admit. (*W4u64.VPBROADCAST_4u64 (W2u64.truncateu64 t128)*)
+  rewrite /is_init /valid /= => &m /> *. smt(List.all_cat). 
 qed .
 
 lemma __a_ilen_write_upto8_proof _buf _b_buf _offset _dELTA _lEN _w :
@@ -18719,7 +18712,7 @@ if .
      smt (List.all_cat).
    auto .
    ecall (__a_ilen_write_upto8_proof param_3 b_param param_2 param_1 param_0 param). 
-  if. auto. rewrite /is_init /valid /=. move => &m /> * .  admit. (*assert false - fix compiler*)
+  if. auto. rewrite /is_init /valid /=. move => &m /> * . smt(List.all_cat).
   auto. rewrite /is_init /valid /= => &m /> *. smt(List.all_cat).
   auto .
   rewrite /is_init /valid /= => &m /> *.
@@ -18834,7 +18827,7 @@ rewrite /__addstate_avx2_spec .
   + sp. if.  
     + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=. smt().  split. split. smt(). smt().  smt().
       auto. ecall (__a_ilen_read_upto8_at_proof param_5 b_param_8 param_4 param_3  param_2 param_1 param_0 param). auto. 
-      rewrite /valid /is_init /= => &m /> *. split.  split. smt(). split. smt(). split. smt(). smt().  move => /> *. admit. (*instruction invalid -  W4u64.VPBROADCAST_4u64 (W2u64.truncateu64 t128_0)    *)
+      rewrite /valid /is_init /= => &m /> *. split.  split. smt(). split. smt(). split. smt(). smt().  move => /> *. smt(List.all_cat). 
     auto. rewrite /valid /is_init /= => &m /> *. smt(List.all_cat).
   seq 1: (valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
           dELTA = (_aT < 40) ? (( __LEN < (40 - _aT)) ? __LEN : (40-_aT)) : 0 /\
@@ -19239,3 +19232,5 @@ proof.
   rewrite /is_init /valid /=.
   smt (List.all_cat BArray800.init_arrP).
 qed .
+
+end KECCAK_ARRAY_ASIZE.
