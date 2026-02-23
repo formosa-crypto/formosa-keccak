@@ -3348,7 +3348,7 @@ qed.
 
 bind circuit VPINSR_2u64 "VPINSR_2u64".
 
-import Avx2_extra Bindings.
+import Avx2_extra Kck_bindings.
 
 op F2(inp : W64.t Array53.t ) : W256.t Array7.t =
    stavx2_from_st25 (addstate (stavx2_to_st25
@@ -3776,7 +3776,7 @@ case (_len < 32+8+8 \/ (_len = 32+8+8 /\ _tb = 0)); last first.
        rewrite (nth_map witness);1:by smt(Array7.size_to_list).
        rewrite w2bitsK get_to_list => <-;rewrite /aa /F2 /addstate_avx2;do congr.
        + (* state matching *)
-         rewrite tP => k kb;rewrite initiE 1:/# /= /u256_pack4 /Bindings.concat_2u128 /concat_2u64!pack2E !initiE 1..4:/# wordP => j jb.
+         rewrite tP => k kb;rewrite initiE 1:/# /= /u256_pack4 /Kck_bindings.concat_2u128 /concat_2u64!pack2E !initiE 1..4:/# wordP => j jb.
          rewrite !initiE 1:/# /= get_of_list 1:/# /=.
          case (j %/64 = 0) => ?.
          + rewrite ifT 1:/# initiE 1:/# /= get_of_list 1:/# /= ifT 1:/# (nth_map []) 1:/#.
@@ -3935,7 +3935,7 @@ case (_len < 32+8+8 \/ (_len = 32+8+8 /\ _tb = 0)); last first.
        rewrite (nth_map witness);1:by smt(Array7.size_to_list).
        rewrite w2bitsK get_to_list => <-;rewrite /aa /F3 /addstate_avx2;do congr.
        + (* state matching *)
-         rewrite tP => k kb;rewrite initiE 1:/# /= /u256_pack4 /Bindings.concat_2u128 /concat_2u64!pack2E !initiE 1..4:/# wordP => j jb.
+         rewrite tP => k kb;rewrite initiE 1:/# /= /u256_pack4 /Kck_bindings.concat_2u128 /concat_2u64!pack2E !initiE 1..4:/# wordP => j jb.
          rewrite !initiE 1:/# /= get_of_list 1:/# /=.
          case (j %/64 = 0) => ?.
          + rewrite ifT 1:/# initiE 1:/# /= get_of_list 1:/# /= ifT 1:/# (nth_map []) 1:/#.

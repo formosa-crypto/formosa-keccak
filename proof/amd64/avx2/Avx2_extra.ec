@@ -1,7 +1,7 @@
 require import AllCore List IntDiv.
 from Jasmin require import JWord JUtils.
 
-from CryptoSpecs require import Bindings.
+require import Kck_bindings.
 
 (* circuit-friendly state mappings *)
 
