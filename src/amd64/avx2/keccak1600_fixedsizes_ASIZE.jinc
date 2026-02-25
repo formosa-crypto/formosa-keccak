@@ -33,9 +33,9 @@ requires{0 <= _TRAILB && _TRAILB < 256}
 ensures{is_arr_init(result.0,0,7*32) && result.1 == offset + _LEN}
 */
 {
-  reg u64 t64_1, t64_2, t64_3, t64_4, t64_5 ;
+  reg u64 t64_2, t64_3, t64_4, t64_5 ;
   reg u256 r0, r1, r2, r3, r4, r5, r6;
-  reg u128 t128_0, t128_1, t128_2;
+  reg u128 t128_1, t128_2;
   inline int DELTA;
 
   DELTA = 0;
