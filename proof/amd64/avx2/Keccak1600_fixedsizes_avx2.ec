@@ -93,69 +93,7 @@ qed.
 require import BitEncoding.
 import BitChunking.
 
-lemma chunk_take_eq' ['a] (n n': int) (l : 'a list):
-  0 < n => 
-  size l %/ n * n <= n' =>
-  chunk n l = chunk n (take n' l).
-proof.
-move => Hn Hn'; rewrite /chunk.
-have ->: size (take n' l) %/ n = size l %/ n.
- rewrite size_take; first smt(size_ge0).
- case: (n' < size l) => C //.
- rewrite eqz_leq; split; last smt().
- by apply leq_div2r; smt().
-apply eq_in_mkseq => i Hi /=.
-rewrite drop_take 1:/# take_take ifT //.
-have ?: i*n < size l by smt().
-have H1: n+i*n <= n'.
- move: Hn'; rewrite -lez_divRL 1:/# => Hn'.
- have H2: 1+i <= n' %/ n by smt(). 
- apply (lez_trans (n' %/ n * n)); last smt().
- by rewrite (:n+i*n=(1+i)*n) 1:/# ler_pmul2r /#.
-smt().
-qed.
 
-
-lemma drop_cat' ['a] (n : int) (s1 s2 : 'a list):
- drop n (s1 ++ s2)
- = if n <= size s1 then drop n s1 ++ s2 else drop (n - size s1) s2.
-proof.
-case: (n=size s1) => [->//=|C].
- by rewrite drop_cat /= drop0 drop_size.
-by rewrite drop_cat /#.
-qed.
-
-lemma chunkremains_cat ['a] (l1 l2 : 'a list) (r : int):
- 0 < r =>
- chunkremains r (l1++l2) = chunkremains r (chunkremains r l1 ++ l2).
-proof.
-move=> Hr.
-rewrite /chunkremains size_cat eq_sym.
-rewrite drop_cat size_cat size_drop. smt(size_ge0).
-have ->: max 0 (size l1 - size l1 %/ r * r) = size l1 %% r by smt().
-rewrite drop_drop. smt(size_ge0). smt(size_ge0).
-case: ((size l1 %% r + size l2) %/ r * r < size l1 %% r) => C.
- have E: (size l1 %% r + size l2) %/ r * r = 0 by smt(size_ge0).
- rewrite E /= drop_cat' ifT.
-  by rewrite {1}(divz_eq (size l1) r) -addzA divzMDl 1:/# mulzDl E /= /#.
- rewrite {2}(divz_eq (size l1) r) -addzA divzMDl 1:/# mulzDl E /= /#.
-rewrite drop_cat ifF.
-move: C; apply contra.
-  rewrite {1 2}(divz_eq (size l1) r) -addzA divzMDl 1:/#. smt().
-
-congr.
-rewrite eq_sym.
-rewrite {1}(divz_eq (size l1) r) -addzA divzMDl 1:/# mulzDl.
-rewrite {3}(divz_eq (size l1) r). ring.
-qed.
-
-lemma chunkremains_nil ['a] r (l: 'a list):
- 0 < r =>
- r %| size l =>
- chunkremains r l = [].
-proof.
-by move=> Hr0 Hr; rewrite -size_eq0 size_chunkremains /#.
-qed.
 
 lemma bytes2state_cat l1 l2:
  bytes2state (l1++l2)
@@ -173,13 +111,7 @@ have: bytes2stbytes (l1 ++ l2)
 by move => ->; rewrite stbytesK.
 qed.
  
-lemma addstateC s1 s2:
- addstate s1 s2 = addstate s2 s1.
-proof.
-rewrite tP => i Hi.
-by rewrite /addstate !initiE //= xorwC.
-qed.
-
+(*
 lemma chunk1 ['a] r (l: 'a list):
  r <> 0 =>
  size l = r =>
@@ -188,6 +120,7 @@ proof.
 move=> Hr Hsz.
 by rewrite /chunk Hsz divzz Hr b2i1 mkseq1 /= drop0 -Hsz take_size.
 qed.
+*)
 
 lemma stateabsorb_iblocks_rcons l x st:
  stateabsorb_iblocks (rcons l x) st
@@ -1108,7 +1041,7 @@ seq 3: (buf=_buf /\ _RATE8=_r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256
    rewrite size_cat size_sub 1:/# addzA (addzC (size _l)) -addzA.
    rewrite {1}(divz_eq (size _l) _r8) -addzA /= -mulzDl dvdzP.
    by exists (i{m} + 1 + size _l %/ _r8).
-  rewrite (chunk1 _ (sub _buf _ _)) 1:/#.
+  rewrite (chunk_size _ (sub _buf _ _)) 1:/#.
    by rewrite size_sub /#.
   rewrite cats1 stateabsorb_iblocks_rcons Est' stavx2_from_st25K /stateabsorb; congr; congr.
    by rewrite Est stavx2_from_st25K.
@@ -1133,7 +1066,7 @@ seq 3: (buf=_buf /\ _RATE8=_r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256
    rewrite {1}(divz_eq (size _l) _r8) -addzA /= -{2}(mul1z _r8) -mulzDl dvdzP.
    by exists (1 + size _l %/ _r8).
   rewrite /stateabsorb bytes2state0 addstateC addstate_st0; congr.
-  rewrite chunk_cat' 1:/# (chunk1 _ (_++_)) 1:/#.
+  rewrite chunk_cat' 1:/# (chunk_size _ (_++_)) 1:/#.
    by rewrite size_cat size_chunkremains size_sub /#.
   rewrite cats1 stateabsorb_iblocks_rcons Est' Est !stavx2_from_st25K /stateabsorb. 
   rewrite -addstateA; congr; congr.

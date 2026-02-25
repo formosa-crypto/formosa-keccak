@@ -3073,7 +3073,11 @@ module M = {
     z256 <- (set0_256);
     i <- 0;
     while ((i < (32 * 25))) {
-      st.[i] <- z256;
+      st <-
+      (Array25.init
+      (WArray800.get256
+      (WArray800.set256_direct (WArray800.init256 (fun i_0 => st.[i_0])) 
+      i z256)));
       i <- (i + 32);
     }
     return st;

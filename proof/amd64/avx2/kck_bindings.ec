@@ -6,7 +6,7 @@ from JazzEC require import WArray16 WArray32 WArray128 WArray160 WArray512 WArra
 
 import BitEncoding BS2Int BitChunking.
 
-require import JWord_extra.
+from CryptoSpecs require import JWord_extra.
 
 require import Kck_abs_bindings.
 

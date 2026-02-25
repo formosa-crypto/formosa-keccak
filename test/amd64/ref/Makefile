@@ -18,9 +18,10 @@ endif
 PWD = $(shell pwd)
 SRCDIR = $(PWD)/../../../src/amd64
 
-JOPTS   ?= "-lazy-regalloc"
-JASMINC ?= jasminc $(JOPTS) -I Keccak=$(SRCDIR)
-
+JASMINDIR = $(PWD)/../../../submodules/jasmin/compiler
+JASMINC  ?= $(JASMINDIR)/jasminc
+JOPTS    ?= -lazy-regalloc
+JASMINC  := $(JASMINC) $(JOPTS) -I Keccak=$(SRCDIR)
 
 .DEFAULT_GOAL := all
 

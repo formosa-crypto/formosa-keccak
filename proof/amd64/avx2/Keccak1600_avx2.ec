@@ -70,7 +70,7 @@ proof.
 move=> Hi.
 have: i \in iotared 0 7 by smt(mem_iota).
 move: {Hi} i; apply/List.allP => /=.
-by rewrite /stavx2_st0 /stavx2_from_st25 get_of_list 1:// /= /st0 !createiE 1..25:// u256_pack4_zero.
+by rewrite /stavx2_st0 /stavx2_from_st25 get_of_list 1:// /= /st0 !initiE 1..25:// !u256_pack4_zero.
 qed.
 
 op stavx2INV (st: W256.t Array7.t): bool =

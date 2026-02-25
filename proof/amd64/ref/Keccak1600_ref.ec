@@ -46,13 +46,13 @@ lemma addstate_st0 st:
 proof.
 rewrite tP => i Hi.
 rewrite /addstate /st0 /map2.
-by rewrite initiE //= createiE //=.
+by rewrite initiE //= initiE //.
 qed.
 
 lemma bytes2state0: bytes2state [] = st0.
 proof.
 rewrite /bytes2state /st0 tP => i Hi.
-rewrite get_of_list 1:// createiE //.
+rewrite get_of_list 1:// initiE //.
 by rewrite w64L_from_bytes_nil.
 qed.
 (* end: MOVE TO CryptoSpecs *)
@@ -113,7 +113,7 @@ while (0 <= i <= 25 /\ forall k, 0 <= k < i => st.[k] = z64).
 auto => /> &m Hr1 Hr2; split; first smt().
 move=> i st ???; have->: i=25 by smt().
 move=> H; rewrite tP /st0 => j Hj.
-by rewrite createiE 1:// H.
+by rewrite initiE 1:// H.
 qed.
 
 phoare state_init_ref_ph _r8:

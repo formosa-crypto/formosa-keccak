@@ -18,8 +18,10 @@ endif
 PWD = $(shell pwd)
 SRCDIR = $(PWD)/../../../src/amd64
 
-JASMINC ?= jasminc -I Keccak=$(SRCDIR)
-
+JASMINDIR = $(PWD)/../../../submodules/jasmin/compiler
+JASMINC  ?= $(JASMINDIR)/jasminc
+JOPTS    ?=
+JASMINC  := $(JASMINC) $(JOPTS) -I Keccak=$(SRCDIR)
 
 .DEFAULT_GOAL := all
 

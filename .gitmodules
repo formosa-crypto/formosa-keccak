@@ -1,7 +1,8 @@
 [submodule "submodules/crypto-specs"]
 	path = submodules/crypto-specs
 	url = ../crypto-specs.git
-	branch = bdep_prune
+	branch = main
 [submodule "submodules/jasmin"]
 	path = submodules/jasmin
 	url = git@github.com:jasmin-lang/jasmin.git
+	branch = safety-assert2

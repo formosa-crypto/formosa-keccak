@@ -133,7 +133,7 @@ lemma st4x0E: st4x_match st4x0 (st0,st0,st0,st0).
 proof.
 rewrite /st4x_match tP => i Hi.
 rewrite createiE // st4x_packiE //; iota.
-by rewrite !createiE // u256_pack4_zero.
+by rewrite initiE // u256_pack4_zero.
 qed.
 
 
