@@ -18,7 +18,8 @@ require "../common/subreadwrite_imem.jinc"
 #[safety =
    { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
                 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,25*32) 
-   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   , res = { final_st, final_AT }
+   , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
    }
  ]
 inline fn __addstate_m_bcast_avx2x4
@@ -71,7 +72,8 @@ inline fn __addstate_m_bcast_avx2x4
    { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<_RATE8 && _RATE8< 200 && 
                 AT < _RATE8 && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 &&
                 is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,25*32) && 0<= AT
-   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   , res = { final_st, final_AT }
+   , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
    }
  ]
 inline fn __absorb_m_bcast_avx2x4
@@ -117,9 +119,10 @@ inline fn __absorb_m_bcast_avx2x4
    { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<= AT  && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
                && is_mem_init((64u) buf0,_LEN) && is_mem_init((64u) buf1,_LEN) && 
                is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN) && is_arr_init(st,0,25*32) 
-   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0) &&
-               result.2 == buf0 + _LEN && result.3 == buf0 + _LEN &&
-               result.4 == buf0 + _LEN && result.5 == buf0 + _LEN
+   , res = { final_st, final_AT, final_buf0, final_buf1, final_buf2, final_buf3 }
+   , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) &&
+               final_buf0 == buf0 + _LEN && final_buf1 == buf1 + _LEN &&
+               final_buf2 == buf2 + _LEN && final_buf3 == buf3 + _LEN
    }
  ]
 inline fn __addstate_m_avx2x4
@@ -194,7 +197,8 @@ inline fn __addstate_m_avx2x4
    { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<_RATE8 && _RATE8< 200 && 
                 AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200  && 0<= AT && is_arr_init(st,0,25*32) &&
                 is_mem_init((64u) buf0,_LEN) && is_mem_init((64u) buf1,_LEN) && is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN)
-   , ensures = is_arr_init(result.0,0,25*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   , res = {final_st, final_AT}
+   , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
    }
  ]
 inline fn __absorb_m_avx2x4
@@ -237,7 +241,8 @@ inline fn __absorb_m_avx2x4
 #[safety =
    { requires = 0<= _LEN && _LEN <= 200 && is_arr_init(st,0,25*32) && is_mem_init((64u) buf0,_LEN) && 
               is_mem_init((64u) buf1,_LEN) && is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN)
-   , ensures = result.0 == buf0 + _LEN && result.1 == buf1 + _LEN && result.2 == buf2 + _LEN && result.3 == buf3 + _LEN 
+   , res = { final_buf0, final_buf1, final_buf2, final_buf3 }
+   , ensures = final_buf0 == buf0 + _LEN && final_buf1 == buf1 + _LEN && final_buf2 == buf2 + _LEN && final_buf3 == buf3 + _LEN 
    }
  ]
 inline fn __dumpstate_m_avx2x4
@@ -302,7 +307,7 @@ inline fn __dumpstate_m_avx2x4
 #[safety =
    { requires = 0<= _LEN && 0< _RATE8 && _RATE8 < 200 && is_arr_init(st,0,32*25) && is_mem_init((64u) buf0,_LEN) &&
                 is_mem_init((64u) buf1,_LEN) && is_mem_init((64u) buf2,_LEN) && is_mem_init((64u) buf3,_LEN) 
-   , ensures = is_arr_init(result.0,0,32*25)
+   , ensures = is_arr_init(st,0,32*25)
    }
  ]
 inline fn __squeeze_m_avx2x4

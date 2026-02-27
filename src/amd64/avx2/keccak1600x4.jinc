@@ -5,7 +5,7 @@ require "keccakf1600x4.jinc"
    ==========
 */
 
-#[safety ={ ensures = is_arr_init(result.0,0,800)}]
+#[safety ={ ensures = is_arr_init(st,0,800)}]
 inline fn __state_init_avx2x4
 ( reg mut ptr u256[25] st
 ) -> reg ptr u256[25]
@@ -28,7 +28,7 @@ inline fn __state_init_avx2x4
 
 #[safety =
    { requires = is_arr_init(st,0,800) && 0<RATE8 && RATE8 < 200
-   , ensures = is_arr_init(result.0,0,800)
+   , ensures = is_arr_init(st,0,800)
    }
  ]
 inline fn __addratebit_avx2x4

@@ -146,7 +146,7 @@ inline fn keccakf1600_4x_set_row
 
 #[safety =
    { requires = is_arr_init(a,0,800)
-   , ensures = is_arr_init(result.0,0,800) 
+   , ensures = is_arr_init(e,0,800) 
    }
  ]
 inline fn __keccakf1600_4x_pround
@@ -171,7 +171,7 @@ inline fn __keccakf1600_4x_pround
 
 #[safety =
    { requires = is_arr_init(a,0,800)
-   , ensures = is_arr_init(result.0,0,800) 
+   , ensures = is_arr_init(e,0,800) 
    }
  ]
 export fn __keccakf1600_4x_pround_inlined

@@ -14,15 +14,16 @@ require "keccak1600_generic.jinc"
 #[safety =
    { requires = is_mem_init((64u) buf,max(LEN,8 - (AT-CUR))) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
+   , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
    , ensures =  (CUR <= AT && AT < CUR + 8) ?
-       ( result.0 == buf + max(0,min(LEN,8 - (AT-CUR)))
-     && result.1 == LEN - max(0,min(LEN,8- (AT-CUR)))
-     && result.2 == (8 <=s AT-CUR + LEN ? TRAIL : 0)
-     && result.3 == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (result.0 == buf
-      && result.1 == LEN
-      && result.2 == TRAIL
-      && result.3 == AT)
+       ( final_buf == buf + max(0,min(LEN,8 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,8- (AT-CUR)))
+     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_upto8_at
@@ -98,15 +99,16 @@ inline fn __m_ilen_read_upto8_at
 #[safety =
    { requires = is_mem_init((64u) buf,max(LEN,16 - (AT-CUR))) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
-   , ensures =  (CUR <= AT && AT < CUR + 16) ?
-       ( result.0 == buf + max(0,min(LEN,16 - (AT-CUR)))
-     && result.1 == LEN - max(0,min(LEN,16- (AT-CUR)))
-     && result.2 == (16 <=s AT-CUR + LEN ? TRAIL : 0)
-     && result.3 == CUR + max(0,min(AT-CUR + LEN,16) + (16 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (result.0 == buf
-      && result.1 == LEN
-      && result.2 == TRAIL
-      && result.3 == AT)
+    , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
+    , ensures =  (CUR <= AT && AT < CUR + 16) ?
+       ( final_buf == buf + max(0,min(LEN,16 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,16- (AT-CUR)))
+     && final_TRAIL == (16 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,16) + (16 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_upto16_at
@@ -153,15 +155,16 @@ inline fn __m_ilen_read_upto16_at
 #[safety =
    { requires = is_mem_init((64u) buf,max(LEN,32 - (AT-CUR))) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
+   , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
    , ensures =  (CUR <= AT && AT < CUR + 32) ?
-       ( result.0 == buf + max(0,min(LEN,32 - (AT-CUR)))
-     && result.1 == LEN - max(0,min(LEN,32- (AT-CUR)))
-     && result.2 == (32 <=s AT-CUR + LEN ? TRAIL : 0)
-     && result.3 == CUR + max(0,min(AT-CUR + LEN,32) + (32 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (result.0 == buf
-      && result.1 == LEN
-      && result.2 == TRAIL
-      && result.3 == AT)
+       ( final_buf == buf + max(0,min(LEN,32 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,32- (AT-CUR)))
+     && final_TRAIL == (32 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,32) + (32 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_upto32_at
@@ -206,15 +209,16 @@ inline fn __m_ilen_read_upto32_at
 #[safety =
    { requires = is_mem_init((64u) buf,max(LEN,8 - (AT-CUR))) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
+   , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
    , ensures =  (CUR <= AT && AT < CUR + 8) ?
-       ( result.0 == buf + max(0,min(LEN,8 - (AT-CUR)))
-     && result.1 == LEN - max(0,min(LEN,8- (AT-CUR)))
-     && result.2 == (8 <=s AT-CUR + LEN ? TRAIL : 0)
-     && result.3 == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (result.0 == buf
-      && result.1 == LEN
-      && result.2 == TRAIL
-      && result.3 == AT)
+       ( final_buf == buf + max(0,min(LEN,8 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,8- (AT-CUR)))
+     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_bcast_upto8_at
@@ -262,8 +266,9 @@ inline fn __m_ilen_read_bcast_upto8_at
 // __awrite_subu64
 #[safety =
    { requires = is_mem_init((64u) buf,min(LEN,8))
-   , ensures = result.0 == buf + max(0,min(LEN,8))
-     && result.1 == LEN - max(0,min(LEN,8))
+   , res = { final_buf, final_LEN}
+   , ensures = final_buf == buf + max(0,min(LEN,8))
+     && final_LEN == LEN - max(0,min(LEN,8))
    }
  ]
 inline fn __m_ilen_write_upto8
@@ -304,8 +309,9 @@ inline fn __m_ilen_write_upto8
 // __awrite_subu128
 #[safety =
    { requires = is_mem_init((64u) buf,min(LEN,16))
-   , ensures = result.0 == buf + max(0,min(LEN,16))
-     && result.1 == LEN - max(0,min(LEN,16))
+   , res = { final_buf, final_LEN}
+   , ensures = final_buf == buf + max(0,min(LEN,16))
+     && final_LEN == LEN - max(0,min(LEN,16))
    }
  ]
 inline fn __m_ilen_write_upto16
@@ -338,8 +344,9 @@ inline fn __m_ilen_write_upto16
 // __awrite_subu256
 #[safety =
    { requires = is_mem_init((64u) buf,min(LEN,32))
-   , ensures = result.0 == buf + max(0,min(LEN,32))
-     && result.1 == LEN - max(0,min(LEN,32))
+   , res = { final_buf, final_LEN}
+   , ensures = final_buf == buf + max(0,min(LEN,32))
+     && final_LEN == LEN - max(0,min(LEN,32))
    }
  ]
 inline fn __m_ilen_write_upto32
@@ -375,7 +382,8 @@ inline fn __m_ilen_write_upto32
 **/
 #[safety =
    { requires = is_mem_init((64u) buf,min(len,8))
-   , ensures = result.0 == buf + min(len,8)
+   , res = { final_buf, final_data}
+   , ensures = final_buf == buf + min(len,8)
    }
  ]
 inline fn __m_rlen_read_upto8
@@ -426,7 +434,8 @@ inline fn __m_rlen_read_upto8
 **/
 #[safety =
    { requires = is_mem_init((64u) buf,min(len,8))
-   , ensures = result.0 == buf + max(0,min(len,8))
+   , res = { final_buf}
+   , ensures = final_buf == buf + max(0,min(len,8))
    }
  ]
 inline fn __m_rlen_write_upto8

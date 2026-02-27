@@ -122,12 +122,9 @@ inline fn __addstate_r3456_avx2
 */
 
 #[safety =
-   {ensures = 0<=result.0 && result.0 < 7}
+   {ensures = 0<=R && R< 7}
  ]
 inline fn __stavx2_pos_avx2(inline int POS) -> inline int, inline int 
-/*
-ensures
-*/
 {
   inline int R, L;
   //0: [ 0  0  0  0  ]

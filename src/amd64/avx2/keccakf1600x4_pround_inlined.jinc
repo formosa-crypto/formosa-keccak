@@ -3,7 +3,7 @@
 
 #[safety =
    { requires = is_arr_init(a,0,800)
-   , ensures = is_arr_init(result.0,0,800) 
+   , ensures = is_arr_init(e,0,800) 
    }
  ]
 fn _keccakf1600_4x_pround

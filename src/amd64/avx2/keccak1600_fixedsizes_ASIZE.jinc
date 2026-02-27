@@ -20,7 +20,8 @@ require "../common/subreadwrite_ASIZE.jinc"
 #[safety =
    { requires = 0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,7*32)
    , requires = 0 <= _TRAILB && _TRAILB < 256 && 0<= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200
-   , ensures = is_arr_init(result.0,0,7*32) && result.1 == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && result.2 == offset + _LEN }
+   , res = { final_st, final_AT, final_offset }
+   , ensures = is_arr_init(final_st,0,7*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_offset == offset + _LEN }
  ]
 inline fn __addstate_avx2
 ( reg u256[7] st
@@ -78,7 +79,7 @@ inline fn __addstate_avx2
 #[safety =
    { requires = 0<_RATE8 && _RATE8 < 200 &&  0 <= _TRAILB && _TRAILB < 256 && 0<= AT && AT < _RATE8 &&
                 is_arr_init(buf,0,_ASIZE) && is_arr_init(st,0,7*32)
-   , ensures = is_arr_init(result.0,0,7*32) }
+   , ensures = is_arr_init(st,0,7*32) }
  ]
 inline fn __absorb_avx2
 ( reg u256[7] st
@@ -121,8 +122,9 @@ inline fn __absorb_avx2
 */
 #[safety =
    { requires = 0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && is_arr_init(st,0,7*32) && _LEN <= 200 && is_arr_init(buf,0,offset)
-   , ensures = result.1 == offset + _LEN 
-   , ensures = is_arr_init(result.0,0,offset + _LEN)}
+   , res = { final_buf, final_offset }
+   , ensures = final_offset == offset + _LEN 
+   , ensures = is_arr_init(final_buf,0,offset + _LEN)}
  ]
 inline fn __dumpstate_avx2
 ( reg mut ptr u8[_ASIZE] buf
@@ -213,8 +215,8 @@ inline fn __dumpstate_avx2
 
 #[safety =
    { requires =  0< _RATE8 && _RATE8 < 200 && is_arr_init(st,0,7*32)
-   , ensures = is_arr_init(result.0,0,32*7) 
-   , ensures = is_arr_init(result.1,0,_ASIZE)}
+   , ensures = is_arr_init(st,0,32*7) 
+   , ensures = is_arr_init(buf,0,_ASIZE)}
  ]
 inline fn __squeeze_avx2
 ( reg u256[7] st

@@ -92,7 +92,7 @@ inline fn __u256x4_4u64x4
 #[safety =
    { requires = is_arr_init(st0,0,25*8) && is_arr_init(st1,0,25*8)
              && is_arr_init(st2,0,25*8) && is_arr_init(st3,0,25*8)
-   , ensures = is_arr_init(result.0,0,25*32)
+   , ensures = is_arr_init(st4x,0,25*32)
    }
  ]
 inline fn __st4x_pack
@@ -152,8 +152,8 @@ inline fn __4u64x4_u256x4
 
 #[safety =
    { requires = is_arr_init(st4x,0,25*32)
-   , ensures = is_arr_init(result.0,0,25*8) && is_arr_init(result.1,0,25*8)
-            && is_arr_init(result.2,0,25*8) && is_arr_init(result.3,0,25*8)
+   , ensures = is_arr_init(st0,0,25*8) && is_arr_init(st1,0,25*8)
+            && is_arr_init(st2,0,25*8) && is_arr_init(st3,0,25*8)
    }
  ]
 inline fn __st4x_unpack
@@ -213,7 +213,7 @@ inline fn __keccakf1600_pround_unpacked
 
 #[safety =
    { requires = is_arr_init(a,0,32*25)
-   , ensures = is_arr_init(result.0,0,32*25)
+   , ensures = is_arr_init(e,0,32*25)
    }
  ]
 inline fn __keccakf1600_pround_equiv
