@@ -13,7 +13,7 @@ OBS: the generated code is independent of the parameter _ASIZE, but the
 
 *****************************************************************************/
 
-require "../common/subreadwrite_ASIZE.jinc"
+from Keccak require "common/subreadwrite_ASIZE.jinc"
 
 fn _add_bcast_updstate_avx2x4
 ( reg mut ptr keccakx4_state st

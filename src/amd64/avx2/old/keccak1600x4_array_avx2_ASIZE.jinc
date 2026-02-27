@@ -2,7 +2,7 @@
 // require "keccak1600x4_avx2.jinc"
 // param int ASIZE = 1001;
 
-require "../common/subreadwrite_array_ASIZE.jinc"
+from Keccak require "common/subreadwrite_array_ASIZE.jinc"
 
 
 /*

@@ -3,7 +3,7 @@
 //param int ASIZE = 1001;
 //param int RATE8 = 136;
 
-require "../common/subreadwrite_ASIZE.jinc"
+from Keccak require "common/subreadwrite_ASIZE.jinc"
 
 
 /*

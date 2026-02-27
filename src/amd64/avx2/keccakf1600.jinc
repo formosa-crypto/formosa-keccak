@@ -1,4 +1,4 @@
-require "../common/keccakf1600_generic.jinc"
+from Keccak require "common/keccakf1600_generic.jinc"
 
 u256[6] KECCAK_RHOTATES_LEFT = 
 {

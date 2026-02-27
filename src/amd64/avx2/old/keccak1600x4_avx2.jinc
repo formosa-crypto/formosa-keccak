@@ -1,6 +1,6 @@
 require "keccakf1600x4_avx2.jinc"
-require "../common/keccak1600_generic.jinc"
-require "../common/subreadwrite_imem.jinc"
+from Keccak require "common/keccak1600_generic.jinc"
+from Keccak require "common/subreadwrite_imem.jinc"
 
 /*
    STATE INIT

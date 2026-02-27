@@ -10,7 +10,7 @@
 
 *****************************************************************************/
 
-require "../common/subreadwrite_ASIZE.jinc"
+from Keccak require "common/subreadwrite_ASIZE.jinc"
 
 /*
    INCREMENTAL ARRAY ABSORB

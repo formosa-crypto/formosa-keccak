@@ -1,4 +1,4 @@
-require "../common/keccakf1600_generic.jinc"
+from Keccak require "keccakf1600_generic.jinc"
 
 // C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
 inline fn keccakf1600_4x_theta_sum
