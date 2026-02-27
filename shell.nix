@@ -23,17 +23,8 @@ let crypto-specs =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "crypto-specs";
-    rev = "3213f7c794357359d2abf026ec7e942f1d31f9b5";
-    hash = "sha256-VjrcN4NEnVXXW5y3wTPD/rxk5mnMZXvg0IF9Y+etHY8=";
-  }
-; in
-
-let formosa-keccak =
-  fetchFromGitHub {
-    owner = "formosa-crypto";
-    repo = "formosa-keccak";
-    rev = "5203b0fa687796a298eddc1c993379e774f24fbd";
-    hash = "sha256-TBzxSFjOWtzHIE81lc+HEcmVPAMw/upxcoYrvXYizRM=";
+    rev = "fb050598ed356c5c6604d92a1e198b2dd4543777";
+    hash = "sha256-SG2jQzBcce/aPQAbJSVold2gm7buHOrOBsK7MHNIRFs=";
   }
 ; in
 
@@ -72,7 +63,6 @@ mkShell ({
   JASMINC = "${jasmin.bin}/bin/jasminc";
   JASMINCT = "${jasmin.bin}/bin/jasmin-ct";
   JASMIN2EC = "${jasmin.bin}/bin/jasmin2ec";
-  JASMINPATH="Keccak=${formosa-keccak}/src/amd64";
   packages = [
     libxslt
     valgrind 
@@ -87,13 +77,8 @@ mkShell ({
   EC_RDIRS = mkECvar [
     { key = "Jasmin"; val = "${jasmin.lib}/lib/easycrypt/jasmin"; }
     { key = "CryptoSpecs"; val = "${crypto-specs}/fips202"; }
-    { key = "CryptoSpecs"; val = "${crypto-specs}/ml-kem"; }
   ];
   EC_IDIRS = mkECvar [
-    { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/common"; }
-    { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/ref"; }
-    { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/avx2"; }
-    { key = "JazzEC"; val = "${formosa-keccak}/proof/amd64/extracted"; }
     { key = "JazzEC"; val = "${crypto-specs}/arrays"; }
     { key = "JazzEC"; val = "${crypto-specs}/common"; }
     { key = "CryptoSpecs"; val = "${crypto-specs}/arrays"; }
