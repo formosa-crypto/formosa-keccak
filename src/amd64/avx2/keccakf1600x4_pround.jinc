@@ -1,4 +1,4 @@
-require "../common/keccakf1600_generic.jinc"
+from Keccak require "keccakf1600_generic.jinc"
 
 // C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
 inline fn keccakf1600_4x_theta_sum
@@ -21,15 +21,16 @@ inline fn keccakf1600_4x_theta_sum
   return c;
 }
 
+#[safety =
+   { requires = is_arr_init(a,0,32*(x + 1)) && 0<=x && x<5
+   , ensures = is_arr_init(a,0,32*(x+1))
+   }
+ ]
 inline fn keccakf1600_4x_rol
 ( reg u256[5] a
 , inline int x r
 , reg u256 r8 r56
 ) -> reg u256[5]
-/*safety*/ requires
-  { is_arr_init(a,x*32,32) && 0<=x && x<5 }
-/*safety*/ ensures
-  { \all (k \in 0:160) (is_arr_init(result.0,k,1) == is_arr_init(a,k,1)) }
 {
   reg u256 t;
 
@@ -77,16 +78,17 @@ inline fn keccakf1600_4x_theta_rol
 // M = (0 1)  M^-1 = (1 3)  x' = 1x + 3y
 //     (2 3)         (1 0)  y' = 1x + 0y
 //
+#[safety =
+   { requires = is_arr_init(a,0,800) && is_arr_init(d,0,160) && 0<=y && y<5 
+   , ensures = is_arr_init(a,0,800) && is_arr_init(d,0,160) && 0<=y && y<5 
+   }
+ ]
 inline fn keccakf1600_4x_rol_sum
 ( reg ptr u256[25] a
 , reg u256[5] d
 , inline int y
 , reg u256 r8 r56
 ) -> reg u256[5]
-/*safety*/ requires
- { is_arr_init(a,0,800) && is_arr_init(d,0,160) && 0<=y && y<5 }
-/*safety*/ ensures
- { is_arr_init(a,0,800) && is_arr_init(d,0,160) && 0<=y && y<5 }
 {
   inline int r x x_ y_;
   reg u256[5] b;
@@ -114,18 +116,16 @@ inline fn keccakf1600_4x_rol_sum
 
 // E[x, y] = B[x] ^ ( (!B[x+1]) & B[x+2] )
 // -- when x and y are 0: E[0,0] ^= RC[i];
+#[safety =
+   { requires = is_arr_init(b,0,160) && 0 <= y && y<5 && is_arr_init(e,0,y*5*32)
+   , ensures = is_arr_init(e,0,(y+1)*5*32)
+   }
+ ]
 inline fn keccakf1600_4x_set_row
 ( reg ptr u256[25] e
 , reg u256[5] b
 , inline int y
 ) -> reg ptr u256[25]
-/*safety*/ requires
- { is_arr_init(b,0,160) && 0 <= y && y<5 }
-/*safety*/ ensures
- { \all (k \in 0:800)
-  (is_arr_init(result.0,k,1)
-  == (is_arr_init(e,k,1) || (y*5*32 <=k && k < (y + 1)*5*32)))
- }
 {
   inline int x x1 x2;
   reg u256 t;
@@ -144,15 +144,16 @@ inline fn keccakf1600_4x_set_row
   return e;
 }
 
+#[safety =
+   { requires = is_arr_init(a,0,800)
+   , ensures = is_arr_init(e,0,800) 
+   }
+ ]
 inline fn __keccakf1600_4x_pround
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25]a
 , reg u256 r8 r56
 ) -> reg ptr u256[25]
-/*safety*/ requires
- { is_arr_init(a,0,800) }
-/*safety*/ ensures
- { is_arr_init(result.0,0,800) }
 {
   inline int y;
   reg u256[5] b c d;
@@ -168,6 +169,11 @@ inline fn __keccakf1600_4x_pround
   return e;
 }
 
+#[safety =
+   { requires = is_arr_init(a,0,800)
+   , ensures = is_arr_init(e,0,800) 
+   }
+ ]
 export fn __keccakf1600_4x_pround_inlined
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25]a

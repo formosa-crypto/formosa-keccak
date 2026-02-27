@@ -1,6 +1,6 @@
 require "keccakf1600.jinc"
-require "../common/keccak1600_generic.jinc"
-require "../common/subreadwrite_imem.jinc"
+from Keccak require "common/keccak1600_generic.jinc"
+from Keccak require "common/subreadwrite_imem.jinc"
 
 
 inline fn __u64_to_u256
@@ -101,7 +101,6 @@ inline fn __unperm_reg3456_avx2
 }
 
 
-
 inline fn __addstate_r3456_avx2
 ( reg u256[7] st
 , reg u256 r3 r4 r5 r6
@@ -122,10 +121,10 @@ inline fn __addstate_r3456_avx2
    ============
 */
 
+#[safety =
+   {ensures = 0<=R && R< 7}
+ ]
 inline fn __stavx2_pos_avx2(inline int POS) -> inline int, inline int 
-/*
-ensures{0<=result.0 && result.0 < 7}
-*/
 {
   inline int R, L;
   //0: [ 0  0  0  0  ]

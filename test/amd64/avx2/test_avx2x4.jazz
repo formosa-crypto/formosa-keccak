@@ -109,6 +109,20 @@ namespace TEST_ONESHOT {
 
   from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 
+    export fn absorb_bcast_avx2x4
+    ( reg mut ptr u256[25] state
+    , reg const ptr u8[_ASIZE] buf
+    ) -> reg ptr u256[25] /* st */
+    {
+      inline int AT;
+      state = state;
+      buf = buf;
+      AT = 0;
+	    state, AT = __absorb_bcast_avx2x4(state, AT, buf, TRAIL, RATE8);
+      return state;
+    }
+  
+
   export fn absorb_avx2x4
   ( reg mut ptr u256[25] state
   , reg const ptr u8[_ASIZE] buf0 buf1 buf2 buf3
