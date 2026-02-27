@@ -9,7 +9,3 @@
 [submodule "submodules/XKCP"]
 	path = submodules/XKCP
 	url = https://github.com/XKCP/XKCP
-[submodule "submodules/old-implementation"]
-	path = submodules/old-implementation
-	url = git@github.com:formosa-crypto/formosa-keccak.git
-	branch = safety-assert2

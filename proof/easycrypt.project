@@ -9,7 +9,6 @@ spec = amd64/common/avx2.spec
 idirs = CryptoSpecs:../submodules/crypto-specs/common
 rdirs = CryptoSpecs:../submodules/crypto-specs/fips202
 idirs = JazzEC:../submodules/crypto-specs/arrays
-idirs = JazzEC:amd64/barrays
 idirs = JazzEC:amd64/extracted
 rdirs = Jasmin:../submodules/jasmin/eclib
 idirs = amd64/common
