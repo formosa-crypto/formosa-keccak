@@ -23,7 +23,10 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            dir: [ 'avx2' , 'ref']
+            arch: [ 'amd64' ]
+            subarch: [ 'ref', 'avx2' ]
+        env:
+          JASMINPATH: Keccak=${{github.workspace}}/src/${{matrix.arch}}
         steps:
         - uses: actions/checkout@v4
           with:
@@ -33,5 +36,5 @@ jobs:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --arg full false --run "make -C submodules/XKCP/ x86-64/libXKCP.so"
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --run "make -C src/amd64/${{matrix.dir}}/ test"
+        - run: nix-shell --arg full false --run "make -C src/${{matrix.arch}}/${{matrix.subarch}}/ test"
     

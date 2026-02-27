@@ -5,9 +5,9 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches: ["ci_tests", "main"]
+    branches:
+    - main
   pull_request:
-    branches: ["main"]
     
 env:
   NIXPKGS_ALLOW_UNFREE: 1

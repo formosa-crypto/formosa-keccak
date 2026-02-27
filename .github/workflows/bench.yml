@@ -14,6 +14,8 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
           fail-fast: false
+        env:
+          JASMINPATH: Keccak=${{github.workspace}}/src/amd64
         steps:
         - uses: actions/checkout@v4
           with:
