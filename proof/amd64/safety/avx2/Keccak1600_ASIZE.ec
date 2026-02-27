@@ -2300,8 +2300,8 @@ module M = {
   proc __stavx2_pack (st:BArray200.t, b_st:BArray200.t) : BArray224.t *
                                                           BArray224.t * trace = {
     var state:BArray224.t;
-    var t128_0:W128.t;
     var t128_1:W128.t;
+    var t128_0:W128.t;
     var r:W64.t;
     var t256_0:W256.t;
     var t256_1:W256.t;
@@ -2327,14 +2327,14 @@ module M = {
     115792089237316195423570985008687907853269984665640564039457584007913129639935
     ));
     state <- (BArray224.set256 state 1 (BArray200.get256d st 8));
-    t128_0 <- (VMOV_64 (BArray200.get64 st 5));
+    t128_1 <- (VMOV_64 (BArray200.get64 st 5));
     b_state <-
     (BArray224.set256d b_state 96
     (W256.of_int
     115792089237316195423570985008687907853269984665640564039457584007913129639935
     ));
     state <- (BArray224.set256 state 3 (BArray200.get256d st 48));
-    t128_1 <- (VMOV_64 (BArray200.get64 st 10));
+    t128_0 <- (VMOV_64 (BArray200.get64 st 10));
     b_state <-
     (BArray224.set256d b_state 128
     (W256.of_int
@@ -2342,7 +2342,7 @@ module M = {
     ));
     state <- (BArray224.set256 state 4 (BArray200.get256d st 88));
     r <- (BArray200.get64 st 15);
-    t128_0 <- (VPINSR_2u64 t128_0 r (W8.of_int 1));
+    t128_1 <- (VPINSR_2u64 t128_1 r (W8.of_int 1));
     b_state <-
     (BArray224.set256d b_state 160
     (W256.of_int
@@ -2350,17 +2350,15 @@ module M = {
     ));
     state <- (BArray224.set256 state 5 (BArray200.get256d st 128));
     r <- (BArray200.get64 st 20);
-    t128_1 <- (VPINSR_2u64 t128_1 r (W8.of_int 1));
+    t128_0 <- (VPINSR_2u64 t128_0 r (W8.of_int 1));
+    t256_0 <- (zeroextu256 t128_0);
+    t256_0 <- (VINSERTI128 t256_0 t128_1 (W8.of_int 1));
     b_state <-
     (BArray224.set256d b_state 64
     (W256.of_int
     115792089237316195423570985008687907853269984665640564039457584007913129639935
     ));
-    state <-
-    (BArray224.set256 state 2
-    (W256.of_int
-    (((W128.to_uint t128_1) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_0)))));
+    state <- (BArray224.set256 state 2 t256_0);
     b_state <-
     (BArray224.set256d b_state 192
     (W256.of_int
@@ -7885,8 +7883,6 @@ module M = {
     var aux:BArray224.t;
     var aux_0:BArray224.t;
     var dELTA:int;
-    var t64_1:W64.t;
-    var t128_0:W128.t;
     var r0:W256.t;
     var r1:W256.t;
     var t64_2:W64.t;
@@ -7907,7 +7903,7 @@ module M = {
     var param_3:int;
     var param_4:int;
     var param_5:BArrayS.t;
-    var result:W64.t;
+    var result:W256.t;
     var result_0:int;
     var result_1:int;
     var result_2:int;
@@ -8080,104 +8076,67 @@ module M = {
     [(Assert, ((0 <= offset) /\ (offset <= 18446744073709551615)))]);
     dELTA <- 0;
     if ((aT < 8)) {
-      if (((aT = 0) /\ (8 <= _LEN))) {
-        trace___addstate_avx2 <-
-        (trace___addstate_avx2 ++
-        [(Assert, ((0 <= offset) /\ (offset <= 18446744073709551615)))]);
-        trace___addstate_avx2 <-
-        (trace___addstate_avx2 ++
-        [(Assert,
-         ((0 <= (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))) /\
-         (((W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA))) + 8) <=
-         size)))]);
-        trace___addstate_avx2 <-
-        (trace___addstate_avx2 ++
-        [(Assert,
-         (BArrayS.is_init b_buf
-         (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA))) 8))]);
-        r0 <-
-        (VPBROADCAST_4u64
-        (BArrayS.get64d buf
-        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
-        dELTA <- (dELTA + 8);
-        _LEN <- (_LEN - 8);
-        aT <- 8;
-      } else {
-        b_param_8 <- b_buf;
-        param_5 <- buf;
-        param_4 <- offset;
-        param_3 <- dELTA;
-        param_2 <- _LEN;
-        param_1 <- _TRAILB;
-        param_0 <- 0;
-        param <- aT;
-        (result_3, result_2, result_1, result_0, result, tmp__trace) <@ 
-        __a_ilen_read_upto8_at (param_5, b_param_8, param_4, param_3,
-        param_2, param_1, param_0, param);
-        trace___addstate_avx2 <- (trace___addstate_avx2 ++ tmp__trace);
-        trace___addstate_avx2 <-
-        (trace___addstate_avx2 ++
-        [(Assert,
-         (((param_0 <= param) /\ (param < (param_0 + 8))) ? ((((result_3 =
-                                                               (param_3 +
-                                                               ((((param_2 <
-                                                                  (8 -
-                                                                  (param -
-                                                                  param_0))) ? 
-                                                                 param_2 : 
-                                                                 (8 -
-                                                                 (param -
-                                                                 param_0))) <
-                                                                0) ? 0 : 
-                                                               ((param_2 <
+      b_param_8 <- b_buf;
+      param_5 <- buf;
+      param_4 <- offset;
+      param_3 <- dELTA;
+      param_2 <- _LEN;
+      param_1 <- _TRAILB;
+      param_0 <- 0;
+      param <- aT;
+      (result_3, result_2, result_1, result_0, result, tmp__trace) <@ 
+      __a_ilen_read_bcast_upto8_at (param_5, b_param_8, param_4, param_3,
+      param_2, param_1, param_0, param);
+      trace___addstate_avx2 <- (trace___addstate_avx2 ++ tmp__trace);
+      trace___addstate_avx2 <-
+      (trace___addstate_avx2 ++
+      [(Assert,
+       (((param_0 <= param) /\ (param < (param_0 + 8))) ? ((((result_3 =
+                                                             (param_3 +
+                                                             ((((param_2 <
                                                                 (8 -
                                                                 (param -
                                                                 param_0))) ? 
                                                                param_2 : 
                                                                (8 -
                                                                (param -
-                                                               param_0)))))) /\
-                                                              (result_2 =
-                                                              (param_2 -
-                                                              ((((param_2 <
-                                                                 (8 -
-                                                                 (param -
-                                                                 param_0))) ? 
-                                                                param_2 : 
-                                                                (8 -
-                                                                (param -
-                                                                param_0))) <
-                                                               0) ? 0 : 
-                                                              ((param_2 <
+                                                               param_0))) <
+                                                              0) ? 0 : 
+                                                             ((param_2 <
+                                                              (8 -
+                                                              (param -
+                                                              param_0))) ? 
+                                                             param_2 : 
+                                                             (8 -
+                                                             (param -
+                                                             param_0)))))) /\
+                                                            (result_2 =
+                                                            (param_2 -
+                                                            ((((param_2 <
                                                                (8 -
                                                                (param -
                                                                param_0))) ? 
                                                               param_2 : 
                                                               (8 -
                                                               (param -
-                                                              param_0))))))) /\
-                                                             (result_1 =
-                                                             ((8 <=
-                                                              ((param -
-                                                               param_0) +
-                                                              param_2)) ? 
-                                                             param_1 : 0))) /\
-                                                            (result_0 =
-                                                            (param_0 +
-                                                            (((((((param -
-                                                                  param_0) +
-                                                                 param_2) <
-                                                                8) ? 
-                                                               ((param -
-                                                                param_0) +
-                                                               param_2) : 8) +
-                                                              (((8 <=
-                                                                ((param -
-                                                                 param_0) +
-                                                                param_2)) \/
-                                                               (param_1 = 0)) ? 0 : 1)) <
+                                                              param_0))) <
                                                              0) ? 0 : 
-                                                            (((((param -
+                                                            ((param_2 <
+                                                             (8 -
+                                                             (param -
+                                                             param_0))) ? 
+                                                            param_2 : 
+                                                            (8 -
+                                                            (param - param_0))))))) /\
+                                                           (result_1 =
+                                                           ((8 <=
+                                                            ((param -
+                                                             param_0) +
+                                                            param_2)) ? 
+                                                           param_1 : 0))) /\
+                                                          (result_0 =
+                                                          (param_0 +
+                                                          (((((((param -
                                                                 param_0) +
                                                                param_2) <
                                                               8) ? ((
@@ -8188,18 +8147,40 @@ module M = {
                                                               ((param -
                                                                param_0) +
                                                               param_2)) \/
-                                                             (param_1 = 0)) ? 0 : 1)))))) : 
-         ((((result_3 = param_3) /\ (result_2 = param_2)) /\
-          (result_1 = param_1)) /\
-         (result_0 = param))))]);
-        dELTA <- result_3;
-        _LEN <- result_2;
-        _TRAILB <- result_1;
-        aT <- result_0;
-        t64_1 <- result;
-        t128_0 <- (zeroextu128 t64_1);
-        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-      }
+                                                             (param_1 = 0)) ? 0 : 1)) <
+                                                           0) ? 0 : (
+                                                                    (
+                                                                    (
+                                                                    (
+                                                                    (
+                                                                    param -
+                                                                    param_0) +
+                                                                    param_2) <
+                                                                    8) ? 
+                                                                    (
+                                                                    (
+                                                                    param -
+                                                                    param_0) +
+                                                                    param_2) : 8) +
+                                                                    (
+                                                                    (
+                                                                    (8 <=
+                                                                    (
+                                                                    (
+                                                                    param -
+                                                                    param_0) +
+                                                                    param_2)) \/
+                                                                    (
+                                                                    param_1 =
+                                                                    0)) ? 0 : 1)))))) : 
+       ((((result_3 = param_3) /\ (result_2 = param_2)) /\
+        (result_1 = param_1)) /\
+       (result_0 = param))))]);
+      dELTA <- result_3;
+      _LEN <- result_2;
+      _TRAILB <- result_1;
+      aT <- result_0;
+      r0 <- result;
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
     } else {
       
@@ -9138,10 +9119,8 @@ module M = {
       } else {
         
       }
-      r2 <-
-      (W256.of_int
-      (((W128.to_uint t128_2) %% (2 ^ 128)) +
-      ((2 ^ 128) * (W128.to_uint t128_1))));
+      r2 <- (zeroextu256 t128_2);
+      r2 <- (VINSERTI128 r2 t128_1 (W8.of_int 1));
       st <- (BArray224.set256 st 2 ((BArray224.get256 st 2) `^` r2));
     } else {
       
@@ -16351,7 +16330,6 @@ op __squeeze_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _bu
    (valid res.`11))].
 
 
-
 lemma __SHLQ_proof _x _shbytes : (__SHLQ_spec _x _shbytes).
 proof.
 rewrite /__SHLQ_spec .
@@ -17276,8 +17254,8 @@ rewrite /__addstate_avx2_spec .
           aT = _aT + dELTA +  (( 8 <= _aT  || (8 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
   + sp. if.  
-    + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=. smt().  split. split. smt(). smt().  smt().
-      auto. ecall (__a_ilen_read_upto8_at_proof param_5 b_param_8 param_4 param_3  param_2 param_1 param_0 param). auto. 
+   (* + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=. smt().  split. split. smt(). smt().  smt().*)
+      auto. ecall (__a_ilen_read_bcast_upto8_at_proof param_5 b_param_8 param_4 param_3  param_2 param_1 param_0 param). auto. 
       rewrite /valid /is_init /= => &m /> *. split.  split. smt(). split. smt(). split. smt(). smt().  move => /> *. smt(List.all_cat). 
     auto. rewrite /valid /is_init /= => &m /> *. smt(List.all_cat).
   seq 1: (valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
@@ -17416,7 +17394,7 @@ proof.
         auto. smt(). 
       seq 1: (valid trace___dumpstate_avx2 /\ __LEN <= 200 /\ BArrayS.is_init b_buf 0 (_offset + dELTA) /\ 0<=__LEN /\ _LEN = __LEN - dELTA /\
           dELTA = (if __LEN < 168 then __LEN else 168) /\ offset = _offset /\ 0<=_offset /\ _offset + __LEN <= size).
-      + if. auto. ecall(__a_ilen_write_upto8_proof param_48 b_param_0 param_47 param_46 param_45 param_44). auto. 
+      + if. auto. ecall(__a_ilen_write_upto8_proof param_48 b_param_0 param_47 param_46 param_45 param_44). auto.
         + rewrite /valid /is_init /= => &m /> *.  smt(List.all_cat).
         auto. smt().
       seq 1: (valid trace___dumpstate_avx2 /\ __LEN <= 200 /\ BArrayS.is_init b_buf 0 (_offset + dELTA) /\ 0<=__LEN /\
