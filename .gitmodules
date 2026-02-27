@@ -5,3 +5,6 @@
 [submodule "submodules/XKCP"]
 	path = submodules/XKCP
 	url = https://github.com/XKCP/XKCP
+[submodule "submodules/jasmin"]
+	path = submodules/jasmin
+	url = https://gitlab.com/jasmin-lang/jasmin-compiler.git
