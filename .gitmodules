@@ -1,6 +1,6 @@
 [submodule "submodules/crypto-specs"]
 	path = submodules/crypto-specs
-	url = ../crypto-specs.git
+	url = https://github.com/formosa-crypto/crypto-specs.git
 	branch = main
 [submodule "submodules/XKCP"]
 	path = submodules/XKCP
