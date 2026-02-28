@@ -10,7 +10,7 @@
 *****************************************************************************/
 
 require "keccak1600.jinc"
-require "../common/subreadwrite_imem.jinc"
+from Keccak require "common/subreadwrite_imem.jinc"
 
 type keccak_updstate = u64[26];
 

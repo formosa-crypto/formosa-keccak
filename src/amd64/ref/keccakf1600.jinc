@@ -9,7 +9,7 @@
 
 *****************************************************************************/
 
-require "../common/keccakf1600_generic.jinc"
+from Keccak require "common/keccakf1600_generic.jinc"
 
 inline fn __rol_u64_ref
 ( reg u64 x
@@ -27,12 +27,6 @@ inline fn __rol_u64_ref
 inline fn __theta_sum_ref
 ( reg ptr u64[25] a
 ) -> reg u64[5]
-/*
-/*safety*/ requires
- { is_arr_init(a,0,200) }
-/*safety*/ ensures
- { is_arr_init(result.0,0,40) }
-*/
 {
   inline int x y;
   reg u64[5] c;
@@ -54,12 +48,6 @@ inline fn __theta_sum_ref
 inline fn __theta_rol_ref
 ( reg u64[5] c
 ) -> reg u64[5]
-/*
-/*safety*/ requires
- { is_arr_init(c,0,40) }
-/*safety*/ ensures
- { is_arr_init(result.0,0,40) }
-*/
 {
   inline int x;
   reg u64[5] d;
@@ -88,12 +76,6 @@ inline fn __rol_sum_ref
 , reg u64[5] d
 , inline int y
 ) -> reg u64[5]
-/*
-/*safety*/ requires
- { is_arr_init(a,0,200) && is_arr_init(d,0,40) }
-/*safety*/ ensures
- { is_arr_init(result.0,0,40) }
-*/
 {
   inline int r x x_ y_;
   reg u64[5] b;
@@ -121,21 +103,16 @@ inline fn __rol_sum_ref
 
 // E[x, y] = B[x] ^ ( (!B[x+1]) & B[x+2] )
 // -- when x and y are 0: E[0,0] ^= RC[i];
+#[safety =
+   { requires = is_arr_init(b,0,40) && 0 <= y && y < 5 && is_arr_init(e,0,y*5*8)
+   , ensures = is_arr_init(e,0,(y+1)*5*8) }
+]
 inline fn __set_row_ref
 ( reg ptr u64[25] e
 , reg u64[5] b
 , inline int y
 /*, stack u64 s_rc*/
 ) -> reg ptr u64[25]
-/*
-/*safety*/ requires
- { is_arr_init(b,0,40) && 0 <= y && y < 5 }
-/*safety*/ ensures
- { \all (k \in 0:200)
-     (is_arr_init(result.0,k,1)
-     == (is_arr_init(e,k,1) || (y*5*8 <= k && k < (y+1)*5*8)))
- }
-*/
 {
   inline int x x1 x2;
   reg u64 t;
@@ -155,17 +132,14 @@ inline fn __set_row_ref
   return e;
 }
 
-
+#[safety =
+   { requires = is_arr_init(a,0,200)
+   , ensures = is_arr_init(e,0,200) }
+]
 fn _pround_ref
 ( reg ptr u64[25] e a
 //, reg u64 rc
 ) -> reg ptr u64[25]
-/*
-/*safety*/ requires
- { is_arr_init(a,0,200) }
-/*safety*/ ensures
- { is_arr_init(result.0,0,200) }
-*/
 {
   inline int y;
   reg u64[5] b c d;

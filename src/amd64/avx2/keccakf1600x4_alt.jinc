@@ -1,4 +1,4 @@
-require "../common/keccakf1600_generic.jinc"
+from Keccak require "common/keccakf1600_generic.jinc"
 
 type keccakx4_state = u256[25];
 
@@ -1360,7 +1360,7 @@ inline fn __st4x_pack
    && is_arr_init(st2,0,25*8) && is_arr_init(st3,0,25*8)
  }
 /* safety */ ensures
- { is_arr_init(result.0,0,25*32) }
+ { is_arr_init(st4x,0,25*32) }
 */
 {
   inline int i;
@@ -1421,8 +1421,8 @@ inline fn __st4x_unpack
 /* safety */ requires
  { is_arr_init(st4x,0,25*32) }
 /* safety */ ensures
- { is_arr_init(result.0,0,25*8) && is_arr_init(result.1,0,25*8)
-   && is_arr_init(result.2,0,25*8) && is_arr_init(result.3,0,25*8)
+ { is_arr_init(st0,0,25*8) && is_arr_init(st1,0,25*8)
+   && is_arr_init(st2,0,25*8) && is_arr_init(st3,0,25*8)
  }
 */
 {

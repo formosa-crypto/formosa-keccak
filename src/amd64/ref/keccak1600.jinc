@@ -15,6 +15,9 @@ require "keccakf1600.jinc"
    STATE INIT
    ==========
 */
+#[safety =
+   { ensures = is_arr_init(st,0,200) }
+]
 inline fn __state_init_ref
 ( reg mut ptr u64[25] st
 ) -> reg ptr u64[25]
@@ -34,7 +37,10 @@ inline fn __state_init_ref
    ADD RATE BIT
    ============
 */
-
+#[safety =
+   { requires = is_arr_init(st,0,200) && 0 < _RATE8 && _RATE8 <= 200
+   , ensures = is_arr_init(st,0,200) }
+]
 inline fn __addratebit_ref
 ( reg mut ptr u64[25] st
 , inline int _RATE8

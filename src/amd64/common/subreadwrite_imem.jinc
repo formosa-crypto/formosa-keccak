@@ -11,7 +11,21 @@ require "keccak1600_generic.jinc"
 /**
     READ A FIXED NUMBER OF BYTES FROM MEMORY INTO A WORD
 **/
-
+#[safety =
+   { requires = is_mem_init((64u) buf,max(LEN,8 - (AT-CUR))) && 0<=LEN
+     && 0 <= TRAIL && TRAIL < 256
+   , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
+   , ensures =  (CUR <= AT && AT < CUR + 8) ?
+       ( final_buf == buf + max(0,min(LEN,8 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,8- (AT-CUR)))
+     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
+   }
+ ]
 inline fn __m_ilen_read_upto8_at
 ( reg ui64 buf
 , inline int LEN
@@ -82,6 +96,21 @@ inline fn __m_ilen_read_upto8_at
   return buf, LEN, TRAIL, AT, w; 
 }
 
+#[safety =
+   { requires = is_mem_init((64u) buf,max(LEN,16 - (AT-CUR))) && 0<=LEN
+     && 0 <= TRAIL && TRAIL < 256
+    , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
+    , ensures =  (CUR <= AT && AT < CUR + 16) ?
+       ( final_buf == buf + max(0,min(LEN,16 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,16- (AT-CUR)))
+     && final_TRAIL == (16 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,16) + (16 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
+   }
+ ]
 inline fn __m_ilen_read_upto16_at
 ( reg ui64 buf
 , inline int LEN
@@ -123,6 +152,21 @@ inline fn __m_ilen_read_upto16_at
   return buf, LEN, TRAIL, AT, w; 
 }  
 
+#[safety =
+   { requires = is_mem_init((64u) buf,max(LEN,32 - (AT-CUR))) && 0<=LEN
+     && 0 <= TRAIL && TRAIL < 256
+   , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
+   , ensures =  (CUR <= AT && AT < CUR + 32) ?
+       ( final_buf == buf + max(0,min(LEN,32 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,32- (AT-CUR)))
+     && final_TRAIL == (32 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,32) + (32 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
+   }
+ ]
 inline fn __m_ilen_read_upto32_at
 ( reg ui64 buf
 , inline int LEN
@@ -162,6 +206,21 @@ inline fn __m_ilen_read_upto32_at
   return buf, LEN, TRAIL, AT, w; 
 }  
 
+#[safety =
+   { requires = is_mem_init((64u) buf,max(LEN,8 - (AT-CUR))) && 0<=LEN
+     && 0 <= TRAIL && TRAIL < 256
+   , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
+   , ensures =  (CUR <= AT && AT < CUR + 8) ?
+       ( final_buf == buf + max(0,min(LEN,8 - (AT-CUR)))
+     && final_LEN == LEN - max(0,min(LEN,8- (AT-CUR)))
+     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
+     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+     : (final_buf == buf
+      && final_LEN == LEN
+      && final_TRAIL == TRAIL
+      && final_AT == AT)
+   }
+ ]
 inline fn __m_ilen_read_bcast_upto8_at
 ( reg ui64 buf
 , inline int LEN
@@ -188,18 +247,14 @@ inline fn __m_ilen_read_bcast_upto8_at
       w256 = __SHLQ_256(w256, AT8);
       buf += 8-AT8;
       LEN -= 8-AT8;
-      AT8 = 8;
+      AT = CUR + 8;
     } else {
       AT8 = AT-CUR;
       buf, LEN, TRAIL, AT, w = __m_ilen_read_upto8_at(buf, LEN, TRAIL, CUR, AT);
       t128 = (128u) w;
       w256 = #VPBROADCAST_4u64(t128);
       w256 = __SHLQ_256(w256, AT8);
-      buf += 8-AT8;
-      LEN -= 8-AT8;
-      AT8 = 8;
     }
-    AT = CUR + AT8;
   }
   return buf, LEN, TRAIL, AT, w256; 
 }
@@ -209,31 +264,19 @@ inline fn __m_ilen_read_bcast_upto8_at
 **/
 
 // __awrite_subu64
+#[safety =
+   { requires = is_mem_init((64u) buf,min(LEN,8))
+   , res = { final_buf, final_LEN}
+   , ensures = final_buf == buf + max(0,min(LEN,8))
+     && final_LEN == LEN - max(0,min(LEN,8))
+   }
+ ]
 inline fn __m_ilen_write_upto8
 ( reg ui64 buf
 , inline int LEN
 , reg u64 w
 ) -> reg ui64 /* buf */
    , inline int /* LEN */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? 0 <= offset + DELTA && 0 <= DELTA
-   && offset + DELTA + min(LEN,8) <= ASIZE
- : true
-}
-/* safety */ ensures {
- result.1 == DELTA + max(0,min(LEN,8))
- && result.2 == LEN - max(0,min(LEN,8))
-}
-/* safety */ ensures { 
- \all (k \in 0:ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == ( is_arr_init(buf,k,1)
-          || offset + DELTA <= k 
-             && k < offset + DELTA + max(0,min(LEN,8))) )
-}
-*/
 {
   if (0 < LEN) {
     if (8 <=s LEN) {
@@ -264,31 +307,19 @@ inline fn __m_ilen_write_upto8
 }
 
 // __awrite_subu128
+#[safety =
+   { requires = is_mem_init((64u) buf,min(LEN,16))
+   , res = { final_buf, final_LEN}
+   , ensures = final_buf == buf + max(0,min(LEN,16))
+     && final_LEN == LEN - max(0,min(LEN,16))
+   }
+ ]
 inline fn __m_ilen_write_upto16
 ( reg ui64 buf
 , inline int LEN
 , reg u128 w
 ) -> reg ui64     /* buf */
    , inline int   /* LEN */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? 0 <= offset + DELTA && 0 <= DELTA
-   && offset + DELTA + min(LEN,16) <= ASIZE
- : true
-}
-/* safety */ ensures {
- result.1 == DELTA + max(0,min(LEN,16))
- && result.2 == LEN - max(0,min(LEN,16))
-}
-/* safety */ ensures {
- \all (k \in 0:ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == ( is_arr_init(buf,k,1)
-          || (offset + DELTA <= k 
-             && k < offset + DELTA + max(0,min(LEN,16)))) )
-}
-*/
 {
   reg u64 t64;
   if (0 < LEN) {
@@ -311,28 +342,19 @@ inline fn __m_ilen_write_upto16
 }
 
 // __awrite_subu256
+#[safety =
+   { requires = is_mem_init((64u) buf,min(LEN,32))
+   , res = { final_buf, final_LEN}
+   , ensures = final_buf == buf + max(0,min(LEN,32))
+     && final_LEN == LEN - max(0,min(LEN,32))
+   }
+ ]
 inline fn __m_ilen_write_upto32
 ( reg ui64 buf
 , inline int LEN
 , reg u256 w
 ) -> reg ui64   /* buf */
    , inline int /* LEN */
-/*
-/* safety */ requires {
- (0 < LEN)
- ? 0 <= offset + DELTA && 0 <= DELTA && offset + DELTA + min(LEN,32) <= ASIZE
- : true
-}
-/* safety */ ensures {
- result.1 == DELTA + max(0,min(LEN,32)) && result.2 == LEN - max(0,min(LEN,32))}
-/* safety */ ensures {
- \all (k \in 0:ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == ( is_arr_init(buf,k,1)
-          || (offset + DELTA <= k 
-              && k < offset + DELTA + max(0,min(LEN,32)))) )
-}
-*/
 {
   reg u128 t128;
   if (0 < LEN) {
@@ -358,21 +380,17 @@ inline fn __m_ilen_write_upto32
 /**
     READ A VARIABLE NUMBER OF BYTES FROM MEMORY INTO A WORD
 **/
-
+#[safety =
+   { requires = is_mem_init((64u) buf,min(len,8))
+   , res = { final_buf, final_data}
+   , ensures = final_buf == buf + min(len,8)
+   }
+ ]
 inline fn __m_rlen_read_upto8
 ( reg ui64 buf
 , reg ui64 len // off + len <= ASIZE
 ) -> reg ui64 /* buf */
    , reg u64  /* data */
-/*
-/* safety */ requires {
- (0 < len)
- ? is_arr_init(a,off,min(len,8))
-   && 0 <= off && off + min(len,8) <= ASIZE
- : true
-}
-/* safety */ ensures { result.0 == off + min(len,8) }
-*/
 {
   reg u64 w, x;
   reg u8 sh;
@@ -414,24 +432,17 @@ inline fn __m_rlen_read_upto8
 /**
     WRITE A VARIABLE NUMBER OF BYTES FROM AN ARRAY INTO A WORD
 **/
-
+#[safety =
+   { requires = is_mem_init((64u) buf,min(len,8))
+   , res = { final_buf}
+   , ensures = final_buf == buf + max(0,min(len,8))
+   }
+ ]
 inline fn __m_rlen_write_upto8
 ( reg ui64 buf
 , reg u64 data
 , reg ui64 len // off + len <= ASIZE
 ) -> reg ui64   /* buf */
-/*
-/* safety */ requires {
- (0 < len)
- ? 0 <= off && off + min(len,8) <= ASIZE
- : true
-}
-/* safety */ ensures { 
- \all (k \in 0:ASIZE)
-   ( is_arr_init(result.0,k,1)
-     == (is_arr_init(buf,k,1) || off <= k && k < off + min(len,8)) )
-}
-*/
 {
   reg bool zf;
 
