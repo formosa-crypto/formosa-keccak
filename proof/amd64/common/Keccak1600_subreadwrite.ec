@@ -976,54 +976,30 @@ proof.
 qed.
 
 
-lemma preu32_0s x i _buf pos:
+lemma preu64_0s x i _buf pos:
   0 <= x =>
-  4 + x <= i < 8 =>
-  zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
+  64 + x <= i < 8 =>
+  (get64_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
   \bits8 nth witness (iota_ 0 8) i = W8.zero.
 proof.
-admit.
-(*
   move => H0 H1.
-  pose a:= (get32_direct (WA.init8 ("_.[_]" _buf)) pos).
-  rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
-  + split. smt(bs2int_ge0). move =>*.
-  + rewrite (ltr_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
-  rewrite (int2bs_cat 32) 1:/# pdiv_small.
-  + split. smt(bs2int_ge0). move =>*. 
-  + rewrite (ltr_le_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
-  rewrite int2bs0 W64_bits2w_cat_nseq0. 
-  have->: 32 = size (w2bits a) by rewrite size_w2bits.
-  rewrite bs2intK /(\bits8) (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
+  rewrite /(\bits8) (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
   rewrite initE ifT 1:/# /=.
   rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/#.
   have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
   rewrite andaE andTb.
   have aux: 32 <= nth 0 (iota_ 0 8) i * 8 + x0 - 8 * x < 64. smt(nth_iota).
-  rewrite get_bits2w 1:/# get_w2bits get_out /#. smt().
-*)
+  rewrite nth_iota /#. smt().
 qed.
 
-
-lemma posu32_0s x i _buf pos:
+lemma posu64_0s x i _buf pos:
   0 <= x =>
   0 <= i < min 8 x =>
-  zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
+  (get64_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
   \bits8 nth witness (iota_ 0 8) i = W8.zero.
 proof.
-admit.
-(*
   move => H0 H1.
-  pose a:= (get32_direct (WA.init8 ("_.[_]" _buf)) pos).
-  rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
-  + split. smt(bs2int_ge0). move =>*.
-  + rewrite (ltr_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
-  rewrite (int2bs_cat 32) 1:/# pdiv_small.
-  + split. smt(bs2int_ge0). move =>*. 
-  + rewrite (ltr_le_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
-  rewrite int2bs0 W64_bits2w_cat_nseq0. 
-  have->: 32 = size (w2bits a) by rewrite size_w2bits.
-  rewrite bs2intK /(\bits8) (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
+  rewrite /(\bits8) (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
   rewrite initE ifT 1:/# /=.
   case(8 < x) => x_max.
   rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/#.
@@ -1031,20 +1007,17 @@ admit.
   rewrite andaE andTb get_out; smt(nth_iota).
   have->: 0 <= nth witness (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
   rewrite andaE andTb get_out; smt(nth_iota). smt().
-*)
 qed.
 
-
+(*
 lemma u32_word x i _buf pos:
   0 <= x =>
   min 8 x <= i < min 8 (4 + x) =>
-  zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
+  (get64_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
   \bits8 nth witness (iota_ 0 8) i =
-  (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos)
-  \bits8 nth 0 (iota_ 0 (min 4 (8-x))) (i-x).
+  (get64_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos)
+  \bits8 nth 0 (iota_ 0 (min 8 (8-x))) (i-x).
 proof.
-admit.
-(*
   move => H0 H1.
   pose a:= (get32_direct (WA.init8 ("_.[_]" _buf)) pos).
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
@@ -1067,7 +1040,92 @@ admit.
   rewrite andaE andTb get_w2bits /(\bits8) initE ifT 1:/# /=.
   smt(nth_iota). 
   rewrite /(\bits8) /#.
-*)
+qed.
+ *)
+
+lemma preu32_0s x i _buf pos:
+  0 <= x =>
+  4 + x <= i < 8 =>
+  zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
+  \bits8 nth witness (iota_ 0 8) i = W8.zero.
+proof.
+  move => H0 H1.
+  pose a:= (get32_direct (WA.init8 ("_.[_]" _buf)) pos).
+  rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
+  + split. smt(bs2int_ge0). move =>*.
+  + rewrite (ltr_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
+  rewrite (int2bs_cat 32) 1:/# pdiv_small.
+  + split. smt(bs2int_ge0). move =>*. 
+  + rewrite (ltr_le_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
+  rewrite int2bs0 W64_bits2w_cat_nseq0. 
+  have->: 32 = size (w2bits a) by rewrite size_w2bits.
+  rewrite bs2intK /(\bits8) (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
+  rewrite initE ifT 1:/# /=.
+  rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/#.
+  have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
+  rewrite andaE andTb.
+  have aux: 32 <= nth 0 (iota_ 0 8) i * 8 + x0 - 8 * x < 64. smt(nth_iota).
+  rewrite get_bits2w 1:/# get_w2bits get_out /#. smt().
+qed.
+
+
+lemma posu32_0s x i _buf pos:
+  0 <= x =>
+  0 <= i < min 8 x =>
+  zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
+  \bits8 nth witness (iota_ 0 8) i = W8.zero.
+proof.
+  move => H0 H1.
+  pose a:= (get32_direct (WA.init8 ("_.[_]" _buf)) pos).
+  rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
+  + split. smt(bs2int_ge0). move =>*.
+  + rewrite (ltr_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
+  rewrite (int2bs_cat 32) 1:/# pdiv_small.
+  + split. smt(bs2int_ge0). move =>*. 
+  + rewrite (ltr_le_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
+  rewrite int2bs0 W64_bits2w_cat_nseq0. 
+  have->: 32 = size (w2bits a) by rewrite size_w2bits.
+  rewrite bs2intK /(\bits8) (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
+  rewrite initE ifT 1:/# /=.
+  case(8 < x) => x_max.
+  rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/#.
+  have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
+  rewrite andaE andTb get_out; smt(nth_iota).
+  have->: 0 <= nth witness (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
+  rewrite andaE andTb get_out; smt(nth_iota). smt().
+qed.
+
+
+lemma u32_word x i _buf pos:
+  0 <= x =>
+  min 8 x <= i < min 8 (4 + x) =>
+  zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
+  \bits8 nth witness (iota_ 0 8) i =
+  (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos)
+  \bits8 nth 0 (iota_ 0 (min 4 (8-x))) (i-x).
+proof.
+  move => H0 H1.
+  pose a:= (get32_direct (WA.init8 ("_.[_]" _buf)) pos).
+  rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
+  + split. smt(bs2int_ge0). move =>*.
+  + rewrite (ltr_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
+  rewrite (int2bs_cat 32) 1:/# pdiv_small.
+  + split. smt(bs2int_ge0). move =>*. 
+  + rewrite (ltr_le_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
+  rewrite int2bs0 W64_bits2w_cat_nseq0. 
+  have->: 32 = size (w2bits a) by rewrite size_w2bits.
+  rewrite bs2intK /(\bits8) (W8.ext_eq _ (a \bits8 nth 0 (iota_ 0 (min 4 (8-x))) (i-x))).
+  move => x0 x0_bnd.
+  rewrite initE ifT 1:/# /=.
+  case(8 <= x) => x_max.
+  rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/#.
+  have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
+  rewrite andaE andTb get_out; smt(nth_iota).
+  rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/# get_bits2w. smt(nth_iota).  
+  have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
+  rewrite andaE andTb get_w2bits /(\bits8) initE ifT 1:/# /=.
+  smt(nth_iota). 
+  rewrite /(\bits8) /#.
 qed.
 
 lemma preu16_0s x y i _buf pos:
@@ -1077,8 +1135,6 @@ lemma preu16_0s x y i _buf pos:
   zeroextu64 (get16_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (pos+y))
    `<<<` 8 * (y + x) \bits8 nth witness (iota_ 0 8) i = W8.zero.
 proof.
-admit.
-(*
   move => H0 H1 H2.
   pose a:= (get16_direct (WA.init8 ("_.[_]" _buf)) (pos+y)).
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
@@ -1097,7 +1153,6 @@ admit.
   have aux: 16 <= nth 0 (iota_ 0 8) i * 8 + x0 - 8 * (y + x) < 64. smt(nth_iota).
   rewrite get_bits2w 1:/# get_w2bits get_out /#.
   smt().
-*)
 qed.
 
 lemma posu16_0s x y i _buf pos:
@@ -1107,8 +1162,6 @@ lemma posu16_0s x y i _buf pos:
   zeroextu64 (get16_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (pos + y))
     `<<<` 8 * (y + x) \bits8 nth witness (iota_ 0 8) i = W8.zero.
 proof.
-admit.
-(*
   move => H0 H1 H2.
   pose a:= (get16_direct (WA.init8 ("_.[_]" _buf)) (pos + y)).
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
@@ -1125,7 +1178,6 @@ admit.
   have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
   rewrite andaE andTb get_out; smt(nth_iota).
   smt().
-*)
 qed.
 
 lemma u16_word x y i _buf pos:
@@ -1137,8 +1189,6 @@ lemma u16_word x y i _buf pos:
   (get16_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (pos + y))
   \bits8 nth 0 (iota_ 0 2) (i-y-x).
 proof.
-admit.
-(*
   move => H0 H1 H2.
   pose a:= (get16_direct (WA.init8 ("_.[_]" _buf)) (pos + y)).
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
@@ -1159,7 +1209,6 @@ admit.
   + rewrite !get_out /#.
   + rewrite /(\bits8)initE ifT 1:/# /= get_bits2w. smt(nth_iota).
     rewrite get_w2bits !nth_iota /#. smt().
-*)
 qed.
 
 lemma preu8_0s x y i _buf pos:
@@ -1169,8 +1218,6 @@ lemma preu8_0s x y i _buf pos:
   zeroextu64 (get8_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (pos+y))
    `<<<` 8 * (y + x) \bits8 nth witness (iota_ 0 8) i = W8.zero.
 proof.
-admit.
-(*
   move => H0 H1 H2.
   pose a:= (get8_direct (WA.init8 ("_.[_]" _buf)) (pos+y)).
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
@@ -1189,7 +1236,6 @@ admit.
   have aux: 8 <= nth 0 (iota_ 0 8) i * 8 + x0 - 8 * (y + x) < 64. smt(nth_iota).
   rewrite get_bits2w 1:/# get_w2bits get_out /#.
   smt().
-*)
 qed.
 
 lemma posu8_0s x y i _buf pos:
@@ -1199,8 +1245,6 @@ lemma posu8_0s x y i _buf pos:
   zeroextu64 (get8_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (pos + y))
     `<<<` 8 * (y + x) \bits8 nth witness (iota_ 0 8) i = W8.zero.
 proof.
-admit.
-(*
   move => H0 H1 H2.
   pose a:= (get8_direct (WA.init8 ("_.[_]" _buf)) (pos + y)).
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
@@ -1219,7 +1263,6 @@ admit.
   rewrite andaE andTb get_out; smt(nth_iota).
   have->: 0 <= nth witness (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
   rewrite andaE andTb get_out; smt(nth_iota). smt().
-*)
 qed.
 
 lemma u8_word x y i _buf pos:
@@ -1230,8 +1273,6 @@ lemma u8_word x y i _buf pos:
     `<<<` 8 * (y + x) \bits8 nth witness (iota_ 0 8) i =
   [get8 (WA.init8 ("_.[_]" _buf)) (pos + y)].[i - y - x].
 proof.
-admit.
-(*
   move => H0 H1 H2.
   pose a:= (get8_direct (WA.init8 ("_.[_]" _buf)) (pos + y)).
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
@@ -1253,7 +1294,6 @@ admit.
   + rewrite get_bits2w 1:/# get_w2bits /#.
   + smt().
   smt().
-*)
 qed.
 
 lemma preTrail_0s x off i _trail:
@@ -1265,15 +1305,12 @@ lemma preTrail_0s x off i _trail:
   W64.of_int _trail `<<<` 8 * (off + x) \bits8 nth witness (iota_ 0 8) i =
   W8.zero.
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4.
   rewrite nth_iota 1:/# /(\bits8) /= (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
     rewrite initE ifT 1:/# /= andaE. have->: 0 <= i * 8 + x0 < 64 by smt().
     rewrite andTb /of_int get_bits2w 1:/# pmod_small 1:/#.
     rewrite (int2bs_cat 8) 1:/# pdiv_small 1:/# nth_cat size_int2bs ifF 1:/# int2bs0.
     rewrite nth_nseq /#. smt().
-*)
 qed.
 
 lemma posTrail_0s x i off _trail:
@@ -1284,15 +1321,12 @@ lemma posTrail_0s x i off _trail:
   _trail < 256 =>
   W64.of_int _trail `<<<` 8 * (off + x) \bits8 nth witness (iota_ 0 8) i = W8.zero.
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4.
   rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small 1:/#.
   rewrite nth_iota 1:/# /(\bits8) /= (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
     rewrite initE ifT 1:/# /=. have->: 0 <= i * 8 + x0 < 64 by smt().
     rewrite andaE andTb get_out; smt(nth_iota).
   smt().
-*)
 qed.
 
 lemma trail_word x i off _trail:
@@ -1304,8 +1338,6 @@ lemma trail_word x i off _trail:
   W64.of_int _trail `<<<` 8 * (off + x) \bits8 nth witness (iota_ 0 8) i =
   W8.of_int _trail.
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4.
   rewrite /W64.of_int !pmod_small 1:/#.
   rewrite nth_iota 1:/# /(\bits8) /= (W8.ext_eq _ (W8.of_int _trail)). move => x0 x0_bnd.
@@ -1313,7 +1345,6 @@ admit.
     rewrite andaE andTb /W8.of_int pmod_small 1:/# !get_bits2w ..2:/#.
     rewrite (int2bs_cat 8) 1:/# pdiv_small 1:/# nth_cat size_int2bs ifT /#.
   smt().
-*)
 qed.
 
 lemma trail_simplify y x a:
@@ -1339,8 +1370,6 @@ u64bytes
   (zeroextu64 (get16_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x)
  = bytes_at 8 _cur _at (sub _buf pos _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8.
   pose w0:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose l1:= u64bytes w0.
@@ -1368,7 +1397,7 @@ admit.
           rewrite initE ifT 1:/# /WA.init8 /get16_direct /pack2_t /=.
           rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
           rewrite !nth_iota 1:/# initE ifT /#. smt().
-      smt().*)
+      smt().
 qed.
 
 
@@ -1384,8 +1413,6 @@ lemma compose4u8 _buf _off _dlt _at _cur _len _trail:
 u64bytes (zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (_off + _dlt)) `<<<` 8 * (_at - _cur)) =
 bytes_at 8 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7.
   pose l1:= u64bytes (zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt)) `<<<` 8 * (_at - _cur)).
   pose l2:= bytes_at 8 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
@@ -1423,7 +1450,6 @@ admit.
       rewrite get_w2bits /b /pack4_t W32.initE ifT 1:/# /= W4u8.Pack.get_of_list /#.
       smt().
     smt().
-*)
 qed.
 
 lemma compose6u8 _buf pos x _cur _at _len _trail:
@@ -1441,8 +1467,6 @@ u64bytes
    (zeroextu64 (get16_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (pos + 4))
     `<<<` 8 * (4 + x))) = bytes_at 8 _cur _at (sub _buf pos _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8.
   pose w0:= zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8*x.
   pose w1:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) (pos + 4)) `<<<` 8*(4+x).
@@ -1482,11 +1506,10 @@ admit.
           rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
           rewrite !nth_iota 1:/# initE ifT /#. smt().
       smt().
-*)
 qed.
 
 lemma compose8u8 _buf _off _dlt _at _cur _len _trail:
-  4 <= _len =>
+  8 <= _len =>
   0 <= _cur =>
   0 <= _at =>
   _cur <= _at =>
@@ -1498,12 +1521,64 @@ lemma compose8u8 _buf _off _dlt _at _cur _len _trail:
                          (_off + _dlt) `<<<` 8 * (_at - _cur)) =
 bytes_at 8 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
+  move => H0 H1 H2 H3 H4 H5 H6 H7.
+  pose l1:= u64bytes (get64_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt)
+            `<<<` 8*(_at - _cur)).
+  pose l2:= bytes_at 8 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
+    rewrite (eq_from_nth W8.zero l1 l2).
+    + rewrite size_to_list size_take 1:/# size_cat size_drop 1:/# size_nseq /#.
+    + rewrite size_to_list /l1 => i i_bnd.
+      rewrite /l2 /bytes_at nth_take ..2:/# drop_cat_le nth_cat size_nseq lez_maxr 1:/#.
+      case(i < _at - _cur) => i_min.
+        rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
+        rewrite posu64_0s ..2:/# ifT ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq.
+        rewrite size_nseq /#. smt().
+        rewrite nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/# nth_nseq /#.
+      + rewrite ifT ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#.
+        smt(). rewrite nth_to_list /get64_direct /pack8_t nth_cat size_drop 1:/# size_nseq.
+        rewrite ifF 1:/# !nth_cat size_mkseq ifT 1:/# nth_mkseq 1:/# /=.
+        rewrite (W8.ext_eq _ (_buf.[_off + _dlt + (i - max 0 (max 0 _at - _cur))])).
+        move => x x_bnd. rewrite /(\bits8) initE ifT 1:/# /=.
+        have->: 0 <= i * 8 + x < 64 by smt(). rewrite andaE andTb initE ifT 1:/# /=.
+        rewrite initE ifT 1:/# /= initE ifT /#. smt().
+      smt().
+qed.
 (*
+      case(6 + x <= i) => i_max.
+        rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
+        rewrite preu32_0s ..2:/# preu16_0s ..4:/#.
+      case(i < x) => i_min.
+      + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
+        rewrite posu32_0s ..2:/# posu16_0s ..3:/# ifT ifT 1:/# 1:size_cat 1:size_drop 1:/#.
+        rewrite !size_cat size_nseq /sub size_mkseq /#. smt().
+        rewrite nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/# nth_nseq /#.
+      + move: i_max i_min. rewrite -lezNgt lezNgt /= => i_max i_min.
+      case(i < 4 + x) => u32.
+      + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
+        rewrite u32_word ..2:/# posu16_0s ..3:/# ifT ifT 1:/# 1:size_cat.
+        rewrite !size_cat size_drop 1:/# /sub size_mkseq /#. smt().
+        rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
+        rewrite nth_mkseq 1:/# orw0 /= !lez_maxr ..3:/# /(\bits8).
+        rewrite (W8.ext_eq _ (_buf.[pos + (i - x)])). move => x0 x0_bnd.
+          rewrite initE ifT 1:/# /WA.init8 /get32_direct /pack4_t /=.
+          rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
+          rewrite !nth_iota 1:/# initE ifT /#. smt().
+      move: u32. rewrite -lezNgt => u16. 
+      + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
+        rewrite preu32_0s ..2:/# u16_word ..3:/# ifT ifT 1:/# 1:size_cat.
+        rewrite !size_cat size_drop 1:/# /sub size_mkseq size_nseq /#. smt().
+        rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
+        rewrite nth_mkseq 1:/# or0w /= !lez_maxr ..3:/# /(\bits8).
+        rewrite (W8.ext_eq _ (_buf.[pos + (i - x)])). move => x0 x0_bnd.
+          rewrite initE ifT 1:/# /WA.init8 /get16_direct /pack2_t /=.
+          rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
+          rewrite !nth_iota 1:/# initE ifT /#. smt().
+      smt().
+
   move => H0 H1 H2 H3 H4 H5 H6 H7.
   rewrite /bytes_at drop_cat_le size_nseq ifT 1:/# drop_nseq 1:/#.
-   rewrite catA -catA take_cat_le size_cat size_nseq size_mkseq ifT 1:/#.
-   rewrite /l1 get64E /u64bytes W8u8.Pack.init_of_list /pack8_t.
+   rewrite catA -catA take_cat_le size_cat size_nseq size_mkseq. (*ifT 1:/#.*)
+   rewrite /l1 get64E /u64bytes W8u8.Pack.init_of_list /pack8_t
    (*** remove the below admits - I might need info on _off & _dlt bounds ***)
    rewrite (buf8_expand _ _ H6 H7).
    pose base:= _off + _dlt.
@@ -1545,9 +1620,8 @@ admit.
        + rewrite /(\bits8) /= W8.initiE 1:/# /= W64.initE ifT 1:/# /buf /base /#.
        smt().
      smt().
-*)
 qed.
-
+*)
 
 lemma compose_trail (_buf: W8.t A.t) pos _cur _at _trail:
   0 <= _cur =>
@@ -1562,8 +1636,6 @@ lemma compose_trail (_buf: W8.t A.t) pos _cur _at _trail:
  u64bytes (W64.of_int _trail `<<<` 8 * (_at - _cur)) =
  bytes_at 8 _cur _at (sub _buf pos 0 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8.
   pose w0:= W64.of_int _trail `<<<` 8 * (_at - _cur).
   pose l1:= u64bytes w0.
@@ -1588,7 +1660,6 @@ admit.
         rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifF 1:/# /#.
       smt().
-*)
 qed.
 
 lemma compose1u8_trail _buf pos x _cur _at _trail:
@@ -1607,8 +1678,6 @@ u64bytes
     `|` W64.of_int (256 * _trail) `<<<` 8 * x)
  = bytes_at 8 _cur _at (sub _buf pos 1 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8 H9. rewrite -shlw_or (trail_simplify _ x 0) ..2:/# /=.
   pose w0:= zeroextu64 (get8 (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose w1:= W64.of_int (_trail) `<<<` 8 * (1 + x).
@@ -1642,7 +1711,6 @@ admit.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifF 1:/# !or0w /#.
       smt().
-*)
 qed.
 
 lemma compose2u8_trail _buf pos x _cur _at _trail:
@@ -1661,8 +1729,6 @@ u64bytes
     `<<<` 8 * x) `|` (W64.of_int (_trail) `<<<` 8 * (2 + x)))
  = bytes_at 8 _cur _at (sub _buf pos 2 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8 H9.
   pose w0:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose w1:= W64.of_int (_trail) `<<<` 8 * (2 + x).
@@ -1700,7 +1766,6 @@ admit.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifF 1:/# !or0w /#.
       smt().
-*)
 qed.
 
 lemma compose3u8_trail _buf pos x _cur _at _trail:
@@ -1721,8 +1786,6 @@ u64bytes
    W64.of_int (256 * _trail) `<<<` 8 * (2 + x)))
  = bytes_at 8 _cur _at (sub _buf pos 3 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8 H9. rewrite -shlw_or trail_simplify ..2:/# /=.
   pose w0:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose w1:= zeroextu64 (get8 (WA.init8 ("_.[_]" _buf)) (pos + 2)) `<<<` 8 * (2 + x).
@@ -1769,7 +1832,6 @@ admit.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifF 1:/# !or0w /#.
       smt().
-*)
 qed.
 
 lemma compose4u8_trail _buf pos x _cur _at _trail:
@@ -1789,8 +1851,6 @@ lemma compose4u8_trail _buf pos x _cur _at _trail:
    (W64.of_int _trail `<<<` 8 * (4 + x))) =
 bytes_at 8 _cur _at (sub _buf pos 4 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8 H9.
   pose w0:= zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose w1:= W64.of_int _trail `<<<` 8 * (4 + x).
@@ -1802,19 +1862,19 @@ admit.
       rewrite /l2 /bytes_at nth_take ..2:/# drop_cat_le nth_cat size_nseq lez_maxr 1:/#.
       case(5 + x <= i) => i_max.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# preTrail_0s ..5:/#.
+        rewrite preu32_0s ..2:/# preTrail_0s ..5:/#.
         rewrite ifF ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#.
         smt(). rewrite nth_nseq. rewrite !size_cat size_drop 1:/# size_nseq size_mkseq /#.
         smt().
       case(i < x) => i_min.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite posu32_0s..4:/# posTrail_0s..5:/# ifT ifT 1:/# 1:size_cat 1:size_drop 1:/#.
+        rewrite posu32_0s..2:/# posTrail_0s..5:/# ifT ifT 1:/# 1:size_cat 1:size_drop 1:/#.
         rewrite !size_cat size_nseq size_mkseq /#. smt().
         rewrite nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/# nth_nseq /#.
       + move: i_max i_min. rewrite -lezNgt lezNgt /= => i_max i_min.
       case(i < 4 + x) => u32.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite u32_word ..4:/# posTrail_0s ..5:/# !ifT 1:/#.
+        rewrite u32_word ..2:/# posTrail_0s ..5:/# !ifT 1:/#.
         rewrite !size_cat size_drop 1:/# /sub size_mkseq size_nseq /#.
         smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
@@ -1826,11 +1886,10 @@ admit.
       move: u32. rewrite -lezNgt => over_u32.
       case(i < 5 + x) => trail.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# trail_word ..5:/# !ifT 1:/#.
+        rewrite preu32_0s ..2:/# trail_word ..5:/# !ifT 1:/#.
         rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq size_mkseq !ifF /#. smt().
       smt().
-*)
 qed.
 
 
@@ -1852,8 +1911,6 @@ lemma compose5u8_trail _buf pos x _cur _at _trail:
        `<<<` 8 * (4+x)) `|` (W64.of_int _trail `<<<` 8 * (5 + x)))) =
   bytes_at 8 _cur _at (sub _buf pos 5 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7 H8 H9.
   pose w0:= zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose w1:= zeroextu64 (get8_direct (WA.init8 ("_.[_]" _buf)) (pos + 4)) `<<<` 8 * (4 + x).
@@ -1866,20 +1923,20 @@ admit.
       rewrite /l2 /bytes_at nth_take ..2:/# drop_cat_le nth_cat size_nseq lez_maxr 1:/#.
       case(6 + x <= i) => i_max.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# preu8_0s ..6:/# preTrail_0s ..5:/#.
+        rewrite preu32_0s ..2:/# preu8_0s ..3:/# preTrail_0s ..5:/#.
         rewrite ifF ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#.
         smt(). rewrite nth_nseq. rewrite !size_cat size_drop 1:/# size_nseq size_mkseq /#.
         smt().
       case(i < x) => i_min.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite posu32_0s ..4:/# posu8_0s ..5:/# posTrail_0s ..5:/#.
+        rewrite posu32_0s ..2:/# posu8_0s ..3:/# posTrail_0s ..5:/#.
         rewrite ifT ifT 1:/# 1:size_cat 1:size_drop 1:/#.
         rewrite !size_cat size_nseq size_mkseq /#. smt().
         rewrite nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/# nth_nseq /#.
       + move: i_max i_min. rewrite -lezNgt lezNgt /= => i_max i_min.
       case(i < 4 + (_at - _cur)) => u32.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite u32_word ..4:/# posu8_0s ..5:/# posTrail_0s ..5:/#.
+        rewrite u32_word ..2:/# posu8_0s ..3:/# posTrail_0s ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# /sub size_mkseq size_nseq /#.
         smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
@@ -1891,18 +1948,17 @@ admit.
       move: u32. rewrite -lezNgt => over_u32.
       case(i < 5 + (_at - _cur)) => u8.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# u8_word ..5:/# posTrail_0s ..5:/#.
+        rewrite preu32_0s ..2:/# u8_word ..3:/# posTrail_0s ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
         rewrite nth_mkseq 1:/# or0w /= !lez_maxr ..3:/# /(\bits8) ifT 1:/#.
         rewrite (W8.ext_eq _ (_buf.[pos + (i - x)])). move => x0 x0_bnd.
           rewrite /get8 initE ifT 1:/# /WA.init8 /get16_direct /pack2_t /#. smt().
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# preu8_0s ..6:/# trail_word ..5:/#.
+        rewrite preu32_0s ..2:/# preu8_0s ..3:/# trail_word ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq size_mkseq !ifF /#.
       smt().
-*)
 qed.
 
 
@@ -1924,8 +1980,6 @@ u64bytes
    (W64.of_int (_trail) `<<<` 8 * (6 + x)))
  = bytes_at 8 _cur _at (sub _buf pos 6 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H3 H4 H5 H6 H7 H8 H9 H10.
   pose w0:= zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose w1:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) (pos+ 4)) `<<<` 8 * (4 + x).
@@ -1938,20 +1992,20 @@ admit.
       rewrite /l2 /bytes_at nth_take ..2:/# drop_cat_le nth_cat size_nseq lez_maxr 1:/#.
       case(7 + x <= i) => i_max.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# preu16_0s ..4:/# preTrail_0s ..5:/#.
+        rewrite preu32_0s ..2:/# preu16_0s ..3:/# preTrail_0s ..5:/#.
         rewrite ifF ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#.
         smt(). rewrite nth_nseq. rewrite !size_cat size_drop 1:/# size_nseq size_mkseq /#.
         smt().
       case(i < x) => i_min.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite posu32_0s ..4:/# posu16_0s ..4:/# posTrail_0s ..5:/#.
+        rewrite posu32_0s ..2:/# posu16_0s ..3:/# posTrail_0s ..5:/#.
         rewrite ifT ifT 1:/# 1:size_cat 1:size_drop 1:/#.
         rewrite !size_cat size_nseq size_mkseq /#. smt().
         rewrite nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/# nth_nseq /#.
       + move: i_max i_min. rewrite -lezNgt lezNgt /= => i_max i_min.
       case(i < 4 + x) => u32.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite u32_word ..4:/# posu16_0s ..4:/# posTrail_0s ..5:/#.
+        rewrite u32_word ..2:/# posu16_0s ..3:/# posTrail_0s ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# /sub size_mkseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
         rewrite nth_mkseq 1:/# orw0 /= !lez_maxr ..3:/# /(\bits8).
@@ -1962,7 +2016,7 @@ admit.
       move: u32. rewrite -lezNgt => over_u32.
       case(i < 6 + x) => u16.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# u16_word ..4:/#  posTrail_0s ..5:/#.
+        rewrite preu32_0s ..2:/# u16_word ..3:/#  posTrail_0s ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
         rewrite nth_mkseq 1:/# or0w /= !lez_maxr ..3:/# /(\bits8).
@@ -1971,11 +2025,10 @@ admit.
           rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
           rewrite !nth_iota 1:/# initE ifT /#. smt().
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# preu16_0s ..4:/# trail_word ..5:/#.
+        rewrite preu32_0s ..2:/# preu16_0s ..3:/# trail_word ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq size_mkseq ifF 1:/# !or0w /#.
       smt().
-*)
 qed.
 
 lemma compose7u8_trail _buf pos x _cur _at _trail:
@@ -1997,9 +2050,7 @@ u64bytes
    W64.of_int (256 * _trail) `<<<` 8 * (6 + x)))
  = bytes_at 8 _cur _at (sub _buf pos 7 ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
-  move => H0 H1 H2 H3 H4 H5 H6 H7 H8 H9. rewrite -shlw_or trail_simplify 1:/#.
+  move => H0 H1 H2 H3 H4 H5 H6 H7 H8 H9. rewrite -shlw_or trail_simplify ..2:/# /=.
   pose w0:= zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose w1:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) (pos+ 4)) `<<<` 8 * (4 + x).
   pose w2:= zeroextu64 (get8 (WA.init8 ("_.[_]" _buf)) (pos + 6)) `<<<` 8 * (6 + x).
@@ -2012,20 +2063,20 @@ admit.
       rewrite /l2 /bytes_at nth_take ..2:/# drop_cat_le nth_cat size_nseq lez_maxr 1:/#.
       case(7 + x <= i) => i_max.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# preu16_0s ..4:/# preu8_0s ..4:/# trail_word ..5:/#.
+        rewrite preu32_0s ..2:/# preu16_0s ..3:/# preu8_0s ..3:/# trail_word ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq /#. smt().
         rewrite nth_cat nth_drop ..2:/# nth_cat size_mkseq size_drop 1:/# size_nseq.
         rewrite !ifF /#.
       case(i < x) => i_min.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite posu32_0s ..4:/# posu16_0s ..4:/# posu8_0s ..4:/# posTrail_0s ..5:/#.
+        rewrite posu32_0s ..2:/# posu16_0s ..3:/# posu8_0s ..3:/# posTrail_0s ..5:/#.
         rewrite ifT ifT 1:/# 1:size_cat 1:size_drop 1:/#.
         rewrite !size_cat size_nseq size_mkseq /#. smt().
         rewrite nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/# nth_nseq /#.
       + move: i_max i_min. rewrite -lezNgt lezNgt /= => i_max i_min.
       case(i < 4 + (_at - _cur)) => u32.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite u32_word ..4:/# posu16_0s ..4:/# posu8_0s ..4:/# posTrail_0s ..5:/#.
+        rewrite u32_word ..2:/# posu16_0s ..3:/# posu8_0s ..3:/# posTrail_0s ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# /sub size_mkseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
         rewrite nth_mkseq 1:/# orw0 /= !lez_maxr ..3:/# /(\bits8).
@@ -2036,7 +2087,7 @@ admit.
       move: u32. rewrite -lezNgt => over_u32.
       case(i < 6 + (_at - _cur)) => u16.
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# u16_word ..4:/# posu8_0s ..4:/# posTrail_0s ..5:/#.
+        rewrite preu32_0s ..2:/# u16_word ..3:/# posu8_0s ..3:/# posTrail_0s ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
         rewrite nth_mkseq 1:/# or0w /= !lez_maxr ..3:/# /(\bits8).
@@ -2045,14 +2096,13 @@ admit.
           rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
           rewrite !nth_iota 1:/# initE ifT /#. smt().
       + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..4:/# preu16_0s ..4:/# u8_word ..4:/# posTrail_0s ..5:/#.
+        rewrite preu32_0s ..2:/# preu16_0s ..3:/# u8_word ..3:/# posTrail_0s ..5:/#.
         rewrite !ifT 1:/#. rewrite !size_cat size_drop 1:/# size_mkseq size_nseq /#. smt().
         rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
         rewrite nth_mkseq 1:/# or0w /= !lez_maxr ..3:/# /(\bits8).
         rewrite (W8.ext_eq _ (_buf.[pos + (i - x)])). move => x0 x0_bnd.
           rewrite ifT 1:/# /get8 initE ifT /#. smt().
       smt().
-*)
 qed.
 
 lemma compose2u8_trail0 _buf pos x _cur _at:
@@ -2068,8 +2118,6 @@ u64bytes
   (zeroextu64 (get16_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x)
  = bytes_at 8 _cur _at (sub _buf pos 2 ++ [W8.zero]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7.
   pose w0:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8 * x.
   pose l1:= u64bytes w0.
@@ -2100,7 +2148,6 @@ admit.
           rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
           rewrite !nth_iota 1:/# initE ifT /#. smt().
       smt().
-*)
 qed.
 
 lemma compose4u8_trail0 _buf pos x _cur _at:
@@ -2115,8 +2162,6 @@ lemma compose4u8_trail0 _buf pos x _cur _at:
   u64bytes (zeroextu64 (get32_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos)
             `<<<` 8*x) = bytes_at 8 _cur _at (sub _buf pos 4 ++ [W8.zero]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7.
   pose w0:= zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8*x.
   pose l1:= u64bytes w0.
@@ -2146,7 +2191,6 @@ admit.
           rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
           rewrite !nth_iota 1:/# initE ifT /#. smt().
       smt().
-*)
 qed.
 
 
@@ -2164,8 +2208,6 @@ u64bytes
    (zeroextu64 (get16_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) (pos + 4))
     `<<<` 8 * (4 + x))) = bytes_at 8 _cur _at (sub _buf pos 6 ++ [W8.zero]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5 H6 H7.
   pose w0:= zeroextu64 (get32_direct (WA.init8 ("_.[_]" _buf)) pos) `<<<` 8*x.
   pose w1:= zeroextu64 (get16_direct (WA.init8 ("_.[_]" _buf)) (pos + 4)) `<<<` 8*(4+x).
@@ -2207,7 +2249,6 @@ admit.
           rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
           rewrite !nth_iota 1:/# initE ifT /#. smt().
       smt().
-*)
 qed.
 
 hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
@@ -2215,8 +2256,6 @@ hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
  : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
  ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
 proof.
-admit.
-(*
 proc; simplify. 
 if => //.
  auto => /> [[H|H]|H].
@@ -2726,7 +2765,6 @@ case(aT8 = 7).
       by auto => /#.
 + rcondf 2. auto => /#.
   auto => /#.
-*)
 qed.
 
 
@@ -2779,8 +2817,6 @@ lemma u128_0s_v0 (_buf: W8.t A.t) _off _dlt _len _trail _cur _at:
    _len = 0 /\ _trail = 0 =>
   u128bytes W128.zero = bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => ? ? ? ? H.
   pose l1:= u128bytes W128.zero.
   pose l2:=  bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]). 
@@ -2791,7 +2827,6 @@ admit.
     rewrite nth_to_list /(\bits8) nth_take ..2:/# !nth_cat size_drop 1:/# !size_cat.
     rewrite !H size_mkseq size_nseq /= ifF 1:/#.  rewrite u8init0 nth_nseq /#.
     smt().
-*)
 qed.
 
 lemma u128_0s_v1 (_buf: W8.t A.t) _off _dlt _len _trail _cur _at:
@@ -2802,8 +2837,6 @@ lemma u128_0s_v1 (_buf: W8.t A.t) _off _dlt _len _trail _cur _at:
    _len = 0 /\ _trail = 0 =>
   u128bytes W128.zero = bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => ???? H.
   pose l1:= u128bytes W128.zero.
   pose l2:=  bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]). 
@@ -2817,7 +2850,6 @@ admit.
     + rewrite nth_drop ..2:/# nth_nseq 1:/# u8init0 /#.
     + rewrite nth_nseq 1:/# u8init0 /#.
     smt().
-*)
 qed.
 
 lemma u128_0s_v2 (_buf: W8.t A.t) _off _dlt _len _trail _cur _at:
@@ -2827,8 +2859,6 @@ lemma u128_0s_v2 (_buf: W8.t A.t) _off _dlt _len _trail _cur _at:
    _cur + 16 <= _at =>
   u128bytes W128.zero = bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => ??? H.
   pose l1:= u128bytes W128.zero.
   pose l2:=  bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]). 
@@ -2841,7 +2871,6 @@ admit.
     rewrite ifT 1:/# nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/#.
     rewrite nth_nseq 1:/# u8init0 /#.
     smt().
-*)
 qed.
 
 lemma full_u128_0s (_buf: W8.t A.t) _off _dlt _len _trail _cur _at:
@@ -2851,13 +2880,10 @@ lemma full_u128_0s (_buf: W8.t A.t) _off _dlt _len _trail _cur _at:
   ((_len = 0 /\ _trail = 0 /\ (_at < _cur \/ _cur <= _at)) \/ _cur + 16 <= _at) =>
   u128bytes W128.zero = bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 [[? [? [H | H]]] | H].
     rewrite (u128_0s_v0 _buf _off _dlt _len _trail _cur _at) /#.
     rewrite (u128_0s_v1 _buf _off _dlt _len _trail _cur _at) /#.
     rewrite (u128_0s_v2 _buf _off _dlt _len _trail _cur _at) /#.
-*)
 qed.
 
 lemma compose16u8 (buf: W8.t A.t) pos at cur len trail:
@@ -2870,8 +2896,6 @@ lemma compose16u8 (buf: W8.t A.t) pos at cur len trail:
   u128bytes (get128_direct (WA.init8 ("_.[_]" buf)) pos `<<<` 8 * (at - cur)) =
   bytes_at 16 cur at (sub buf pos len ++ [W8.of_int trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5.
   pose l1:= u128bytes (get128_direct (WA.init8 ("_.[_]" buf)) pos `<<<` 8 * (at - cur)).
   pose l2:= bytes_at 16 cur at (sub buf pos len ++ [W8.of_int trail]).
@@ -2894,15 +2918,12 @@ admit.
         rewrite initiE 1:/# /= initE ifT 1:/# /sub nth_mkseq /#.
       smt().
     smt().
-*)
 qed.
 
 lemma u128_to_1u64 x:
     u128bytes (VPINSR_2u64 W128.zero x W8.one) =
     u64bytes (W64.zero) ++ (u64bytes x).
 proof.
-admit.
-(*
   pose l1:= u128bytes (VPINSR_2u64 W128.zero x W8.one).
   pose l2:= u64bytes W64.zero ++ u64bytes x.
   rewrite (eq_from_nth W8.zero l1 l2).
@@ -2921,15 +2942,12 @@ admit.
         rewrite ifT 1:/# /= ifT 1:/# /(\bits64) initE ifT /#.
       smt().
     smt().
-*)
 qed.
 
 lemma u128_to_2u64 x y:
   u128bytes (VPINSR_2u64 (zeroextu128 x) y W8.one) =
   u64bytes x ++ u64bytes y.
 proof.
-admit.
-(*
   pose l1:= u128bytes (VPINSR_2u64 (zeroextu128 x) y W8.one).
   pose l2:= u64bytes x ++ u64bytes y.
   rewrite (eq_from_nth W8.zero l1 l2). 
@@ -2961,8 +2979,8 @@ admit.
         rewrite initE ifT /#.
       smt().
     smt().
-*)
 qed.
+
 
 lemma u128_compose8u8_trail (_buf: W8.t A.t) x _off _dlt _len _trail _cur _at:
   0 <= _len =>
@@ -2975,8 +2993,6 @@ lemma u128_compose8u8_trail (_buf: W8.t A.t) x _off _dlt _len _trail _cur _at:
   u64bytes W64.zero ++ u64bytes x =
   bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5.
   pose l1:= u64bytes W64.zero ++ u64bytes x.
   pose l2:= bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
@@ -3000,7 +3016,6 @@ admit.
           rewrite ifF 1:/# ifF 1:/# ifT 1:/# ifF 1:/# ifF /#.
     + rewrite !ifF ..2:/# !nth_nseq /#.
     smt().
-*)
 qed.
 
 lemma u128_compose16u8_trail (_buf: W8.t A.t) x0 x1 y1 y2 y3 y4 _off _dlt _len _trail _cur _at:
@@ -3019,8 +3034,6 @@ lemma u128_compose16u8_trail (_buf: W8.t A.t) x0 x1 y1 y2 y3 y4 _off _dlt _len _
     bytes_at 8 8 y4 (sub _buf (_off + y1) y2 ++ [W8.of_int y3]) =>
   u64bytes x0 ++ u64bytes x1 = bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => ?????h0 h1 h2 ? H0 H1.
   pose l1:= u64bytes x0 ++ u64bytes x1.
   pose l2:= bytes_at 16 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
@@ -3060,7 +3073,6 @@ admit.
                   + rewrite !ifF ..2:/# !nth_nseq /#.
             + rewrite !ifF ..2:/# !nth_nseq /#.
     smt().
-*)
 qed.
 
 hoare a_ilen_read_upto16_at_h _buf _off _dlt _len _trail _cur _at:
@@ -3120,13 +3132,10 @@ by conseq a_ilen_read_upto16_at_ll
 qed.
 
 
-
 lemma u256_to_1u128 x:
     u256bytes (VINSERTI128 W256.zero x W8.one) =
     u128bytes (W128.zero) ++ (u128bytes x).
 proof.
-admit.
-(*
   pose l1:= u256bytes (VINSERTI128 W256.zero x W8.one).
   pose l2:= u128bytes W128.zero ++ u128bytes x.
   rewrite (eq_from_nth W8.zero l1 l2).
@@ -3145,15 +3154,12 @@ admit.
         rewrite ifT 1:/# /= /of_list initE ifT 1:/# /(\bits64) /= ifF 1:/# ifT /#.
       smt().
     smt().
-*)
 qed.
 
 lemma u256_to_2u128 x y:
 u256bytes (W256.of_int (to_uint x %% W128.modulus + W128.modulus * to_uint y)) =
 u128bytes x ++ u128bytes y.
 proof.
-admit.
-(*
   have [a b]: 0 <= W128.to_uint x < W128.modulus by rewrite W128.to_uint_cmp.
   have [c d]: 0 <= W128.to_uint y < W128.modulus by rewrite W128.to_uint_cmp.
   rewrite pmod_small. rewrite b /#.
@@ -3181,7 +3187,6 @@ admit.
           rewrite bs2intK get_w2bits nth_to_list /(\bits8) initE ifT /#. smt().
      smt().
    smt().
-*)
 qed.
 
 lemma u256_full_0s (_buf : W8.t A.t) _off _dlt _len _trail _cur _at:
@@ -3192,8 +3197,6 @@ lemma u256_full_0s (_buf : W8.t A.t) _off _dlt _len _trail _cur _at:
  u256bytes W256.zero =
  bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3.
   pose l2:= bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
   rewrite (eq_from_nth W8.zero (u256bytes W256.zero) l2).
@@ -3214,7 +3217,6 @@ admit.
         + rewrite ifF 1:/# nth_cat size_mkseq ifF /#.
       + rewrite ifF 1:/# !nth_nseq /#.
     smt().
-*)
 qed.
 
 lemma u256compose32u8 (_buf : W8.t A.t) _off _dlt _len _trail _cur _at:
@@ -3227,8 +3229,6 @@ lemma u256compose32u8 (_buf : W8.t A.t) _off _dlt _len _trail _cur _at:
  u256bytes (get256_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt)) =
  bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => H0 H1 H2 H3 H4 H5.
   pose l1:= u256bytes (get256_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt)).
   pose l2:= bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
@@ -3245,7 +3245,6 @@ admit.
       rewrite /= initE ifT 1:/# nth_mkseq /#.
       smt().
     smt().
-*)
 qed.
 
 
@@ -3262,8 +3261,6 @@ lemma u256compose16u8 (_buf : W8.t A.t) x _off _dlt _len _trail _cur _at:
 u256bytes (VINSERTI128 W256.zero x W8.one) =
 bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move =>??????? H0.
   pose l1:= u256bytes (VINSERTI128 W256.zero x W8.one).
   pose l2:= bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
@@ -3293,7 +3290,6 @@ admit.
           + rewrite H0 nth_take ..2:/# !nth_cat size_drop 1:/# !size_cat size_mkseq.
             rewrite size_nseq !ifF ..2:/# !nth_nseq /#.
         smt().
-*)
 qed.
 
 lemma u256_compose32u8 (_buf: W8.t A.t) x0 x1 y1 y2 y3 y4 _off _dlt _len _trail _cur _at:
@@ -3313,8 +3309,6 @@ lemma u256_compose32u8 (_buf: W8.t A.t) x0 x1 y1 y2 y3 y4 _off _dlt _len _trail 
   u128bytes x0 ++ u128bytes x1 =
   bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
-admit.
-(*
   move => ??????y_2 y_4? H0 H1.
   pose l2:= bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
   rewrite (eq_from_nth W8.zero (u128bytes x0 ++ u128bytes x1) l2).
@@ -3379,7 +3373,6 @@ admit.
                   rewrite !ifF /#.
                 + rewrite !ifF ..2:/# !nth_nseq /#.
           smt().
-*)
 qed.
     
 hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
