@@ -8,3 +8,4 @@
 [submodule "submodules/jasmin"]
 	path = submodules/jasmin
 	url = https://gitlab.com/jasmin-lang/jasmin-compiler.git
+	branch = main

@@ -209,36 +209,6 @@ phoare state_init_avx2_ph _r8:
  ] = 1%r.
 proof. by conseq state_init_avx2_ll (state_init_avx2_h _r8). qed.
 
-(*
-lemma pstate_init_avx2_ll:
- islossless M.__pstate_init_avx2.
-proof.
-proc.
-call state_init_avx2_ll.
-wp; while true (aux-i).
- by move=> z; auto => /> /#.
-by auto => /#.
-qed.
-
-hoare pstate_init_avx2_h _r8:
- M.__pstate_init_avx2
- : 0 < _r8 <= 200
- ==> pabsorb_spec_avx2 _r8 [] res.`1 res.`2.
-proof.
-proc.
-seq 7: (#pre /\ pst=st0).
- admit.
-call state_init_avx2_h; auto => |> *.
-by apply pabsorb_spec_avx2_nil.
-qed.
-
-phoare pstate_init_avx2_ph _r8:
- [ M.__pstate_init_avx2
- : 0 < _r8 <= 200
- ==> pabsorb_spec_avx2 _r8 [] res.`1 res.`2
- ] = 1%r.
-proof. by conseq pstate_init_avx2_ll (pstate_init_avx2_h _r8). qed.
-*)
 
 (*
 perm_reg3456_avx2
@@ -249,124 +219,7 @@ unperm_reg3456_avx2
 *)
 
 (*
-state_from_pstate_avx2
-*)
-
-(*
-lemma state_from_pstate_avx2_ll: islossless M.__state_from_pstate_avx2
-by islossless.
-
-hoare state_from_pstate_avx2_h _pst:
- M.__state_from_pstate_avx2
- : pst=_pst
- ==> res = stavx2_from_st25 _pst.
-proof.
-admit. (* BDEP *)
-qed.
-
-phoare state_from_pstate_avx2_ph _pst:
- [ M.__state_from_pstate_avx2
- : pst=_pst
- ==> res = stavx2_from_st25 _pst
- ] = 1%r.
-proof. by conseq state_from_pstate_avx2_ll (state_from_pstate_avx2_h _pst). qed.
-*)
-(*
 addstate_r3456_avx2
-*)
-
-(*
-addpst01_avx2
-*)
-
-(*
-lemma addpst01_avx2_ll: islossless M.__addpst01_avx2
- by islossless.
-
-hoare addpst01_avx2_h _pst _stavx2:
- M.__addpst01_avx2
- : pst=_pst /\ st=_stavx2
- ==> res.[0] = _stavx2.[0] `^` u256_pack4 _pst.[0] _pst.[0] _pst.[0] _pst.[0]
-  /\ res.[1] = _stavx2.[1] `^` u256_pack4 _pst.[1] _pst.[2] _pst.[3] _pst.[4]
-  /\ res.[2] = _stavx2.[2]
-  /\ res.[3] = _stavx2.[3]
-  /\ res.[4] = _stavx2.[4]
-  /\ res.[5] = _stavx2.[5]
-  /\ res.[6] = _stavx2.[6].
-proof.
-admit (* bdep *).
-qed.
-
-phoare addpst01_avx2_ph _pst _stavx2:
- [ M.__addpst01_avx2
- : pst=_pst /\ st=_stavx2
- ==> res.[0] = _stavx2.[0] `^` u256_pack4 _pst.[0] _pst.[0] _pst.[0] _pst.[0]
-  /\ res.[1] = _stavx2.[1] `^` u256_pack4 _pst.[1] _pst.[2] _pst.[3] _pst.[4]
-  /\ res.[2] = _stavx2.[2]
-  /\ res.[3] = _stavx2.[3]
-  /\ res.[4] = _stavx2.[4]
-  /\ res.[5] = _stavx2.[5]
-  /\ res.[6] = _stavx2.[6]
- ] = 1%r.
-proof. by conseq addpst01_avx2_ll (addpst01_avx2_h _pst _stavx2). qed.
-*)
-
-(*
-addpst23456_avx2
-*)
-(*
-lemma addpst23456_avx2_ll: islossless M.__addpst23456_avx2
- by islossless.
-
-hoare addpst23456_avx2_h _pst _stavx2:
- M.__addpst23456_avx2
- : pst=_pst /\ st=_stavx2
- ==> res.[0] = _stavx2.[0]
-  /\ res.[1] = _stavx2.[1]
-  /\ res.[2] = _stavx2.[2] `^` u256_pack4 _pst.[10] _pst.[20] _pst.[5]  _pst.[15]
-  /\ res.[3] = _stavx2.[3] `^` u256_pack4 _pst.[16] _pst.[7]  _pst.[23] _pst.[14]
-  /\ res.[4] = _stavx2.[4] `^` u256_pack4 _pst.[11] _pst.[22] _pst.[8]  _pst.[19]
-  /\ res.[5] = _stavx2.[5] `^` u256_pack4 _pst.[21] _pst.[17] _pst.[13] _pst.[9]
-  /\ res.[6] = _stavx2.[6] `^` u256_pack4 _pst.[6]  _pst.[12] _pst.[18] _pst.[24].
-proof.
-admit (* bdep *).
-qed.
-
-phoare addpst23456_avx2_ph _pst _stavx2:
- [ M.__addpst23456_avx2
- : pst=_pst /\ st=_stavx2
- ==> res.[0] = _stavx2.[0]
-  /\ res.[1] = _stavx2.[1]
-  /\ res.[2] = _stavx2.[2] `^` u256_pack4 _pst.[10] _pst.[20] _pst.[5]  _pst.[15]
-  /\ res.[3] = _stavx2.[3] `^` u256_pack4 _pst.[16] _pst.[7]  _pst.[23] _pst.[14]
-  /\ res.[4] = _stavx2.[4] `^` u256_pack4 _pst.[11] _pst.[22] _pst.[8]  _pst.[19]
-  /\ res.[5] = _stavx2.[5] `^` u256_pack4 _pst.[21] _pst.[17] _pst.[13] _pst.[9]
-  /\ res.[6] = _stavx2.[6] `^` u256_pack4 _pst.[6]  _pst.[12] _pst.[18] _pst.[24]
- ] = 1%r.
-proof. by conseq addpst23456_avx2_ll (addpst23456_avx2_h _pst _stavx2). qed.
-*)
-
-(*
-addpstate_avx2
-*)
-(*
-lemma addpstate_avx2_ll: islossless M._addpstate_avx2
-by islossless.
-
-hoare addpstate_avx2_h _pst _stavx2:
- M._addpstate_avx2
- : pst=_pst /\ st=_stavx2
- ==> res = stavx2_from_st25 (addstate _pst (stavx2_to_st25 _stavx2)).
-proof.
-admit (* BDEP *).
-qed.
-
-phoare addpstate_avx2_ph _pst _stavx2:
- [ M._addpstate_avx2
- : pst=_pst /\ st=_stavx2
- ==> res = stavx2_from_st25 (addstate _pst (stavx2_to_st25 _stavx2))
- ] = 1%r.
-proof. by conseq addpstate_avx2_ll (addpstate_avx2_h _pst _stavx2). qed.
 *)
 
 (*
@@ -379,18 +232,154 @@ addratebit_avx2
 lemma addratebit_avx2_ll: islossless M.__addratebit_avx2
  by islossless.
 
+op u256_set_u64 (w:W256.t) k (x:W64.t) =
+ W256.init (fun i => if 64*k <= i < 64*(k+1) then x.[i-64*k] else w.[i]).
+
+lemma w256_set_u64E w k x:
+ u256_set_u64 w k x = pack4_t (W4u64.Pack.init (fun i => if i=k then x else w \bits64 i)).
+proof.
+apply W256.ext_eq => i Hi.
+rewrite initiE //= pack4E initiE //= initiE 1:/# /=.
+case: (i %/ 64 = k) => C.
+ by rewrite ifT /#.
+by rewrite ifF 1:/# bits64iE /#.
+qed.
+
+hoare u64_to_u256_h _k _w:
+ M.__u64_to_u256
+ : x = _w /\ l=_k /\ 0 <= _k < 4 ==> res = u256_set_u64 W256.zero _k _w.
+proof.
+proc; simplify.
+case: (l=0).
+ rcondt 1; first by auto => />.
+ rcondt 3; first by auto => />.
+ by auto => />; circuit.
+case: (l=1).
+ rcondf 1; first by auto => />.
+ rcondt 4; first by auto => />.
+ by auto => />; circuit.
+case: (l=2).
+ rcondt 1; first by auto => />.
+ rcondf 3; first by auto => />.
+ by auto => />; circuit.
+case: (l=3).
+ rcondf 1; first by auto => />.
+ rcondf 4; first by auto => />.
+ by auto => />; circuit.
+conseq (: false ==> _).
+ by move=> /> /#.
+by auto.
+qed.
+
+op stavx2_pos n =
+ nth (0,0) [(0,0);(1,0);(1,1);(1,2);(1,3);(2,2);(6,0);(3,1);(4,2);(5,3)
+           ;(2,0);(4,0);(6,1);(5,2);(3,3);(2,3);(3,0);(5,1);(6,2);(4,3)
+           ;(2,1);(5,0);(4,1);(3,2);(6,3) ] n.
+
+hoare stavx2_pos_avx2_h _n:
+ M.__stavx2_pos_avx2
+ : pOS=_n ==> res = stavx2_pos _n.
+proof.
+proc. by auto => /> /#. qed.
+
+
+lemma stavx2_posP st n r l x:
+ stavx2INV st =>
+ 0 < n < 25 =>
+ (r,l) = stavx2_pos n =>
+ st.[r <- st.[r] `^` u256_set_u64 W256.zero l x]
+ = stavx2_from_st25 (stavx2_to_st25 st).[n <- (stavx2_to_st25 st).[n] `^` x].
+proof.
+move=> Hinv H; have: n \in iota_ 1 24 by smt(mem_iota).
+move: {H} n; rewrite -List.allP -iotaredE /stavx2_pos /= => />.
+move: Hinv; circuit.
+qed.
+
+lemma stavx2_posP' (st: W64.t Array25.t) i x:
+ 0 < i < 25 =>
+ stavx2_from_st25 (st.[i <- x])
+ = (stavx2_from_st25 st).[(stavx2_pos i).`1 <- u256_set_u64 (stavx2_from_st25 st).[(stavx2_pos i).`1] (stavx2_pos i).`2 x].
+proof.
+rewrite tP => Hi k Hk.
+have: i \in iota_ 1 24 by smt(mem_iota).
+move: {Hi} i; rewrite -allP -iotaredE /=.
+have: k \in iota_ 0 7 by smt(mem_iota).
+move: {Hk} k; rewrite -allP -iotaredE /stavx2_pos /=.
+by circuit.
+qed.
+
+
+lemma stavx2_pos0 n:
+ 0 <= n < 25 =>
+ (stavx2_pos n).`1 = 0 =>
+ n = 0
+by smt().
+
+
+lemma stavx2_pos0' stavx2 (st: W64.t Array25.t) x:
+ stavx2 = stavx2_from_st25 st =>
+ stavx2.[0 <- stavx2.[0] `^` VPBROADCAST_4u64 x]
+ = stavx2_from_st25 (st.[0 <- st.[0] `^` x]).
+proof. by circuit. qed.
+
+abbrev u64_bitswap i (w:W64.t) = w `^` (W64.one `<<` (W8.of_int i)).
+
+
+lemma u64_xorbitE i w:
+ 0 <= i < 64 =>
+ u64_xorbit i w = u64_bitswap i w.
+move=> Hi; apply W64.ext_eq => k Hk.
+rewrite !initiE // xorwE shlwE of_uintK modz_small 1:/# Hk /=.
+by rewrite nth_one /#.
+qed.
+
+
+
 hoare addratebit_avx2_h _r8 _stavx2:
  M.__addratebit_avx2
- : st = _stavx2 /\ rATE_8=_r8
+ : st = _stavx2 /\ rATE_8=_r8 /\ 0 < _r8 <= 200 /\ stavx2INV st
  ==> res = stavx2_from_st25 (addratebit _r8 (stavx2_to_st25 _stavx2)).
 proof.
-proc.
-admit (*BDEP*).
+proc; simplify.
+sp.
+seq 1: (#pre /\ (r,l) = stavx2_pos ((rATE_8 - 1) %/ 8)).
+ by ecall (stavx2_pos_avx2_h ((rATE_8 - 1) %/ 8)); auto => /> /#.
+case: (r=0).
+ rcondt 1; first by auto.
+ auto => |> &m  ??Hinv H.
+ have := stavx2_pos0 ((_r8 - 1) %/ 8) _; first smt().
+ rewrite -H /= => {H} H.
+ rewrite (stavx2_pos0' _ (stavx2_to_st25 _stavx2)).
+  admit.
+ pose x:= (W64.one `<<` W8.of_int ((8 * _r8 - 1) %% 64)).
+ congr.
+ move: (Top.stavx2_to_st25 _stavx2) => _s.
+ rewrite /addratebit /addratebit8 -stbytesK.
+ apply stbytes_inj; rewrite !stwordsK tP => i Hi.
+ rewrite initiE 1:/# /= initiE 1:/# get_setE // get_setE 1:/# /=.
+ case: (i%/8=0) => C1.
+  case: (i=_r8-1) => C2.
+   rewrite -C2 C1 xorb8E; congr.
+   admit.
+  rewrite xorb8E initiE //= C1. 
+   have ->: (x \bits8 i %% 8) = W8.zero. admit.
+   smt().
+ case: (i=_r8-1) => ?; first smt().
+ by rewrite initiE //=. 
+rcondf 1; first by auto.
+wp; ecall (u64_to_u256_h l t64); auto => |> &m ??Hinv H ?.
+split.
+ admit.
+move=> ??.
+rewrite (stavx2_posP _stavx2 ((_r8 - 1) %/ 8) r{m} l{m} _ Hinv _ H). admit.
+rewrite /addratebit -addratebitE 1:/#.
+congr.
+move: H; rewrite u64_xorbitE /#.
 qed.
 
 phoare addratebit_avx2_ph _r8 _stavx2:
  [ M.__addratebit_avx2
- : st = _stavx2 /\ rATE_8=_r8
+ : st = _stavx2 /\ rATE_8=_r8 /\ 0 < _r8 <= 200 /\ stavx2INV st
  ==> res = stavx2_from_st25 (addratebit _r8 (stavx2_to_st25 _stavx2))
  ] = 1%r.
 proof. by conseq addratebit_avx2_ll (addratebit_avx2_h _r8 _stavx2). qed.

@@ -1107,7 +1107,11 @@ case: (_TRAILB<>0).
  move => ?????? [st' at' off'] /= Est' Eat' Eoff'.
  move: H; rewrite /pabsorb_spec_avx2 /absorb_spec_avx2 => [[? H]].
  rewrite Est' H /addstate_avx2 !stavx2_from_st25K.
- rewrite /lastpos /niters /lastlen /ABSORB1600 /PABSORB1600 /stateabsorb_last /stateabsorb -cats1; congr; congr.
+ rewrite /lastpos /niters /lastlen /ABSORB1600 /PABSORB1600 /stateabsorb_last /stateabsorb -cats1.
+ move=> *; split => *. 
+  split; first smt().
+  by apply stavx2INV_from_st25.
+ congr; congr.
  rewrite -addstateA; congr.
   by congr; rewrite chunk_cat_buf 1:// /#.
  by rewrite chunkremains_cat_buf /#.
