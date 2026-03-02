@@ -916,25 +916,6 @@ move=> i Hi.
 rewrite nth_take 1..2:/# nth_cat ?size_drop 1:/# u64bytes0 nth_drop 1..2:/# nth_cat !nth_u8zeros /#.
 qed.
 
-lemma buf8_expand buf base:
-  0 <= base =>
-  base + 8 < _ASIZE =>
-  (map (fun (j : int) => (WA.init8 (ReadWriteArray.A."_.[_]" buf)).[base + j]) (iota_ 0 8)) =
-  [buf.[base]; buf.[base + 1]; buf.[base + 2]; buf.[base + 3]; buf.[base + 4];
-   buf.[base + 5]; buf.[base + 6]; buf.[base + 7]].
-proof.
-  move => H0 H1.
-  rewrite (eq_from_nth W8.zero _ ([buf.[base]; buf.[base + 1]; buf.[base + 2];
-                                   buf.[base + 3]; buf.[base + 4]; buf.[base + 5];
-                                   buf.[base + 6]; buf.[base + 7]])).
-     + rewrite size_map size_iota /#.
-     + rewrite size_map size_iota lez_maxr 1:/# => i0 i0_bnd.
-       rewrite (nth_map 0 W8.zero); first by smt(size_iota).
-       rewrite nth_iota 1:/# add0r /WA.init8 /=.
-       rewrite initE ifT. by rewrite (ltr_trans (base + 8)) /#.  
-  smt(). smt().
-qed.
-
 lemma buf4_expand buf base:
   0 <= base =>
   base + 8 < _ASIZE =>
@@ -952,45 +933,6 @@ proof.
   smt(). smt().
 qed.
 
-lemma expunge_W8u8 buf:
-  size buf = 8 =>
-  W64.init (fun i0 => (W8u8.Pack.init (fun i1 => buf.[i1])).[i0 %/ 8].[i0 %% 8]) =
-  W64.init (fun (i0 : int) => buf.[i0 %/ 8].[i0 %% 8]).
-proof.
-  rewrite (W64.init_ext _ (fun (i0 : int) => buf.[i0 %/ 8].[i0 %% 8])).
-  by move => x x_bnd /=; rewrite W8u8.Pack.initE ifT /#. smt().
-qed.
-
-lemma W64_merge_inits (buf: W8.t list) x:
-  0<= size buf <= 8 =>
-  W64.init (fun (j : int) => (W64.init (fun (i0 : int) => buf.[i0 %/ 8].[i0 %% 8])).[x])
-   = W64.init (fun (j : int) => buf.[x%/8].[x%%8]).
-proof.
-  move => H.
-  rewrite (W64.init_ext (fun j => (W64.init (fun i0 => buf.[i0 %/ 8].[i0 %% 8])).[x])
-                        (fun j => buf.[x%/8].[x%%8])). move => x0 x0_bnd.
-  rewrite /= W64.initE.
-  case(0 <= x < 64) => x_in; first by smt().
-  + rewrite nth_out /#.
-  smt().
-qed.
-
-
-lemma preu64_0s x i _buf pos:
-  0 <= x =>
-  64 + x <= i < 8 =>
-  (get64_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
-  \bits8 nth witness (iota_ 0 8) i = W8.zero.
-proof.
-  move => H0 H1.
-  rewrite /(\bits8) (W8.ext_eq _ W8.zero). move => x0 x0_bnd.
-  rewrite initE ifT 1:/# /=.
-  rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/#.
-  have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
-  rewrite andaE andTb.
-  have aux: 32 <= nth 0 (iota_ 0 8) i * 8 + x0 - 8 * x < 64. smt(nth_iota).
-  rewrite nth_iota /#. smt().
-qed.
 
 lemma posu64_0s x i _buf pos:
   0 <= x =>
