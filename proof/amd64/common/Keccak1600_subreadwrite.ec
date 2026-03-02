@@ -1009,39 +1009,6 @@ proof.
   rewrite andaE andTb get_out; smt(nth_iota). smt().
 qed.
 
-(*
-lemma u32_word x i _buf pos:
-  0 <= x =>
-  min 8 x <= i < min 8 (4 + x) =>
-  (get64_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos) `<<<` 8 * x
-  \bits8 nth witness (iota_ 0 8) i =
-  (get64_direct (WA.init8 (ReadWriteArray.A."_.[_]" _buf)) pos)
-  \bits8 nth 0 (iota_ 0 (min 8 (8-x))) (i-x).
-proof.
-  move => H0 H1.
-  pose a:= (get32_direct (WA.init8 ("_.[_]" _buf)) pos).
-  rewrite /zeroextu64 {1}/W64.of_int /to_uint pmod_small. 
-  + split. smt(bs2int_ge0). move =>*.
-  + rewrite (ltr_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
-  rewrite (int2bs_cat 32) 1:/# pdiv_small.
-  + split. smt(bs2int_ge0). move =>*. 
-  + rewrite (ltr_le_trans (2^size (W32.w2bits a))). rewrite bs2int_le2Xs. smt().
-  rewrite int2bs0 W64_bits2w_cat_nseq0. 
-  have->: 32 = size (w2bits a) by rewrite size_w2bits.
-  rewrite bs2intK /(\bits8) (W8.ext_eq _ (a \bits8 nth 0 (iota_ 0 (min 4 (8-x))) (i-x))).
-  move => x0 x0_bnd.
-  rewrite initE ifT 1:/# /=.
-  case(8 <= x) => x_max.
-  rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/#.
-  have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
-  rewrite andaE andTb get_out; smt(nth_iota).
-  rewrite (nth_change_dfl 0 witness) 1:size_iota 1:/# get_bits2w. smt(nth_iota).  
-  have->: 0 <= nth 0 (iota_ 0 8) i * 8 + x0 < 64 by smt(nth_iota).
-  rewrite andaE andTb get_w2bits /(\bits8) initE ifT 1:/# /=.
-  smt(nth_iota). 
-  rewrite /(\bits8) /#.
-qed.
- *)
 
 lemma preu32_0s x i _buf pos:
   0 <= x =>
@@ -1543,85 +1510,6 @@ proof.
         rewrite initE ifT 1:/# /= initE ifT /#. smt().
       smt().
 qed.
-(*
-      case(6 + x <= i) => i_max.
-        rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..2:/# preu16_0s ..4:/#.
-      case(i < x) => i_min.
-      + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite posu32_0s ..2:/# posu16_0s ..3:/# ifT ifT 1:/# 1:size_cat 1:size_drop 1:/#.
-        rewrite !size_cat size_nseq /sub size_mkseq /#. smt().
-        rewrite nth_cat size_drop 1:/# size_nseq ifT 1:/# nth_drop ..2:/# nth_nseq /#.
-      + move: i_max i_min. rewrite -lezNgt lezNgt /= => i_max i_min.
-      case(i < 4 + x) => u32.
-      + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite u32_word ..2:/# posu16_0s ..3:/# ifT ifT 1:/# 1:size_cat.
-        rewrite !size_cat size_drop 1:/# /sub size_mkseq /#. smt().
-        rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
-        rewrite nth_mkseq 1:/# orw0 /= !lez_maxr ..3:/# /(\bits8).
-        rewrite (W8.ext_eq _ (_buf.[pos + (i - x)])). move => x0 x0_bnd.
-          rewrite initE ifT 1:/# /WA.init8 /get32_direct /pack4_t /=.
-          rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
-          rewrite !nth_iota 1:/# initE ifT /#. smt().
-      move: u32. rewrite -lezNgt => u16. 
-      + rewrite /u64bytes (nth_map witness W8.zero) /iotared 1:size_iota 1:/# /=.
-        rewrite preu32_0s ..2:/# u16_word ..3:/# ifT ifT 1:/# 1:size_cat.
-        rewrite !size_cat size_drop 1:/# /sub size_mkseq size_nseq /#. smt().
-        rewrite !nth_cat size_drop 1:/# size_nseq ifF 1:/# size_mkseq ifT 1:/#.
-        rewrite nth_mkseq 1:/# or0w /= !lez_maxr ..3:/# /(\bits8).
-        rewrite (W8.ext_eq _ (_buf.[pos + (i - x)])). move => x0 x0_bnd.
-          rewrite initE ifT 1:/# /WA.init8 /get16_direct /pack2_t /=.
-          rewrite initE ifT 1:nth_iota ..2:/# /= initE ifT 1:nth_iota ..2:/# /=.
-          rewrite !nth_iota 1:/# initE ifT /#. smt().
-      smt().
-
-  move => H0 H1 H2 H3 H4 H5 H6 H7.
-  rewrite /bytes_at drop_cat_le size_nseq ifT 1:/# drop_nseq 1:/#.
-   rewrite catA -catA take_cat_le size_cat size_nseq size_mkseq. (*ifT 1:/#.*)
-   rewrite /l1 get64E /u64bytes W8u8.Pack.init_of_list /pack8_t
-   (*** remove the below admits - I might need info on _off & _dlt bounds ***)
-   rewrite (buf8_expand _ _ H6 H7).
-   pose base:= _off + _dlt.
-   pose buf:= [_buf.[base]; _buf.[base + 1]; _buf.[base + 2]; _buf.[base + 3]; _buf.[base + 4]; _buf.[base + 5]; _buf.[base + 6]; _buf.[base + 7]].
-   pose l1:= W8u8.to_list (W64.init (fun (i : int) => (W8u8.Pack.of_list buf).[i %/ 8].[i %% 8]) `<<<` 8 * (_at - _cur)).
-   pose l2:= take 8 (u8zeros (_at - _cur) ++ sub _buf base _len). 
-   have buf_bnd: 0 <= size buf <= 8. by rewrite /buf; smt().
-   rewrite (eq_from_nth W8.zero l1 l2).
-   + rewrite size_to_list size_take 1:/# size_cat size_nseq size_mkseq /#.  
-   + rewrite size_to_list => i i_bnd.
-     rewrite /l1 /l2 W8u8.Pack.of_listE. rewrite expunge_W8u8. by rewrite /buf /#.
-     rewrite W64.wlslE.
-     (*** replace with W64_merge_inits ***)
-     (* remove below *)
-     have->:(W64.init (fun j=> (W64.init (fun i0=> buf.[i0%/8].[i0%%8])).[j-8*(_at-_cur)]))
-          = (W64.init (fun j => buf.[(j-8*(_at-_cur))%/8].[(j-8*(_at-_cur)) %% 8])).
-       rewrite (W64.init_ext (fun j=> (W64.init (fun i0=> buf.[i0%/8].[i0%%8]))
-                .[j-8*(_at-_cur)])
-               (fun j => buf.[(j-8*(_at-_cur))%/8].[(j-8*(_at-_cur))%%8])).
-       move => x0 x0_bnd.
-       rewrite /= W64.initE.
-       case(0 <= x0 - 8 * (_at - _cur) < 64) => x_in; first by smt().
-       + rewrite nth_out /#.
-       smt().
-     (* remove above *)
-     rewrite /sub nth_take ..2:/# nth_cat size_nseq.
-     rewrite (nth_map witness W8.zero _ i ); first by rewrite /iotared size_iota /#.
-     case(i < _at - _cur) => i_min. 
-     + rewrite ifT 1:/# nth_nseq 1:/# /l1 /u64bytes.
-       rewrite (W8.ext_eq _ W8.zero). move => x x_bnd.
-       rewrite /(\bits8) /= W8.initiE 1:/# /= W64.initE ifT 1:/# /buf /=.
-       have aux: (8 + x - 8 * (_at - _cur)) %/ 8 <= 0 by smt().
-       rewrite ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF /#.
-       smt().
-     + move: i_min. rewrite -lezNgt => i_max.
-     + rewrite ifF 1:/# lez_maxr 1:/# /l1 /u64bytes /=.
-       rewrite nth_mkseq 1:/# /=.
-       rewrite (W8.ext_eq _ (_buf.[_off + _dlt + (i - (_at - _cur))])). move => x x_bnd.
-       + rewrite /(\bits8) /= W8.initiE 1:/# /= W64.initE ifT 1:/# /buf /base /#.
-       smt().
-     smt().
-qed.
-*)
 
 lemma compose_trail (_buf: W8.t A.t) pos _cur _at _trail:
   0 <= _cur =>
@@ -2256,7 +2144,7 @@ hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
  : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
  ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
 proof.
-proc; simplify. 
+proc; simplify.
 if => //.
  auto => /> [[H|H]|H].
  + move=> _; rewrite /subread_pre => /> ??????.
@@ -2270,146 +2158,90 @@ if => //.
 sp; if => //.
  (* 8 <= lEN *)
  wp; ecall (SHLQ_h w aT8); auto => />.
- rewrite !negb_or negb_and -!lezNgt andb_orr. move => [#] [H | H] H1.
+ rewrite !negb_or negb_and -!lezNgt andb_orr. move =>*.
  split; first smt().
- move=> H2 H3 H4. rewrite /subread_pre oraE andaE => [#] H5 H6 H7 H8 H9 H10 [H11|H11].
+  move => ???. rewrite /subread_pre oraE andaE => [#] *.
  do split; 1..2: smt(); 2..5: smt().
- + (* Need info regarding _off and _dlt bounds *)
    have->: to_uint (W64.of_int (_off + _dlt)) = _off + _dlt. admit.
    have min_pos: 0 <= _off + _dlt. admit.
    have max_pos: _off + _dlt + 8 < _ASIZE. admit.
    apply compose8u8; smt().
- + smt().
-+ split; first smt().
-+ move=> H2 H3 H4. rewrite /subread_pre oraE andaE => [#] H5 H6 H7 H8 H9 H10 [H11|H11].
-  do split; 1..2: smt(); 2..5: smt().
-  + (* Need info regarding _off and _dlt bounds *)
-    have->: to_uint (W64.of_int (_off + _dlt)) = _off + _dlt. admit.
-    have min_pos: 0 <= _off + _dlt. admit.
-    have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-    apply compose8u8; smt(). 
-  + smt().
  (* 4 <= lEN < 8 *)
 if => //.
  case(4 <= aT8).
- rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
- rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
- wp; ecall (SHLQ_h w aT8); auto => />.
- rewrite !negb_or negb_and -!lezNgt andb_orr. move => [#] [H | H] H1 H2 H3.
- split; first smt().
- move=> H4 H5 H6. rewrite /subread_pre oraE andaE => [#] H7 H8 H9 H10 H11 H12 [H13|H13].
-do split; 1..2: smt(); 2..5: smt().
- + (* Need info regarding _off and _dlt bounds *)
-   have->: to_uint (W64.of_int (_off + _dlt)) = _off + _dlt. admit.
-   have min_pos: 0 <= _off + _dlt. admit.
-   have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-   apply compose4u8; smt().
- + smt().
-+ split; first smt().
-move=> H4 H5 H6. rewrite /subread_pre oraE andaE => [#] H7 H8 H9 H10 H11 H12 [H13|H13].
-do split; 1..2: smt(); 2..5: smt().
- + (* Need info regarding _off and _dlt bounds *)
-   have->: to_uint (W64.of_int (_off + _dlt)) = _off + _dlt. admit.
-   have min_pos: 0 <= _off + _dlt. admit.
-   have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-   apply compose4u8; smt().
- + smt().
-case(6 <= lEN).
-+ rcondt 6. wp; ecall (SHLQ_h w aT8); auto => /#.
-  case(2 <= aT8). 
-  + rcondf 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
-    wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => />.
-    rewrite !negb_or negb_and -!lezNgt andb_orr. move => [#] [H | H] H1 H2 H3 H4 H5.
-    split; first smt(). move => [#] H6 H7.
-    split; first smt().
-    rewrite ifF 1:/# ifF 1:/# !ifT ..2:/# => H8 H9 H10. rewrite /subread_pre oraE andaE.
-    move => [#] H11 H12 H13 H14 H15 H16 [H17 | H17].
-    do split; 1..2: smt(); 2..5: smt().
-    + (* Need info regarding _off and _dlt bounds *)
-      have aux: _ASIZE < W64.modulus. admit.
-      have min_pos: 0 <= _off + _dlt. admit.
-      have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-      rewrite !of_uintK !pmod_small.
-        split; first by smt(). move => _. rewrite (ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        split; first by smt(). move => _. rewrite (ltr_trans _ASIZE); 1:smt(). rewrite aux.
-      rewrite -(compose6u8 _ _ (_at - _cur)) /#.
-    + smt().
-    split; first by smt(). move => [#] H6 H7.
-    split; first smt().
-    rewrite ifF 1:/# ifF 1:/# !ifT ..2:/# => H8 H9 H10. rewrite /subread_pre oraE andaE.
-     move => [#] H11 H12 H13 H14 H15 H16 [H17 | H17].
-    do split; 1..2: smt(); 2..5: smt().
-    + (* Need info regarding _off and _dlt bounds *)
-      have aux: _ASIZE < W64.modulus. admit.
-      have min_pos: 0 <= _off + _dlt. admit.
-      have max_pos: _off + _dlt + 8 < _ASIZE. admit.  
-      rewrite !of_uintK !pmod_small.
-        split; first by smt(). move => _. rewrite (ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        split; first by smt(). move => _. rewrite (ltr_trans _ASIZE); 1:smt(). rewrite aux.
-      rewrite -(compose6u8 _ _ (_at - _cur)) /#.
-    + smt(). 
-  + rcondt 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
-    case(lEN = 7).
-    + rcondt 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
-      wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8).
-      auto => />.
-      rewrite !negb_or negb_and -!lezNgt. move => [#] H0 H1 H2 H3 H4.
-      split; first smt(). move => [#] H6 H7.
-      split; first smt().
-      rewrite !ifF ..4:/# => H8 H9.
-      split; first smt(). move => H10 H11. 
-      split. move =>  H12 H13 H14. rewrite /subread_pre !andaE oraE.
-      move => [#] H15 H16 H17 H18 H19 H20 [H21 | H21]; last by smt().
-      do split; 1..3: smt(); 2..4: smt().
-      + (* Need info regarding _off and _dlt bounds *)
+   rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
+   rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
+   wp; ecall (SHLQ_h w aT8); auto => />.
+   rewrite !negb_or negb_and -!lezNgt andb_orr. move => [#] *.
+   split; first smt().
+   move=> ???. rewrite /subread_pre oraE andaE => [#] *.
+   do split; 1..2: smt(); 2..5: smt().
+   + (* Need info regarding _off and _dlt bounds *)
+     have->: to_uint (W64.of_int (_off + _dlt)) = _off + _dlt. admit.
+     have min_pos: 0 <= _off + _dlt. admit.
+     have max_pos: _off + _dlt + 8 < _ASIZE. admit.
+     apply compose4u8; smt().
+     case(6 <= lEN).
+     + rcondt 6. wp; ecall (SHLQ_h w aT8); auto => /#.
+       case(2 <= aT8). 
+       + rcondf 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
+         wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => />.
+         rewrite !negb_or negb_and -!lezNgt andb_orr. move => [#] H H1 H2 H3 H4 H5.
+         split; first smt(). move => [#] H6 H7.
+         split; first smt().
+        rewrite ifF 1:/# ifF 1:/# !ifT ..2:/#=> H8 H9 H10. rewrite /subread_pre oraE andaE.
+        move => [#] H11 H12 H13 H14 H15 H16 H17.
+        do split; 1..2: smt(); 2..5: smt().
+        + (* Need info regarding _off and _dlt bounds *)
+          have aux: _ASIZE < W64.modulus. admit.
+          have min_pos: 0 <= _off + _dlt. admit.
+          have max_pos: _off + _dlt + 8 < _ASIZE. admit.
+          rewrite !of_uintK !pmod_small.
+            split; 1: by smt(). move=> _. rewrite (ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            split; 1: by smt(). move=> _. rewrite (ltr_trans _ASIZE); 1:smt(). rewrite aux.
+        rewrite -(compose6u8 _ _ (_at - _cur)) /#.
+   + rcondt 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
+     case(lEN = 7).
+     + rcondt 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
+        wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8).
+        auto => />.
+        rewrite !negb_or negb_and -!lezNgt. move => [#] H0 H1 H2 H3 H4.
+        split; first smt(). move => [#] H6 H7.
+        split; first smt().
+        rewrite !ifF ..4:/# => H8 H9.
+        split; first smt(). move => H10 H11.
+        (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
         have min_pos: 0 <= _off + _dlt. admit.
         have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-        rewrite !of_uintK !pmod_small.
-          split; first by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-          split; first by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-          split; first by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-          smt().
-        rewrite -(compose7u8_trail _ _ (_at - _cur)) /#.
-      rewrite /subread_spec /subread_pre oraE !andaE.
-      move => H12 H13 [#] H14 H15 H16 H17 H18 H19 [H20 | ?]; last by smt().
-      do split; 1..6: smt(); 2..4: smt().
-      + (* Need info regarding _off and _dlt bounds *)
-        have aux: _ASIZE < W64.modulus. admit.
-        have min_pos: 0 <= _off + _dlt. admit.
-        have max_pos: _off + _dlt + 8 < _ASIZE. admit.  
-        rewrite !of_uintK !pmod_small.
-          split; first by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-          split; first by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-          split; first by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        smt().
-        rewrite -(compose7u8_trail _ _ (_at - _cur)) /#.
+        split. move =>  ???. rewrite /subread_pre !andaE oraE. move => [#] *.
+        do split; 1..3: smt(); 2..4: smt().
+        + rewrite !of_uintK !pmod_small.
+            split; 1: by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            split; 1: by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            split; 1: by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            smt().
+          rewrite -(compose7u8_trail _ _ (_at - _cur)) /#.
+        move =>  ??. rewrite /subread_pre !andaE oraE. move => [#]*.
+        do split; 1..6: smt(); 2..4: smt().
+        + rewrite !of_uintK !pmod_small.
+            split; 1: by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            split; 1: by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            split; 1: by smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            smt().
+          rewrite -(compose7u8_trail _ _ (_at - _cur)) /#.
+        move =>*.
     + rcondf 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
       case(tRAIL %% 256 <> 0).
       + rcondt 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
         wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8).
         auto => />.
         rewrite !negb_or negb_and -!lezNgt andb_orr.
-        move => [#] [H | H] H1 H2 H3 H4 H5 H6 H7. have->: _len = 6 by smt().
+        move => [#] H H1 H2 H3 H4 H5 H6 H7. have->: _len = 6 by smt().
         split; first smt(). move => [#] H8 H9.
         split; first smt().
         rewrite !ifF ..4:/# /subread_spec /subread_pre !andaE oraE => H10 H11.
-        split;first smt(). move=> H12 H13 H14 [#] H15 H16 H17 H18 H19 H20 [H21|?]; 2:smt().
-        do split; 1..3: smt(); 2..4: smt().
-        + (* Need info regarding _off and _dlt bounds *)
-          have aux: _ASIZE < W64.modulus. admit.
-          have min_pos: 0 <= _off + _dlt. admit.
-          have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-          rewrite !of_uintK !pmod_small.
-            split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-            split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-            smt().
-          rewrite !addrA /= -(compose6u8_trail _ _ (_at - _cur)) /#.
-        rewrite /subread_spec /subread_pre oraE !andaE.
-        split; first by smt(). move => [#] H8 H9. have->: _len = 6 by smt().
-        split; first smt().
-        rewrite !ifF ..4:/# => H10 H11. 
-        split; first smt(). move=> H12 H13 H14 [#]H15 H16 H17 H18 H19 H20 [H21|?]; 2:smt().
+        split;first smt(). move=> H12 H13 H14 [#] H15 H16 H17 H18 H19 H20 H21.
         do split; 1..3: smt(); 2..4: smt().
         + (* Need info regarding _off and _dlt bounds *)
           have aux: _ASIZE < W64.modulus. admit.
@@ -2423,11 +2255,11 @@ case(6 <= lEN).
       + rcondf 12. wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8); auto => /#.
         wp; ecall (SHLQ_h t16 aT8); wp; ecall (SHLQ_h w aT8). auto => />.
         rewrite !negb_or negb_and -!lezNgt andb_orr.
-        move => [#] [H | H] H1 H2 H3 H4 H5 H6 H7. have->: _len = 6 by smt().
+        move => [#] H H1 H2 H3 H4 H5 H6 H7. have->: _len = 6 by smt().
         split; first smt(). move => [#] H8 H9.
         split; first smt().
         rewrite !ifF ..4:/# /subread_spec /subread_pre !andaE oraE.
-        move => H10 H11 H12 [#] H13 H14 H15 H16 H17 H18 [H19 | H19]; last by smt().
+        move => H10 H11 H12 [#] H13 H14 H15 H16 H17 H18 H19.
         do split; 1..6: smt(); 2..4: smt().
         + (* Need info regarding _off and _dlt bounds *)
           have aux: _ASIZE < W64.modulus. admit.
@@ -2438,91 +2270,57 @@ case(6 <= lEN).
             split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
           rewrite -of_int_mod H7.
           rewrite !addrA /= -(compose6u8_trail0 _ _ (_at - _cur)) /#.
-        smt().
-+ rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
-  rcondt 6. wp; ecall (SHLQ_h w aT8); auto => /#.
-  case(lEN = 5).
-  + rcondt 6. wp; ecall (SHLQ_h w aT8); auto => /#.
-    wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h w aT8); auto => />.
-    rewrite !negb_or negb_and -!lezNgt.
-    move => H0 H1.
-    split; first smt(). move => H2 H3.
-    split; first smt().
-    rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE.
-    move => H4 H5. split.
-    move => H6 H7 H8 [#] H10 H11 H12 H13 H14 H15 [H16 | H16]; 2:smt().
-    do split; 1..3:smt(); 2..4:smt().
-    + (* Need info regarding _off and _dlt bounds *)
+  + rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
+    rcondt 6. wp; ecall (SHLQ_h w aT8); auto => /#.
+    case(lEN = 5).
+    + rcondt 6. wp; ecall (SHLQ_h w aT8); auto => /#.
+      wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h w aT8); auto => />.
+      rewrite !negb_or negb_and -!lezNgt.
+      move => *. split; first smt().
+      move => *. split; first smt().
+      rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE => *.
+      (* Need info regarding _off and _dlt bounds *)
       have aux: _ASIZE < W64.modulus. admit.
       have min_pos: 0 <= _off + _dlt. admit.
       have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-      rewrite !of_uintK !pmod_small.
-        split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        smt().
-      rewrite -shlw_or trail_simplify ..2:/# addrA -(compose5u8_trail _ _ (_at-_cur)) /#.
-    move => H6 H7 [#] H8 H9 H10 H11 H12 H13 [H14 | H14]; 2:smt().
-    do split; 1..6:smt(); 2..4:smt().
-    + (* Need info regarding _off and _dlt bounds *)
-      have aux: _ASIZE < W64.modulus. admit.
-      have min_pos: 0 <= _off + _dlt. admit.
-      have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-      rewrite !of_uintK !pmod_small.
-        split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        smt().
-      rewrite -shlw_or trail_simplify ..2:/# addrA -(compose5u8_trail _ _ (_at-_cur)) /#.
+      split. move => ??? [#] H10 H11 H12 H13 H14 H15 H16.
+      do split; 1..3:smt(); 2..4:smt().
+        rewrite !of_uintK !pmod_small.
+          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+          smt().
+        rewrite -shlw_or trail_simplify ..2:/# addrA -(compose5u8_trail _ _ (_at-_cur)) /#.
+      move => ?? [#] H10 H11 H12 H13 H14 H15 H16.
+      do split; 1..6:smt(); 2..4:smt().
+        rewrite !of_uintK !pmod_small.
+          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+          smt().
+        rewrite -shlw_or trail_simplify ..2:/# addrA -(compose5u8_trail _ _ (_at-_cur)) /#.
   + rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
     case(tRAIL %% 256 <> 0).
     + rcondt 6. wp; ecall (SHLQ_h w aT8); auto => /#.
       wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h w aT8); auto => />.
       rewrite !negb_or negb_and -!lezNgt andb_orr.
-      move => [H | H] H0 H1 H2 H3 H4 H5. have->: _len = 4 by smt().
+      move => H H0 H1 H2 H3 H4 H5. have->: _len = 4 by smt().
       split; first smt(). move => H6 H7.
       rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE.
-      split; first smt().
-      move => H8 H9 H10 [#] H11 H12 H13 H14 H15 H16 [H17 | H17]; 2:smt().
-      do split; 1..3:smt(); 2..4:smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
         have min_pos: 0 <= _off + _dlt. admit.
         have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-        rewrite of_uintK !pmod_small. 
-          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-          smt().
-        rewrite -(compose4u8_trail _ _ (_at - _cur)) /#.
-      split; first smt(). move => H6 H7. have->: _len = 4 by smt().
-      rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE.
-      split; first smt().
-      move => H8 H9 H10 [#] H11 H12 H13 H14 H15 H16 [H17 | H17]; 2:smt().
+      split; first smt(). move => ??? [#] *.
       do split; 1..3:smt(); 2..4:smt().
-      + (* Need info regarding _off and _dlt bounds *)
-        have aux: _ASIZE < W64.modulus. admit.
-        have min_pos: 0 <= _off + _dlt. admit.
-        have max_pos: _off + _dlt + 8 < _ASIZE. admit.
         rewrite of_uintK !pmod_small. 
           split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
           smt().
         rewrite -(compose4u8_trail _ _ (_at - _cur)) /#.
-    + rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
+   + rcondf 6. wp; ecall (SHLQ_h w aT8); auto => /#.
       wp; ecall (SHLQ_h w aT8); auto => />.
       rewrite !negb_or negb_and -!lezNgt andb_orr.
-      move => [H | H] H0 H1 H2 H3 H4 H5. have->: _len = 4 by smt().
-      split; first smt(). move => H6 H7.
-      rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE.
-      move => H8 [#] H9 H10 H11 H12 H13 H14 [H15 | H15]; 2:smt().
-      do split; 1..6:smt(); 2..4:smt().
-      + (* Need info regarding _off and _dlt bounds *)
-        have aux: _ASIZE < W64.modulus. admit.
-        have min_pos: 0 <= _off + _dlt. admit.
-        have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-        rewrite of_uintK !pmod_small. 
-          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        rewrite -of_int_mod H5.
-        rewrite -(compose4u8_trail0 _ _ (_at - _cur)) /#.
-      split; first smt(). move => H6 H7. have->: _len = 4 by smt().
-      rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE.
-      move => H8 [#] H9 H10 H11 H12 H13 H14 [H15 | H15]; 2:smt().
+      move => ?????? H5. have->: _len = 4 by smt().
+      split; first smt(). move => *.
+      rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE. move => *.
       do split; 1..6:smt(); 2..4:smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2545,8 +2343,7 @@ case(2 <= lEN).
         rewrite negb_or lezNgt -lezNgt /= => H0 H1 H2.
         split; first by smt(). move => H3 H4.
         rewrite !ifF ..2:/#. split; first by smt().
-        rewrite /subread_spec /subread_pre !andaE oraE.
-        move => H5 H6 H7 [#]H8 H9 H10 H11 H12 H13 [H14 | H14]; last by smt().
+        rewrite /subread_spec /subread_pre !andaE oraE => *.
         do split; 1..3: smt(); 2..4: smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2559,11 +2356,10 @@ case(2 <= lEN).
         rewrite -(compose3u8_trail _ _ (_at - _cur)) /#.
     + rcondf 15. wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); auto => /#.
         wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); auto => />.
-        rewrite negb_or lezNgt -lezNgt /= => H0 H1 H2.
-        split; first by smt(). move => H3 H4.
+        rewrite negb_or lezNgt -lezNgt /= => *.
+        split; first by smt(). move => *.
         rewrite !ifF ..2:/#. split; first by smt().
-        rewrite /subread_spec /subread_pre !andaE oraE.
-        move => H5 H6 H7 [#]H8 H9 H10 H11 H12 H13 [H14 | H14]; last by smt().
+        rewrite /subread_spec /subread_pre !andaE oraE => *.
         do split; 1..6: smt(); 2..4: smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2578,11 +2374,10 @@ case(2 <= lEN).
       case(tRAIL %% 256 <> 0).
       + rcondt 8. wp; ecall (SHLQ_h t16 aT8); auto => /#.
         wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); auto => />.
-        rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2 H3 H4 H5 H6.
+        rewrite !negb_or lezNgt -lezNgt /= => *.
         split; first by smt(). move => H7 H8.
         rewrite !ifF ..2:/#. split; first by smt().
-        rewrite /subread_spec /subread_pre !andaE oraE. have->: _len = 2 by smt().
-        move => H9 H10 H11[#] H12 H13 H14 H15 H16 H17 [H18 | H18]; last by smt().
+        rewrite /subread_spec /subread_pre !andaE oraE => *. have->: _len = 2 by smt().
         do split; 1..3: smt(); 2..4: smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2594,49 +2389,46 @@ case(2 <= lEN).
         rewrite -(compose2u8_trail _ _ (_at - _cur)) /#.
     + rcondf 8. wp; ecall (SHLQ_h t16 aT8); auto => /#.
         wp; ecall (SHLQ_h t16 aT8); auto => />.
-        rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2 H3 H4 H5 H6.
-        split; first by smt(). move => H7 H8. have->: _len = 2 by smt().
-        rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE.
-        move => H9 [#] H10 H11 H12 H13 H14 H15 [H16 | H16]; last by smt().
+        rewrite !negb_or lezNgt -lezNgt /= => ??????H6.
+        split; first by smt(). move => *. have->: _len = 2 by smt().
+        rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE =>*.
         do split; 1..6: smt(); 2..4: smt().
-      + (* Need info regarding _off and _dlt bounds *)
-        have aux: _ASIZE < W64.modulus. admit.
-        have min_pos: 0 <= _off + _dlt. admit.
-        have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-        rewrite !of_uintK !pmod_small. 
-          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        rewrite -of_int_mod H6.
-        rewrite -(compose2u8_trail0 _ _ (_at - _cur)) /#.
+        + (* Need info regarding _off and _dlt bounds *)
+          have aux: _ASIZE < W64.modulus. admit.
+          have min_pos: 0 <= _off + _dlt. admit.
+          have max_pos: _off + _dlt + 8 < _ASIZE. admit.
+          rewrite !of_uintK !pmod_small. 
+            split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+          rewrite -of_int_mod H6.
+          rewrite -(compose2u8_trail0 _ _ (_at - _cur)) /#.
   case(aT8 = 5).
   + rcondt 8. wp; ecall (SHLQ_h t16 aT8); auto => /#.
     case(lEN = 3).
     + rcondt 8. wp; ecall (SHLQ_h t16 aT8); auto => /#.
       rcondf 15. wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); auto => /#.
         wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); auto => />.
-        rewrite negb_or lezNgt -lezNgt /= => H0 H1 H2.
-        split; first by smt(). move => H3 H4.
+        rewrite negb_or lezNgt -lezNgt /= => *.
+        split; first by smt(). move => *.
         rewrite !ifF ..2:/#. split; first by smt().
-        rewrite /subread_spec /subread_pre !andaE oraE.
-        move => H5 H6 H7 [#]H8 H9 H10 H11 H12 H13 [H14 | H14]; last by smt().
+        rewrite /subread_spec /subread_pre !andaE oraE =>*.
         do split; 1..6: smt(); 2..4: smt().
-      + (* Need info regarding _off and _dlt bounds *)
-        have aux: _ASIZE < W64.modulus. admit.
-        have min_pos: 0 <= _off + _dlt. admit.
-        have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-        rewrite !of_uintK !pmod_small. 
-          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        smt().
-        rewrite !addrA /= -(compose3u8_trail _ _ (_at - _cur)) /#.
+        + (* Need info regarding _off and _dlt bounds *)
+          have aux: _ASIZE < W64.modulus. admit.
+          have min_pos: 0 <= _off + _dlt. admit.
+          have max_pos: _off + _dlt + 8 < _ASIZE. admit.
+          rewrite !of_uintK !pmod_small. 
+            split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+            split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+          smt().
+          rewrite !addrA /= -(compose3u8_trail _ _ (_at - _cur)) /#.
     + rcondf 8. wp; ecall (SHLQ_h t16 aT8); auto => /#.
       case(tRAIL %% 256 <> 0).
       + rcondt 8. wp; ecall (SHLQ_h t16 aT8); auto => /#.
         wp; ecall (SHLQ_h t8 aT8); wp; ecall (SHLQ_h t16 aT8); auto => />.
-        rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2 H3 H4 H5 H6 *.
-        split; first by smt(). move => H7 H8.
+        rewrite !negb_or lezNgt -lezNgt /= => *.
+        split; first by smt(). move => *.
         rewrite !ifF ..2:/#. split; first by smt().
-        rewrite /subread_spec /subread_pre !andaE oraE. have->: _len = 2 by smt().
-        move => H9 H10 H11[#] H12 H13 H14 H15 H16 H17 [H18 | H18]; last by smt().
+        rewrite /subread_spec /subread_pre !andaE oraE => *. have->: _len = 2 by smt().
         do split; 1..3: smt(); 2..4: smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2648,25 +2440,23 @@ case(2 <= lEN).
         rewrite -(compose2u8_trail _ _ (_at - _cur)) /#.
     + rcondf 8. wp; ecall (SHLQ_h t16 aT8); auto => /#.
         wp; ecall (SHLQ_h t16 aT8); auto => />.
-        rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2 H3 H4 H5 H6 H.
-        split; first by smt(). move => H7 H8. have->: _len = 2 by smt().
-        rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE.
-        move => H9 [#] H10 H11 H12 H13 H14 H15 [H16 | H16]; last by smt().
+        rewrite !negb_or lezNgt -lezNgt /= => ???????H.
+        split; first by smt(). move => *. have->: _len = 2 by smt().
+        rewrite !ifF ..2:/# /subread_spec /subread_pre !andaE oraE => *.
         do split; 1..6: smt(); 2..4: smt().
-      + (* Need info regarding _off and _dlt bounds *)
-        have aux: _ASIZE < W64.modulus. admit.
-        have min_pos: 0 <= _off + _dlt. admit.
-        have max_pos: _off + _dlt + 8 < _ASIZE. admit.
-        rewrite !of_uintK !pmod_small. 
-          split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
-        rewrite -of_int_mod H.
-        rewrite -(compose2u8_trail0 _ _ (_at - _cur)) /#.
+        + (* Need info regarding _off and _dlt bounds *)
+          have aux: _ASIZE < W64.modulus. admit.
+          have min_pos: 0 <= _off + _dlt. admit.
+          have max_pos: _off + _dlt + 8 < _ASIZE. admit.
+          rewrite !of_uintK !pmod_small. 
+           split; first smt(). move=> _. rewrite(ltr_trans _ASIZE); 1:smt(). rewrite aux.
+          rewrite -of_int_mod H.
+          rewrite -(compose2u8_trail0 _ _ (_at - _cur)) /#.
   + rcondf 8. wp; ecall (SHLQ_h t16 aT8); auto => /#. 
     wp; ecall (SHLQ_h t16 aT8); auto => />.
-    rewrite !negb_or !negb_and lezNgt -lezNgt /= => H0 H1 H2 H3 H4 H5.
+    rewrite !negb_or !negb_and lezNgt -lezNgt /= => *.
     split; first by smt(). move => H7 H8.
-    rewrite !ifT ..2:/# /subread_spec /subread_pre !andaE oraE.
-    move => H9 [#] H10 H11 H12 H13 H14 H15 [H16 | H16]; last by smt().
+    rewrite !ifT ..2:/# /subread_spec /subread_pre !andaE oraE => *.
     do split; 1..6: smt(); 2..5: smt().
     + (* Need info regarding _off and _dlt bounds *)
       have aux: _ASIZE < W64.modulus. admit.
@@ -2684,10 +2474,9 @@ case(aT8 < 7).
     case(tRAIL %% 256 <> 0).
     + rcondt 9. wp; ecall (SHLQ_h t8 aT8); auto => /#.
        wp; ecall (SHLQ_h t8 aT8); auto => />.
-      rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2.
-      split; first by smt(). move => H7 H8.
-      rewrite /subread_spec /subread_pre !andaE oraE.
-      move => H9 [#] H10 H11 H12 H13 H14 H15 [H16 | H16]; last by smt().
+      rewrite !negb_or lezNgt -lezNgt /= => *.
+      split; first by smt(). move => *.
+      rewrite /subread_spec /subread_pre !andaE oraE => *.
       do split; 1..3: smt(); 2..4: smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2699,10 +2488,9 @@ case(aT8 < 7).
         rewrite -(compose1u8_trail _ _ (_at - _cur)) /#.
     + rcondf 9. wp; ecall (SHLQ_h t8 aT8); auto => /#.
        wp; ecall (SHLQ_h t8 aT8); auto => />.
-      rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2.
+      rewrite !negb_or lezNgt -lezNgt /= => *.
       split; first by smt(). move => H7 H8.
-      rewrite /subread_spec /subread_pre !andaE oraE.
-      move => H9 [#] H10 H11 H12 H13 H14 H15 [H16 | H16]; last by smt().
+      rewrite /subread_spec /subread_pre !andaE oraE => *.
       do split; 1..6: smt(); 2..4: smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2716,10 +2504,9 @@ case(aT8 < 7).
     case(tRAIL %% 256 <> 0).
     + rcondt 2. auto => /#.
       wp; ecall (SHLQ_h t8 aT8); auto => />.
-      rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2 H3 H4 H5 H6.
-      split; first by smt(). move => H7 H8.
-      rewrite /subread_spec /subread_pre !andaE oraE.
-      move => H9 [#] H10 H11 H12 H13 H14 H15 [H16 | H16]; last by smt().
+      rewrite !negb_or lezNgt -lezNgt /= => *.
+      split; first by smt(). move => *.
+      rewrite /subread_spec /subread_pre !andaE oraE => *.
       do split; 1..5: smt(); 2..5: smt(). have->: _len = 0 by smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2734,10 +2521,9 @@ case(aT8 = 7).
   + rcondt 2. auto => /#.
     rcondf 9. wp; ecall (SHLQ_h t8 aT8); auto => /#.
     wp; ecall (SHLQ_h t8 aT8); auto => />.
-    rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2.
-    split; first by smt(). move => H3 H4.
-    rewrite /subread_spec /subread_pre !andaE oraE.
-    move => H5 [#] H6 H7 H8 H9 H10 H11 [H12 | H12]; last by smt().
+    rewrite !negb_or lezNgt -lezNgt /= => *.
+    split; first by smt(). move => *.
+    rewrite /subread_spec /subread_pre !andaE oraE => *.
     do split; 1..6: smt(); 2..4: smt().
     + (* Need info regarding _off and _dlt bounds *)
       have aux: _ASIZE < W64.modulus. admit.
@@ -2751,10 +2537,9 @@ case(aT8 = 7).
     case(tRAIL %% 256 <> 0).
     + rcondt 2. auto => /#.
       wp; ecall (SHLQ_h t8 aT8); auto => />.
-      rewrite !negb_or lezNgt -lezNgt /= => H0 H1 H2 H3 H4 H5 H6 H7.
-      split; first by smt(). move => H8 H9.
-      rewrite /subread_spec /subread_pre !andaE oraE.
-      move => H10 [#] H11 H12 H13 H14 H15 H16 [H17 | H17]; last by smt().
+      rewrite !negb_or lezNgt -lezNgt /= => *.
+      split; first by smt(). move => *.
+      rewrite /subread_spec /subread_pre !andaE oraE => *.
       do split; 1..5: smt(); 2..5: smt(). have->: _len = 0 by smt().
       + (* Need info regarding _off and _dlt bounds *)
         have aux: _ASIZE < W64.modulus. admit.
@@ -2766,9 +2551,6 @@ case(aT8 = 7).
 + rcondf 2. auto => /#.
   auto => /#.
 qed.
-
-
-
 
 phoare a_ilen_read_upto8_at_ph _buf _off _dlt _len _trail _cur _at:
  [ MM.__a_ilen_read_upto8_at
