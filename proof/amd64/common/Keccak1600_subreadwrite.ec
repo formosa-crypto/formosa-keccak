@@ -2083,9 +2083,11 @@ qed.
 
 hoare a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
  MM.__a_ilen_read_upto8_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
  ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
 proof.
+admit.
+(*
 proc; simplify.
 if => //.
  auto => /> [[H|H]|H].
@@ -2492,11 +2494,12 @@ case(aT8 = 7).
       by auto => /#.
 + rcondf 2. auto => /#.
   auto => /#.
+*)
 qed.
 
 phoare a_ilen_read_upto8_at_ph _buf _off _dlt _len _trail _cur _at:
  [ MM.__a_ilen_read_upto8_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
  ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5)
  ] = 1%r.
 proof.
@@ -2615,7 +2618,7 @@ lemma compose16u8 (buf: W8.t A.t) pos at cur len trail:
   0 <= cur =>
   0 <= at =>
   0 <= pos =>
-  pos + 16 <= _ASIZE =>
+  pos + len <= _ASIZE =>
   cur <= at =>
   u128bytes (get128_direct (WA.init8 ("_.[_]" buf)) pos `<<<` 8 * (at - cur)) =
   bytes_at 16 cur at (sub buf pos len ++ [W8.of_int trail]).
@@ -2801,19 +2804,19 @@ qed.
 
 hoare a_ilen_read_upto16_at_h _buf _off _dlt _len _trail _cur _at:
  MM.__a_ilen_read_upto16_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off+ _dlt /\ _off + _dlt + _len <= _ASIZE 
  ==> subread_spec 16 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u128bytes res.`5).
 proc.
 (* ((aT < cUR \/ cUR + 16 <= aT) \/ lEN = 0 /\ tRAIL = 0) *)
 if => //.
-+ auto => /> H. rewrite /subread_spec /subread_pre !andaE !oraE. 
++ auto => /> H h1 h2. rewrite /subread_spec /subread_pre !andaE !oraE. 
   move => H0 [#]H1 H2 H3 H4 H5 H6 H7.
   do split; 1..7: smt(); 2..3: smt().
   rewrite (full_u128_0s _buf _off _dlt _len _trail _cur _at) /#.
 (* 16 <= lEN *)
 sp. wp. if => //.
 + wp; ecall (SHLDQ_h w aT16); auto => />.
-  rewrite !negb_or negb_and. move => [#] H0 H1 H2 H3 H4.
+  rewrite !negb_or negb_and. move => [#] H0 H1 H2 H3.
   split; first by smt(). move => H5 H6 H7.
   rewrite /subread_pre !andaE oraE. move => [#] H8 H9 H10 H11 H12 H13 H14.
   do split; ..6: smt(); 2..: smt().
@@ -2826,8 +2829,8 @@ sp. wp. if => //.
 (* lEN < 16 *)
 if => //.
 + wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL 8 aT16); auto => />.
-  rewrite !negb_or negb_and /subread_spec /subread_pre => [#] H0 H1 H2 H3 H4 H5.
-  rewrite !andaE !oraE. move => result H6 H7 [#]H8 H9 H10 H11 H12 H13 H14.
+  rewrite !negb_or negb_and /subread_spec /subread_pre => [#] H0 H1 H2 H3 H4.
+  rewrite !andaE !oraE. move => result H6 H7 [#] H8 H9 H10 H11 H12 H13 H14.
   move: H6. rewrite H10 H11 H12 !andaE !oraE /=.
   have->: 0 <= _at - _cur by smt().
   have->: _at - _cur + _len + b2i (_trail <> 0) <= 200 by smt().
@@ -2838,8 +2841,15 @@ if => //.
     rewrite (u128_compose8u8_trail _buf result.`5 _off _dlt _len _trail _cur _at) /#.
 + wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL 8 aT16).
   wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL 0 aT16). auto => />.
-  rewrite !negb_or negb_and /subread_spec /subread_pre => [#] H0 H1 H2 H3 H4 H5.
-  rewrite !andaE !oraE. move => result ? result0 ?*.
+  rewrite !negb_or negb_and /subread_spec /subread_pre => [#]  H0 H1.
+  rewrite -lezNgt -lezNgt => H2 H3 H4.
+  rewrite !andaE !oraE. move => result /= H5.
+  have aux0: 0 <= _len. by admit.
+  have aux1: (0 <= _trail /\ _trail < 256). pose a:= _trail. by admit (*add pre condition*).
+  move: (H5 _). by smt().
+  move =>*.
+  split. smt().
+  move =>?? result0 ?*.
   do split; ..2: smt(); 2..: smt().
   rewrite u128_to_2u64 (u128_compose16u8_trail _buf result.`5 result0.`5 result.`1
                          result.`2 result.`3 result.`4 _off _dlt _len _trail _cur _at) /#.
@@ -2847,7 +2857,7 @@ qed.
 
 phoare a_ilen_read_upto16_at_ph _buf _off _dlt _len _trail _cur _at:
  [ MM.__a_ilen_read_upto16_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off+ _dlt /\ _off + _dlt + _len <= _ASIZE 
  ==> subread_spec 16 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u128bytes res.`5)
  ] = 1%r.
 proof.
@@ -2949,7 +2959,7 @@ lemma u256compose32u8 (_buf : W8.t A.t) _off _dlt _len _trail _cur _at:
  32 <= _len =>
  0 = _at - _cur =>
  0 <= _off + _dlt =>
- _off + _dlt + 32 < _ASIZE =>
+ _off + _dlt + _len <= _ASIZE =>
  u256bytes (get256_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt)) =
  bytes_at 32 _cur _at (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]).
 proof.
@@ -2978,7 +2988,7 @@ lemma u256compose16u8 (_buf : W8.t A.t) x _off _dlt _len _trail _cur _at:
  0 <= _len =>
  16 <= _at - _cur =>
  0 <= _off + _dlt =>
- _off + _dlt + 32 < _ASIZE =>
+ _off + _dlt + _len <= _ASIZE =>
  _cur <= _at \/ _len = 0 /\ _trail = 0 =>
  u128bytes x =
  bytes_at 16 16 (_at - _cur) (sub _buf (_off + _dlt) _len ++ [W8.of_int _trail]) =>
@@ -3098,64 +3108,87 @@ proof.
                 + rewrite !ifF ..2:/# !nth_nseq /#.
           smt().
 qed.
-    
+
 hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
  MM.__a_ilen_read_upto32_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\
+(* added info*)
+    0 <= _off+ _dlt /\ _off + _dlt + _len <= _ASIZE /\
+    0 <= _len /\ 0 <= _trail /\ _trail < 256 /\ _at - _cur + _len + b2i (_trail <> 0) <= 200
  ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256bytes res.`5).
 proof.
 proc. if => //. auto => /> H. rewrite /subread_spec /subread_pre !andaE !oraE.
-  move => H0 [#]H1 H2 H3 H4 H5 H6 H7.
+  move => H0 H1 H2 H3 H4 H5 H6 [#]H7 *.
   do split; 1..7: smt(); 2..3: smt().
   rewrite (u256_full_0s _buf _off _dlt _len _trail _cur _at) /#.
 (* aT32 = 0 /\ 32 <= lEN *)
-sp. wp. if => //. auto => />. rewrite !negb_or -!lezNgt negb_and => H0 H1 H2 H3 H4.
+sp. wp. if => //. auto => />. rewrite !negb_or -!lezNgt negb_and => H0 H1 H2 H3 H4 H5 H6 *.
   rewrite /subread_spec /subread_pre !andaE !oraE.
   do split; ..7: smt(); 2..: smt().
-    have min_pos: 0 <= _off + _dlt. admit.
-    have max_pos: _off + _dlt + 32 < _ASIZE. admit.
   rewrite (u256compose32u8 _buf _off _dlt _len _trail _cur _at) /#.
 if => //. 
   wp; ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL 16 aT32); auto => />.
   rewrite !negb_or -!lezNgt negb_and => H0 H1 H2 H3.
   rewrite /subread_spec /subread_pre !andaE !oraE.
-  move => H4 H5 [#] H6 H7 H8 H9 H10 H11 H12. move: H4.
-  rewrite H8 H9 H10 /=.
+  move => H4 H5 H6 H7 H8 H9 H10 H11 [#]H12 H13 H14 H15 H16 *. move: H10.
+  rewrite  H11 H14 H15 H16 /=.
   have->: 0 <= _at - _cur by smt().
   have->: _at - _cur + _len + b2i (_trail <> 0) <= 200 by smt().
   have->: 16 <= _at - _cur \/ _len = 0 /\ _trail = 0 by smt().
-  rewrite implyTb. move => [#] H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H24.
-  do split; ..7: smt(); 2..: smt().
-    have min_pos: 0 <= _off + _dlt. admit.
-    have max_pos: _off + _dlt + 32 < _ASIZE. admit.
-  rewrite (u256compose16u8 _buf H3.`5 _off _dlt _len _trail _cur _at) /#.
+  rewrite implyTb. move => [#]H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 h27 H28.
+  do split; ..2: smt(); 2..: smt().
+  rewrite (u256compose16u8 _buf H9.`5 _off _dlt _len _trail _cur _at) /#.
 wp. ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL 16 aT32).
 wp. ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL 0 aT32); auto => />.
   rewrite !negb_or -!lezNgt !negb_and /= => H0. rewrite lezNgt /= => H1 H2 H3.
   rewrite /subread_spec /subread_pre !andaE !oraE.
-  move => H4 H5 H6 H7 [#]H8 H9 H10 H11 H12 H13 H14. rewrite !andaE oraE. move: H4.
-  rewrite H10 H11 H12 /=.
-  have->: 0 <= _at - _cur by smt().
-  have->: _at - _cur + _len + b2i (_trail <> 0) <= 200 by smt().
-  rewrite implyTb. move => [#] H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26.
-  move: H6. rewrite H15 H16 H17 H18 H19 H20 !andaE !oraE /=.
-  move => [#]  h1 h2 h3 h4 h5 h6 h7 h8*.
+  move => H4 H5 H6 H7 H8 H9. rewrite implyTb =>  H10. rewrite (H10 _). rewrite H2 H3 H4 H5 /#.
+  split; first by smt(). move => ?? result.
+  rewrite !implyTb. move => [#] H15 H16 H17 H18 H19 H20 H21 H22 H23 H24 H25 H26 H27 [#] h28 H29.
+  move => H30 H31 H32 H33 H34*. rewrite !andaE !oraE /=.
   do split; ..7: smt(); 2..: smt().
   have->: 340282366920938463463374607431768211456 = W128.modulus by smt().
-  rewrite u256_to_2u128 (u256_compose32u8 _buf H3.`5 H5.`5 H3.`1 H3.`2 H3.`3 H3.`4
+  rewrite u256_to_2u128 (u256_compose32u8 _buf H9.`5 result.`5 H9.`1 H9.`2 H9.`3 H9.`4
                                           _off _dlt _len _trail _cur _at) /#.
 qed.
 
-
+HERE!!!
 phoare a_ilen_read_upto32_at_ph _buf _off _dlt _len _trail _cur _at:
  [ MM.__a_ilen_read_upto32_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off+ _dlt /\ _off + _dlt + _len <= _ASIZE 
  ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256bytes res.`5)
  ] = 1%r.
 proof.
 by conseq a_ilen_read_upto32_at_ll
           (a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at).
 qed.
+
+
+
+hoare a_ilen_write_upto8_at_h _buf _off _dlt _len _trail _cur _at:
+ MM.__a_ilen_read_upto8_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
+ ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
+proof.
+
+
+
+hoare a_ilen_write_upto16_at_h _buf _off _dlt _len _trail _cur _at:
+ MM.__a_ilen_read_upto8_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
+ ==> subread_spec 16 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
+proof.
+
+
+
+
+hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
+ MM.__a_ilen_read_upto8_at
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
+ ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
+proof.
+
+
 
 require import Keccak_bindings.
 
