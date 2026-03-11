@@ -598,7 +598,6 @@ lemma a_rlen_write_upto8_ll: islossless MM.__a_rlen_write_upto8
 by islossless.
 
 
-
 op subread_pre cur at len tb =
  0 <= cur && 0 <= at && 0 <= len && 0 <= tb < 256
  && at+len+b2i (tb<>0) <= 200
@@ -3163,6 +3162,24 @@ by conseq a_ilen_read_upto32_at_ll
           (a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at).
 qed.
 
+
+op subwrite_spec
+ (size: int)
+ (buf: W8.t A.t) (off dlt len tb cur at: int)
+ (dlt' len' tb' at': int) (w: W8.t list)
+ : bool =
+ 0 <= size =>
+ subread_pre cur at len tb =>
+ subread_pre (cur+size) at' len' tb'
+ /\ w = bytes_at size cur at (sub buf (off+dlt) len ++ [W8.of_int tb])
+ /\ at+len+b2i(tb<>0)=at'+len'+b2i(tb'<>0)
+ /\ (tb'=tb || len'=0 && tb'=0)
+ /\ dlt+len = dlt'+len'
+ /\ at' = max at
+              (min (cur+size)
+                   (at+len+b2i (tb<>0)))
+ /\ len' = max 0 (len - (max 0 (cur+size-at)))
+ .
 
 
 hoare a_ilen_write_upto8_at_h _buf _off _dlt _len _trail _cur _at:
