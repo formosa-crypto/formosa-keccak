@@ -10,10 +10,10 @@ type keccak_updstate = u64[26];
 */
 
 
-fn _init_updstate_avx2
+inline fn _init_updstate_avx2
 ( reg mut ptr keccak_updstate st
-, reg ui8 r64 // 9 <= r64 < 25 
-, reg u8 trailb // 0 <= trailb < 256
+, inline int r64    // 9 <= r64 < 25
+, inline int trailb // 0 <= trailb < 256
 ) -> reg ptr keccak_updstate /* st */
 {
   inline int i;
@@ -27,10 +27,9 @@ fn _init_updstate_avx2
     }
 
   st[24] = 0;
-  status = (64u) trailb;
+  status = trailb;
   status <<= 8;
-  r64 = (8ui) ((8u)r64 - 1);
-  t = (64u) (8u) r64;
+  t = r64 - 1;
   status += t;
   status <<= 8;
   st[25] = status;
@@ -117,10 +116,20 @@ export fn init_updstate_avx2
 , reg u8 trailb
 ) -> reg ptr keccak_updstate
 {
-  st = st;
-  r64 = r64;
-  trailb = trailb;
-  st = _init_updstate_avx2(st, r64, trailb);
+  inline int i;
+  reg u256 r256;
+  reg u64 status, t;
+
+  r256 = #set0_256();
+  for i = 0 to 6 { st[:u256 i] = r256; }
+  st[24] = 0;
+  status = (64u) trailb;
+  status <<= 8;
+  r64 = (8ui) ((8u)r64 - 1);
+  t = (64u) (8u) r64;
+  status += t;
+  status <<= 8;
+  st[25] = status;
   return st;
 }
 
