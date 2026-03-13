@@ -585,7 +585,7 @@ by islossless.
 lemma a_ilen_write_upto8_ll: islossless MM.__a_ilen_write_upto8
 by islossless.
 
-lemma a_ilen_write_upto16_ll: islossless MM.__a_ilen_write_upto8
+lemma a_ilen_write_upto16_ll: islossless MM.__a_ilen_write_upto16
 by islossless.
 
 lemma a_ilen_write_upto32_ll: islossless MM.__a_ilen_write_upto32
@@ -597,7 +597,7 @@ by islossless.
 lemma a_rlen_write_upto8_ll: islossless MM.__a_rlen_write_upto8
 by islossless.
 
-
+(*
 op subread_pre cur at len tb =
  0 <= cur && 0 <= at && 0 <= len && 0 <= tb < 256
  && at+len+b2i (tb<>0) <= 200
@@ -3151,60 +3151,605 @@ wp. ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL 0 aT32); auto => />
                                           _off _dlt _len _trail _cur _at) /#.
 qed.
 
-HERE!!!
 phoare a_ilen_read_upto32_at_ph _buf _off _dlt _len _trail _cur _at:
  [ MM.__a_ilen_read_upto32_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off+ _dlt /\ _off + _dlt + _len <= _ASIZE 
+   : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off+ _dlt /\ _off + _dlt + _len <= _ASIZE /\ 0 <= _len /\ 0 <= _trail /\
+   _trail < 256 /\ _at - _cur + _len + b2i (_trail <> 0) <= 200
  ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256bytes res.`5)
  ] = 1%r.
 proof.
 by conseq a_ilen_read_upto32_at_ll
           (a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at).
 qed.
+*)
 
+
+lemma sub_cat (buf: W8.t A.t) off dlt x y:
+  0 <= off =>
+  0 <= dlt =>
+  0 <= y =>
+  0 <= x =>
+  y <= x =>
+  sub buf (off + dlt) x =
+  sub buf (off + dlt) y ++
+  sub buf (off + dlt + y) (x-y).
+proof.
+move =>*.
+  pose l1 := sub buf (off + dlt) x.
+  pose l2 := sub buf (off + dlt) y ++
+             sub buf (off + dlt + y) (x-y).
+  rewrite (eq_from_nth witness l1 l2).
+  + rewrite size_cat !size_sub /#. rewrite size_sub 1:/# => i i_bnd.
+    + rewrite nth_cat size_sub 1:/# nth_sub 1:/#. 
+      case(i < y) => i_small; by rewrite nth_sub /#.
+   smt().
+qed.
+
+lemma aux a b c d e f:
+  0 <= a =>
+  0 <= b =>
+  0 <= c =>
+  a + b + min c f <= d =>
+  0 <= e < min c f =>
+    0 <= a + b + e < d.
+proof.
+  move => H0 H1 H2.
+  case(c < f) => c_small.
+  + rewrite !lez_minl 1:/# => *. split. smt(). move=> *. rewrite (ltr_le_trans (a+b+c)) /#.
+  + rewrite !lez_minr 1:/# => *. split. smt(). move=> *. rewrite (ltr_le_trans (a+b+f)) /#. 
+qed.
+    
+lemma u8_from_u64 x _w:
+  0 <= x =>
+  x < 8 =>
+  W8.of_int (W64.to_uint _w %/ 2 ^ (8*x)) = (_w \bits8 x).
+    proof.
+  move => *.
+  rewrite /(\bits8) (W8.ext_eq _ (W8.init(fun j=> _w.[x * 8 + j]))). move => x0 x0_bnd.
+  + rewrite /of_int /to_uint bs2int_div 1:/# -(cat_take_drop 8 (drop (8*x) (w2bits _w))).
+    rewrite -(bs2intD _ _ 8) 1:size_take 1:/# 1:size_drop 1:/# 1:size_w2bits 1:/#.
+    rewrite dvdz_modzDr 1:/# int2bs_mod.
+    have{1}->: 8 = size (take 8 (drop (8*x) (w2bits _w)))
+      by rewrite size_take 1:/# size_drop 1:/# size_w2bits /#.
+    rewrite bs2intK /bits2w !initE !ifT ..2:/# /= nth_take ..2:/# nth_drop ..2:/#.
+    rewrite get_w2bits /#. smt().
+  qed.
+
+lemma u16_from_u64 x i _w:
+  x <= i =>
+  i < x+2 => 
+  0 <= x =>
+  x < 6 =>
+  (W16.of_int (W64.to_uint _w %/ 2 ^ (8*x)) \bits8 i - x) = (_w \bits8 i).
+proof.
+  move => *.
+  rewrite /(\bits8) (W8.ext_eq _ (W8.init(fun j=> _w.[i * 8 + j]))). move => x0 x0_bnd.
+  + rewrite /of_int /to_uint bs2int_div 1:/# -(cat_take_drop 16 (drop (8*x) (w2bits _w))).
+    rewrite -(bs2intD _ _ 16) 1:size_take 1:/# 1:size_drop 1:/# 1:size_w2bits 1:/#.
+    rewrite !initE !ifT ..2:/# /= dvdz_modzDr 1:/# int2bs_mod.
+    have{1}->: 16 = size (take 16 (drop (8*x) (w2bits _w)))
+      by rewrite size_take 1:/# size_drop 1:/# size_w2bits /#.
+    rewrite bs2intK /bits2w !initE ifT 1:/# /= nth_take ..2:/# nth_drop ..2:/#.
+    rewrite get_w2bits /#. smt().
+qed.
+
+lemma u32_from_u64 i _w: 
+  0 <= i =>
+  i < 4 =>
+(W32.of_int (W64.to_uint _w) \bits8 i) = (_w \bits8 i).
+proof.
+  move => *.
+  rewrite /(\bits8) (W8.ext_eq _ (W8.init(fun j=> _w.[i * 8 + j]))). move => x0 x0_bnd.
+  + rewrite /of_int /to_uint initE ifT 1:/# -(cat_take_drop 32 (w2bits _w)).
+    rewrite -(bs2intD _ _ 32) 1:size_take 1:/# 1:size_w2bits 1:/# dvdz_modzDr 1:/#.
+    rewrite int2bs_mod /=. have{1}->: 32 = size (take 32 (w2bits _w))
+      by rewrite size_take 1:/# size_w2bits /#.
+    rewrite bs2intK /bits2w !initE ifT 1:/# /= nth_take ..2:/# get_w2bits /#. smt().
+qed.
+
+
+op subwrite_pre (off dlt len size :int) : bool =
+  0 <= off /\ 0 <= dlt /\ 0 <= len /\ 8 <= size /\ off + dlt + min len size <= _ASIZE.
 
 op subwrite_spec
- (size: int)
- (buf: W8.t A.t) (off dlt len tb cur at: int)
- (dlt' len' tb' at': int) (w: W8.t list)
+ w (size: int)
+ (buf: W8.t A.t) (off dlt len: int)
+ (buf': W8.t A.t) (dlt' len': int)
  : bool =
- 0 <= size =>
- subread_pre cur at len tb =>
- subread_pre (cur+size) at' len' tb'
- /\ w = bytes_at size cur at (sub buf (off+dlt) len ++ [W8.of_int tb])
- /\ at+len+b2i(tb<>0)=at'+len'+b2i(tb'<>0)
- /\ (tb'=tb || len'=0 && tb'=0)
- /\ dlt+len = dlt'+len'
- /\ at' = max at
-              (min (cur+size)
-                   (at+len+b2i (tb<>0)))
- /\ len' = max 0 (len - (max 0 (cur+size-at)))
- .
+ subwrite_pre off dlt len size =>
+ subwrite_pre off dlt len size /\
+ sub buf' 0 (off + dlt) = 
+ sub buf 0 (off + dlt) /\
+ sub buf' (off + dlt) (min len size) = 
+ take (min len size) (W8u8.to_list w) /\
+ dlt' = dlt + min len size /\
+ len' = max 0 (len - size).
 
 
-hoare a_ilen_write_upto8_at_h _buf _off _dlt _len _trail _cur _at:
- MM.__a_ilen_read_upto8_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
- ==> subread_spec 8 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
+lemma u64_from_u64 buf off dlt len size w:
+  subwrite_pre off dlt len size =>
+  sub (A.init (get8 (set64_direct (WA.init8 (A."_.[_]" buf)) (off + dlt) w))) (off + dlt)
+     (min len 8) =
+  take len (to_list w).
 proof.
+  rewrite /subwrite_pre => H0.
+  + rewrite /sub /to_list -map_take /iotared take_iota minrC.
+    pose f1:= (fun (i : int) => (A.init (get8 (set64_direct
+                (WA.init8 ("_.[_]" buf)) (off + dlt) w))).[ off + dlt + i]).
+    rewrite (eq_in_mkseq f1 (((\bits8) w))). move => i i_bnd.
+    + rewrite /f1 /get8 /set64_direct initE ifT 1:(aux off dlt len _ASIZE i size) ..5:/# /=.
+      rewrite initE ifT 1:(aux off dlt len _ASIZE i size) ..5:/# /= ifT /#. smt().
+qed.
 
-
-
-hoare a_ilen_write_upto16_at_h _buf _off _dlt _len _trail _cur _at:
- MM.__a_ilen_read_upto8_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
- ==> subread_spec 16 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
+hoare a_ilen_write_upto8_at_h _buf _off _dlt _len _w:
+ MM.__a_ilen_write_upto8
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ w = _w /\
+   subwrite_pre _off _dlt _len 8
+ ==> subwrite_spec _w 8 _buf _off _dlt _len res.`1 res.`2 res.`3.
 proof.
+proc. if => //=; last first.
++ auto => /> *. do split; 1..4: smt(); 2..: smt().
+  + have->: _len = 0 by smt(). rewrite /sub mkseq0 take0 /#.
+(* 8 <= len *)
+if => //=. auto => /> *. 
+  + do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set8 /set64_direct initE.
+      rewrite ifT 1:/# /= ifF 1:/# initE ifT /#. smt().
+    rewrite (u64_from_u64 _buf _off _dlt _len 8 _w) /#.
+(* 4 <= LEN < 8 *)
+case( 7 <= lEN).
++ rcondt 1. auto => /#.
+  rcondt 5. auto => /#.
+  rcondt 9. auto => /#.
+  auto => /> *. do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set16_direct /set32_direct.
+      rewrite /init8 /truncateu8 get_setE 1:/# ifF 1:/# initE ifT 1:/# initE ifT 1:/#.
+      rewrite /= initE ifT 1:/# /= ifF 1:/# initE ifT 1:/# initE ifT 1:/# initE.
+      rewrite ifT 1:/# /= ifF 1:/# initE /#. smt().
+  + rewrite /sub /set16_direct /to_list -map_take /iotared take_iota minrC lez_minr 1:/#.
+    rewrite /truncateu16 /set32_direct /truncateu32 (eq_in_mkseq _ ((\bits8) _w)).
+    move => i i_bnd /=. rewrite /get8 /init8 initE ifT 1:/# /=.
+    case(i = 6) => i_max.
+    + rewrite get_setE 1:/# ifT 1:/# /truncateu8 !shr_div_le ..2:/# -divzMl ..2:/#.
+      have->: 2^16 * 2^32 = 2^(8 * 6) by smt(). rewrite u8_from_u64 /#.
+    case(4 <= i) => i_mid.
+    + rewrite get_setE 1:/# ifF 1:/# initE ifT 1:/# /= !initE !ifT ..2:/# /= ifT 1:/#.
+      rewrite !opprD !addrA shr_div_le 1:/#.
+      have->: _off + _dlt + i - _off - _dlt - 4 = i - 4 by smt().
+      have->: W32.modulus = 2^(8*4) by smt().
+      rewrite u16_from_u64 /#.
+    + rewrite get_setE 1:/# ifF 1:/# initE ifT 1:/# /= !initE !ifT ..2:/# /= ifF 1:/#.
+      rewrite initE ifT 1:/# initE ifT 1:/# !opprD initE.
+      rewrite ifT 1:/# /= ifT 1:/#. have->: _off + _dlt + i + ((-_off) - _dlt) = i by smt().
+      rewrite u32_from_u64 /#.  
+    smt().
+case(6 <= lEN).
++ rcondt 1. auto => /#.
+  rcondt 5. auto => /#.
+  rcondf 9. auto => /#.
+  auto => /> *. do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set16_direct /set32_direct.
+      rewrite /init8 initE ifT 1:/# /= ifF 1:/# initE ifT 1:/# initE ifT 1:/# initE.
+      rewrite ifT 1:/# /= initE ifF /#. smt().
+  + rewrite /sub /set16_direct /truncateu16 /to_list -map_take /iotared take_iota minrC.
+    rewrite lez_minr 1:/#/set32_direct /truncateu32 (eq_in_mkseq _ ((\bits8) _w)).
+    move => i i_bnd /=. rewrite /get8 /init8 initE ifT 1:/# /=.
+    case(4 <= i) => i_mid.
+    + rewrite initE ifT 1:/# /= !initE ifT 1:/# !opprD !addrA shr_div_le 1:/#.
+      have->: _off + _dlt + i - _off - _dlt - 4 = i - 4 by smt().
+      have->: W32.modulus = 2^(8*4) by smt().
+      rewrite u16_from_u64 /#.
+    + rewrite initE ifT 1:/# /= !initE ifF 1:/# !ifT..3:/# !opprD /= ifT 1:/# /=.
+      have->: _off + _dlt + i + ((-_off) - _dlt) = i by smt().
+      rewrite u32_from_u64 /#.
+    smt().
+case(5 <= lEN).
++ rcondt 1. auto => /#.
+  rcondf 5. auto => /#.
+  rcondt 5. auto => /#.
+  auto => />*. do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set16_direct /set32_direct.
+      rewrite /init8 get_setE 1:/# ifF 1:/# initE ifT 1:/# initE ifT 1:/# /= initE.
+      rewrite ifT 1:/# /= ifF 1:/# initE /#. smt().
+  + rewrite /sub /set16_direct /truncateu8 /to_list -map_take /iotared take_iota minrC.
+    rewrite lez_minr 1:/#  /set32_direct /truncateu32 (eq_in_mkseq _ ((\bits8) _w)).
+    move => i i_bnd /=. rewrite /get8 /init8 initE ifT 1:/# /=.
+    case(4 <= i) => i_mid.
+    + rewrite get_setE 1:/# ifT 1:/# shr_div_le 1:/#.
+      have->: 32 = 8 * 4 by smt(). rewrite u8_from_u64 /#.
+    + rewrite get_setE 1:/# ifF 1:/# initE ifT 1:/# /= !initE ifT 1:/# ifT 1:/# /= ifT 1:/#.
+      have->:  _off + _dlt + i - (_off + _dlt) = i by smt().
+      rewrite u32_from_u64 /#.  
+    smt().
+case(4 <= lEN).
+  rcondt 1. auto => /#.
+  rcondf 5. auto => /#.
+  rcondf 5. auto => /#.
+  auto => /> *. do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set32_direct.
+      rewrite /init8 initE ifT 1:/# /= ifF 1:/# initE /#. smt().
+  + rewrite /sub /set32_direct /truncateu32 /to_list -map_take /iotared take_iota minrC.
+    rewrite lez_minr 1:/#(eq_in_mkseq _ ((\bits8) _w)). move => i i_bnd /=.
+    rewrite /get8 /init8 initE ifT 1:/# /= initE ifT 1:/# /= ifT 1:/# opprD.
+    have->: _off + _dlt + i + ((-_off) - _dlt) = i by smt().
+    rewrite u32_from_u64 /#.
+    smt().
+rcondf 1. auto => /#.
+case(3 <= lEN).
+  rcondt 1. auto => /#.
+  rcondt 5. auto => /#.
+  auto => /> *. do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set16_direct /set32_direct.
+      rewrite /init8 get_setE 1:/# ifF 1:/# initE ifT 1:/# initE ifT 1:/# /= initE.
+      rewrite ifT 1:/# /= ifF 1:/# initE /#. smt().
+  + rewrite /sub /set16_direct /truncateu16 /to_list -map_take /iotared take_iota minrC.
+    rewrite lez_minr 1:/# /truncateu8 (eq_in_mkseq _ ((\bits8) _w)). move => i i_bnd /=.
+    rewrite /get8 /init8 initE ifT 1:/# /=.
+    case(2 <= i) => i_max.
+    + rewrite get_setE 1:/# ifT 1:/# shr_div_le 1:/#.
+      have->: 16 = 8 * 2 by smt(). rewrite u8_from_u64 /#.
+    + rewrite get_setE 1:/# ifF 1:/# initE ifT 1:/# !initE !ifT ..2:/#/= ifT 1:/#.
+      have->: _off + _dlt + i - (_off + _dlt) = i by smt().
+      rewrite (u16_from_u64 0 i _w) /#.
+    smt().
+case(2 <= lEN).
+  rcondt 1. auto => /#.
+  rcondf 5. auto => /#.
+  auto => /> *. do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set16_direct.
+      rewrite /init8 initE ifT 1:/# /= ifF 1:/# /= initE /#. smt().
+  + rewrite /sub /set16_direct /truncateu16 /to_list -map_take /iotared take_iota minrC.
+    rewrite lez_minr 1:/# (eq_in_mkseq _ ((\bits8) _w)). move => i i_bnd /=.
+    rewrite /get8 /init8 initE ifT 1:/# /= initE ifT 1:/# /= ifT 1:/# opprD.
+    have->: _off + _dlt + i + ((-_off) - _dlt) = i by smt().
+    rewrite (u16_from_u64 0 i _w) /#.
+    smt().
+rcondf 1. auto => /#.
+rcondt 1. auto => /#.
+auto => /> *. do split; ..4: smt(); 3..: smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /init8 get_setE 1:/# ifF 1:/#.
+      rewrite initE /#. smt().
+  rewrite /sub /truncateu8 /to_list -map_take /iotared take_iota minrC lez_minr 1:/#.
+  rewrite (eq_in_mkseq _ ((\bits8) _w)). move => i i_bnd /=.
+  rewrite initE ifT 1:/# /get8 /init8 get_setE 1:/# ifT 1:/# (u8_from_u64 0 _w) /#.
+  smt().
+qed.
 
-
-
-
-hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
- MM.__a_ilen_read_upto8_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off + _dlt /\ _off + _dlt + _len <= _ASIZE
- ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u64bytes res.`5).
+phoare a_ilen_write_upto8_at_ph _buf _off _dlt _len _w:
+ [ MM.__a_ilen_write_upto8
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ w = _w /\
+   subwrite_pre _off _dlt _len 8
+ ==> subwrite_spec _w 8 _buf _off _dlt _len res.`1 res.`2 res.`3] = 1%r.
 proof.
+by conseq a_ilen_write_upto8_ll
+          (a_ilen_write_upto8_at_h _buf _off _dlt _len _w).
+qed.
 
+op subwriteu128_spec 
+  (w : W128.t) (size : int) 
+  (buf : W8.t A.t) (off dlt len : int)
+  (buf' : W8.t A.t) (dlt' len' : int) : bool =
+  subwrite_pre off dlt len size =>
+  subwrite_pre off dlt len size /\
+  sub buf' 0 (off + dlt) = sub buf 0 (off + dlt) /\
+  sub buf' (off + dlt) (min len size) = take len (to_list w) /\
+  dlt' = dlt + min len size /\ len' = max 0 (len - size).
+
+lemma u128_from_u128 buf off dlt len size w:
+  size = 16 =>
+  subwrite_pre off dlt len size =>
+  sub (A.init (get8 (set128_direct (WA.init8 (A."_.[_]" buf)) (off + dlt) w))) (off + dlt)
+     (min len 16) =
+  take len (to_list w).
+proof.
+  rewrite /subwriteX_pre => H0 *.
+  + rewrite /sub /to_list -map_take /iotared take_iota minrC.
+    rewrite (eq_in_mkseq _ (((\bits8) w))). move => i i_bnd.
+    + rewrite /get8 /set128_direct /= initE ifT 1:(aux off dlt len _ASIZE i size) ..5:/# /=.
+      rewrite initE ifT 1:(aux off dlt len _ASIZE i size) ..5:/# /= ifT /#. smt().
+qed.
+
+
+lemma set_highu64 _len _w:
+  take (_len - 8) (W8u8.to_list (truncateu64 (VPUNPCKH_2u64 _w _w))) =
+          take (_len - 8) (drop 8 (to_list _w)).
+proof.
+  move => *.
+  pose l1:= W8u8.to_list (truncateu64 (VPUNPCKH_2u64 _w _w)).
+  pose l2:= drop 8 (W16u8.to_list _w).
+  congr. rewrite (eq_from_nth W8.zero l1 l2).
+  + rewrite size_drop 1:/# !size_to_list /#.
+  + rewrite size_to_list => i i_bnd.
+    rewrite nth_drop ..2:/# /l1 /to_list !nth_to_list_in ..2:/#.
+    rewrite /truncateu64 /VPUNPCKH_2u64 /interleave_gen /get_hi_2u64 /=.
+    rewrite /of_int /to_uint bs2int_mod 1:/#.
+    have{1}->: 64 = size (take 64 (w2bits (pack2 [_w \bits64 1; _w \bits64 1]))).
+      by rewrite size_take 1:/# size_w2bits /#.
+    rewrite bs2intK (W8.ext_eq _ (_w \bits8 8 + i)). move => x0 x0_bnd.
+  + rewrite /pack2_t /bits2w /w2bits take_mkseq 1:/# /= /(\bits8) /= initE ifT 1:/#/=.
+    rewrite initE ifT 1:/# /= nth_mkseq 1:/# initE ifT 1:/# /(\bits64) /=.
+    rewrite /of_list initE ifT 1:/# /= ifT 1:/# !initE !ifT /#. smt().
+  smt().
+qed.
+
+lemma set_lowu64 buf off dlt len w:
+  0 <= off =>
+  0 <= dlt =>
+  0 <= len =>
+  off + dlt + 8 <= _ASIZE =>
+  sub (A.init (get8 (set64_direct (WA.init8 (A."_.[_]" buf)) (off + dlt) 
+  (MOVV_64 (truncateu64 w))))) (off + dlt) 8 =
+  take 8 (W16u8.to_list w).
+proof.
+ move =>*.
+ pose l1:= sub (A.init (get8 (set64_direct (WA.init8 ("_.[_]" buf)) (off + dlt) 
+           (MOVV_64 (truncateu64 w))))) (off + dlt) 8.
+  pose l2:= take 8 (W16u8.to_list w).
+  rewrite (eq_from_nth W8.zero l1 l2).
+  + rewrite size_mkseq size_take 1:/# size_to_list /#.
+  + rewrite size_mkseq lez_maxr 1:/# => i i_bnd.
+    rewrite nth_mkseq 1:/# /= initE ifT 1:/# /get8 /set64_direct.
+    rewrite initE ifT 1:/# /= ifT 1:/# /MOVV_64 /truncateu64.
+    have->: off + dlt + i - (off + dlt) = i by smt().
+    rewrite nth_take ..2:/# (W8.ext_eq _ (W16u8.to_list w).[i]). move => x x_bnd.
+    + rewrite nth_to_list /(\bits8) !initE !ifT ..2:/# /= /of_int /to_uint.
+      rewrite bs2int_mod 1:/#. 
+      have{1}->:64=size (take 64 (w2bits w))by rewrite size_take 1:/# size_w2bits /#.
+      rewrite bs2intK get_bits2w 1:/# nth_take ..2:/# get_w2bits /#.
+      smt().
+    smt().
+qed.
+
+
+hoare a_ilen_write_upto16_at_h _buf _off _dlt _len _w:
+ MM.__a_ilen_write_upto16
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ w = _w /\
+   subwrite_pre _off _dlt _len 16
+ ==> subwriteu128_spec _w 16 _buf _off _dlt _len res.`1 res.`2 res.`3.
+proof.
+proc.
+if => //=; first last.
+auto => /> *. rewrite /subwrite_pre.
+  do split; ..4:smt(); 2..:smt().
+  + rewrite /sub /to_list -map_take /iotared take_iota minrC.
+    rewrite (eq_in_mkseq _ (((\bits8) _w))) /#.
+(*16 <= lEN *)
+if => //=.
+  auto => /> *. do split; ..4:smt(); 3..:smt().
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set8 /set128_direct initE.
+      rewrite ifT 1:/# /= ifF 1:/# initE ifT /#. smt().
+  rewrite (u128_from_u128 _ _ _ _ 16) /#. 
+(* 8 <= lEN *)
+case(8 <= lEN). 
+  rcondt 1. auto => /#.
+  ecall(a_ilen_write_upto8_at_h buf offset dELTA lEN t64). 
+  auto => /> H0 H1 H2 H3 H4 H5 H6. split; first by smt().
+  rewrite /subwrite_spec =>H7 H8 H9 H10 result _H0 _H1.
+  move: _H0. rewrite /subwrite_pre H7 H8 H9 H10 implyTb !addrA=> [#]?????.
+  have->: _off + _dlt + 8 - 8 = _off + _dlt by smt().
+  rewrite lez_minl 1:/# => h0 h1 h2 h3.
+  rewrite h2 h3. do split; ..3: smt(); 3..: smt().
+  move: h0. rewrite !(sub_cat _ 0 0 (_off + _dlt + 8) (_off + _dlt)) ..10:/#.
+  have->: _off + _dlt + 8 - (_off + _dlt) = 8 by smt().
+  have->: 0 + 0 + (_off + _dlt) = _off + _dlt by smt().
+  rewrite eqseq_cat. rewrite !size_sub /#. move => [#] h0_0 h0_1.
+  rewrite h0_0.
+    rewrite (eq_from_nth W8.zero _ (sub _buf 0 (_off + _dlt))).
+    + rewrite !size_sub /#.
+    + rewrite size_sub 1:/# => i i_bnd.
+      rewrite /l1 !nth_sub ..2:/# initE ifT 1:/# /get8 /set64_direct initE ifT 1:/#.
+      rewrite /= ifF 1:/# initE /#. smt().
+  rewrite (sub_cat result.`1 _off _dlt (min _len 16) 8) ..5:/#.
+  rewrite lez_minl 1:/# h1.
+  have->: take _len (W16u8.to_list _w) =
+          take 8(to_list _w) ++ take (_len-8) (drop 8 (to_list _w))
+          by rewrite -drop_take /#.
+  rewrite set_highu64. congr.
+  move: h0. rewrite !(sub_cat _ 0 0 (_off + _dlt + 8) (_off + _dlt)) ..10:/#.
+  have->: _off + _dlt + 8 - (_off + _dlt) = 8 by smt().
+  have->: 0 + 0 + (_off + _dlt) = _off + _dlt by smt().
+  rewrite eqseq_cat. rewrite !size_sub /#. move => [#] h0_0 h0_1. print set_lowu64.
+  rewrite h0_1 (set_lowu64 _buf _off _dlt _len _w) /#.
+rcondf 1. auto => /#.
+ ecall(a_ilen_write_upto8_at_h buf offset dELTA lEN t64). auto => /> H0 H1 H2 H3 H4 H5 H6. 
+  split; first by smt().
+  rewrite /subwrite_spec =>H7 H8 H9 H10 result _H0 _H1.
+  move: _H0. rewrite /subwrite_pre H7 H8 H9 H10 implyTb => [#]?????.
+  have->: _off + _dlt + 8 - 8 = _off + _dlt by smt().
+  rewrite !lez_minl ..2:/#. move =>  h0 h1 h2 h3.
+  rewrite h2 h3. do split; ..1: smt(); 3..: smt().
+  + rewrite h0 /#.
+  + rewrite h1. 
+    pose l1:= take _len (W8u8.to_list (truncateu64 _w)).
+    pose l2:= take _len (W16u8.to_list _w).
+    rewrite (eq_from_nth W8.zero l1 l2).
+    + rewrite !size_take ..2:/# !size_to_list /#.
+    + rewrite size_take 1:/# size_to_list ifT 1:/#. move => i i_bnd.
+      rewrite !nth_take ..4:/# !nth_to_list /truncateu64 /of_int /to_uint bs2int_mod.
+      rewrite 1:/#. have{1}->:64=size (take 64 (w2bits _w)) 
+        by rewrite size_take 1:/# size_w2bits /#.
+      rewrite bs2intK (W8.ext_eq _ (_w \bits8 i)). move => x x_bnd.
+      + rewrite /(\bits8) !initE !ifT..2:/# /= get_bits2w 1:/# nth_take..2:/#.
+        rewrite get_w2bits /#. smt().
+      smt().
+qed.
+
+phoare a_ilen_write_upto16_at_ph _buf _off _dlt _len _w:
+ [ MM.__a_ilen_write_upto16
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ w = _w /\
+   subwrite_pre _off _dlt _len 16
+ ==> subwriteu128_spec _w 16 _buf _off _dlt _len res.`1 res.`2 res.`3] = 1%r.
+proof.
+by conseq a_ilen_write_upto16_ll
+          (a_ilen_write_upto16_at_h _buf _off _dlt _len _w).
+qed.
+
+op subwriteu256_spec (w : W256.t) (size : int) (_ : W8.t A.t) (off dlt
+  len : int) (buf' : W8.t A.t) (dlt' len' : int) : bool =
+  subwrite_pre off dlt len size =>
+  subwrite_pre off dlt len size /\
+  sub buf' (off + dlt) (min len size) = take len (to_list w) /\
+  dlt' = dlt + min len size /\ len' = max 0 (len - size).
+
+
+lemma u256_from_u256 buf off dlt len size w:
+  size = 32 =>
+  subwrite_pre off dlt len size =>
+  sub (A.init (get8 (set256_direct (WA.init8 (A."_.[_]" buf)) (off + dlt) w))) (off + dlt)
+     (min len 32) =
+  take len (to_list w).
+proof.
+  rewrite /subwriteX_pre => H0 *.
+  + rewrite /sub /to_list -map_take /iotared take_iota minrC.
+    rewrite (eq_in_mkseq _ (((\bits8) w))). move => i i_bnd.
+    + rewrite /get8 /set256_direct /= initE ifT 1:(aux off dlt len _ASIZE i size) ..5:/# /=.
+      rewrite initE ifT 1:(aux off dlt len _ASIZE i size) ..5:/# /= ifT /#. smt().
+qed.
+
+
+lemma set_highu128 _len _w:
+  take (_len - 16) (W16u8.to_list (VEXTRACTI128 _w one)) =
+          take (_len - 16) (drop 16 (to_list _w)).
+proof.
+  move => *.
+  pose l1:= W16u8.to_list (VEXTRACTI128 _w one).
+  pose l2:= drop 16 (W32u8.to_list _w).
+  congr. rewrite (eq_from_nth W8.zero l1 l2).
+  + rewrite size_drop 1:/# !size_to_list /#.
+  + rewrite size_to_list => i i_bnd.
+    rewrite nth_drop ..2:/# /l1 /to_list !nth_to_list_in ..2:/# /VEXTRACTI128.
+    rewrite (W8.ext_eq _ (_w \bits8 16 + i)). move => x x_bnd.
+    + rewrite /(\bits128) /(\bits8) !initE !ifT ..2:/# /= initE ifT 1:/# nth_one /=.
+      rewrite b2i1 /#. smt(). 
+  smt().
+qed.
+
+lemma set_lowu128 buf off dlt len w:
+  0 <= off =>
+  0 <= dlt =>
+  0 <= len =>
+  off + dlt + 16 <= _ASIZE =>
+  sub (A.init (get8 (set128_direct (WA.init8 (A."_.[_]" buf)) (off + dlt) 
+  (truncateu128 w)))) (off + dlt) 16 =
+  take 16 (W32u8.to_list w).
+proof.
+ move =>*.
+ pose l1:= sub (A.init (get8 (set128_direct (WA.init8 ("_.[_]" buf)) (off + dlt) 
+           (truncateu128 w)))) (off + dlt) 16.
+  pose l2:= take 16 (W32u8.to_list w).
+  rewrite (eq_from_nth W8.zero l1 l2).
+  + rewrite size_mkseq size_take 1:/# size_to_list /#.
+  + rewrite size_mkseq lez_maxr 1:/# => i i_bnd.
+    rewrite nth_mkseq 1:/# /= initE ifT 1:/# /get8 /set128_direct.
+    rewrite initE ifT 1:/# /= ifT 1:/# /truncateu128.
+    have->: off + dlt + i - (off + dlt) = i by smt().
+    rewrite nth_take ..2:/# (W8.ext_eq _ (W32u8.to_list w).[i]). move => x x_bnd.
+    + rewrite nth_to_list /(\bits8) !initE !ifT ..2:/# /= /of_int /to_uint.
+      rewrite bs2int_mod 1:/#. 
+      have{1}->:128 = size (take 128 (w2bits w))
+        by rewrite size_take 1:/# size_w2bits /#.
+      rewrite bs2intK get_bits2w 1:/# nth_take ..2:/# get_w2bits /#.
+      smt().
+    smt().
+qed.
+
+hoare a_ilen_write_upto32_at_h _buf _off _dlt _len _w:
+ MM.__a_ilen_write_upto32
+ : buf = _buf /\ offset = _off /\ dELTA = _dlt /\ lEN = _len /\ w = _w /\ 
+   subwrite_pre _off _dlt _len 32 ==>
+   subwriteu256_spec _w 32 _buf _off _dlt _len res.`1 res.`2 res.`3.
+proof.
+proc.
+if => //=; first last.
+auto => /> *. rewrite /subwrite_pre.
+  do split; ..4:smt(); 2..:smt().
+  + rewrite /sub /to_list -map_take /iotared take_iota minrC.
+    rewrite (eq_in_mkseq _ (((\bits8) _w))) /#.
+(*32 <= lEN *)
+if => //=.
+  auto => /> *. do split; ..4:smt();2..: smt(). 
+  rewrite (u256_from_u256 _ _ _ _ 32) /#. 
+sp 1.
+(* 16 <= lEN *)
+case(16 <= lEN). 
+  rcondt 1. auto => /#.
+  ecall(a_ilen_write_upto16_at_h buf offset dELTA lEN t128). 
+  auto => /> H0 H1 H2 H3 H4 H5 H6. 
+  split; first by smt().
+  rewrite /subwriteu128_spec =>H7 H8 H9 H10 result _H0 _H1.
+  move: _H0. rewrite /subwrite_pre H7 H8 H9 H10 implyTb !addrA=> [#]?????.
+  have->: _off + _dlt + 8 - 8 = _off + _dlt by smt().
+  rewrite lez_minl 1:/# => h0 h1 h2 h3.
+  rewrite h2. do split; ..3: smt(); 2..: smt().
+  rewrite (sub_cat result.`1 _off _dlt (min _len 32) 16) ..5:/# lez_minl 1:/# h1.
+  have->: take _len (W32u8.to_list _w) =
+          take 16 (take _len (to_list _w)) ++ take (_len-16) (drop 16 (to_list _w)).
+    rewrite -drop_take 1:/# cat_take_drop /#.
+  rewrite set_highu128. congr.
+  move: h0. rewrite !(sub_cat _ 0 0 (_off + _dlt + 16) (_off + _dlt)) ..10:/#.
+  have->: _off + _dlt + 16 - (_off + _dlt) = 16 by smt().
+  have->: 0 + 0 + (_off + _dlt) = _off + _dlt by smt().
+  rewrite eqseq_cat. rewrite !size_sub /#. move => [#] h0_0 h0_1.
+  rewrite h0_1 take_take (set_lowu128 _buf _off _dlt _len _w) /#.
+rcondf 1. auto => /#.
+  ecall(a_ilen_write_upto16_at_h buf offset dELTA lEN t128). 
+  auto => /> H0 H1 H2 H3 H4 H5 H6. split; first by smt().
+  rewrite /subwriteu128_spec =>H7 H8 H9 H10 result _H0 _H1.
+  move: _H0. rewrite /subwrite_pre H7 H8 H9 H10 implyTb => [#]?????.
+  have->: _off + _dlt + 8 - 8 = _off + _dlt by smt().
+  rewrite !lez_minl ..2:/#. move =>  h0 h1 h2 h3.
+  rewrite h2 h3. do split; ..1: smt(); 2..: smt().
+  rewrite h1.
+  pose l1:= take _len (W16u8.to_list (truncateu128 _w)).
+  pose l2:= take _len (W32u8.to_list _w).
+  rewrite (eq_from_nth W8.zero l1 l2).
+  + rewrite !size_take ..2:/# !size_to_list /#.
+  + rewrite size_take 1:/# size_to_list ifT 1:/#. move => i i_bnd.
+    rewrite !nth_take ..4:/# !nth_to_list /truncateu128 /of_int /to_uint bs2int_mod 1:/#.
+    have{1}->:128 = size (take 128 (w2bits _w)) 
+      by rewrite size_take 1:/# size_w2bits /#.
+    rewrite bs2intK (W8.ext_eq _ (_w \bits8 i)). move => x x_bnd.
+    + rewrite /(\bits8) !initE !ifT..2:/# /= get_bits2w 1:/# nth_take..2:/# get_w2bits /#.
+      smt().
+    smt().
+qed.
+
+phoare a_ilen_write_upto32_at_ph _buf _off _dlt _len _w:
+ [ MM.__a_ilen_write_upto32
+ : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ w = _w /\
+   subwrite_pre _off _dlt _len 32
+ ==> subwriteu256_spec _w 32 _buf _off _dlt _len res.`1 res.`2 res.`3] = 1%r.
+proof.
+by conseq a_ilen_write_upto32_ll
+          (a_ilen_write_upto32_at_h _buf _off _dlt _len _w).
+qed.
 
 
 require import Keccak_bindings.
