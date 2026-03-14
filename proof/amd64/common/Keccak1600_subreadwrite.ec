@@ -776,7 +776,7 @@ by islossless.
 lemma a_ilen_write_upto8_ll: islossless MM.__a_ilen_write_upto8
 by islossless.
 
-lemma a_ilen_write_upto16_ll: islossless MM.__a_ilen_write_upto8
+lemma a_ilen_write_upto16_ll: islossless MM.__a_ilen_write_upto16
 by islossless.
 
 lemma a_ilen_write_upto32_ll: islossless MM.__a_ilen_write_upto32
@@ -1433,8 +1433,6 @@ split.
 smt().
 qed.
 
-
-
 lemma a_ilen_read_upto8_at_h _buf _off _dlt _len _trail _cur _at:
  (* 0 <= _len => *)
  hoare [
@@ -1588,7 +1586,7 @@ proof.
 proc; simplify.
 
 if => //.
- auto => |> [[H|H]|H]. 
+ auto => |>  [[H|H]|H]. 
  + move=> _; rewrite /subread_pre => /> ?????????.
    rewrite (:!_cur<=_at) 1:/# /= => [[Elen Etb]].
    rewrite !Elen !Etb; split; first smt().
@@ -1694,16 +1692,17 @@ rewrite -u128bytes_cat.
 by apply (subread_spec_cat 16 16 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 _).
 qed.
 
-
 phoare a_ilen_read_upto32_at_ph _buf _off _dlt _len _trail _cur _at:
  [ MM.__a_ilen_read_upto32_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
+   : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at /\ 0 <= _off+ _dlt /\ _off + _dlt + _len <= _ASIZE /\ 0 <= _len /\ 0 <= _trail /\
+   _trail < 256 /\ _at - _cur + _len + b2i (_trail <> 0) <= 200
  ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256bytes res.`5)
  ] = 1%r.
 proof.
 by conseq a_ilen_read_upto32_at_ll
           (a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at).
 qed.
+
 
 
 
