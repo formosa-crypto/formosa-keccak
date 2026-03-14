@@ -879,7 +879,7 @@ seq 15: ( st=_st /\
           bytes2state _statebytes = bytes2state (stavx2bytes_pack t64_1 r1 t64_2 r3 t64_3 r4 t64_4 r5 t64_5 r6)
           /\ aT = _at + _len + b2i (_tb <> 0) /\ offset = _off + _len /\ stavx2INV _st).
  seq 3: ( #[1:3,8:]pre
-        /\ subread_pre 0 _at _len _tb
+        /\ subread_pre 0 _at _off 0 _len _tb
         /\ subread_spec 8 _buf _off 0 _len _tb 0 _at dELTA _LEN _TRAILB aT (u64bytes t64_1)).
   case: (aT < 8).
    rcondt 3; first by auto.
@@ -933,17 +933,17 @@ seq 15: ( st=_st /\
    have {H2c H5} H5:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2c H5) => //.
    have {H5 H2d} H2d:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H5 H2d) => //.
    have {H2d H6} /= H6:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2d H6) => //.
-   have := subread_full _ _ _ _ _ _ _ _ _ _ _ H6 _; first 2 smt().
+   have := subread_full _ _ _ _ _ _ _ _ _ _ _ _ H6 _; first 2 smt().
    by rewrite /= => />.
   auto => |> &m ?????? H6 /negb_or [Hlen Htb].
-  have := subread_finished 48 _ _ _ _ _ _ _ _ _ _ _ _ H6 _ _; first 4 smt().
+  have := subread_finished 48 _ _ _ _ _ _ _ _ _ _ _ _ _ H6 _ _; first 4 smt().
   move=> [? [? ->]]; split; last smt().
   rewrite /stavx2bytes_pack -!catA !u256bytes0 !u64bytes0 !cat_nseq //= !catA.
   by rewrite bytes2state_zext.
  rcondf 9; first by auto.
  auto => |> &m ?????? H6 ?.
   split; last smt().
-  have := subread_finished 40 _ _ _ _ _ _ _ _ _ _ _ _ H6 _ _; first 4 smt().
+  have := subread_finished 40 _ _ _ _ _ _ _ _ _ _ _ _ _ H6 _ _; first 4 smt().
   move=> [? [? ->]]. 
   rewrite /stavx2bytes_pack -!catA !u256bytes0 !u64bytes0 !cat_nseq //= !catA.
   by rewrite bytes2state_zext.

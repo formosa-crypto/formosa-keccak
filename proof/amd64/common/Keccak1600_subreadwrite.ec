@@ -1706,4 +1706,39 @@ qed.
 
 
 
+
+lemma trunc_zext_u64_u128 w:
+ truncateu64 (W2u64.zeroextu128 w) = w.
+proof.
+by circuit.
+qed.
+
+equiv a_ilen_read_bcast_upto8_at_eq:
+ MM.__a_ilen_read_bcast_upto8_at
+ ~ MM.__a_ilen_read_upto8_at
+ : ={arg}
+ ==> (res.`1,res.`2,res.`3,res.`4,res.`5){1}
+     = (res.`1,res.`2,res.`3,res.`4,VPBROADCAST_4u64 (truncateu64 (zeroextu128 res.`5))){2}.
+proof.
+proc; simplify.
+if => //=.
+ auto => />.
+ by move=> *; clear; circuit.
+sp; if => //=.
+ inline*; auto => /> &m *; do (split => *).
+ + smt().
+ + smt().
+ + rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=; congr => />.
+   by rewrite /W64.(`<<`) trunc_zext_u64_u128 of_uintK modz_small 1:/# of_uintK modz_small /#.
+ + smt().
+ + smt().
+ + by rewrite /W64.(`<<`) trunc_zext_u64_u128; congr; congr.
+inline *.
+rcondf {1} 9; first by auto.
+rcondf {1} 9; first by auto.
+admitted.
+
+
+
+
 end ReadWriteArray.
