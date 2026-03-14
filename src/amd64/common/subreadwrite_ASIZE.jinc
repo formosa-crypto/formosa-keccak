@@ -49,59 +49,51 @@ inline fn __a_ilen_read_upto8_at
    , reg u64    /* w */
 {
   reg u64 w, t16, t8;
-  inline int AT8;
 
-  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
+  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) {
+    // nothing to be done...
     w = 0;
   } else {
-    AT8 = AT-CUR;
     if (8 <= LEN) {
       w = buf.[:u64 offset + DELTA];
-      w = __SHLQ(w, AT8);
-      DELTA += 8-AT8;
-      LEN -= 8-AT8;
-      AT8 = 8; 
+      w = __SHLQ(w, AT-CUR);
+      DELTA += CUR+8-AT;
+      LEN -= CUR+8-AT;
+      AT = CUR+8; 
     } else {
       if (4 <= LEN) {
 	w = (64u) buf.[:u32 offset + DELTA];
-	w = __SHLQ(w, AT8);
-	DELTA += (4+AT8 >= 8 ? 8-AT8 : 4);
-	LEN -= (4+AT8 >= 8 ? 8-AT8 : 4);
-	AT8 = (4+AT8 >= 8 ? 8 : 4+AT8); // AT8==8: finished!
+	w = __SHLQ(w, AT-CUR);
+        DELTA += CUR+8 <= AT+4 ? CUR+8-AT : 4;
+	LEN -= CUR+8 <= AT+4 ? CUR+8-AT : 4;
+	AT = CUR+8 <= AT+4 ? CUR+8 : AT+4;
       } else {
 	w = 0;
       }
-      if (AT8 < 8 && 2 <= LEN) {
+      if (AT < CUR+8 && 2 <= LEN) {
 	t16 = (64u) buf.[:u16 offset + DELTA];
-	DELTA += (2+AT8 >= 8 ? 8-AT8 : 2);
-	LEN -= (2+AT8 >= 8 ? 8-AT8 : 2);
-	t16 = __SHLQ(t16, AT8);
+	DELTA += CUR+8 <= AT+2 ? CUR+8-AT : 2;
+	LEN -= CUR+8 <= AT+2 ? CUR+8-AT : 2;
+	t16 = __SHLQ(t16, AT-CUR);
 	w |= t16;
-	AT8 = (2+AT8 >= 8 ? 8 : 2+AT8);
+	AT = CUR+8 <= AT+2 ? CUR+8 : AT+2;
       }
-      if (AT8 < 8) {
-	if ( 1 <= LEN ) {
-	  t8 = (64u) buf.[:u8 offset + DELTA];
-	  t8 |= 256*(TRAIL%256);
-	  DELTA += 1;
-	  LEN -= 1;
-	  t8 = __SHLQ(t8, AT8);
-	  w |= t8;
-	  AT8 += 1;
-	  if (AT8 < 8 && TRAIL%256 != 0) {
-	    AT8 += 1;
-	    TRAIL = 0;
-	  }
-	} else if ( TRAIL%256 != 0) {
-	  t8 = TRAIL%256;
-	  t8 = __SHLQ(t8, AT8);
-	  w |= t8;
-	  TRAIL = 0;
-	  AT8 += 1;
-	}
+      if (AT < CUR+8 && 1 <= LEN) {
+        t8 = (64u) buf.[:u8 offset + DELTA];
+	DELTA += 1;
+	LEN -= 1;
+	t8 = __SHLQ(t8, AT-CUR);
+	w |= t8;
+	AT += 1;
+      }
+      if (AT < CUR+8 && TRAIL!=0) {
+        t8 = TRAIL%256;
+        t8 <<= 8*(AT-CUR);
+	w |= t8;
+	AT += 1;
+	TRAIL = 0;
       }
     }
-    AT = CUR + AT8;
   }
   return DELTA, LEN, TRAIL, AT, w; 
 }
@@ -138,29 +130,27 @@ inline fn __a_ilen_read_upto16_at
 {
   reg u64 t64_0, t64_1;
   reg u128 w;
-  inline int AT16;
 
-  if ( AT < CUR || CUR+16 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
+  if ( AT < CUR || CUR+16 <= AT || LEN==0 && TRAIL==0 ) {
+    // nothing to be done...
     w = #set0_128();
   } else {
-    AT16 = AT-CUR;
     if ( 16 <= LEN ) {
       w = buf.[:u128 offset + DELTA];
-      w = __SHLDQ(w, AT16);
-      DELTA += 16-AT16;
-      LEN -= 16-AT16;
-      AT16 = 16;
-    } else if ( 8 <= AT16 ) {
+      w = __SHLDQ(w, AT-CUR);
+      DELTA += 16-(AT-CUR);
+      LEN -= 16-(AT-CUR);
+      AT = CUR+16;
+    } else if ( CUR+8 <= AT ) {
       w = #set0_128();
-      DELTA, LEN, TRAIL, AT16, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, 8, AT16);
+      DELTA, LEN, TRAIL, AT, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR+8, AT);
       w = #VPINSR_2u64(w, t64_1, 1); 
     } else {
-      DELTA, LEN, TRAIL, AT16, t64_0 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, 0, AT16);
+      DELTA, LEN, TRAIL, AT, t64_0 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
       w = (128u) t64_0;
-      DELTA, LEN, TRAIL, AT16, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, 8, AT16);
+      DELTA, LEN, TRAIL, AT, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR+8, AT);
       w = #VPINSR_2u64(w, t64_1, 1); 
     }
-    AT = CUR+AT16;
   }
   return DELTA, LEN, TRAIL, AT, w; 
 }  
@@ -197,27 +187,25 @@ inline fn __a_ilen_read_upto32_at
 {
   reg u128 t128_0, t128_1;
   reg u256 w;
-  inline int AT32;
 
   if ( AT < CUR || CUR+32 <= AT || LEN==0 && TRAIL==0) { // nothing to be done...
     w = #set0_256();
   } else {
-    AT32 = AT-CUR;
-    if ( AT32==0 && 32 <= LEN ) {
+    if ( AT==CUR && 32 <= LEN ) {
       w = buf.[:u256 offset + DELTA];
-      AT32 += 32;
       DELTA += 32;
       LEN -= 32;
-    } else if ( 16 <= AT32 ) {
+      AT += 32;
+    } else if ( CUR+16 <= AT ) {
       w = #set0_256();
-      DELTA, LEN, TRAIL, AT32, t128_1 = __a_ilen_read_upto16_at(buf, offset, DELTA, LEN, TRAIL, 16, AT32);
+      DELTA, LEN, TRAIL, AT, t128_1 = __a_ilen_read_upto16_at(buf, offset, DELTA, LEN, TRAIL, CUR+16, AT);
       w = #VINSERTI128(w, t128_1, 1); 
     } else {
-      DELTA, LEN, TRAIL, AT32, t128_0 = __a_ilen_read_upto16_at(buf, offset, DELTA, LEN, TRAIL,  0, AT32);
-      DELTA, LEN, TRAIL, AT32, t128_1 = __a_ilen_read_upto16_at(buf, offset, DELTA, LEN, TRAIL, 16, AT32);
-      w = (2u128)[t128_1, t128_0];
+      DELTA, LEN, TRAIL, AT, t128_0 = __a_ilen_read_upto16_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
+      w = (256u) t128_0;
+      DELTA, LEN, TRAIL, AT, t128_1 = __a_ilen_read_upto16_at(buf, offset, DELTA, LEN, TRAIL, CUR+16, AT);
+      w = #VINSERTI128(w, t128_1, 1); 
     }
-    AT = CUR+AT32;
   }
   return DELTA, LEN, TRAIL, AT, w; 
 }  

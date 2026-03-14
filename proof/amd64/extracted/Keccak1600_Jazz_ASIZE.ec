@@ -2684,80 +2684,69 @@ module M = {
                                lEN:int, tRAIL:int, cUR:int, aT:int) : 
   int * int * int * int * W64.t = {
     var w:W64.t;
-    var aT8:int;
     var t16:W64.t;
     var t8:W64.t;
     if ((((aT < cUR) \/ ((cUR + 8) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
       w <- (W64.of_int 0);
     } else {
-      aT8 <- (aT - cUR);
       if ((8 <= lEN)) {
         w <-
         (get64_direct (WArray999.init8 (fun i => buf.[i])) (offset + dELTA));
-        w <@ __SHLQ (w, aT8);
-        dELTA <- (dELTA + (8 - aT8));
-        lEN <- (lEN - (8 - aT8));
-        aT8 <- 8;
+        w <@ __SHLQ (w, (aT - cUR));
+        dELTA <- (dELTA + ((cUR + 8) - aT));
+        lEN <- (lEN - ((cUR + 8) - aT));
+        aT <- (cUR + 8);
       } else {
         if ((4 <= lEN)) {
           w <-
           (zeroextu64
           (get32_direct (WArray999.init8 (fun i => buf.[i])) (offset + dELTA)
           ));
-          w <@ __SHLQ (w, aT8);
-          dELTA <- (dELTA + ((8 <= (4 + aT8)) ? (8 - aT8) : 4));
-          lEN <- (lEN - ((8 <= (4 + aT8)) ? (8 - aT8) : 4));
-          aT8 <- ((8 <= (4 + aT8)) ? 8 : (4 + aT8));
+          w <@ __SHLQ (w, (aT - cUR));
+          dELTA <-
+          (dELTA + (((cUR + 8) <= (aT + 4)) ? ((cUR + 8) - aT) : 4));
+          lEN <- (lEN - (((cUR + 8) <= (aT + 4)) ? ((cUR + 8) - aT) : 4));
+          aT <- (((cUR + 8) <= (aT + 4)) ? (cUR + 8) : (aT + 4));
         } else {
           w <- (W64.of_int 0);
         }
-        if (((aT8 < 8) /\ (2 <= lEN))) {
+        if (((aT < (cUR + 8)) /\ (2 <= lEN))) {
           t16 <-
           (zeroextu64
           (get16_direct (WArray999.init8 (fun i => buf.[i])) (offset + dELTA)
           ));
-          dELTA <- (dELTA + ((8 <= (2 + aT8)) ? (8 - aT8) : 2));
-          lEN <- (lEN - ((8 <= (2 + aT8)) ? (8 - aT8) : 2));
-          t16 <@ __SHLQ (t16, aT8);
+          dELTA <-
+          (dELTA + (((cUR + 8) <= (aT + 2)) ? ((cUR + 8) - aT) : 2));
+          lEN <- (lEN - (((cUR + 8) <= (aT + 2)) ? ((cUR + 8) - aT) : 2));
+          t16 <@ __SHLQ (t16, (aT - cUR));
           w <- (w `|` t16);
-          aT8 <- ((8 <= (2 + aT8)) ? 8 : (2 + aT8));
+          aT <- (((cUR + 8) <= (aT + 2)) ? (cUR + 8) : (aT + 2));
         } else {
           
         }
-        if ((aT8 < 8)) {
-          if ((1 <= lEN)) {
-            t8 <-
-            (zeroextu64
-            (get8_direct (WArray999.init8 (fun i => buf.[i]))
-            (offset + dELTA)));
-            t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
-            dELTA <- (dELTA + 1);
-            lEN <- (lEN - 1);
-            t8 <@ __SHLQ (t8, aT8);
-            w <- (w `|` t8);
-            aT8 <- (aT8 + 1);
-            if (((aT8 < 8) /\ ((tRAIL %% 256) <> 0))) {
-              aT8 <- (aT8 + 1);
-              tRAIL <- 0;
-            } else {
-              
-            }
-          } else {
-            if (((tRAIL %% 256) <> 0)) {
-              t8 <- (W64.of_int (tRAIL %% 256));
-              t8 <@ __SHLQ (t8, aT8);
-              w <- (w `|` t8);
-              tRAIL <- 0;
-              aT8 <- (aT8 + 1);
-            } else {
-              
-            }
-          }
+        if (((aT < (cUR + 8)) /\ (1 <= lEN))) {
+          t8 <-
+          (zeroextu64
+          (get8_direct (WArray999.init8 (fun i => buf.[i])) (offset + dELTA))
+          );
+          dELTA <- (dELTA + 1);
+          lEN <- (lEN - 1);
+          t8 <@ __SHLQ (t8, (aT - cUR));
+          w <- (w `|` t8);
+          aT <- (aT + 1);
+        } else {
+          
+        }
+        if (((aT < (cUR + 8)) /\ (tRAIL <> 0))) {
+          t8 <- (W64.of_int (tRAIL %% 256));
+          t8 <- (t8 `<<` (W8.of_int (8 * (aT - cUR))));
+          w <- (w `|` t8);
+          aT <- (aT + 1);
+          tRAIL <- 0;
         } else {
           
         }
       }
-      aT <- (cUR + aT8);
     }
     return (dELTA, lEN, tRAIL, aT, w);
   }
@@ -2765,36 +2754,33 @@ module M = {
                                 lEN:int, tRAIL:int, cUR:int, aT:int) : 
   int * int * int * int * W128.t = {
     var w:W128.t;
-    var aT16:int;
     var t64_0:W64.t;
     var t64_1:W64.t;
     if ((((aT < cUR) \/ ((cUR + 16) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
       w <- (set0_128);
     } else {
-      aT16 <- (aT - cUR);
       if ((16 <= lEN)) {
         w <-
         (get128_direct (WArray999.init8 (fun i => buf.[i])) (offset + dELTA));
-        w <@ __SHLDQ (w, aT16);
-        dELTA <- (dELTA + (16 - aT16));
-        lEN <- (lEN - (16 - aT16));
-        aT16 <- 16;
+        w <@ __SHLDQ (w, (aT - cUR));
+        dELTA <- (dELTA + (16 - (aT - cUR)));
+        lEN <- (lEN - (16 - (aT - cUR)));
+        aT <- (cUR + 16);
       } else {
-        if ((8 <= aT16)) {
+        if (((cUR + 8) <= aT)) {
           w <- (set0_128);
-          (dELTA, lEN, tRAIL, aT16, t64_1) <@ __a_ilen_read_upto8_at (
-          buf, offset, dELTA, lEN, tRAIL, 8, aT16);
+          (dELTA, lEN, tRAIL, aT, t64_1) <@ __a_ilen_read_upto8_at (buf,
+          offset, dELTA, lEN, tRAIL, (cUR + 8), aT);
           w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
         } else {
-          (dELTA, lEN, tRAIL, aT16, t64_0) <@ __a_ilen_read_upto8_at (
-          buf, offset, dELTA, lEN, tRAIL, 0, aT16);
+          (dELTA, lEN, tRAIL, aT, t64_0) <@ __a_ilen_read_upto8_at (buf,
+          offset, dELTA, lEN, tRAIL, cUR, aT);
           w <- (zeroextu128 t64_0);
-          (dELTA, lEN, tRAIL, aT16, t64_1) <@ __a_ilen_read_upto8_at (
-          buf, offset, dELTA, lEN, tRAIL, 8, aT16);
+          (dELTA, lEN, tRAIL, aT, t64_1) <@ __a_ilen_read_upto8_at (buf,
+          offset, dELTA, lEN, tRAIL, (cUR + 8), aT);
           w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
         }
       }
-      aT <- (cUR + aT16);
     }
     return (dELTA, lEN, tRAIL, aT, w);
   }
@@ -2802,37 +2788,32 @@ module M = {
                                 lEN:int, tRAIL:int, cUR:int, aT:int) : 
   int * int * int * int * W256.t = {
     var w:W256.t;
-    var aT32:int;
     var t128_0:W128.t;
     var t128_1:W128.t;
     if ((((aT < cUR) \/ ((cUR + 32) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
       w <- (set0_256);
     } else {
-      aT32 <- (aT - cUR);
-      if (((aT32 = 0) /\ (32 <= lEN))) {
+      if (((aT = cUR) /\ (32 <= lEN))) {
         w <-
         (get256_direct (WArray999.init8 (fun i => buf.[i])) (offset + dELTA));
-        aT32 <- (aT32 + 32);
         dELTA <- (dELTA + 32);
         lEN <- (lEN - 32);
+        aT <- (aT + 32);
       } else {
-        if ((16 <= aT32)) {
+        if (((cUR + 16) <= aT)) {
           w <- (set0_256);
-          (dELTA, lEN, tRAIL, aT32, t128_1) <@ __a_ilen_read_upto16_at (
-          buf, offset, dELTA, lEN, tRAIL, 16, aT32);
+          (dELTA, lEN, tRAIL, aT, t128_1) <@ __a_ilen_read_upto16_at (
+          buf, offset, dELTA, lEN, tRAIL, (cUR + 16), aT);
           w <- (VINSERTI128 w t128_1 (W8.of_int 1));
         } else {
-          (dELTA, lEN, tRAIL, aT32, t128_0) <@ __a_ilen_read_upto16_at (
-          buf, offset, dELTA, lEN, tRAIL, 0, aT32);
-          (dELTA, lEN, tRAIL, aT32, t128_1) <@ __a_ilen_read_upto16_at (
-          buf, offset, dELTA, lEN, tRAIL, 16, aT32);
-          w <-
-          (W256.of_int
-          (((W128.to_uint t128_0) %% (2 ^ 128)) +
-          ((2 ^ 128) * (W128.to_uint t128_1))));
+          (dELTA, lEN, tRAIL, aT, t128_0) <@ __a_ilen_read_upto16_at (
+          buf, offset, dELTA, lEN, tRAIL, cUR, aT);
+          w <- (zeroextu256 t128_0);
+          (dELTA, lEN, tRAIL, aT, t128_1) <@ __a_ilen_read_upto16_at (
+          buf, offset, dELTA, lEN, tRAIL, (cUR + 16), aT);
+          w <- (VINSERTI128 w t128_1 (W8.of_int 1));
         }
       }
-      aT <- (cUR + aT32);
     }
     return (dELTA, lEN, tRAIL, aT, w);
   }
