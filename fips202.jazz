@@ -1,0 +1,18 @@
+/* Entry point for the formosa-keccak AVX2 FIPS 202 implementation.
+ *
+ * Pulls in the AVX2 Keccak-f[1600] permutation (via keccak1600.jinc, which
+ * also brings in the memory-read/write helpers from subreadwrite_imem.jinc),
+ * then the incremental updstate functions that are exported to C.
+ *
+ * Compile with:
+ *   jasminc -I Keccak=src/amd64 -o fips202.s fips202.jazz
+ *
+ * Exported symbols (callable from C):
+ *   init_updstate_avx2    – initialise a keccak_updstate (u64[26])
+ *   finish_updstate_avx2  – apply multi-rate padding (conclude absorb phase)
+ *   absorb_m_updstate_avx2 – absorb an arbitrary number of bytes
+ *   squeeze_m_updstate_avx2 – squeeze an arbitrary number of bytes
+ */
+
+from Keccak require "avx2/keccak1600.jinc"
+from Keccak require "avx2/keccak1600_updstate.jinc"
