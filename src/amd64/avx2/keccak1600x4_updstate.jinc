@@ -100,7 +100,7 @@ fn _finish_updstate_avx2x4
   t8 = t8 & 0x07;
   t8 <<= 3;
   trailb <<= (t8 & 63);
-  t128 = (128u) trailb;
+  t128 = #VMOV_64(trailb);
   t256 = #VPBROADCAST_4u64(t128);
   t256 ^= st.[:u256 at];
   st.[:u256 at] = t256;
@@ -110,7 +110,7 @@ fn _finish_updstate_avx2x4
   r8 -= 1;
   r8 >>= 3;    // r64
   r8 <<= 5;
-  t128 = (128u) rbit;
+  t128 = #VMOV_64(rbit);
   t256 = #VPBROADCAST_4u64(t128);
   t256 ^= st.[:u256 r8];
   st.[:u256 r8] = t256;
