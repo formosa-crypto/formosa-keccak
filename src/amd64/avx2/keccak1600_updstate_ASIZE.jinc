@@ -256,9 +256,11 @@ export fn squeeze_updstate_avx2
 ) -> reg ptr keccak_updstate /* st */
    , reg ptr u8[_ASIZE] /* buf */
 {
+  reg ui64 len;
   st = st;
   buf = buf;
-  st, buf = _squeeze_updstate_avx2(st, buf, _ASIZE);
+  len = _ASIZE;
+  st, buf = _squeeze_updstate_avx2(st, buf, len);
   return st, buf;
 }
 
