@@ -93,10 +93,11 @@ fn _add_updstate_avx2
 fn _update_updstate_avx2
 ( reg mut ptr keccak_updstate st
 , reg const ptr u8[_ASIZE] buf
+, reg ui64 len
 ) -> reg ptr keccak_updstate /* st */
 {
   reg u64 ststatus;
-  reg ui64 off, r8, at, len;
+  reg ui64 off, r8, at;
   reg ptr keccak_state stk;
 
   ststatus = st[25];
@@ -105,7 +106,6 @@ fn _update_updstate_avx2
   () = #spill(st);
 
   off = 0;
-  len = _ASIZE;
   len += at;
   while (r8 <= len) {
     at, off, stk = _add_updstate_avx2(stk, at, buf, off, r8);
@@ -198,11 +198,12 @@ fn _dump_updstate_avx2
 fn _squeeze_updstate_avx2
 ( reg mut ptr keccak_updstate st
 , reg mut ptr u8[_ASIZE] buf
+, reg ui64 len
 ) -> reg ptr keccak_updstate /* st */
    , reg ptr u8[_ASIZE]      /* buf */
 {
   reg u64 ststatus;
-  reg ui64 off, r8, at, len;
+  reg ui64 off, r8, at;
   reg ptr keccak_state stk;
 
   ststatus = st[25];
@@ -216,7 +217,6 @@ fn _squeeze_updstate_avx2
   }
 
   off = 0;
-  len = _ASIZE;
   len += at;
 
   while (r8 < len) {
@@ -240,11 +240,13 @@ fn _squeeze_updstate_avx2
 export fn absorb_updstate_avx2
 ( reg mut ptr keccak_updstate st
 , reg const ptr u8[_ASIZE] buf
+, reg ui64 len
 ) -> reg ptr keccak_updstate /* st */
 {
   st = st;
   buf = buf;
-  st = _update_updstate_avx2(st, buf);
+  len = len;
+  st = _update_updstate_avx2(st, buf, len);
   return st;
 }
 
@@ -256,7 +258,7 @@ export fn squeeze_updstate_avx2
 {
   st = st;
   buf = buf;
-  st, buf = _squeeze_updstate_avx2(st, buf);
+  st, buf = _squeeze_updstate_avx2(st, buf, _ASIZE);
   return st, buf;
 }
 
