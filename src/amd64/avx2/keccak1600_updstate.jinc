@@ -9,7 +9,7 @@ type keccak_updstate = u64[26];
   - byte[2] - Trail Byte
 */
 
-
+inline
 fn _init_updstate_avx2
 ( reg mut ptr keccak_updstate st
 , reg ui8 r64    // 9 <= r64 < 25
