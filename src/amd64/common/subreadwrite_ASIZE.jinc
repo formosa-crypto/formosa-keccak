@@ -147,7 +147,7 @@ inline fn __a_ilen_read_upto16_at
       w = #VPINSR_2u64(w, t64_1, 1); 
     } else {
       DELTA, LEN, TRAIL, AT, t64_0 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
-      w = (128u) t64_0;
+      w = #VMOV_64(t64_0);
       DELTA, LEN, TRAIL, AT, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR+8, AT);
       w = #VPINSR_2u64(w, t64_1, 1); 
     }
@@ -258,7 +258,7 @@ inline fn __a_ilen_read_bcast_upto8_at
     } else {
       AT8 = AT-CUR;
       DELTA, LEN, TRAIL, AT, w = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
-      t128 = (128u) w;
+      t128 = #VMOV_64(w);
       w256 = #VPBROADCAST_4u64(t128);
       w256 = __SHLQ_256(w256, AT8);
     }
@@ -367,7 +367,7 @@ inline fn __a_ilen_read_bcast_upto8
       LEN -= 8;
     } else {
       DELTA, LEN, TRAIL, t64 = __a_ilen_read_upto8(buf, offset, DELTA, LEN, TRAIL);
-      t128 = (128u) t64;
+      t128 = #VMOV_64(t64);
       w = #VPBROADCAST_4u64(t128);
     }
   }
@@ -413,7 +413,7 @@ inline fn __a_ilen_read_upto16
       w = #VPINSR_2u64(w, t64, 1); 
     } else {
       DELTA, LEN, TRAIL, t64 = __a_ilen_read_upto8(buf, offset, DELTA, LEN, TRAIL);
-      w = (128u) t64;
+      w = #VMOV_64(t64);
     }
   }
   return DELTA, LEN, TRAIL, w;

@@ -256,7 +256,7 @@ module MM = {
       sh <- (truncateu8 at8);
       sh <- (sh `<<` (W8.of_int 3));
       t64 <- (t64 `<<` (sh `&` (W8.of_int 63)));
-      t128 <- (zeroextu128 t64);
+      t128 <- (VMOV_64 t64);
       t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
       t256 <-
       (t256 `^`
@@ -299,7 +299,7 @@ module MM = {
       upto8 <- (W64.of_int upto);
       upto8 <- (upto8 `&` (W64.of_int 7));
       (off, t64) <@ RW.MM.__a_rlen_read_upto8 (buf, off, (W64.to_uint upto8));
-      t128 <- (zeroextu128 t64);
+      t128 <- (VMOV_64 t64);
       t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
       t256 <-
       (t256 `^`

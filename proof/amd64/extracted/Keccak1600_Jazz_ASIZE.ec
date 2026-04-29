@@ -174,7 +174,7 @@ module M = {
         } else {
           (buf, lEN, tRAIL, aT16, t64_0) <@ __m_ilen_read_upto8_at (buf, 
           lEN, tRAIL, 0, aT16);
-          w <- (zeroextu128 t64_0);
+          w <- (VMOV_64 t64_0);
           (buf, lEN, tRAIL, aT16, t64_1) <@ __m_ilen_read_upto8_at (buf, 
           lEN, tRAIL, 8, aT16);
           w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
@@ -240,7 +240,7 @@ module M = {
         aT8 <- (aT - cUR);
         (buf, lEN, tRAIL, aT, w) <@ __m_ilen_read_upto8_at (buf, lEN, 
         tRAIL, cUR, aT);
-        t128 <- (zeroextu128 w);
+        t128 <- (VMOV_64 w);
         w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
         w256 <@ __SHLQ_256 (w256, aT8);
       }
@@ -1669,7 +1669,7 @@ module M = {
     var t256:W256.t;
     var t128:W128.t;
     if (((l %% 2) = 0)) {
-      t128 <- (zeroextu128 x);
+      t128 <- (VMOV_64 x);
     } else {
       t128 <- (set0_128);
       t128 <- (VPINSR_2u64 t128 x (W8.of_int 1));
@@ -2675,7 +2675,7 @@ module M = {
     var t256:W256.t;
     t64 <- (W64.of_int 1);
     t64 <- (t64 `<<` (W8.of_int (((8 * rATE8) - 1) %% 64)));
-    t128 <- (zeroextu128 t64);
+    t128 <- (VMOV_64 t64);
     t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
     t256 <- (t256 `^` st.[((rATE8 - 1) %/ 8)]);
     st.[((rATE8 - 1) %/ 8)] <- t256;
@@ -3060,7 +3060,7 @@ module M = {
     t8 <- (t8 `&` (W8.of_int 7));
     t8 <- (t8 `<<` (W8.of_int 3));
     trailb <- (trailb `<<` (t8 `&` (W8.of_int 63)));
-    t128 <- (zeroextu128 trailb);
+    t128 <- (VMOV_64 trailb);
     t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
     t256 <-
     (t256 `^` (get256_direct (WArray808.init64 (fun i => st.[i])) at));
@@ -3073,7 +3073,7 @@ module M = {
     r8 <- (r8 - 1);
     r8 <- (r8 `|>>` 3);
     r8 <- (r8 `<<` 5);
-    t128 <- (zeroextu128 rbit);
+    t128 <- (VMOV_64 rbit);
     t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
     t256 <-
     (t256 `^` (get256_direct (WArray808.init64 (fun i => st.[i])) r8));
@@ -3214,7 +3214,7 @@ module M = {
         } else {
           (dELTA, lEN, tRAIL, aT, t64_0) <@ __a_ilen_read_upto8_at (buf,
           offset, dELTA, lEN, tRAIL, cUR, aT);
-          w <- (zeroextu128 t64_0);
+          w <- (VMOV_64 t64_0);
           (dELTA, lEN, tRAIL, aT, t64_1) <@ __a_ilen_read_upto8_at (buf,
           offset, dELTA, lEN, tRAIL, (cUR + 8), aT);
           w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
@@ -3279,7 +3279,7 @@ module M = {
         aT8 <- (aT - cUR);
         (dELTA, lEN, tRAIL, aT, w) <@ __a_ilen_read_upto8_at (buf, offset,
         dELTA, lEN, tRAIL, cUR, aT);
-        t128 <- (zeroextu128 w);
+        t128 <- (VMOV_64 w);
         w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
         w256 <@ __SHLQ_256 (w256, aT8);
       }
@@ -3755,14 +3755,14 @@ module M = {
     if (((0 < _LEN) \/ (_TRAILB <> 0))) {
       (dELTA, _LEN, _TRAILB, aT, t64_2) <@ __a_ilen_read_upto8_at (buf,
       offset, dELTA, _LEN, _TRAILB, 40, aT);
-      t128_1 <- (zeroextu128 t64_2);
+      t128_1 <- (VMOV_64 t64_2);
       t128_2 <- (set0_128);
       if (((0 < _LEN) \/ (_TRAILB <> 0))) {
         (dELTA, _LEN, _TRAILB, aT, r3) <@ __a_ilen_read_upto32_at (buf,
         offset, dELTA, _LEN, _TRAILB, 48, aT);
         (dELTA, _LEN, _TRAILB, aT, t64_3) <@ __a_ilen_read_upto8_at (
         buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-        t128_2 <- (zeroextu128 t64_3);
+        t128_2 <- (VMOV_64 t64_3);
         (dELTA, _LEN, _TRAILB, aT, r4) <@ __a_ilen_read_upto32_at (buf,
         offset, dELTA, _LEN, _TRAILB, 88, aT);
         (dELTA, _LEN, _TRAILB, aT, t64_4) <@ __a_ilen_read_upto8_at (
@@ -4753,7 +4753,7 @@ module M = {
       sh <- (truncateu8 at8);
       sh <- (sh `<<` (W8.of_int 3));
       t64 <- (t64 `<<` (sh `&` (W8.of_int 63)));
-      t128 <- (zeroextu128 t64);
+      t128 <- (VMOV_64 t64);
       t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
       t256 <-
       (t256 `^`
@@ -4796,7 +4796,7 @@ module M = {
       upto8 <- (W64.of_int upto);
       upto8 <- (upto8 `&` (W64.of_int 7));
       (off, t64) <@ __a_rlen_read_upto8 (buf, off, (W64.to_uint upto8));
-      t128 <- (zeroextu128 t64);
+      t128 <- (VMOV_64 t64);
       t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
       t256 <-
       (t256 `^`

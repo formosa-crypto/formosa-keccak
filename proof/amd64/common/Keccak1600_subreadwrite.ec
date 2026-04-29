@@ -382,7 +382,7 @@ module MM = {
         } else {
           (dELTA, lEN, tRAIL, aT, t64_0) <@ __a_ilen_read_upto8_at (buf,
           offset, dELTA, lEN, tRAIL, cUR, aT);
-          w <- (zeroextu128 t64_0);
+          w <- (VMOV_64 t64_0);
           (dELTA, lEN, tRAIL, aT, t64_1) <@ __a_ilen_read_upto8_at (buf,
           offset, dELTA, lEN, tRAIL, (cUR + 8), aT);
           w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
@@ -447,7 +447,7 @@ module MM = {
         aT8 <- (aT - cUR);
         (dELTA, lEN, tRAIL, aT, w) <@ __a_ilen_read_upto8_at (buf, offset,
         dELTA, lEN, tRAIL, cUR, aT);
-        t128 <- (zeroextu128 w);
+        t128 <- (VMOV_64 w);
         w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
         w256 <@ M.__SHLQ_256 (w256, aT8);
       }

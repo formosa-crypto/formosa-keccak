@@ -410,14 +410,14 @@ module MM = {
     if (((0 < _LEN) \/ (_TRAILB <> 0))) {
       (dELTA, _LEN, _TRAILB, aT, t64_2) <@ RW.MM.__a_ilen_read_upto8_at (buf,
       offset, dELTA, _LEN, _TRAILB, 40, aT);
-      t128_1 <- (zeroextu128 t64_2);
+      t128_1 <- (VMOV_64 t64_2);
       t128_2 <- (set0_128);
       if (((0 < _LEN) \/ (_TRAILB <> 0))) {
         (dELTA, _LEN, _TRAILB, aT, r3) <@ RW.MM.__a_ilen_read_upto32_at (buf,
         offset, dELTA, _LEN, _TRAILB, 48, aT);
         (dELTA, _LEN, _TRAILB, aT, t64_3) <@ RW.MM.__a_ilen_read_upto8_at (
         buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-        t128_2 <- (zeroextu128 t64_3);
+        t128_2 <- (VMOV_64 t64_3);
         (dELTA, _LEN, _TRAILB, aT, r4) <@ RW.MM.__a_ilen_read_upto32_at (buf,
         offset, dELTA, _LEN, _TRAILB, 88, aT);
         (dELTA, _LEN, _TRAILB, aT, t64_4) <@ RW.MM.__a_ilen_read_upto8_at (
@@ -773,7 +773,7 @@ module MMaux = {
     } else { }
     offset <- (offset + dELTA);
 
-    t128_0 <- (zeroextu128 t64_1);
+    t128_0 <- (VMOV_64 t64_1);
     r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
     st.[0] <- (st.[0] `^` r0);
 
@@ -781,9 +781,9 @@ module MMaux = {
 
     st <@ M.__addstate_r3456_avx2 (st, r3, r4, r5, r6);
 
-    t128_1 <- (zeroextu128 t64_2);
+    t128_1 <- (VMOV_64 t64_2);
     t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
-    t128_2 <- (zeroextu128 t64_3);
+    t128_2 <- (VMOV_64 t64_3);
     t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
     r2 <- zeroextu256 t128_2;
     r2 <- VINSERTI128 r2 t128_1 (W8.of_int 1);
