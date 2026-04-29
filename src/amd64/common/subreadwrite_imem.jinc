@@ -143,7 +143,7 @@ inline fn __m_ilen_read_upto16_at
       w = #VPINSR_2u64(w, t64_1, 1); 
     } else {
       buf, LEN, TRAIL, AT16, t64_0 = __m_ilen_read_upto8_at(buf, LEN, TRAIL, 0, AT16);
-      w = (128u) t64_0;
+      w = #VMOV_64(t64_0);
       buf, LEN, TRAIL, AT16, t64_1 = __m_ilen_read_upto8_at(buf, LEN, TRAIL, 8, AT16);
       w = #VPINSR_2u64(w, t64_1, 1); 
     }
@@ -251,7 +251,7 @@ inline fn __m_ilen_read_bcast_upto8_at
     } else {
       AT8 = AT-CUR;
       buf, LEN, TRAIL, AT, w = __m_ilen_read_upto8_at(buf, LEN, TRAIL, CUR, AT);
-      t128 = (128u) w;
+      t128 = #VMOV_64(w);
       w256 = #VPBROADCAST_4u64(t128);
       w256 = __SHLQ_256(w256, AT8);
     }

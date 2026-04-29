@@ -245,6 +245,7 @@ export fn absorb_updstate_avx2
 {
   st = st;
   buf = buf;
+  len = len;
   st = _update_updstate_avx2(st, buf, len);
   return st;
 }
@@ -252,13 +253,13 @@ export fn absorb_updstate_avx2
 export fn squeeze_updstate_avx2
 ( reg mut ptr keccak_updstate st
 , reg mut ptr u8[_ASIZE] buf
-, reg ui64 len
 ) -> reg ptr keccak_updstate /* st */
    , reg ptr u8[_ASIZE] /* buf */
 {
+  reg ui64 len;
   st = st;
   buf = buf;
-  len = len;
+  len = _ASIZE;
   st, buf = _squeeze_updstate_avx2(st, buf, len);
   return st, buf;
 }
