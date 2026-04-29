@@ -377,8 +377,6 @@ module MM = {
                         offset:int, _LEN:int, _TRAILB:int) : W256.t Array7.t *
                                                              int * int = {
     var dELTA:int;
-    var t64_1:W64.t;
-    var t128_0:W128.t;
     var r0:W256.t;
     var r1:W256.t;
     var t64_2:W64.t;
