@@ -24,6 +24,79 @@ from CryptoSpecs require import JWordList.
 require import Keccak1600_avx2 Keccakf1600_avx2.
 require import Keccak1600_subreadwrite.
 
+
+(* Size-independent flat lemmas (memory-buffer / setup procs). The procs
+   _init_updstate_avx2, _finish_updstate_avx2, _absorb_m_updstate_avx2 use
+   only Array26 and don't depend on _ASIZE, so they live outside the
+   abstract theory and reference M directly (mirroring fixedsizes). *)
+
+op init_updstate_avx2_spec : W64.t Array26.t -> int -> W8.t -> W64.t Array26.t.
+
+op finish_updstate_avx2_spec : W64.t Array26.t -> W64.t Array26.t.
+
+op absorb_m_updstate_avx2_spec :
+  global_mem_t -> W64.t Array26.t -> int -> int -> W64.t Array26.t.
+
+
+lemma init_updstate_avx2_ll: islossless M._init_updstate_avx2.
+proof. admitted.
+
+hoare init_updstate_avx2_h _st _r64 _trailb:
+  M._init_updstate_avx2
+  : st = _st /\ r64 = _r64 /\ trailb = _trailb
+  ==> res = init_updstate_avx2_spec _st _r64 _trailb.
+proof. admitted.
+
+phoare init_updstate_avx2_ph _st _r64 _trailb:
+  [ M._init_updstate_avx2
+  : st = _st /\ r64 = _r64 /\ trailb = _trailb
+  ==> res = init_updstate_avx2_spec _st _r64 _trailb
+  ] = 1%r.
+proof.
+by conseq init_updstate_avx2_ll
+       (init_updstate_avx2_h _st _r64 _trailb).
+qed.
+
+
+lemma finish_updstate_avx2_ll: islossless M._finish_updstate_avx2.
+proof. admitted.
+
+hoare finish_updstate_avx2_h _st:
+  M._finish_updstate_avx2
+  : st = _st
+  ==> res = finish_updstate_avx2_spec _st.
+proof. admitted.
+
+phoare finish_updstate_avx2_ph _st:
+  [ M._finish_updstate_avx2
+  : st = _st
+  ==> res = finish_updstate_avx2_spec _st
+  ] = 1%r.
+proof.
+by conseq finish_updstate_avx2_ll (finish_updstate_avx2_h _st).
+qed.
+
+
+lemma absorb_m_updstate_avx2_ll: islossless M._absorb_m_updstate_avx2.
+proof. admitted.
+
+hoare absorb_m_updstate_avx2_h _mem _st _buf _len:
+  M._absorb_m_updstate_avx2
+  : Glob.mem = _mem /\ st = _st /\ buf = _buf /\ len = _len
+  ==> res = absorb_m_updstate_avx2_spec _mem _st _buf _len.
+proof. admitted.
+
+phoare absorb_m_updstate_avx2_ph _mem _st _buf _len:
+  [ M._absorb_m_updstate_avx2
+  : Glob.mem = _mem /\ st = _st /\ buf = _buf /\ len = _len
+  ==> res = absorb_m_updstate_avx2_spec _mem _st _buf _len
+  ] = 1%r.
+proof.
+by conseq absorb_m_updstate_avx2_ll
+       (absorb_m_updstate_avx2_h _mem _st _buf _len).
+qed.
+
+
 abstract theory KeccakUpdstateAvx2.
 
 op _ASIZE: int.
