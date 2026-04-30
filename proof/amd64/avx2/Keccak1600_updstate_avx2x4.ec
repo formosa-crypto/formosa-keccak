@@ -20,9 +20,149 @@ from JazzEC require import WArray200 WArray800 WArray808.
 from JazzEC require import Array25 Array101.
 
 from CryptoSpecs require import JWordList.
+from CryptoSpecs require import FIPS202_Keccakf1600.
+from CryptoSpecs require import Keccak1600_Spec Keccakf1600_Spec.
 
 require export Keccak1600_avx2x4 Keccakf1600_avx2x4.
 require import Keccak1600_subreadwrite.
+
+
+(* ------------------------------------------------------------------------- *)
+(* Size-independent flat layer (x4, 4-way parallel).                         *)
+(*                                                                           *)
+(* Only `_init_updstate_avx2x4` and `_finish_updstate_avx2x4` are            *)
+(* size-independent — `_absorb_m_updstate_avx2x4` internally calls the       *)
+(* array-buffer add proc, so the memory variant doesn't extract into         *)
+(* `Keccak1600_Jazz` (it lives in the abstract theory's MM via the array     *)
+(* `absorb_updstate_avx2x4`). Clients drive 4-way SHA3 / SHAKE via:          *)
+(*                                                                           *)
+(*   init_updstate_avx2x4                                                    *)
+(*   absorb_updstate_avx2x4 (size-dep, in abstract theory)                   *)
+(*   finish_updstate_avx2x4                                                  *)
+(*   squeeze_updstate_avx2x4 (size-dep, in abstract theory)                  *)
+(*                                                                           *)
+(* The viewers `absorb_msg_x4` / `sponge_state_x4` are 4-tuples (one per     *)
+(* lane); rate8/trailb are shared across lanes (single ststatus word).       *)
+(* ------------------------------------------------------------------------- *)
+
+
+(* Concrete decoder for the x4 ststatus, mirroring `_ststatus_data_avx2x4`.
+   (Differs from the x1 spec only in returning `trailb` boxed as W64 to
+   match the proc's signature.) *)
+op ststatus_data_avx2x4_spec (s : W64.t) : W64.t * int * int =
+  let raw_at  = W64.to_uint s %% 256 in
+  let raw_r8  = (((W64.to_uint s %/ 256) %% 256) + 1) * 8 in
+  let r8      = if 200 < raw_r8 then 200 else raw_r8 in
+  let at      = if r8 <= raw_at then 0 else raw_at in
+  let trailb  = W64.of_int ((W64.to_uint s %/ 65536) %% 256) in
+  (trailb, r8, at).
+
+op rate8_of_x4  (st : W64.t Array101.t) : int  = (ststatus_data_avx2x4_spec st.[100]).`2.
+op trailb_of_x4 (st : W64.t Array101.t) : W8.t =
+  W8.of_int (W64.to_uint (ststatus_data_avx2x4_spec st.[100]).`1).
+
+
+(* Reuse the x1 ststatus packer. *)
+op encode_ststatus_x4 (at r8m1 trailb : int) : W64.t =
+  W64.of_int (at + 256 * r8m1 + 65536 * trailb).
+
+(* Concrete spec for x4 init: zeros all 4 lane states (st[0..99]),
+   packs ststatus into st[100]. *)
+op init_updstate_avx2x4_spec
+    (_st : W64.t Array101.t) (r64 : int) (trailb : W8.t)
+  : W64.t Array101.t =
+  Array101.init (fun i =>
+    if i < 100 then W64.zero
+    else encode_ststatus_x4 0 (r64 - 1) (W8.to_uint trailb)).
+
+(* Opaque spec for x4 finish: the SoA byte indexing makes a closed-form
+   body verbose; the client only relies on the `sponge_state_x4_finish`
+   composition lemma below, which fully pins it down. *)
+op finish_updstate_avx2x4_spec : W64.t Array101.t -> W64.t Array101.t.
+
+
+(* ------------------------------------------------------------------------- *)
+(* Per-lane sponge-phase viewers (opaque). Each is a 4-tuple (one entry per  *)
+(* lane).                                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+op absorb_msg_x4 :
+  W64.t Array101.t -> W8.t list * W8.t list * W8.t list * W8.t list.
+
+op sponge_state_x4 :
+  W64.t Array101.t
+  -> W64.t Array25.t * W64.t Array25.t * W64.t Array25.t * W64.t Array25.t.
+
+
+(* ------------------------------------------------------------------------- *)
+(* Flat (size-indep) `_ll` / `_h` / `_ph` triples for init / finish.         *)
+(* ------------------------------------------------------------------------- *)
+
+lemma init_updstate_avx2x4_ll: islossless M._init_updstate_avx2x4.
+proof. admitted.
+
+hoare init_updstate_avx2x4_h _st _r64 _trailb:
+  M._init_updstate_avx2x4
+  : st = _st /\ r64 = _r64 /\ trailb = _trailb
+  ==> res = init_updstate_avx2x4_spec _st _r64 _trailb.
+proof. admitted.
+
+phoare init_updstate_avx2x4_ph _st _r64 _trailb:
+  [ M._init_updstate_avx2x4
+  : st = _st /\ r64 = _r64 /\ trailb = _trailb
+  ==> res = init_updstate_avx2x4_spec _st _r64 _trailb
+  ] = 1%r.
+proof.
+by conseq init_updstate_avx2x4_ll
+       (init_updstate_avx2x4_h _st _r64 _trailb).
+qed.
+
+
+lemma finish_updstate_avx2x4_ll: islossless M._finish_updstate_avx2x4.
+proof. admitted.
+
+hoare finish_updstate_avx2x4_h _st:
+  M._finish_updstate_avx2x4
+  : st = _st
+  ==> res = finish_updstate_avx2x4_spec _st.
+proof. admitted.
+
+phoare finish_updstate_avx2x4_ph _st:
+  [ M._finish_updstate_avx2x4
+  : st = _st
+  ==> res = finish_updstate_avx2x4_spec _st
+  ] = 1%r.
+proof.
+by conseq finish_updstate_avx2x4_ll (finish_updstate_avx2x4_h _st).
+qed.
+
+
+(* ------------------------------------------------------------------------- *)
+(* Client-facing composition lemmas (admitted) — flat half.                   *)
+(* ------------------------------------------------------------------------- *)
+
+(* (1) init produces empty absorb buffers in all 4 lanes; rate/trailb set. *)
+lemma absorb_msg_x4_init _st r64 trailb:
+  absorb_msg_x4 (init_updstate_avx2x4_spec _st r64 trailb) = ([], [], [], [])
+  /\ rate8_of_x4  (init_updstate_avx2x4_spec _st r64 trailb) = r64 * 8
+  /\ trailb_of_x4 (init_updstate_avx2x4_spec _st r64 trailb) = trailb.
+proof. admitted.
+
+(* (3) finish closes the absorb phase in all 4 lanes simultaneously: each
+       lane's resulting sponge state equals ABSORB1600 over its own
+       accumulated message. *)
+lemma sponge_state_x4_finish _st:
+  let m  = absorb_msg_x4 _st in
+  let r8 = rate8_of_x4 _st in
+  let tb = trailb_of_x4 _st in
+  sponge_state_x4 (finish_updstate_avx2x4_spec _st) =
+    ( ABSORB1600 tb r8 m.`1
+    , ABSORB1600 tb r8 m.`2
+    , ABSORB1600 tb r8 m.`3
+    , ABSORB1600 tb r8 m.`4 )
+  /\ rate8_of_x4 (finish_updstate_avx2x4_spec _st) = r8.
+proof. admitted.
+
 
 abstract theory KeccakUpdstateAvx2x4.
 
@@ -586,7 +726,7 @@ module MM = {
 (* layer is filled in.                                                        *)
 (* ------------------------------------------------------------------------ *)
 
-op ststatus_data_avx2x4_spec : W64.t -> W64.t * int * int.
+(* ststatus_data_avx2x4_spec is defined in the flat scope above (concrete body). *)
 
 op add_updstate_avx2x4_spec :
   W256.t Array25.t -> int -> W8.t A.t -> W8.t A.t -> W8.t A.t -> W8.t A.t -> int -> int
@@ -755,5 +895,48 @@ proof.
 by conseq squeeze_updstate_avx2x4_ll
        (squeeze_updstate_avx2x4_h _st _b0 _b1 _b2 _b3 _len).
 qed.
+
+
+(* ----------------------------------------------------------------------- *)
+(* Client-facing composition lemmas (admitted) for the size-dependent      *)
+(* absorb / absorb_bcast / squeeze procs (4-way).                          *)
+(* ----------------------------------------------------------------------- *)
+
+(* (2) absorb: each lane's absorb buffer is extended by the first `len`
+       bytes of its respective input buffer. *)
+lemma absorb_msg_x4_absorb _st _b0 _b1 _b2 _b3 _len:
+  let m  = absorb_msg_x4 _st in
+  let st' = absorb_updstate_avx2x4_spec _st _b0 _b1 _b2 _b3 _len in
+  absorb_msg_x4 st' =
+    ( m.`1 ++ take _len (A.to_list _b0)
+    , m.`2 ++ take _len (A.to_list _b1)
+    , m.`3 ++ take _len (A.to_list _b2)
+    , m.`4 ++ take _len (A.to_list _b3) )
+  /\ rate8_of_x4  st' = rate8_of_x4 _st
+  /\ trailb_of_x4 st' = trailb_of_x4 _st.
+proof. admitted.
+
+(* (2') absorb_bcast: all 4 lanes absorb the same buffer slice. *)
+lemma absorb_msg_x4_absorb_bcast _st _buf _len:
+  let m  = absorb_msg_x4 _st in
+  let st' = absorb_bcast_updstate_avx2x4_spec _st _buf _len in
+  let new = m.`1 ++ take _len (A.to_list _buf) in
+  absorb_msg_x4 st' = (new, new, new, new)
+  /\ rate8_of_x4  st' = rate8_of_x4 _st
+  /\ trailb_of_x4 st' = trailb_of_x4 _st
+  /\ absorb_msg_x4 _st = (m.`1, m.`1, m.`1, m.`1).  (* pre: bcast assumes all lanes equal *)
+proof. admitted.
+
+(* (5) squeeze: each lane's output buffer (first `len` bytes) equals
+       SQUEEZE1600 of that lane's sponge state. *)
+lemma squeeze_yields_bytes_x4 _st _b0 _b1 _b2 _b3 _len:
+  let (_, b0', b1', b2', b3') = squeeze_updstate_avx2x4_spec _st _b0 _b1 _b2 _b3 _len in
+  let s  = sponge_state_x4 _st in
+  let r8 = rate8_of_x4 _st in
+  take _len (A.to_list b0') = SQUEEZE1600 r8 _len s.`1
+  /\ take _len (A.to_list b1') = SQUEEZE1600 r8 _len s.`2
+  /\ take _len (A.to_list b2') = SQUEEZE1600 r8 _len s.`3
+  /\ take _len (A.to_list b3') = SQUEEZE1600 r8 _len s.`4.
+proof. admitted.
 
 end KeccakUpdstateAvx2x4.
