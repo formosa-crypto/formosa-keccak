@@ -20,22 +20,137 @@ from JazzEC require import WArray200 WArray208.
 from JazzEC require import Array7 Array25 Array26.
 
 from CryptoSpecs require import JWordList.
+from CryptoSpecs require import FIPS202_Keccakf1600.
+from CryptoSpecs require import Keccak1600_Spec Keccakf1600_Spec.
 
 require import Keccak1600_avx2 Keccakf1600_avx2.
 require import Keccak1600_subreadwrite.
 
 
-(* Size-independent flat lemmas (memory-buffer / setup procs). The procs
-   _init_updstate_avx2, _finish_updstate_avx2, _absorb_m_updstate_avx2 use
-   only Array26 and don't depend on _ASIZE, so they live outside the
-   abstract theory and reference M directly (mirroring fixedsizes). *)
+(* ------------------------------------------------------------------------- *)
+(* Size-independent flat layer (memory-buffer / setup procs).                *)
+(*                                                                           *)
+(* The procs _init_updstate_avx2, _finish_updstate_avx2,                     *)
+(* _absorb_m_updstate_avx2 use only Array26 and don't depend on _ASIZE, so   *)
+(* they live outside the abstract theory and reference M directly.           *)
+(*                                                                           *)
+(* The spec layer below is the *minimal* surface a client needs to conclude  *)
+(* that init -> (absorb_m | update)* -> finish -> squeeze produces           *)
+(*    SQUEEZE1600 r8 (ABSORB1600 trailb r8 msg) outlen                       *)
+(* i.e. a SHA3 / SHAKE call. It introduces:                                  *)
+(*                                                                           *)
+(*   - absorb_msg, sponge_state : opaque viewers of the abstract sponge      *)
+(*     phase carried by an updstate state;                                   *)
+(*   - rate8_of, trailb_of      : concrete (r8, trailb) decoders;            *)
+(*   - init_*, finish_* specs    : concrete bodies (init zeros + packs       *)
+(*     ststatus; finish XORs the FIPS-202 padding into the keccak portion); *)
+(*   - absorb_m_* spec           : opaque (the streaming primitive itself).  *)
+(*                                                                           *)
+(* Composition is then captured by five admitted lemmas — see "Client-       *)
+(* facing composition lemmas" below. Each `admitted` is an explicit proof    *)
+(* obligation; nothing is stated as an axiom.                                *)
+(* ------------------------------------------------------------------------- *)
 
-op init_updstate_avx2_spec : W64.t Array26.t -> int -> W8.t -> W64.t Array26.t.
 
-op finish_updstate_avx2_spec : W64.t Array26.t -> W64.t Array26.t.
+(* ststatus encoding: low byte = at, next = r8/8 - 1, next = trailb,
+   high bytes don't-care. *)
 
+op encode_ststatus (at r8m1 trailb : int) : W64.t =
+  W64.of_int (at + 256 * r8m1 + 65536 * trailb).
+
+(* Decoder, mirroring _ststatus_data: clamps r8 to 200 and at to [0, r8). *)
+op ststatus_data_spec (s : W64.t) : W8.t * int * int =
+  let raw_at  = W64.to_uint s %% 256 in
+  let raw_r8  = (((W64.to_uint s %/ 256) %% 256) + 1) * 8 in
+  let r8      = if 200 < raw_r8 then 200 else raw_r8 in
+  let at      = if r8 <= raw_at then 0 else raw_at in
+  let trailb  = W8.of_int ((W64.to_uint s %/ 65536) %% 256) in
+  (trailb, r8, at).
+
+op rate8_of  (st : W64.t Array26.t) : int  = (ststatus_data_spec st.[25]).`2.
+op trailb_of (st : W64.t Array26.t) : W8.t = (ststatus_data_spec st.[25]).`1.
+
+
+(* Helpers used by finish: byte-XOR into the keccak state, and the
+   `[:u32 8*25] &= 0xFF00FF00` byte-clear on st[25] (preserves r8-1 byte,
+   clears at and trailb bytes). *)
+
+op xor_byte_at_st25 (stk : W64.t Array25.t) (pos : int) (b : W8.t)
+  : W64.t Array25.t =
+  let w = pos %/ 8 in
+  let m = W64.of_int (W8.to_uint b) `<<` W8.of_int (8 * (pos %% 8)) in
+  stk.[w <- stk.[w] `^` m].
+
+op clear_at_trailb (s : W64.t) : W64.t =
+  s `&` W64.of_int 0xFFFFFFFFFF00FF00.
+
+
+(* Concrete spec for init: zeros 25 keccak words, packs (at=0, r8-1=r64-1,
+   trailb) into st[25]. Input state is fully overwritten. *)
+op init_updstate_avx2_spec
+    (_st : W64.t Array26.t) (r64 : int) (trailb : W8.t)
+  : W64.t Array26.t =
+  Array26.init (fun i =>
+    if i < 25 then W64.zero
+    else encode_ststatus 0 (r64 - 1) (W8.to_uint trailb)).
+
+(* Concrete spec for finish: applies the FIPS-202 multi-rate padding:
+   XOR trailb at byte position `at`, XOR 0x80 at byte position r8-1,
+   then clear the at and trailb bytes of st[25]. *)
+op finish_updstate_avx2_spec (st : W64.t Array26.t) : W64.t Array26.t =
+  let (trailb, r8, at) = ststatus_data_spec st.[25] in
+  let stk0 = Array25.init (fun i => st.[i]) in
+  let stk1 = xor_byte_at_st25 stk0 at trailb in
+  let stk2 = xor_byte_at_st25 stk1 (r8 - 1) (W8.of_int 128) in
+  Array26.init (fun i =>
+    if i < 25 then stk2.[i] else clear_at_trailb st.[25]).
+
+(* Streaming-absorb primitive: opaque. Its behaviour is pinned down by the
+   admitted client-facing lemma `absorb_msg_absorb_m` below. *)
 op absorb_m_updstate_avx2_spec :
   global_mem_t -> W64.t Array26.t -> int -> int -> W64.t Array26.t.
+
+
+(* ------------------------------------------------------------------------- *)
+(* Sponge-phase viewers (opaque).                                            *)
+(*                                                                           *)
+(*   absorb_msg st    — the bytes absorbed-so-far that st represents (in     *)
+(*                      the absorbing phase).                                *)
+(*   sponge_state st  — the 25-word sponge state ready to be squeezed (in    *)
+(*                      the squeezing phase, i.e. post-finish).              *)
+(* ------------------------------------------------------------------------- *)
+
+op absorb_msg   : W64.t Array26.t -> W8.t list.
+op sponge_state : W64.t Array26.t -> W64.t Array25.t.
+
+
+(* ------------------------------------------------------------------------- *)
+(* Client-facing composition lemmas (admitted).                              *)
+(* ------------------------------------------------------------------------- *)
+
+(* (1) init produces an empty absorb buffer at the requested r8 / trailb. *)
+lemma absorb_msg_init _st r64 trailb:
+  absorb_msg (init_updstate_avx2_spec _st r64 trailb) = []
+  /\ rate8_of  (init_updstate_avx2_spec _st r64 trailb) = r64 * 8
+  /\ trailb_of (init_updstate_avx2_spec _st r64 trailb) = trailb.
+proof. admitted.
+
+(* (2) absorb_m appends `len` bytes of memory at `buf` to the absorb buffer.
+       The rate and trail-byte are preserved. *)
+lemma absorb_msg_absorb_m _mem _st _buf _len:
+  absorb_msg (absorb_m_updstate_avx2_spec _mem _st _buf _len)
+    = absorb_msg _st ++ memread _mem _buf _len
+  /\ rate8_of  (absorb_m_updstate_avx2_spec _mem _st _buf _len) = rate8_of _st
+  /\ trailb_of (absorb_m_updstate_avx2_spec _mem _st _buf _len) = trailb_of _st.
+proof. admitted.
+
+(* (3) finish closes the absorb phase: the resulting sponge state equals
+       ABSORB1600 over the accumulated message. *)
+lemma sponge_state_finish _st:
+  sponge_state (finish_updstate_avx2_spec _st)
+    = ABSORB1600 (trailb_of _st) (rate8_of _st) (absorb_msg _st)
+  /\ rate8_of (finish_updstate_avx2_spec _st) = rate8_of _st.
+proof. admitted.
 
 
 lemma init_updstate_avx2_ll: islossless M._init_updstate_avx2.
@@ -383,7 +498,7 @@ module MM = {
 (* layer is filled in.                                                        *)
 (* ------------------------------------------------------------------------ *)
 
-op ststatus_data_spec : W64.t -> W8.t * int * int.
+(* ststatus_data_spec is defined in the flat scope above (concrete body). *)
 
 op add_updstate_avx2_spec :
   W64.t Array25.t -> int -> W8.t A.t -> int -> int
@@ -500,5 +615,31 @@ proof.
 by conseq squeeze_updstate_avx2_ll
        (squeeze_updstate_avx2_h _st _buf _len).
 qed.
+
+
+(* ----------------------------------------------------------------------- *)
+(* Client-facing composition lemmas (admitted) for the size-dependent      *)
+(* update / squeeze procs. These extend the same `absorb_msg` /            *)
+(* `sponge_state` viewers introduced in the flat scope above.              *)
+(* ----------------------------------------------------------------------- *)
+
+(* (4) update is the array-buffer counterpart of absorb_m: it appends the
+       first `len` bytes of buf to the absorb buffer. *)
+lemma absorb_msg_update _st _buf _len:
+  absorb_msg (update_updstate_avx2_spec _st _buf _len)
+    = absorb_msg _st ++ take _len (A.to_list _buf)
+  /\ rate8_of  (update_updstate_avx2_spec _st _buf _len) = rate8_of _st
+  /\ trailb_of (update_updstate_avx2_spec _st _buf _len) = trailb_of _st.
+proof. admitted.
+
+(* (5) squeeze yields the SQUEEZE1600 bytes of length `len` from the
+       sponge state. (Single-squeeze model: the call is expected on a
+       post-finish state whose `sponge_state` is ABSORB1600 of the
+       accumulated message.) *)
+lemma squeeze_yields_bytes _st _buf _len:
+  let (_, buf') = squeeze_updstate_avx2_spec _st _buf _len in
+  take _len (A.to_list buf')
+    = SQUEEZE1600 (rate8_of _st) _len (sponge_state _st).
+proof. admitted.
 
 end KeccakUpdstateAvx2.
