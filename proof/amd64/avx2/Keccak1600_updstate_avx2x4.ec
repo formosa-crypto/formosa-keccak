@@ -27,6 +27,36 @@ require export Keccak1600_avx2x4 Keccakf1600_avx2x4.
 require import Keccak1600_subreadwrite.
 
 
+(* my proposed operators - these use a lot of the fixed_size operators *)
+(*
+op info_eq (w:W64.t) _tb _r8 _at =
+  (w `&` (W64.of_int 255)) = W64.of_int _at /\
+  (((w `>>>` 8) `&` (W64.of_int 255)) + W64.of_int 1) `<<<` 3 = W64.of_int _r8 /\
+  ((w `>>>` 16) `&` (W64.of_int 255)) = W64.of_int _tb.
+*)
+op state_word tb r8 at =
+W64.bits2w (nseq 40 false ++ 
+            W64.w2bits (W64.of_int tb) ++ 
+            W8.w2bits (W8.of_int (r8-1)) ++ 
+            W8.w2bits (W8.of_int at)).
+
+op status_spec w tb r8 at =
+ w = state_word tb r8 at.
+
+op u256_pack4 (w0 w1 w2 w3 : W64.t) : W256.t =
+   W256.init (fun i => if i < 64 then w0.[i]
+                       else if i < 128 then w1.[i-64]
+                       else if i < 192 then w2.[i-128]
+                       else w3.[i-192]).
+
+op A101u64toA25u256 (st: W64.t Array101.t): W256.t Array25.t = 
+  Array25.init (fun i => u256_pack4 st.[i*4] st.[i*4+1] st.[i*4+2] st.[i*4+3]).
+
+op state_eq (st : W64.t Array101.t) (st': W256.t Array25.t) _tb _r8 _at =
+ status_spec st.[100] _tb _r8 _at /\ 
+ A101u64toA25u256 st = st'.
+
+
 (* ------------------------------------------------------------------------- *)
 (* Size-independent flat layer (x4, 4-way parallel).                         *)
 (*                                                                           *)
@@ -101,39 +131,41 @@ op sponge_state_x4 :
 lemma init_updstate_avx2x4_ll: islossless M._init_updstate_avx2x4.
 proof. admitted.
 
-hoare init_updstate_avx2x4_h _st _r64 _trailb:
+hoare init_updstate_avx2x4_h _r8 _tb:
   M._init_updstate_avx2x4
-  : st = _st /\ r64 = _r64 /\ trailb = _trailb
-  ==> res = init_updstate_avx2x4_spec _st _r64 _trailb.
+  : to_uint trailb = _tb /\ (r64 `<<` 3) = _r8
+  ==> state_eq res st4x0 _tb _r8 0.
 proof. admitted.
-
-phoare init_updstate_avx2x4_ph _st _r64 _trailb:
+print state_eq.
+phoare init_updstate_avx2x4_ph _r8 _tb:
   [ M._init_updstate_avx2x4
-  : st = _st /\ r64 = _r64 /\ trailb = _trailb
-  ==> res = init_updstate_avx2x4_spec _st _r64 _trailb
+  : to_uint trailb = _tb /\ (r64 `<<` 3) = _r8
+  ==> state_eq res st4x0 _tb _r8 0
   ] = 1%r.
 proof.
 by conseq init_updstate_avx2x4_ll
-       (init_updstate_avx2x4_h _st _r64 _trailb).
+       (init_updstate_avx2x4_h _r8 _tb).
 qed.
 
 
 lemma finish_updstate_avx2x4_ll: islossless M._finish_updstate_avx2x4.
 proof. admitted.
 
-hoare finish_updstate_avx2x4_h _st:
+hoare finish_updstate_avx2x4_h l0 l1 l2 l3 tb r8:
   M._finish_updstate_avx2x4
-  : st = _st
-  ==> res = finish_updstate_avx2x4_spec _st.
+  :pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 (A101u64toA25u256 st) 
+  ==>
+   absorb_spec_avx2x4 r8 tb l0 l1 l2 l3 (A101u64toA25u256 res).
 proof. admitted.
 
-phoare finish_updstate_avx2x4_ph _st:
+phoare finish_updstate_avx2x4_ph l0 l1 l2 l3 tb r8:
   [ M._finish_updstate_avx2x4
-  : st = _st
-  ==> res = finish_updstate_avx2x4_spec _st
+  : pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 (A101u64toA25u256 st) 
+  ==> 
+   absorb_spec_avx2x4 r8 tb l0 l1 l2 l3 (A101u64toA25u256 res)
   ] = 1%r.
 proof.
-by conseq finish_updstate_avx2x4_ll (finish_updstate_avx2x4_h _st).
+by conseq finish_updstate_avx2x4_ll (finish_updstate_avx2x4_h l0 l1 l2 l3 tb r8).
 qed.
 
 
@@ -759,20 +791,20 @@ op squeeze_updstate_avx2x4_spec :
 lemma ststatus_data_avx2x4_ll: islossless MM._ststatus_data_avx2x4.
 proof. admitted.
 
-hoare ststatus_data_avx2x4_h _s:
+hoare ststatus_data_avx2x4_h _tb _r8 _at:
   MM._ststatus_data_avx2x4
-  : ststatus = _s
-  ==> res = ststatus_data_avx2x4_spec _s.
+  : status_spec arg _tb _r8 _at
+  ==> res = (W64.of_int _tb, _r8, _at).
 proof. admitted.
 
-phoare ststatus_data_avx2x4_ph _s:
+phoare ststatus_data_avx2x4_ph _tb _r8 _at:
   [ MM._ststatus_data_avx2x4
-  : ststatus = _s
-  ==> res = ststatus_data_avx2x4_spec _s
-  ] = 1%r.
-proof. by conseq ststatus_data_avx2x4_ll (ststatus_data_avx2x4_h _s). qed.
+  : status_spec arg _tb _r8 _at
+  ==> res = (W64.of_int _tb, _r8, _at) ] = 1%r.
+proof. by conseq ststatus_data_avx2x4_ll (ststatus_data_avx2x4_h _tb _r8 _at). qed.
 
 
+(* Did not touch the add_updstate definitions *)
 lemma add_updstate_avx2x4_ll: islossless MM._add_updstate_avx2x4.
 proof. admitted.
 
@@ -795,6 +827,7 @@ by conseq add_updstate_avx2x4_ll
 qed.
 
 
+(* Did not touch the add_bcast definitions *)
 lemma add_bcast_updstate_avx2x4_ll: islossless MM._add_bcast_updstate_avx2x4.
 proof. admitted.
 
@@ -818,40 +851,102 @@ qed.
 lemma absorb_updstate_avx2x4_ll: islossless MM._absorb_updstate_avx2x4.
 proof. admitted.
 
-hoare absorb_updstate_avx2x4_h _st _b0 _b1 _b2 _b3 _len:
+hoare absorb_updstate_avx2x4_h l0 l1 l2 l3 _b0 _b1 _b2 _b3 tb r8 at _len:
   MM._absorb_updstate_avx2x4
-  : st = _st /\ buf0 = _b0 /\ buf1 = _b1 /\ buf2 = _b2 /\ buf3 = _b3 /\ len = _len
-  ==> res = absorb_updstate_avx2x4_spec _st _b0 _b1 _b2 _b3 _len.
+  : pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 (A101u64toA25u256 st) /\ 
+    status_spec st.[100] tb r8 at /\ buf0 = _b0 /\ buf1 = _b1 /\
+    buf2 = _b2 /\ buf3 = _b3 /\ len = _len /\ _len <= _ASIZE
+  ==> 
+    status_spec res.[100] tb r8 (at+_len) /\
+    if _len < _ASIZE then
+      pabsorb_spec_avx2x4 r8 
+      (l0 ++ take _len (A.to_list _b0))
+      (l1 ++ take _len (A.to_list _b1))
+      (l2 ++ take _len (A.to_list _b2))
+      (l3 ++ take _len (A.to_list _b3))
+      (A101u64toA25u256 res)
+    else  pabsorb_spec_avx2x4 r8 
+      (l0 ++ A.to_list _b0)
+      (l1 ++ A.to_list _b1)
+      (l2 ++ A.to_list _b2)
+      (l3 ++ A.to_list _b3)
+      (A101u64toA25u256 res).
 proof. admitted.
 
-phoare absorb_updstate_avx2x4_ph _st _b0 _b1 _b2 _b3 _len:
+phoare absorb_updstate_avx2x4_ph l0 l1 l2 l3 _b0 _b1 _b2 _b3 tb r8 at _len:
   [ MM._absorb_updstate_avx2x4
-  : st = _st /\ buf0 = _b0 /\ buf1 = _b1 /\ buf2 = _b2 /\ buf3 = _b3 /\ len = _len
-  ==> res = absorb_updstate_avx2x4_spec _st _b0 _b1 _b2 _b3 _len
-  ] = 1%r.
+  : pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 (A101u64toA25u256 st) /\ 
+    status_spec st.[100] tb r8 at /\ buf0 = _b0 /\ buf1 = _b1 /\
+    buf2 = _b2 /\ buf3 = _b3 /\ len = _len /\ _len <= _ASIZE
+  ==> 
+    status_spec res.[100] tb r8 (at+_len) /\
+    if _len < _ASIZE then
+      pabsorb_spec_avx2x4 r8 
+      (l0 ++ take _len (A.to_list _b0))
+      (l1 ++ take _len (A.to_list _b1))
+      (l2 ++ take _len (A.to_list _b2))
+      (l3 ++ take _len (A.to_list _b3))
+      (A101u64toA25u256 res)
+    else  pabsorb_spec_avx2x4 r8 
+      (l0 ++ A.to_list _b0)
+      (l1 ++ A.to_list _b1)
+      (l2 ++ A.to_list _b2)
+      (l3 ++ A.to_list _b3)
+      (A101u64toA25u256 res)] = 1%r.
 proof.
 by conseq absorb_updstate_avx2x4_ll
-       (absorb_updstate_avx2x4_h _st _b0 _b1 _b2 _b3 _len).
+       (absorb_updstate_avx2x4_h l0 l1 l2 l3 _b0 _b1 _b2 _b3 tb r8 at _len).
 qed.
 
 
 lemma absorb_bcast_updstate_avx2x4_ll: islossless MM._absorb_bcast_updstate_avx2x4.
 proof. admitted.
 
-hoare absorb_bcast_updstate_avx2x4_h _st _buf _len:
+hoare absorb_bcast_updstate_avx2x4_h l0 l1 l2 l3 _buf tb r8 at _len:
   MM._absorb_bcast_updstate_avx2x4
-  : st = _st /\ buf = _buf /\ len = _len
-  ==> res = absorb_bcast_updstate_avx2x4_spec _st _buf _len.
+  : pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 (A101u64toA25u256 st) /\ 
+    status_spec st.[100] tb r8 at /\ buf = _buf /\ len = _len /\
+    _len <= _ASIZE
+  ==> 
+    status_spec res.[100] tb r8 (at+_len) /\
+    if _len < _ASIZE then
+      pabsorb_spec_avx2x4 r8 
+      (l0 ++ take _len (A.to_list _buf))
+      (l1 ++ take _len (A.to_list _buf))
+      (l2 ++ take _len (A.to_list _buf))
+      (l3 ++ take _len (A.to_list _buf))
+      (A101u64toA25u256 res)
+    else  pabsorb_spec_avx2x4 r8 
+      (l0 ++ A.to_list _buf)
+      (l1 ++ A.to_list _buf)
+      (l2 ++ A.to_list _buf)
+      (l3 ++ A.to_list _buf)
+      (A101u64toA25u256 res).
 proof. admitted.
 
-phoare absorb_bcast_updstate_avx2x4_ph _st _buf _len:
+phoare absorb_bcast_updstate_avx2x4_ph l0 l1 l2 l3 _buf tb r8 at _len:
   [ MM._absorb_bcast_updstate_avx2x4
-  : st = _st /\ buf = _buf /\ len = _len
-  ==> res = absorb_bcast_updstate_avx2x4_spec _st _buf _len
-  ] = 1%r.
+  : pabsorb_spec_avx2x4 r8 l0 l1 l2 l3 (A101u64toA25u256 st) /\ 
+    status_spec st.[100] tb r8 at /\ buf = _buf /\ len = _len /\
+    _len <= _ASIZE
+  ==> 
+    status_spec res.[100] tb r8 (at+_len) /\
+    if _len < _ASIZE then
+      pabsorb_spec_avx2x4 r8 
+      (l0 ++ take _len (A.to_list _buf))
+      (l1 ++ take _len (A.to_list _buf))
+      (l2 ++ take _len (A.to_list _buf))
+      (l3 ++ take _len (A.to_list _buf))
+      (A101u64toA25u256 res)
+    else  pabsorb_spec_avx2x4 r8 
+      (l0 ++ A.to_list _buf)
+      (l1 ++ A.to_list _buf)
+      (l2 ++ A.to_list _buf)
+      (l3 ++ A.to_list _buf)
+      (A101u64toA25u256 res)] = 1%r.
 proof.
 by conseq absorb_bcast_updstate_avx2x4_ll
-       (absorb_bcast_updstate_avx2x4_h _st _buf _len).
+       (absorb_bcast_updstate_avx2x4_h l0 l1 l2 l3 _buf tb r8 at _len).
 qed.
 
 
@@ -880,20 +975,29 @@ qed.
 lemma squeeze_updstate_avx2x4_ll: islossless MM._squeeze_updstate_avx2x4.
 proof. admitted.
 
-hoare squeeze_updstate_avx2x4_h _st _b0 _b1 _b2 _b3 _len:
+hoare squeeze_updstate_avx2x4_h _st r8 _len:
   MM._squeeze_updstate_avx2x4
-  : st = _st /\ buf0 = _b0 /\ buf1 = _b1 /\ buf2 = _b2 /\ buf3 = _b3 /\ len = _len
-  ==> res = squeeze_updstate_avx2x4_spec _st _b0 _b1 _b2 _b3 _len.
+  : (A101u64toA25u256 st) = _st /\ len = _len /\ _len <= _ASIZE
+  ==> 
+    A101u64toA25u256 res.`1 = iter ((_ASIZE - 1) %/ r8 + 1) keccak_f1600_x4 _st
+ /\ res.`2 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 0))
+ /\ res.`3 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 1))
+ /\ res.`4 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 2))
+ /\ res.`5 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 3)).
 proof. admitted.
 
-phoare squeeze_updstate_avx2x4_ph _st _b0 _b1 _b2 _b3 _len:
+phoare squeeze_updstate_avx2x4_ph _st r8 _len:
   [ MM._squeeze_updstate_avx2x4
-  : st = _st /\ buf0 = _b0 /\ buf1 = _b1 /\ buf2 = _b2 /\ buf3 = _b3 /\ len = _len
-  ==> res = squeeze_updstate_avx2x4_spec _st _b0 _b1 _b2 _b3 _len
-  ] = 1%r.
+  : (A101u64toA25u256 st) = _st /\ len = _len /\ _len <= _ASIZE
+  ==> 
+    A101u64toA25u256 res.`1 = iter ((_ASIZE - 1) %/ r8 + 1) keccak_f1600_x4 _st 
+ /\ res.`2 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 0))
+ /\ res.`3 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 1))
+ /\ res.`4 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 2))
+ /\ res.`5 = A.of_list W8.zero (SQUEEZE1600 r8 _len (st4x_get _st 3))] = 1%r.
 proof.
 by conseq squeeze_updstate_avx2x4_ll
-       (squeeze_updstate_avx2x4_h _st _b0 _b1 _b2 _b3 _len).
+       (squeeze_updstate_avx2x4_h _st r8 _len).
 qed.
 
 
