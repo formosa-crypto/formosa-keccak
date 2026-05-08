@@ -39,7 +39,7 @@ inline fn __m_ilen_read_upto8_at
    , reg u64    /* w */
 {
   reg u64 w, t16, t8;
-  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) {
+  if ( LEN < 0 || AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) {
     // nothing to be done...
     w = 0;
   } else {
@@ -84,7 +84,7 @@ inline fn __m_ilen_read_upto8_at
       }
     }
   }
-  return buf, LEN, TRAIL, AT, w; 
+  return buf, LEN, TRAIL, AT, w;
 }
 
 inline fn __m_ilen_read_upto8_at2
@@ -102,7 +102,7 @@ inline fn __m_ilen_read_upto8_at2
   reg u64 w, t16, t8;
   inline int AT8;
 
-  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
+  if ( LEN < 0 || AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
     w = 0;
   } else {
     AT8 = AT-CUR;
@@ -187,7 +187,7 @@ inline fn __m_ilen_read_upto16_at
   reg u64 t64_0, t64_1;
   reg u128 w;
 
-  if ( AT < CUR || CUR+16 <= AT || LEN==0 && TRAIL==0 ) {
+  if ( LEN < 0 || AT < CUR || CUR+16 <= AT || LEN==0 && TRAIL==0 ) {
     // nothing to be done...
     w = #set0_128();
   } else {
@@ -203,53 +203,13 @@ inline fn __m_ilen_read_upto16_at
       w = #VPINSR_2u64(w, t64_1, 1); 
     } else {
       buf, LEN, TRAIL, AT, t64_0 = __m_ilen_read_upto8_at(buf, LEN, TRAIL, CUR, AT);
-      w = (128u) t64_0;
+      w = #VMOV_64(t64_0);
       buf, LEN, TRAIL, AT, t64_1 = __m_ilen_read_upto8_at(buf, LEN, TRAIL, CUR+8, AT);
       w = #VPINSR_2u64(w, t64_1, 1); 
     }
   }
   return buf, LEN, TRAIL, AT, w; 
-}  
-inline fn __m_ilen_read_upto16_at2
-( reg ui64 buf
-, inline int LEN
-, inline int TRAIL
-, inline int CUR
-, inline int AT
-) -> reg ui64   /* buf */
-   , inline int /* LEN */
-   , inline int /* TRAIL */
-   , inline int /* AT */
-   , reg u128    /* w */
-{
-  reg u64 t64_0, t64_1;
-  reg u128 w;
-  inline int AT16;
-
-  if ( AT < CUR || CUR+16 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
-    w = #set0_128();
-  } else {
-    AT16 = AT-CUR;
-    if ( 16 <= LEN ) {
-      w = [:u128 (64u) buf];
-      w = __SHLDQ(w, AT16);
-      buf += 16-AT16;
-      LEN -= 16-AT16;
-      AT16 = 16;
-    } else if ( 8 <= AT16 ) {
-      w = #set0_128();
-      buf, LEN, TRAIL, AT16, t64_1 = __m_ilen_read_upto8_at(buf, LEN, TRAIL, 8, AT16);
-      w = #VPINSR_2u64(w, t64_1, 1); 
-    } else {
-      buf, LEN, TRAIL, AT16, t64_0 = __m_ilen_read_upto8_at(buf, LEN, TRAIL, 0, AT16);
-      w = (128u) t64_0;
-      buf, LEN, TRAIL, AT16, t64_1 = __m_ilen_read_upto8_at(buf, LEN, TRAIL, 8, AT16);
-      w = #VPINSR_2u64(w, t64_1, 1); 
-    }
-    AT = CUR+AT16;
-  }
-  return buf, LEN, TRAIL, AT, w; 
-}  
+}
 
 #[safety =
    { requires = is_mem_init((64u) buf,max(LEN,32 - (AT-CUR))) && 0<=LEN
@@ -281,7 +241,7 @@ inline fn __m_ilen_read_upto32_at
   reg u128 t128_0, t128_1;
   reg u256 w;
 
-  if ( AT < CUR || CUR+32 <= AT || LEN==0 && TRAIL==0) { // nothing to be done...
+  if ( LEN < 0 || AT < CUR || CUR+32 <= AT || LEN==0 && TRAIL==0) { // nothing to be done...
     w = #set0_256();
   } else {
     if ( AT==CUR && 32 <= LEN ) {
@@ -301,45 +261,7 @@ inline fn __m_ilen_read_upto32_at
     }
   }
   return buf, LEN, TRAIL, AT, w; 
-}  
-inline fn __m_ilen_read_upto32_at2
-( reg ui64 buf
-, inline int LEN
-, inline int TRAIL
-, inline int CUR
-, inline int AT
-) -> reg ui64   /* buf */
-   , inline int /* LEN */
-   , inline int /* TRAIL */
-   , inline int /* AT */
-   , reg u256    /* w */
-{
-  reg u128 t128_0, t128_1;
-  reg u256 w;
-  inline int AT32;
-
-  if ( AT < CUR || CUR+32 <= AT || LEN==0 && TRAIL==0) { // nothing to be done...
-    w = #set0_256();
-  } else {
-    AT32 = AT-CUR;
-    if ( AT32==0 && 32 <= LEN ) {
-      w = [:u256 (64u) buf];
-      AT32 += 32;
-      buf += 32;
-      LEN -= 32;
-    } else if ( 16 <= AT32 ) {
-      w = #set0_256();
-      buf, LEN, TRAIL, AT32, t128_1 = __m_ilen_read_upto16_at(buf, LEN, TRAIL, 16, AT32);
-      w = #VINSERTI128(w, t128_1, 1); 
-    } else {
-      buf, LEN, TRAIL, AT32, t128_0 = __m_ilen_read_upto16_at(buf, LEN, TRAIL,  0, AT32);
-      buf, LEN, TRAIL, AT32, t128_1 = __m_ilen_read_upto16_at(buf, LEN, TRAIL, 16, AT32);
-      w = (2u128)[t128_1, t128_0];
-    }
-    AT = CUR+AT32;
-  }
-  return buf, LEN, TRAIL, AT, w; 
-}  
+}
 
 #[safety =
    { requires = is_mem_init((64u) buf,max(LEN,8 - (AT-CUR))) && 0<=LEN
@@ -372,7 +294,7 @@ inline fn __m_ilen_read_bcast_upto8_at
   reg u128 t128;
   reg u256 w256;
 
-  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
+  if ( LEN < 0 || AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
     w256 = #set0_256();
   } else {
     if (8 <= LEN) {
@@ -385,46 +307,8 @@ inline fn __m_ilen_read_bcast_upto8_at
     } else {
       //AT8 = AT-CUR;
       buf, LEN, TRAIL, AT, w = __m_ilen_read_upto8_at(buf, LEN, TRAIL, CUR, AT);
-      t128 = (128u) w;
+      t128 = #VMOV_64(w);
       w256 = #VPBROADCAST_4u64(t128);
-      w256 = __SHLQ_256(w256, AT-CUR);
-    }
-  }
-  return buf, LEN, TRAIL, AT, w256; 
-}
-inline fn __m_ilen_read_bcast_upto8_at2
-( reg ui64 buf
-, inline int LEN
-, inline int TRAIL
-, inline int CUR
-, inline int AT
-) -> reg ui64   /* buf */
-   , inline int /* LEN */
-   , inline int /* TRAIL */
-   , inline int /* AT */
-   , reg u256   /* w */
-{
-  reg u64 w;
-  reg u128 t128;
-  reg u256 w256;
-  inline int AT8;
-
-  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
-    w256 = #set0_256();
-  } else {
-    if (8 <= LEN) {
-      AT8 = AT-CUR;
-      w256 = #VPBROADCAST_4u64([:u64 (64u) buf]);
-      w256 = __SHLQ_256(w256, AT8);
-      buf += 8-AT8;
-      LEN -= 8-AT8;
-      AT = CUR + 8;
-    } else {
-      AT8 = AT-CUR;
-      buf, LEN, TRAIL, AT, w = __m_ilen_read_upto8_at(buf, LEN, TRAIL, CUR, AT);
-      t128 = (128u) w;
-      w256 = #VPBROADCAST_4u64(t128);
-      w256 = __SHLQ_256(w256, AT8);
     }
   }
   return buf, LEN, TRAIL, AT, w256; 
@@ -534,7 +418,7 @@ inline fn __m_ilen_write_upto32
       buf += 32;
       LEN -= 32;
     } else {
-      t128 = (128u) w;
+      t128 = #VMOV_64(w);
       if (16 <= LEN) {
         [:u128 (64u) buf] = t128;
         buf += 16;

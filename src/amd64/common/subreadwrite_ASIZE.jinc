@@ -50,7 +50,7 @@ inline fn __a_ilen_read_upto8_at
 {
   reg u64 w, t16, t8;
 
-  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) {
+  if ( LEN < 0 || AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) {
     // nothing to be done...
     w = 0;
   } else {
@@ -62,36 +62,36 @@ inline fn __a_ilen_read_upto8_at
       AT = CUR+8; 
     } else {
       if (4 <= LEN) {
-	w = (64u) buf.[:u32 offset + DELTA];
-	w = __SHLQ(w, AT-CUR);
+        w = (64u) buf.[:u32 offset + DELTA];
+        w = __SHLQ(w, AT-CUR);
         DELTA += CUR+8 <= AT+4 ? CUR+8-AT : 4;
-	LEN -= CUR+8 <= AT+4 ? CUR+8-AT : 4;
-	AT = CUR+8 <= AT+4 ? CUR+8 : AT+4;
+        LEN -= CUR+8 <= AT+4 ? CUR+8-AT : 4;
+        AT = CUR+8 <= AT+4 ? CUR+8 : AT+4;
       } else {
-	w = 0;
+        w = 0;
       }
       if (AT < CUR+8 && 2 <= LEN) {
-	t16 = (64u) buf.[:u16 offset + DELTA];
-	DELTA += CUR+8 <= AT+2 ? CUR+8-AT : 2;
-	LEN -= CUR+8 <= AT+2 ? CUR+8-AT : 2;
-	t16 = __SHLQ(t16, AT-CUR);
-	w |= t16;
-	AT = CUR+8 <= AT+2 ? CUR+8 : AT+2;
+        t16 = (64u) buf.[:u16 offset + DELTA];
+        DELTA += CUR+8 <= AT+2 ? CUR+8-AT : 2;
+        LEN -= CUR+8 <= AT+2 ? CUR+8-AT : 2;
+        t16 = __SHLQ(t16, AT-CUR);
+        w |= t16;
+        AT = CUR+8 <= AT+2 ? CUR+8 : AT+2;
       }
       if (AT < CUR+8 && 1 <= LEN) {
         t8 = (64u) buf.[:u8 offset + DELTA];
-	DELTA += 1;
-	LEN -= 1;
-	t8 = __SHLQ(t8, AT-CUR);
-	w |= t8;
-	AT += 1;
+        DELTA += 1;
+        LEN -= 1;
+        t8 = __SHLQ(t8, AT-CUR);
+        w |= t8;
+        AT += 1;
       }
       if (AT < CUR+8 && TRAIL!=0) {
         t8 = TRAIL%256;
         t8 <<= 8*(AT-CUR);
-	w |= t8;
-	AT += 1;
-	TRAIL = 0;
+        w |= t8;
+        AT += 1;
+        TRAIL = 0;
       }
     }
   }
@@ -131,7 +131,7 @@ inline fn __a_ilen_read_upto16_at
   reg u64 t64_0, t64_1;
   reg u128 w;
 
-  if ( AT < CUR || CUR+16 <= AT || LEN==0 && TRAIL==0 ) {
+  if ( LEN < 0 || AT < CUR || CUR+16 <= AT || LEN==0 && TRAIL==0 ) {
     // nothing to be done...
     w = #set0_128();
   } else {
@@ -147,7 +147,7 @@ inline fn __a_ilen_read_upto16_at
       w = #VPINSR_2u64(w, t64_1, 1); 
     } else {
       DELTA, LEN, TRAIL, AT, t64_0 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
-      w = (128u) t64_0;
+      w = #VMOV_64(t64_0);
       DELTA, LEN, TRAIL, AT, t64_1 = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR+8, AT);
       w = #VPINSR_2u64(w, t64_1, 1); 
     }
@@ -188,7 +188,7 @@ inline fn __a_ilen_read_upto32_at
   reg u128 t128_0, t128_1;
   reg u256 w;
 
-  if ( AT < CUR || CUR+32 <= AT || LEN==0 && TRAIL==0) { // nothing to be done...
+  if ( LEN < 0 || AT < CUR || CUR+32 <= AT || LEN==0 && TRAIL==0) { // nothing to be done...
     w = #set0_256();
   } else {
     if ( AT==CUR && 32 <= LEN ) {
@@ -245,7 +245,7 @@ inline fn __a_ilen_read_bcast_upto8_at
   reg u256 w256;
   inline int AT8;
 
-  if ( AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
+  if ( LEN < 0 || AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
     w256 = #set0_256();
   } else {
     if (8 <= LEN) {
@@ -258,213 +258,12 @@ inline fn __a_ilen_read_bcast_upto8_at
     } else {
       AT8 = AT-CUR;
       DELTA, LEN, TRAIL, AT, w = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
-      t128 = (128u) w;
+      t128 = #VMOV_64(w);
       w256 = #VPBROADCAST_4u64(t128);
-      w256 = __SHLQ_256(w256, AT8);
     }
   }
   return DELTA, LEN, TRAIL, AT, w256; 
 }
-
-/*
-// __aread_subu64
-#[safety =
-   { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
-     && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
-   , res = { final_DELTA, final_LEN, final_TRAIL, final_w }
-   , ensures = final_DELTA == DELTA + max(0,min(LEN,8))
-     && final_LEN == LEN - max(0,min(LEN,8))
-     && final_TRAIL == (8 <=s LEN ? TRAIL : 0)
-   }
- ]
-inline fn __a_ilen_read_upto8
-( reg const ptr u8[_ASIZE] buf
-, reg ui64 offset
-, inline int DELTA
-, inline int LEN
-, inline int TRAIL
-) -> inline int /* DELTA */
-   , inline int /* LEN */
-   , inline int /* TRAIL */
-   , reg u64 /* w */
-{
-  reg u64 w, t16, t8;
-  inline int ILEN;
-  ILEN = LEN;
-  if (LEN <= 0) {
-    w = TRAIL % 256;
-    TRAIL = 0;
-  } else if (8 <= LEN) {
-    w = buf.[:u64 offset + DELTA];
-    DELTA += 8;
-    LEN -= 8;
-  } else {
-    if (4 <= LEN) {
-      w = (64u) buf.[:u32 offset + DELTA];
-      DELTA += 4;
-      LEN -= 4;
-    } else {
-      w = 0;
-    }
-    if (2 <= LEN) {
-      t16 = (64u) buf.[:u16 offset + DELTA];
-      DELTA += 2;
-      LEN -= 2;
-    } else {
-      t16 = 0;
-    }
-    if (1 <= LEN || TRAIL%256 != 0) {
-      if (1 <= LEN) {
-        t8 = (64u) buf.[:u8 offset + DELTA];
-        if (TRAIL%256 != 0) { t8 |= 256*(TRAIL%256); }
-        DELTA += 1;
-        LEN -= 1;
-      } else { 
-        t8 = TRAIL % 256;
-      }
-      TRAIL = 0;
-      t8 <<= 8*(2*((ILEN/2) % 2));
-      t16 |= t8;
-    }
-    t16 <<= 8*(4*((ILEN/4) % 2));
-    w |= t16;
-  }
-  return DELTA, LEN, TRAIL, w; 
-}
-
-// __aread_bcast_4subu64
-#[safety =
-   { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
-     && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
-   , res = { final_DELTA, final_LEN, final_TRAIL, final_w }
-   , ensures = final_DELTA == DELTA + max(0,min(LEN,8))
-     && final_LEN == LEN - max(0,min(LEN,8))
-     && final_TRAIL == (8 <=s LEN ? TRAIL : 0)
-   }
- ]
-inline fn __a_ilen_read_bcast_upto8
-( reg const ptr u8[_ASIZE] buf
-, reg ui64 offset
-, inline int DELTA
-, inline int LEN
-, inline int TRAIL
-) -> inline int /* DELTA */
-   , inline int /* LEN */
-   , inline int /* TRAIL */
-   , reg u256 /* w */
-{
-  reg u64 t64;
-  reg u128 t128;
-  reg u256 w;
-  if (LEN <= 0 && TRAIL%256==0) {
-    w = #set0_256();
-  } else {
-    if (8 <= LEN) {
-      w = #VPBROADCAST_4u64(buf.[:u64 offset + DELTA]);
-      DELTA += 8;
-      LEN -= 8;
-    } else {
-      DELTA, LEN, TRAIL, t64 = __a_ilen_read_upto8(buf, offset, DELTA, LEN, TRAIL);
-      t128 = (128u) t64;
-      w = #VPBROADCAST_4u64(t128);
-    }
-  }
-  return DELTA, LEN, TRAIL, w; 
-}
-
-// __aread_subu128
-#[safety =
-   { requires = is_arr_init(buf,offset+DELTA,min(LEN,16)) && 0 <= DELTA
-     && 0 <= offset && offset + DELTA + min(LEN,16) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
-   , res = { final_DELTA, final_LEN, final_TRAIL, final_w }
-   , ensures = final_DELTA == DELTA + max(0,min(LEN,16))
-     && final_LEN == LEN - max(0,min(LEN,16))
-     && final_TRAIL == (16 <=s LEN ? TRAIL : 0)
-   }
- ]
-inline fn __a_ilen_read_upto16
-( reg const ptr u8[_ASIZE] buf
-, reg ui64 offset
-, inline int DELTA
-, inline int LEN
-, inline int TRAIL
-) -> inline int /* DELTA */
-   , inline int /* LEN */
-   , inline int /* TRAIL */
-   , reg u128 /* w */
-{
-  reg u128 w;
-  reg u64 t64;
-  if (LEN <=s 0 && TRAIL%256==0) {
-    w = #set0_128();
-  } else if (16 <=s LEN) {
-    w = buf.[:u128 offset + DELTA];
-    DELTA += 16;
-    LEN -= 16;
-  } else {
-    if (8 <= LEN) {
-      w = #VMOV(buf.[:u64 offset + DELTA]);
-      DELTA += 8;
-      LEN -= 8;
-      DELTA, LEN, TRAIL, t64 = __a_ilen_read_upto8(buf, offset, DELTA, LEN, TRAIL);
-      w = #VPINSR_2u64(w, t64, 1); 
-    } else {
-      DELTA, LEN, TRAIL, t64 = __a_ilen_read_upto8(buf, offset, DELTA, LEN, TRAIL);
-      w = (128u) t64;
-    }
-  }
-  return DELTA, LEN, TRAIL, w;
-}
-
-// __aread_subu256
-#[safety =
-   { requires = is_arr_init(buf,offset+DELTA,min(LEN,32)) && 0 <= DELTA
-     && 0 <= offset && offset + DELTA + min(LEN,32) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
-   , res = { final_DELTA, final_LEN, final_TRAIL, final_w }
-   , ensures = final_DELTA == DELTA + max(0,min(LEN,32))
-     && final_LEN == LEN - max(0,min(LEN,32))
-     && final_TRAIL == (32 <=s LEN ? TRAIL : 0)
-   }
- ]
-inline fn __a_ilen_read_upto32
-( reg const ptr u8[_ASIZE] buf
-, reg ui64 offset
-, inline int DELTA
-, inline int LEN
-, inline int TRAIL
-) -> inline int /* DELTA */
-   , inline int /* LEN */
-   , inline int /* TRAIL */
-   , reg u256 /* w */
-{
-  reg u256 w;
-  reg u128 t128_0, t128_1;
-  if (LEN <=s 0 && TRAIL%256==0) {
-    w = #set0_256();
-  } else if (32 <=s LEN) {
-    w = buf.[:u256 offset + DELTA];
-    DELTA += 32;
-    LEN -= 32;
-  } else {
-    if (16 <=s LEN) {
-      t128_0 = buf.[:u128 offset + DELTA];
-      DELTA += 16;
-      LEN -= 16;
-      DELTA, LEN, TRAIL, t128_1 = __a_ilen_read_upto16(buf, offset, DELTA, LEN, TRAIL);
-      w = (2u128)[t128_1, t128_0];
-    } else {
-      t128_1 = #set0_128();
-      DELTA, LEN, TRAIL, t128_0 = __a_ilen_read_upto16(buf, offset, DELTA, LEN, TRAIL);
-      w = (2u128)[t128_1, t128_0];
-    }
-  }
-  return DELTA, LEN, TRAIL, w;
-}
-*/
 
 /**
     WRITE A FIXED NUMBER OF BYTES FROM AN ARRAY INTO A WORD
@@ -585,7 +384,7 @@ inline fn __a_ilen_write_upto32
       DELTA += 32;
       LEN -= 32;
     } else {
-      t128 = (128u) w;
+      t128 = #VMOV_64(w);
       if (16 <= LEN) {
         buf.[:u128 offset + DELTA] = t128;
         DELTA += 16;
