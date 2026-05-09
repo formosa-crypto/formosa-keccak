@@ -832,6 +832,9 @@ case: (i=2) => //.
 by move => /> *; move: (st{m}) => _st; clear; circuit.
 qed.
 
+op asubread_pre (_cur _at _off dlt _len _tb: int): bool = true.
+print asubread.
+
 hoare addstate_avx2_h _st _buf _off _len _tb _at:
  MM.__addstate_avx2
  : st=_st /\ buf=_buf /\ offset=_off /\ _LEN=_len /\ _TRAILB=_tb /\ aT=_at
@@ -877,39 +880,39 @@ pose _statebytes := nseq _at W8.zero ++ sub _buf _off _len ++ [W8.of_int _tb].
 seq 15: ( st=_st /\
           bytes2state _statebytes = bytes2state (stavx2bytes_pack t64_1 r1 t64_2 r3 t64_3 r4 t64_4 r5 t64_5 r6)
           /\ aT = _at + _len + b2i (_tb <> 0) /\ offset = _off + _len /\ stavx2INV _st).
-admitted(*
  seq 3: ( #[1:3,8:]pre
-        /\ subread_pre 0 _at _off 0 _len _tb
-        /\ subread_spec 8 _buf _off 0 _len _tb 0 _at dELTA _LEN _TRAILB aT (u64bytes t64_1)).
+        /\ asubread_pre 0 _at _off 0 _len _tb
+        /\ asubread _buf _off (u64bytes t64_1) 0 _at 0 _len _tb aT dELTA _LEN _TRAILB).
   case: (aT < 8).
    rcondt 3; first by auto.
    ecall (a_ilen_read_upto8_at_h buf offset dELTA _LEN _TRAILB 0 aT).
    by auto => &m /#.
   rcondf 3; first by auto.
   auto => |> *; split; first smt().
-  by apply subread_spec_ahead8 => /#.
+  apply asubread0; rewrite size_to_list; last smt().
+  by rewrite u64bytes0.
  seq 2: ( #[/:-2]pre
-        /\ subread_spec 40 _buf _off 0 _len _tb 0 _at dELTA _LEN _TRAILB aT (u64bytes t64_1++u256bytes r1)).
+        /\ asubread _buf _off (u64bytes t64_1++u256bytes r1) 0 _at 0 _len _tb aT dELTA _LEN _TRAILB).
   case: (aT < 40 /\ (0 < _LEN \/ _TRAILB <> 0)).
    rcondt 2; first by auto.
    ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 8 aT).
-   auto => |> &m ?????? H0 ? Hsz [dlt' len' tb' at' w'] /= H1.
-   by apply (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 H1).
+   auto => &m |> ?????? H0 ? Hsz [dlt' len' tb' at' w'] /= H1.
+   by apply (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 H1).
   rcondf 2; first by auto.
-  auto => |> &m ?????? H0 /negb_and [Hat|Hsz].
-   have H1:= subread_spec_ahead32 _buf _off dELTA{m} _LEN{m} _TRAILB{m} 8 aT{m} _; first by smt().
-   by apply (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 H1).
-  have H1:= subread_spec_empty32 _buf _off dELTA{m} _LEN{m} _TRAILB{m} 8 aT{m} _; first by smt().
-  by apply (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 H1).
+  auto => &m |> ?????? H0 /negb_and H.
+  have H1:= asubread0 _buf _off (u256bytes zero) 8 aT{m} dELTA{m} _LEN{m} _TRAILB{m} _ _.
+  + by rewrite u256bytes0 size_nseq /#.
+  + rewrite size_to_list /#.
+  by apply (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 H1).
  case: (0 < _LEN \/ _TRAILB <> 0).
   rcondt 9; first by auto.
   swap [2..8] 1.
   seq 2: ( #[/:-3]pre
-         /\ subread_spec 48 _buf _off 0 _len _tb 0 _at dELTA _LEN _TRAILB aT
-             (u64bytes t64_1++u256bytes r1++u64bytes t64_2)).
+         /\ asubread _buf _off (u64bytes t64_1++u256bytes r1++u64bytes t64_2)
+                     0 _at 0 _len _tb aT dELTA _LEN _TRAILB).
    ecall (a_ilen_read_upto8_at_h buf offset dELTA _LEN _TRAILB 40 aT).
-   auto => |> &m ?????? H0 Hsz [dlt' len' tb' at' w'] /= H1.
-   by apply (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 H1).
+   auto => &m |> ?????? H0 Hsz [dlt' len' tb' at' w'] /= H1.
+   by apply (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 H1).
   sp; if => //=.
    wp; ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 168 aT).
    ecall (a_ilen_read_upto8_at_h buf offset dELTA _LEN _TRAILB 160 aT).
@@ -918,7 +921,7 @@ admitted(*
    ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 88 aT).
    ecall (a_ilen_read_upto8_at_h buf offset dELTA _LEN _TRAILB 80 aT).
    ecall (a_ilen_read_upto32_at_h buf offset dELTA _LEN _TRAILB 48 aT).
-   auto => |> &m ????? Hpre H Hc.
+   auto => &m |> ????? Hpre H Hc.
    move=> [] /= dlt3 len3 tb3 at3 r3 H3.
    move=> [] /= dlt2b len2b tb2b at2b t64_3 H2b.
    move=> [] /= dlt4 len4 tb4 at4 r4 H4.
@@ -926,27 +929,66 @@ admitted(*
    move=> [] /= dlt5 len5 tb5 at5 r5 H5.
    move=> [] /= dlt2d len2d tb2d at2d t64_5 H2d.
    move=> [] /= dlt6 len6 tb6 at6 r6 H6.
-   have {H H3} H3:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H H3) => //.
-   have {H3 H2b} H2b:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H3 H2b) => //.
-   have {H2b H4} H4:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2b H4) => //.
-   have {H4 H2c} H2c:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H4 H2c) => //.
-   have {H2c H5} H5:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2c H5) => //.
-   have {H5 H2d} H2d:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H5 H2d) => //.
-   have {H2d H6} /= H6:= (subread_spec_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2d H6) => //.
+   have {H H3} H3:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H H3) => //.
+   have {H3 H2b} H2b:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H3 H2b) => //.
+   have {H2b H4} H4:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2b H4) => //.
+   have {H4 H2c} H2c:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H4 H2c) => //.
+   have {H2c H5} H5:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2c H5) => //.
+   have {H5 H2d} H2d:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H5 H2d) => //.
+   have {H2d H6} /= H6:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2d H6) => //.
+admit(*
    have := subread_full _ _ _ _ _ _ _ _ _ _ _ _ H6 _; first 2 smt().
    by rewrite /= => />.
+
+H6: asubread _buf _off
+      (u64bytes t64_1{m} ++ u256bytes r1{m} ++ u64bytes t64_2{m} ++
+       u256bytes r3 ++ u64bytes t64_3 ++ u256bytes r4 ++ u64bytes t64_4 ++
+       u256bytes r5 ++ u64bytes t64_5 ++ u256bytes r6) 0 _at 0 _len _tb at6
+      dlt6 len6 tb6
+------------------------------------------------------------------------
+bytes2state _statebytes =
+bytes2state
+  (stavx2bytes_pack t64_1{m} r1{m} t64_2{m} r3 t64_3 r4 t64_4 r5 t64_5 r6) /\
+at6 = _at + _len + b2i (_tb <> 0) /\ _off + dlt6 = _off + _len
+*).
   auto => |> &m ?????? H6 /negb_or [Hlen Htb].
+admit (*
   have := subread_finished 48 _ _ _ _ _ _ _ _ _ _ _ _ _ H6 _ _; first 4 smt().
   move=> [? [? ->]]; split; last smt().
   rewrite /stavx2bytes_pack -!catA !u256bytes0 !u64bytes0 !cat_nseq //= !catA.
   by rewrite bytes2state_zext.
+
+H6: asubread _buf _off
+      (u64bytes t64_1{m} ++ u256bytes r1{m} ++ u64bytes t64_2{m}) 0 _at 0
+      _len _tb aT{m} dELTA{m} _LEN{m} _TRAILB{m}
+Hlen: ! 0 < _LEN{m}
+Htb: ! _TRAILB{m} <> 0
+------------------------------------------------------------------------
+bytes2state _statebytes =
+bytes2state
+  (stavx2bytes_pack t64_1{m} r1{m} t64_2{m} zero zero zero zero zero zero
+     zero) /\
+aT{m} = _at + _len + b2i (_tb <> 0) /\ _off + dELTA{m} = _off + _len
+*).
  rcondf 9; first by auto.
  auto => |> &m ?????? H6 ?.
+admit(*
   split; last smt().
   have := subread_finished 40 _ _ _ _ _ _ _ _ _ _ _ _ _ H6 _ _; first 4 smt().
   move=> [? [? ->]]. 
   rewrite /stavx2bytes_pack -!catA !u256bytes0 !u64bytes0 !cat_nseq //= !catA.
   by rewrite bytes2state_zext.
+
+_: asubread_pre 0 _at _off 0 _len _tb
+H6: asubread _buf _off (u64bytes t64_1{m} ++ u256bytes r1{m}) 0 _at 0 _len
+      _tb aT{m} dELTA{m} _LEN{m} _TRAILB{m}
+_: ! (0 < _LEN{m} \/ _TRAILB{m} <> 0)
+------------------------------------------------------------------------
+bytes2state _statebytes =
+bytes2state
+  (stavx2bytes_pack t64_1{m} r1{m} zero zero zero zero zero zero zero zero) /\
+aT{m} = _at + _len + b2i (_tb <> 0) /\ _off + dELTA{m} = _off + _len
+*).
 (* handling the permutation part with 'circuit' *)
 exlim t64_1 => _t64_1; exlim r1 => _r1; exlim t64_2 => _t64_2; exlim r3 => _r3; exlim t64_3 => _t64_3; exlim r4 => _r4; exlim t64_4 => _t64_4; exlim r5 => _r5; exlim t64_5 => _t64_5; exlim r6 => _r6.
 move: _st => _st.
@@ -955,7 +997,6 @@ conseq (: st = _st /\ stavx2INV _st /\ t64_1=_t64_1 /\ r1=_r1 /\ t64_2=_t64_2 /\
 inline *; clear.
 by circuit.
 qed.
-*).
 
 lemma absorb_avx2_ll: islossless MM.__absorb_avx2.
 proof.
@@ -1019,7 +1060,9 @@ seq 3: (buf=_buf /\ _RATE8=_r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256
   rewrite /stateabsorb bytes2state0 addstateC addstate_st0 => Est Hb.
   rewrite !b2i0 /=; split.
    split; first smt().
-   split; first smt().
+   split.
+    rewrite subr_ge0; apply (ler_trans _r8); first smt().
+    by rewrite mulrSl /#.
    split.
     rewrite (:(i{m} + 1) * _r8 - size _l %% _r8 + _r8 <= _ASIZE
              =(i{m}+2)*_r8<=size _l%%_r8+_ASIZE) 1:/#.
