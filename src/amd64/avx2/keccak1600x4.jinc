@@ -41,7 +41,7 @@ inline fn __addratebit_avx2x4
   reg u64 t64;
   t64 = 1;
   t64 <<= (8*RATE8-1) % 64; // obs: should be 63 for all admissible rates!
-  t128 = (128u) t64;
+  t128 = #VMOV_64(t64);
   t256 = #VPBROADCAST_4u64(t128);
   t256 ^= st[(RATE8-1)/8];
   st[(RATE8-1)/8] = t256;

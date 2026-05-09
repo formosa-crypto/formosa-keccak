@@ -127,8 +127,84 @@ lemma stateabsorb_iblocks_rcons l x st:
  = keccak_f1600_op (stateabsorb (stateabsorb_iblocks l st) x).
 proof. by rewrite /stateabsorb_iblocks foldl_rcons /=. qed.
 
+lemma srspecP lw at l len tb:
+ srpre 0 at l len tb =>
+ at + len + b2i (tb<>0) <= size lw =>
+ size lw <= 200 =>
+ srspec lw 0 at l len tb =>
+ bytes2state (u8zeros at ++ l ++ [W8.of_int tb])
+ = bytes2state lw.
+proof.
+move=> Hpre Hat Hlw H.
+move: (H Hpre) => {H}[_ H].
+rewrite -!bytes2stbytesP; apply stbytes_inj; rewrite !stwordsK tP => i Hi.
+rewrite !get_of_list 1..2:// H ler_maxr 1:/# /=.
+rewrite -catA nth_cat size_nseq nth_u8zeros ler_maxr 1:/#.
+case: (i<at) => ?; first smt(nth_out).
+rewrite nth_cat nth_rcons.
+case: (i-at < size l) => ?.
+ by rewrite ifT 1:/#.
+case: (i - at = size l) => ?; first smt().
+rewrite ifF /#.
+qed.
+
+(*
+lemma msubreadP m lw cur at off len tb at1 off1 len1 tb1 =
+ 0 <= at /\ 0 <= tb < 256 /\ 0 <= len =>
+ at + len + b2i (tb<>0) <= size lw =>
+ size lw <= 200 =>
+ *)
+ 
+(*
+lemma subread_full buf off dlt len tb at dlt' len' tb' at' wl:
+ subread_pre 0 at off dlt len tb => 
+ subread_spec 200 buf off dlt len tb 0 at dlt' len' tb' at' wl =>
+ at+len+b2i (tb<>0) <= 200 =>
+ len' = 0 /\ tb' = 0
+ /\ at'=at+len+b2i(tb<>0) /\ dlt'=len+dlt
+ /\ bytes2state (u8zeros at ++ sub buf (off+dlt) len ++ [W8.of_int tb])
+    = bytes2state wl.
+proof.
+move=> Hpre Hspec.
+move: (Hspec _ Hpre) => //.
+move: Hpre => /= Hpre [#] Hpre' -> /= *.
+do (split; first smt()).
+by rewrite bytes_at_absorb 1..2:/#.
+qed.
 
 
+lemma subread_finished size buf off dlt len tb at dlt' len' tb' at' wl:
+ 0 <= size =>
+ subread_pre 0 at off dlt len tb => 
+ subread_spec size buf off dlt len tb 0 at dlt' len' tb' at' wl =>
+ len' = 0 =>
+ tb' = 0 =>
+ at'= max at (at+len+b2i(tb<>0)) /\ dlt'=len+dlt
+ /\ bytes2state (u8zeros at ++ sub buf (off+dlt) len ++ [W8.of_int tb])
+    = bytes2state wl.
+proof.
+move=> Hsize Hpre Hspec Hlen' Htb'.
+move: (Hspec Hsize Hpre).
+move: Hpre => /= Hpre [#] Hpre' -> /= *.
+do (split; first smt()).
+case: (len=0 /\ tb=0) => C.
+ rewrite -!bytes2stbytesP; apply stbytes_inj; rewrite !stwordsK tP => i Hi.
+ rewrite !get_of_list 1..2:// nth_bytes_at 1..2:/#.
+ by move: C => [-> ->]; rewrite sub0 cats0 /= -nseq1 cat_nseq 1..2:/# nth_nseq_if /#.
+have: at+len+b2i(tb<>0) <= size by smt().
+move=> C'.
+rewrite -!bytes2stbytesP; apply stbytes_inj; rewrite !stwordsK tP => i Hi.
+rewrite !get_of_list 1..2:// nth_bytes_at 1..2:/# /=.
+case: (0 <= at <= i < size) => Ci.
+ by rewrite -!catA nth_cat size_nseq ifF /#.
+move: Ci. rewrite andaE negb_and (:0 <= at) 1:/# /= => [[Ci1|Ci2]].
+ by rewrite -catA nth_cat size_nseq ifT 1:/# nth_nseq_if /#.
+rewrite nth_cat size_cat size_nseq size_sub 1:/# ifF 1:/#.
+case: (tb=0) => Ctb.
+ by rewrite Ctb /#.
+by rewrite ifF /#.
+qed.
+*)
 
 
 (*
@@ -376,8 +452,6 @@ module MM = {
                         offset:int, _LEN:int, _TRAILB:int) : W256.t Array7.t *
                                                              int * int = {
     var dELTA:int;
-    var t64_1:W64.t;
-    var t128_0:W128.t;
     var r0:W256.t;
     var r1:W256.t;
     var t64_2:W64.t;
@@ -832,8 +906,9 @@ case: (i=2) => //.
 by move => /> *; move: (st{m}) => _st; clear; circuit.
 qed.
 
-op asubread_pre (_cur _at _off dlt _len _tb: int): bool = true.
-print asubread.
+op asubread_pre (cur at off dlt len tb: int): bool = 
+ 0<=cur /\ 0<=at /\ 0<=off /\ 0<=dlt /\ 0<=len /\ 0<=tb<256 /\
+ at + len + b2i(tb<>0) <= 200.
 
 hoare addstate_avx2_h _st _buf _off _len _tb _at:
  MM.__addstate_avx2
@@ -929,28 +1004,17 @@ seq 15: ( st=_st /\
    move=> [] /= dlt5 len5 tb5 at5 r5 H5.
    move=> [] /= dlt2d len2d tb2d at2d t64_5 H2d.
    move=> [] /= dlt6 len6 tb6 at6 r6 H6.
-   have {H H3} H3:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H H3) => //.
-   have {H3 H2b} H2b:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H3 H2b) => //.
-   have {H2b H4} H4:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2b H4) => //.
-   have {H4 H2c} H2c:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H4 H2c) => //.
-   have {H2c H5} H5:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2c H5) => //.
-   have {H5 H2d} H2d:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H5 H2d) => //.
-   have {H2d H6} /= H6:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2d H6) => //.
-admit(*
-   have := subread_full _ _ _ _ _ _ _ _ _ _ _ _ H6 _; first 2 smt().
-   by rewrite /= => />.
-
-H6: asubread _buf _off
-      (u64bytes t64_1{m} ++ u256bytes r1{m} ++ u64bytes t64_2{m} ++
-       u256bytes r3 ++ u64bytes t64_3 ++ u256bytes r4 ++ u64bytes t64_4 ++
-       u256bytes r5 ++ u64bytes t64_5 ++ u256bytes r6) 0 _at 0 _len _tb at6
-      dlt6 len6 tb6
-------------------------------------------------------------------------
-bytes2state _statebytes =
-bytes2state
-  (stavx2bytes_pack t64_1{m} r1{m} t64_2{m} r3 t64_3 r4 t64_4 r5 t64_5 r6) /\
-at6 = _at + _len + b2i (_tb <> 0) /\ _off + dlt6 = _off + _len
-*).
+   have {H H3} H3:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H H3).
+   have {H3 H2b} H2b:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H3 H2b).
+   have {H2b H4} H4:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2b H4).
+   have {H4 H2c} H2c:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H4 H2c).
+   have {H2c H5} H5:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2c H5).
+   have {H5 H2d} H2d:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H5 H2d).
+   have {H2d H6} /= [Hspec]:= (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H2d H6).
+   move: (Hspec _); first smt(). 
+   move=> {Hspec}Hspec.
+   rewrite !size_cat !size_to_list /= => [#]Eat Edlt Elen Etb; split; last smt().
+   by rewrite (srspecP _ _ _ _ _ _ _ _ Hspec) /srpre ?size_sub ?size_cat ?size_to_list /= /#.
   auto => |> &m ?????? H6 /negb_or [Hlen Htb].
 admit (*
   have := subread_finished 48 _ _ _ _ _ _ _ _ _ _ _ _ _ H6 _ _; first 4 smt().

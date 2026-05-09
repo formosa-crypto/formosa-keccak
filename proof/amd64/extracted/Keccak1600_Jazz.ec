@@ -5,8 +5,8 @@ from Jasmin require import JModel_x86.
 import SLH64.
 
 require import
-Array3 Array5 Array6 Array7 Array24 Array25 Array26 WArray3 WArray40
-WArray160 WArray192 WArray200 WArray208 WArray224 WArray800.
+Array3 Array5 Array6 Array7 Array24 Array25 Array26 Array101 WArray3 WArray40
+WArray160 WArray192 WArray200 WArray208 WArray224 WArray800 WArray808.
 
 abbrev rOL8 =
 (W256.of_int
@@ -1825,7 +1825,7 @@ module M = {
     var t256:W256.t;
     var t128:W128.t;
     if (((l %% 2) = 0)) {
-      t128 <- (zeroextu128 x);
+      t128 <- (VMOV_64 x);
     } else {
       t128 <- (set0_128);
       t128 <- (VPINSR_2u64 t128 x (W8.of_int 1));
@@ -3134,7 +3134,7 @@ module M = {
     var t256:W256.t;
     t64 <- (W64.of_int 1);
     t64 <- (t64 `<<` (W8.of_int (((8 * rATE8) - 1) %% 64)));
-    t128 <- (zeroextu128 t64);
+    t128 <- (VMOV_64 t64);
     t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
     t256 <- (t256 `^` st.[((rATE8 - 1) %/ 8)]);
     st.[((rATE8 - 1) %/ 8)] <- t256;
@@ -3814,6 +3814,133 @@ module M = {
     st <- st;
     buf <- buf;
     ( _0, st) <@ _squeeze_m_updstate_avx2 (buf, len, st);
+    return st;
+  }
+  proc _init_updstate_avx2x4 (st:W64.t Array101.t, r64:int, trailb:W8.t) : 
+  W64.t Array101.t = {
+    var zero:W256.t;
+    var status:W64.t;
+    var t:W64.t;
+    var i:int;
+    zero <- (set0_256);
+    status <- (zeroextu64 trailb);
+    status <- (status `<<` (W8.of_int 8));
+    r64 <- (W8.to_uint ((W8.of_int r64) - (W8.of_int 1)));
+    t <- (zeroextu64 (W8.of_int r64));
+    status <- (status + t);
+    status <- (status `<<` (W8.of_int 8));
+    i <- 0;
+    while ((i < (32 * 25))) {
+      st <-
+      (Array101.init
+      (WArray808.get64
+      (WArray808.set256_direct (WArray808.init64 (fun i_0 => st.[i_0])) 
+      i zero)));
+      i <- (i + 32);
+    }
+    st.[(4 * 25)] <- status;
+    return st;
+  }
+  proc _ststatus_data_avx2x4 (ststatus:W64.t) : W64.t * int * int = {
+    var trailb:W64.t;
+    var at:W64.t;
+    var r8:W64.t;
+    var c_200:W64.t;
+    var c_0:W64.t;
+    var r8_ui:int;
+    var at_ui:int;
+    at <- ststatus;
+    at <- (at `&` (W64.of_int 255));
+    ststatus <- (ststatus `>>` (W8.of_int 8));
+    r8 <- ststatus;
+    r8 <- (r8 `&` (W64.of_int 255));
+    r8 <- (r8 + (W64.of_int 1));
+    r8 <- (r8 `<<` (W8.of_int 3));
+    c_200 <- (W64.of_int 200);
+    r8 <- (((W64.of_int 200) \ult r8) ? c_200 : r8);
+    c_0 <- (W64.of_int 0);
+    at <- ((r8 \ule at) ? c_0 : at);
+    ststatus <- (ststatus `>>` (W8.of_int 8));
+    ststatus <- (ststatus `&` (W64.of_int 255));
+    trailb <- ststatus;
+    r8_ui <- (W64.to_uint r8);
+    at_ui <- (W64.to_uint at);
+    return (trailb, r8_ui, at_ui);
+  }
+  proc _finish_updstate_avx2x4 (st:W64.t Array101.t) : W64.t Array101.t = {
+    var ststatus:W64.t;
+    var trailb:W64.t;
+    var t8:W8.t;
+    var t128:W128.t;
+    var t256:W256.t;
+    var rbit:W64.t;
+    var r8:int;
+    var at:int;
+    ststatus <- st.[(4 * 25)];
+    (trailb, r8, at) <@ _ststatus_data_avx2x4 (ststatus);
+    t8 <- (truncateu8 (W64.of_int at));
+    at <- (at `|>>` 3);
+    at <- (at `<<` 5);
+    t8 <- (t8 `&` (W8.of_int 7));
+    t8 <- (t8 `<<` (W8.of_int 3));
+    trailb <- (trailb `<<` (t8 `&` (W8.of_int 63)));
+    t128 <- (VMOV_64 trailb);
+    t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
+    t256 <-
+    (t256 `^` (get256_direct (WArray808.init64 (fun i => st.[i])) at));
+    st <-
+    (Array101.init
+    (WArray808.get64
+    (WArray808.set256_direct (WArray808.init64 (fun i => st.[i])) at t256)));
+    rbit <- (W64.of_int 1);
+    rbit <- (rbit `<<` (W8.of_int 63));
+    r8 <- (r8 - 1);
+    r8 <- (r8 `|>>` 3);
+    r8 <- (r8 `<<` 5);
+    t128 <- (VMOV_64 rbit);
+    t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
+    t256 <-
+    (t256 `^` (get256_direct (WArray808.init64 (fun i => st.[i])) r8));
+    st <-
+    (Array101.init
+    (WArray808.get64
+    (WArray808.set256_direct (WArray808.init64 (fun i => st.[i])) r8 t256)));
+    st <-
+    (Array101.init
+    (WArray808.get64
+    (WArray808.set32_direct (WArray808.init64 (fun i => st.[i]))
+    ((4 * 8) * 25)
+    ((get32_direct (WArray808.init64 (fun i => st.[i])) ((4 * 8) * 25)) `&`
+    (W32.of_int 4278255360)))));
+    return st;
+  }
+  proc ststatus_updstate_avx2x4 (status:W8.t Array3.t, st:W64.t Array101.t) : 
+  W8.t Array3.t = {
+    var ststatus:W64.t;
+    var r8:int;
+    var at:int;
+    var  _0:W64.t;
+    ststatus <- st.[25];
+    ( _0, r8, at) <@ _ststatus_data_avx2x4 (ststatus);
+    status.[0] <- (truncateu8 (W64.of_int r8));
+    status.[1] <- (truncateu8 (W64.of_int at));
+    status.[2] <-
+    (get8_direct (WArray808.init64 (fun i => st.[i])) ((8 * 25) + 2));
+    return status;
+  }
+  proc init_updstate_avx2x4 (st:W64.t Array101.t, r64:int, trailb:W8.t) : 
+  W64.t Array101.t = {
+    
+    st <- st;
+    r64 <- r64;
+    trailb <- trailb;
+    st <@ _init_updstate_avx2x4 (st, r64, trailb);
+    return st;
+  }
+  proc finish_updstate_avx2x4 (st:W64.t Array101.t) : W64.t Array101.t = {
+    
+    st <- st;
+    st <@ _finish_updstate_avx2x4 (st);
     return st;
   }
 }.

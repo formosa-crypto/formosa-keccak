@@ -30,7 +30,7 @@ Keccak1600_Jazz_ASIZE.ec : toEC_keccak1600_ASIZE.jazz
 	$(JASMIN2EC) $(JFLAGS) -o $@ $^
 
 check: $(PROGS)
-	for i in *_checkXtr.ec; do easycrypt compile -no-eco $i; done
+	for i in *_checkXtr.ec; do easycrypt compile -no-eco $$i || exit 1; done
 	
 clean:
 	rm -f $(PROGS) WArray*.ec Array*.ec *~

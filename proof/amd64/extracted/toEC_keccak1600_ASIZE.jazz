@@ -5,9 +5,10 @@ from Keccak require "ref/keccak1600.jinc"
 from Keccak require "avx2/keccak1600.jinc"
 from Keccak require "avx2/keccak1600x4.jinc"
 from Keccak require "avx2/keccak1600_updstate.jinc"
-param int _RATE8=199;
+from Keccak require "avx2/keccak1600x4_updstate.jinc"
 param int _ASIZE=999;
 from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
 from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
 from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 from Keccak require "avx2/keccak1600_updstate_ASIZE.jinc"
+from Keccak require "avx2/keccak1600x4_updstate_ASIZE.jinc"

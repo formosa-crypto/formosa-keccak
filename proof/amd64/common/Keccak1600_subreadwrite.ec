@@ -2209,7 +2209,7 @@ module MM = {
         } else {
           
         }
-        t64 <- (truncateu64 w);
+        t64 <- MOVV_64 (truncateu64 w);
         (buf, dELTA, lEN) <@ __a_ilen_write_upto8 (buf, offset, dELTA, 
         lEN, t64);
       }

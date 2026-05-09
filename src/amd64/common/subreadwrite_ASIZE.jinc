@@ -294,13 +294,13 @@ inline fn __a_ilen_write_upto8
     } else {
       if (4 <=s LEN) {
         buf.[:u32 offset + DELTA] = (32u) w;
-	w >>= 32;
+        w >>= 32;
         DELTA += 4;
         LEN -= 4;
       }
       if (2 <=s LEN) {
         buf.[:u16 offset + DELTA] = (16u) w;
-	w >>= 16;
+        w >>= 16;
         DELTA += 2;
         LEN -= 2;
       }
@@ -342,12 +342,12 @@ inline fn __a_ilen_write_upto16
       LEN -= 16;
     } else {
       if (8 <=s LEN) {
-        buf.[:u64 offset + DELTA] = #MOVV(w);
+        buf.[:u64 offset + DELTA] = #MOVV_64(w);
         DELTA += 8;
         LEN -= 8;
         w = #VPUNPCKH_2u64(w, w);
       }
-      t64 = (64u) w;
+      t64 = #MOVV_64(w);
       buf, DELTA, LEN = __a_ilen_write_upto8(buf, offset, DELTA, LEN, t64);
     }
   }
