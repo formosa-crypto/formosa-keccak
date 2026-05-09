@@ -365,7 +365,7 @@ module M = {
         buf <- (buf + 32);
         lEN <- (lEN - 32);
       } else {
-        t128 <- (VMOV_64 (truncateu64 w));
+        t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
           Glob.mem <- (storeW128 Glob.mem buf t128);
           buf <- (buf + 16);
@@ -3185,7 +3185,6 @@ module M = {
                                      dELTA:int, lEN:int, tRAIL:int, cUR:int,
                                      aT:int) : int * int * int * int * W256.t = {
     var w256:W256.t;
-    var aT8:int;
     var w:W64.t;
     var t128:W128.t;
     if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/
@@ -3193,16 +3192,14 @@ module M = {
       w256 <- (set0_256);
     } else {
       if ((8 <= lEN)) {
-        aT8 <- (aT - cUR);
         w256 <-
         (VPBROADCAST_4u64
         (get64_direct (WArray999.init8 (fun i => buf.[i])) (offset + dELTA)));
-        w256 <@ __SHLQ_256 (w256, aT8);
-        dELTA <- (dELTA + (8 - aT8));
-        lEN <- (lEN - (8 - aT8));
+        w256 <@ __SHLQ_256 (w256, (aT - cUR));
+        dELTA <- (dELTA + ((cUR + 8) - aT));
+        lEN <- (lEN - ((cUR + 8) - aT));
         aT <- (cUR + 8);
       } else {
-        aT8 <- (aT - cUR);
         (dELTA, lEN, tRAIL, aT, w) <@ __a_ilen_read_upto8_at (buf, offset,
         dELTA, lEN, tRAIL, cUR, aT);
         t128 <- (VMOV_64 w);
@@ -3314,7 +3311,7 @@ module M = {
         dELTA <- (dELTA + 32);
         lEN <- (lEN - 32);
       } else {
-        t128 <- (VMOV_64 (truncateu64 w));
+        t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
           buf <-
           (Array999.init
@@ -3680,14 +3677,14 @@ module M = {
     if (((0 < _LEN) \/ (_TRAILB <> 0))) {
       (dELTA, _LEN, _TRAILB, aT, t64_2) <@ __a_ilen_read_upto8_at (buf,
       offset, dELTA, _LEN, _TRAILB, 40, aT);
-      t128_1 <- (zeroextu128 t64_2);
+      t128_1 <- (VMOV_64 t64_2);
       t128_2 <- (set0_128);
       if (((0 < _LEN) \/ (_TRAILB <> 0))) {
         (dELTA, _LEN, _TRAILB, aT, r3) <@ __a_ilen_read_upto32_at (buf,
         offset, dELTA, _LEN, _TRAILB, 48, aT);
         (dELTA, _LEN, _TRAILB, aT, t64_3) <@ __a_ilen_read_upto8_at (
         buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-        t128_2 <- (zeroextu128 t64_3);
+        t128_2 <- (VMOV_64 t64_3);
         (dELTA, _LEN, _TRAILB, aT, r4) <@ __a_ilen_read_upto32_at (buf,
         offset, dELTA, _LEN, _TRAILB, 88, aT);
         (dELTA, _LEN, _TRAILB, aT, t64_4) <@ __a_ilen_read_upto8_at (
@@ -3752,8 +3749,8 @@ module M = {
   proc __dumpstate_avx2 (buf:W8.t Array999.t, offset:int, _LEN:int,
                          st:W256.t Array7.t) : W8.t Array999.t * int = {
     var dELTA:int;
-    var t128_0:W128.t;
     var t128_1:W128.t;
+    var t128_0:W128.t;
     var t:W64.t;
     var t256_0:W256.t;
     var t256_1:W256.t;
@@ -3773,9 +3770,9 @@ module M = {
     (buf, dELTA, _LEN) <@ __a_ilen_write_upto32 (buf, offset, dELTA, 
     _LEN, st.[1]);
     if ((0 < _LEN)) {
-      t128_0 <- (truncateu128 st.[2]);
       t128_1 <- (VEXTRACTI128 st.[2] (W8.of_int 1));
-      t <- (truncateu64 t128_1);
+      t128_0 <- (truncateu128 st.[2]);
+      t <- (MOVV_64 (truncateu64 t128_1));
       (buf, dELTA, _LEN) <@ __a_ilen_write_upto8 (buf, offset, dELTA, 
       _LEN, t);
       t128_1 <- (VPUNPCKH_2u64 t128_1 t128_1);
@@ -3858,7 +3855,7 @@ module M = {
         (buf, dELTA, _LEN) <@ __a_ilen_write_upto32 (buf, offset, dELTA,
         _LEN, t256_4);
         if ((0 < _LEN)) {
-          t <- (truncateu64 t128_0);
+          t <- (MOVV_64 (truncateu64 t128_0));
           (buf, dELTA, _LEN) <@ __a_ilen_write_upto8 (buf, offset, dELTA,
           _LEN, t);
           t128_0 <- (VPUNPCKH_2u64 t128_0 t128_0);
@@ -3887,7 +3884,7 @@ module M = {
           
         }
         if ((0 < _LEN)) {
-          t <- (truncateu64 t128_1);
+          t <- (MOVV_64 (truncateu64 t128_1));
           (buf, dELTA, _LEN) <@ __a_ilen_write_upto8 (buf, offset, dELTA,
           _LEN, t);
         } else {
@@ -3915,7 +3912,7 @@ module M = {
           
         }
         if ((0 < _LEN)) {
-          t <- (truncateu64 t128_0);
+          t <- (MOVV_64 (truncateu64 t128_0));
           (buf, dELTA, _LEN) <@ __a_ilen_write_upto8 (buf, offset, dELTA,
           _LEN, t);
         } else {

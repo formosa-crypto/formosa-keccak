@@ -243,20 +243,17 @@ inline fn __a_ilen_read_bcast_upto8_at
   reg u64 w;
   reg u128 t128;
   reg u256 w256;
-  inline int AT8;
 
   if ( LEN < 0 || AT < CUR || CUR+8 <= AT || LEN==0 && TRAIL==0 ) { // nothing to be done...
     w256 = #set0_256();
   } else {
     if (8 <= LEN) {
-      AT8 = AT-CUR;
       w256 = #VPBROADCAST_4u64(buf.[:u64 offset + DELTA]);
-      w256 = __SHLQ_256(w256, AT8);
-      DELTA += 8-AT8;
-      LEN -= 8-AT8;
+      w256 = __SHLQ_256(w256, AT-CUR);
+      DELTA += CUR+8-AT;
+      LEN -= CUR+8-AT;
       AT = CUR + 8;
     } else {
-      AT8 = AT-CUR;
       DELTA, LEN, TRAIL, AT, w = __a_ilen_read_upto8_at(buf, offset, DELTA, LEN, TRAIL, CUR, AT);
       t128 = #VMOV_64(w);
       w256 = #VPBROADCAST_4u64(t128);
@@ -384,7 +381,7 @@ inline fn __a_ilen_write_upto32
       DELTA += 32;
       LEN -= 32;
     } else {
-      t128 = #VMOV_64(w);
+      t128 = (128u) w;
       if (16 <= LEN) {
         buf.[:u128 offset + DELTA] = t128;
         DELTA += 16;

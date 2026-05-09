@@ -1382,9 +1382,11 @@ qed.
 lemma m_ilen_read_bcast_upto8_at_ll: islossless M.__m_ilen_read_bcast_upto8_at
 by islossless.
 
+(*
 lemma trunc_zext_u64_u128 w:
  truncateu64 (W2u64.zeroextu128 w) = w.
 proof. by circuit. qed.
+*)
 
 lemma trunc_VMOV_64 w:
  truncateu64 (VMOV_64 w) = w.
@@ -1395,7 +1397,7 @@ equiv m_ilen_read_bcast_upto8_at_eq:
  ~ M.__m_ilen_read_upto8_at
  : ={arg, Glob.mem}
  ==> (res.`1,res.`2,res.`3,res.`4,res.`5){1}
-     = (res.`1,res.`2,res.`3,res.`4,VPBROADCAST_4u64 (truncateu64 (zeroextu128 res.`5))){2}.
+     = (res.`1,res.`2,res.`3,res.`4,VPBROADCAST_4u64 (truncateu64 (VMOV_64 res.`5))){2}.
 proof.
 proc; simplify.
 if => //=.
@@ -1405,18 +1407,15 @@ sp; if => //=.
  inline*; auto => /> &m *; split.
   move=> *.
   rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=; congr => />.
-  by rewrite /W64.(`<<`) trunc_zext_u64_u128 of_uintK modz_small 1:/# of_uintK modz_small /#.
+  by rewrite /W64.(`<<`) trunc_VMOV_64 of_uintK modz_small 1:/# of_uintK modz_small /#.
  move=> *.
  rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=; congr => />.
- by rewrite /W64.(`<<`) trunc_zext_u64_u128 1:/# of_uintK modz_small /#.
+ by rewrite /W64.(`<<`) trunc_VMOV_64 1:/# of_uintK modz_small /#.
 inline *.
 rcondf {1} 6; first by auto.
 rcondf {1} 6; first by auto.
 wp 10 4.
 conseq (: ={Glob.mem,buf,aT,cUR,lEN,tRAIL} ==> ={w,aT,cUR,buf,lEN,tRAIL}) => //.
- move=> /> &2 H at w.
- rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=.
- by rewrite trunc_zext_u64_u128 trunc_VMOV_64.
 by sim.
 qed.
 
@@ -1973,7 +1972,7 @@ module MM = {
     var w:W64.t;
     var t16:W64.t;
     var t8:W64.t;
-    if ((((lEN < 0) \/ (aT < cUR) \/ ((cUR + 8) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
       w <- (W64.of_int 0);
     } else {
       if ((8 <= lEN)) {
@@ -2043,7 +2042,7 @@ module MM = {
     var w:W128.t;
     var t64_0:W64.t;
     var t64_1:W64.t;
-    if ((((lEN < 0) \/ (aT < cUR) \/ ((cUR + 16) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 16) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
@@ -2077,7 +2076,7 @@ module MM = {
     var w:W256.t;
     var t128_0:W128.t;
     var t128_1:W128.t;
-    if ((((lEN < 0) \/ (aT < cUR) \/ ((cUR + 32) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 32) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
       w <- (set0_256);
     } else {
       if (((aT = cUR) /\ (32 <= lEN))) {
@@ -2108,26 +2107,23 @@ module MM = {
                                      dELTA:int, lEN:int, tRAIL:int, cUR:int,
                                      aT:int) : int * int * int * int * W256.t = {
     var w256:W256.t;
-    var aT8:int;
     var w:W64.t;
     var t128:W128.t;
-    if ((((lEN < 0) \/ (aT < cUR) \/ ((cUR + 8) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/ ((lEN = 0) /\ (tRAIL = 0)))) {
       w256 <- (set0_256);
     } else {
       if ((8 <= lEN)) {
-        aT8 <- (aT - cUR);
         w256 <-
         (VPBROADCAST_4u64
         (get64_direct (WA.init8 (fun i => buf.[i])) (offset + dELTA)));
-        w256 <@ M.__SHLQ_256 (w256, aT8);
-        dELTA <- (dELTA + (8 - aT8));
-        lEN <- (lEN - (8 - aT8));
+        w256 <@ M.__SHLQ_256 (w256, aT - cUR);
+        dELTA <- (dELTA + (cUR + 8 - aT));
+        lEN <- (lEN - (cUR + 8 - aT));
         aT <- (cUR + 8);
       } else {
-        aT8 <- (aT - cUR);
         (dELTA, lEN, tRAIL, aT, w) <@ __a_ilen_read_upto8_at (buf, offset,
         dELTA, lEN, tRAIL, cUR, aT);
-        t128 <- (zeroextu128 w);
+        t128 <- (VMOV_64 w);
         w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
       }
     }
@@ -2646,7 +2642,7 @@ equiv a_ilen_read_bcast_upto8_at_eq:
  ~ MM.__a_ilen_read_upto8_at
  : ={arg}
  ==> (res.`1,res.`2,res.`3,res.`4,res.`5){1}
-     = (res.`1,res.`2,res.`3,res.`4,VPBROADCAST_4u64 (truncateu64 (zeroextu128 res.`5))){2}.
+     = (res.`1,res.`2,res.`3,res.`4,VPBROADCAST_4u64 (truncateu64 (VMOV_64 res.`5))){2}.
 proof.
 proc; simplify.
 if => //=.
@@ -2655,19 +2651,15 @@ if => //=.
 sp; if => //=.
  inline*; auto => /> &m *; split.
   move=> *.
-  split; first smt().
-  split; first smt().
   rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=; congr => />.
-  by rewrite /W64.(`<<`) trunc_zext_u64_u128 of_uintK modz_small 1:/# of_uintK modz_small /#.
+  by rewrite /W64.(`<<`) trunc_VMOV_64 of_uintK modz_small 1:/# of_uintK modz_small /#.
  move=> *.
- split; first smt().
- split; first smt().
  rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=; congr => />.
- by rewrite /W64.(`<<`) trunc_zext_u64_u128 1:/# of_uintK modz_small /#.
+ by rewrite /W64.(`<<`) trunc_VMOV_64 1:/# of_uintK modz_small /#.
 inline *.
-rcondf {1} 9; first by auto.
-rcondf {1} 9; first by auto.
-wp 13 4.
+rcondf {1} 8; first by auto.
+rcondf {1} 8; first by auto.
+wp 12 4.
 conseq (: ={buf,offset,dELTA,aT,cUR,lEN,tRAIL} ==> ={w,aT,cUR,buf,offset,dELTA,lEN,tRAIL}) => //.
 by sim.
 qed.
