@@ -167,11 +167,25 @@ proof.
 by rewrite /VPINSR_2u64 to_uint1 /= /u64bytes /u128bytes /=.
 qed.
 
+lemma u64bytes_cat0w (w: W64.t):
+ u64bytes zero ++ u64bytes w
+ = u128bytes (VPINSR_2u64 zero w W8.one).
+proof.
+by rewrite /VPINSR_2u64 to_uint1 /= /u64bytes /u128bytes /=.
+qed.
+
 lemma u128bytes_cat (w0 w1: W128.t):
  u128bytes w0 ++ u128bytes w1
  = u256bytes (VINSERTI128 (zeroextu256 w0) w1 W8.one).
 proof.
 by rewrite /VINSERTI128 to_uint1 /= /u128bytes /u256bytes /= zeroextu256E.
+qed.
+
+lemma u128bytes_cat0w (w: W128.t):
+ u128bytes zero ++ u128bytes w
+ = u256bytes (VINSERTI128 zero w W8.one).
+proof.
+by rewrite /VINSERTI128 to_uint1 /= /u128bytes /u256bytes /=.
 qed.
 
 lemma zeroextu128_zero:
@@ -308,6 +322,19 @@ rewrite nth_to_list bits8_u64_shl8 // -nth_to_list H ler_maxr //=.
 by rewrite size_to_list; smt(nth_out).
 qed.
 
+lemma nth_u128bytes_shl l w k i:
+ 0 <= k =>
+ u8prefAt (u128bytes w) 0 l =>
+ (u128bytes (w `<<<` 8 * k)).[i]
+ = if k <= i < 16 then l.[i - k] else W8.zero.
+proof.
+move=> Hk H.
+case: (0 <= i < 16) => Hi; last first.
+ by rewrite nth_out ?size_to_list /#.
+rewrite nth_to_list bits8_u128_shl8 // -nth_to_list H ler_maxr //=.
+by rewrite size_to_list; smt(nth_out).
+qed.
+
 abbrev u8prefAbsorb (lw: bytes) off (l: bytes) tb =
  u8prefAt lw off (rcons l (of_int tb)).
 
@@ -328,6 +355,16 @@ lemma u8prefAbsorb0 lw cur at l tb:
 proof.
 move=> /u8prefAt0 H [H1|[E1 E2]]; apply (H 1); first smt().
 by right; rewrite -cats1 E1 E2 /= nseq1.
+qed.
+
+lemma u8prefAbsorbW lw at l tb:
+ size lw <= size l =>
+ u8prefAt lw at l =>
+ u8prefAbsorb lw at l tb.
+proof.
+move=> Hl H; apply u8prefAbsorbP => i.
+rewrite H; case: (max 0 at <= i < size lw) => ?//.
+by rewrite ifF 1:/#.
 qed.
 
 op srincr sz (cur at len:int) =
@@ -581,21 +618,6 @@ by rewrite nth_out //.
 qed.
 
 
-lemma srspec_u64 w cur at l len :
- 0 <= at-cur < 8 =>
- u8prefAt (u64bytes w) 0 l =>
- srspec (u64bytes (w `<<<` 8*(at-cur))) cur at l len 0.
-proof.
-move=> Hcur Hw Hpre.
-split.
- by rewrite size_to_list srpre_next.
-move=> i; rewrite size_to_list.
-case: (0 <= i < 8) => Hi; last first.
- by rewrite nth_out ?size_to_list /#.
-rewrite ler_maxr 1:/# (nth_u64bytes_shl l) 1:/# //.
-smt(nth_rcons nth_out).
-qed.
-
 lemma u8prefAt_zeroext_u32 w l:
  size l = 4 =>
  u8prefAt (u32bytes w) 0 l => u8prefAt (u64bytes (zeroextu64 w)) 0 l.
@@ -629,7 +651,52 @@ rewrite  (nth_u64bytes_shl l) // 1:/#.
 smt(nth_out).
 qed.
 
-lemma srspec_shl tb w cur at l len:
+lemma srspec_u64 w cur at l len :
+ 0 <= at-cur < 8 =>
+ u8prefAt (u64bytes w) 0 l =>
+ srspec (u64bytes (w `<<<` 8*(at-cur))) cur at l len 0.
+proof.
+move=> Hcur Hw Hpre.
+split.
+ by rewrite size_to_list srpre_next.
+move=> i; rewrite size_to_list.
+case: (0 <= i < 8) => Hi; last first.
+ by rewrite nth_out ?size_to_list /#.
+rewrite ler_maxr 1:/# (nth_u64bytes_shl l) 1:/# //.
+smt(nth_rcons nth_out).
+qed.
+
+lemma srspec_u128 w cur at l len :
+ 0 <= at-cur < 16 =>
+ u8prefAt (u128bytes w) 0 l =>
+ srspec (u128bytes (w `<<<` 8*(at-cur))) cur at l len 0.
+proof.
+move=> Hcur Hw Hpre.
+split.
+ by rewrite size_to_list srpre_next.
+move=> i; rewrite size_to_list.
+case: (0 <= i < 16) => Hi; last first.
+ by rewrite nth_out ?size_to_list /#.
+rewrite ler_maxr 1:/# (nth_u128bytes_shl l) 1:/# //.
+smt(nth_rcons nth_out).
+qed.
+
+lemma srspec_u256 w cur l len :
+ u8prefAt (u256bytes w) 0 l =>
+ srspec (u256bytes w) cur cur l len 0.
+proof.
+move=> Hw Hpre.
+split.
+ by rewrite size_to_list srpre_next.
+move=> i; rewrite size_to_list.
+case: (0 <= i < 32) => Hi; last first.
+ by rewrite nth_out ?size_to_list /#.
+rewrite ler_maxr 1:/# /= Hi /= nth_rcons.
+rewrite Hw size_to_list ler_maxr 1:/# Hi /=.
+by case: (i < size l) => ? //; smt(nth_out).
+qed.
+
+lemma srspec_u64_shl tb w cur at l len:
  0 <= at-cur < 8 =>
  tb = 0 \/ 8 <= len =>
  u8prefAt (u64bytes w) 0 l =>
@@ -646,6 +713,57 @@ case: (at-cur <= i < 8) => C.
  case: (i - (at - cur) < size l) => ?//=.
  by elim: H; smt(nth_out).
 by rewrite  (nth_u64bytes_shl l) 1:/# //; smt(nth_out).
+qed.
+
+lemma srspec_u128_shl tb w cur at l len:
+ 0 <= at-cur < 16 =>
+ tb = 0 \/ 16 <= len =>
+ u8prefAt (u128bytes w) 0 l =>
+ srspec (u128bytes (w `<<<` 8*(at-cur))) cur at l len tb.
+proof.
+move=> Hcur H Hw Hpre.
+split.
+ by rewrite size_to_list srpre_next.
+move=> i; rewrite size_to_list ler_maxr 1:/#.
+case: (0 <= i < 16) => ?; last first.
+ by rewrite nth_out ?size_to_list /#.
+case: (at-cur <= i < 16) => C.
+ rewrite (nth_u128bytes_shl l) 1:/# // C /= nth_rcons.
+ case: (i - (at - cur) < size l) => ?//=.
+ by elim: H; smt(nth_out).
+by rewrite  (nth_u128bytes_shl l) 1:/# //; smt(nth_out).
+qed.
+
+lemma srspec_u64_u128 w cur at l len tb:
+ 0 <= at - cur < 16 =>
+ cur + 8 <= at =>
+ srspec (u64bytes w) (cur + 8) at l len tb =>
+ srspec (u128bytes (VPINSR_2u64 zero w one)) cur at l len tb.
+proof.
+move=> Hat Hcur H Hpre; split; first by apply srpre_next; smt(W16u8.size_to_list).
+have Hpre': srpre (cur+8) at l len tb by smt().
+move: (H Hpre') => [_/u8prefAbsorbP {H} H].
+rewrite -u64bytes_cat0w u8prefAbsorbP => i.
+rewrite nth_cat size_cat !size_to_list /= u64bytes0 nth_u8zeros H.
+case: (i<8) => ?; first by rewrite ifF /#.
+rewrite size_to_list ler_maxr 1:/# ler_maxr 1:/#.
+by case: (at - cur <= i < 16) => ? /#.
+qed.
+
+lemma srspec_u128_u256 w cur at l len tb:
+ 0 <= at - cur < 32 =>
+ cur + 16 <= at =>
+ srspec (u128bytes w) (cur + 16) at l len tb =>
+ srspec (u256bytes (VINSERTI128 zero w one)) cur at l len tb.
+proof.
+move=> Hat Hcur H Hpre; split; first by apply srpre_next; smt(W32u8.size_to_list).
+have Hpre': srpre (cur+16) at l len tb by smt().
+move: (H Hpre') => [_/u8prefAbsorbP {H} H].
+rewrite -u128bytes_cat0w u8prefAbsorbP => i.
+rewrite nth_cat size_cat !size_to_list /= u128bytes0 nth_u8zeros H.
+case: (i<16) => ?; first by rewrite ifF /#.
+rewrite size_to_list ler_maxr 1:/# ler_maxr 1:/#.
+by case: (at - cur <= i < 32) => ? /#.
 qed.
 
 lemma srspec_split l1 l2 w1 w2 cur at l len at1:
@@ -793,28 +911,6 @@ have Hl: memread m dlt1 len1 = srl (size lw1) cur at (memread m dlt len)
 by apply (srspec_cat lw1 lw2 cur at (memread m dlt len) len tb) => // /#.
 qed.
 
-lemma loadW64_memread m buf len:
- 8 <= len =>
- u8prefAt (u64bytes (loadW64 m buf)) 0 (memread m buf len).
-proof.
-move=> Hlen i; case: (0 <= i < 8) => C; last first.
- by rewrite nth_out size_to_list 1:/# ifF /#.
-rewrite get_u64bytes loadW64_bits8 // ler_maxr // size_to_list C /=.
-by rewrite /loadW8 nth_mkseq 1:/#.
-qed.
-
-lemma msubread_u64 _m _cur _at _buf _len _tb:
- 8 <= _len =>
- 0 <= _at-_cur < 8 =>
- msubread _m (u64bytes (loadW64 _m _buf `<<<` 8 * (_at - _cur))) _cur _at
-            _buf _len _tb (_cur + 8) (_buf + (_cur + 8 - _at)) (_len - (_cur + 8 - _at)) _tb.
-proof.
-move=> Hlen Hat; rewrite /msubread; split; last first.
- by rewrite size_to_list; smt(size_memread).
-apply srspec_shl => //; first smt().
-by apply loadW64_memread; smt().
-qed.
-
 lemma loadW32_memread m buf len:
  4 <= len =>
  u8prefAt (u32bytes (loadW32 m buf)) 0 (memread m buf len).
@@ -834,6 +930,78 @@ move=> Hat; rewrite /msubread; split; last by rewrite size_to_list /#.
 apply srspec_u32; first smt(). 
  by apply loadW32_memread; smt().
 by rewrite size_memread.
+qed.
+
+lemma loadW64_memread m buf len:
+ 8 <= len =>
+ u8prefAt (u64bytes (loadW64 m buf)) 0 (memread m buf len).
+proof.
+move=> Hlen i; case: (0 <= i < 8) => C; last first.
+ by rewrite nth_out size_to_list 1:/# ifF /#.
+rewrite get_u64bytes loadW64_bits8 // ler_maxr // size_to_list C /=.
+by rewrite /loadW8 nth_mkseq 1:/#.
+qed.
+
+lemma msubread_u64 _m _cur _at _buf _len _tb:
+ 8 <= _len =>
+ 0 <= _at-_cur < 8 =>
+ msubread _m (u64bytes (loadW64 _m _buf `<<<` 8 * (_at - _cur))) _cur _at
+            _buf _len _tb (_cur + 8) (_buf + (_cur + 8 - _at)) (_len - (_cur + 8 - _at)) _tb.
+proof.
+move=> Hlen Hat; rewrite /msubread; split; last first.
+ by rewrite size_to_list; smt(size_memread).
+apply srspec_u64_shl => //; first smt().
+by apply loadW64_memread; smt().
+qed.
+
+lemma loadW128_memread m buf len:
+ 16 <= len =>
+ u8prefAt (u128bytes (loadW128 m buf)) 0 (memread m buf len).
+proof.
+move=> Hlen i; case: (0 <= i < 16) => C; last first.
+ by rewrite nth_out size_to_list 1:/# ifF /#.
+rewrite get_u128bytes loadW128_bits8 // ler_maxr // size_to_list C /=.
+by rewrite /loadW8 nth_mkseq 1:/#.
+qed.
+
+lemma msubread_u128 _m _cur _at _buf _len _tb:
+ 16 <= _len =>
+ 0 <= _at-_cur < 16 =>
+ msubread _m (u128bytes (loadW128 _m _buf `<<<` 8 * (_at - _cur))) _cur _at
+            _buf _len _tb (_cur + 16) (_buf + (16-(_at-_cur))) (_len - (16-(_at-_cur))) _tb.
+proof.
+move=> Hlen Hat; rewrite /msubread; split; last first.
+ by rewrite size_to_list; smt(size_memread).
+apply srspec_u128_shl => //; first smt().
+by apply loadW128_memread; smt().
+qed.
+
+lemma loadW256_bits8 m p i:
+ 0 <= i < 32 =>
+ loadW256 m p \bits8 i = loadW8 m (p+i).
+proof. by move=> Hi; rewrite /loadW256 pack32bE // initiE //. qed.
+
+lemma loadW256_memread m buf len:
+ 32 <= len =>
+ u8prefAt (u256bytes (loadW256 m buf)) 0 (memread m buf len).
+proof.
+move=> Hlen i; case: (0 <= i < 32) => C; last first.
+ by rewrite nth_out size_to_list 1:/# ifF /#.
+rewrite get_u256bytes loadW256_bits8 // ler_maxr // size_to_list C /=.
+by rewrite /loadW8 nth_mkseq 1:/#.
+qed.
+
+lemma msubread_u256 _m _cur _buf _len _tb:
+ 32 <= _len =>
+ msubread _m (u256bytes (loadW256 _m _buf)) _cur _cur
+            _buf _len _tb (_cur + 32) (_buf + 32) (_len - 32) _tb.
+proof.
+move=> Hlen; rewrite /msubread; split; last first.
+ by rewrite size_to_list; smt(size_memread).
+move=> Hpre /=; split.
+ by apply srpre_next; smt(W32u8.size_to_list).
+apply u8prefAbsorbW; first rewrite size_to_list size_memread /#.
+by apply loadW256_memread.
 qed.
 
 lemma msubread_ahead m w1 cur at buf len at1 buf1 len1 len2 tb:
@@ -938,6 +1106,32 @@ move=> Hlen Hat Hcur []H [#]; rewrite size_to_list b2i0 => Eat Ebuf Elen _.
 split; last by rewrite size_to_list /#.
 have ->: at1=at + len by smt().
 apply (srspec_tb _ _ _ _ _ _ H); smt().
+qed.
+
+lemma msubread_u64_u128 m w cur at buf len tb at1 buf1 len1 tb1:
+ 0 <= at-cur < 16 =>
+ cur+8 <= at =>
+ msubread m (u64bytes w) (cur+8) at buf len tb
+          at1 buf1 len1 tb1 =>
+ msubread m (u128bytes (VPINSR_2u64 zero w one)) cur at buf len tb
+          at1 buf1 len1 tb1.
+proof.
+move=> Hat Hcur [Hspec H]; split; last first.
+ by move: H => []; rewrite !size_to_list => /> /#.
+by apply srspec_u64_u128.
+qed.
+
+lemma msubread_u128_u256 m w cur at buf len tb at1 buf1 len1 tb1:
+ 0 <= at-cur < 32 =>
+ cur+16 <= at =>
+ msubread m (u128bytes w) (cur+16) at buf len tb
+          at1 buf1 len1 tb1 =>
+ msubread m (u256bytes (VINSERTI128  zero w one)) cur at buf len tb
+          at1 buf1 len1 tb1.
+proof.
+move=> Hat Hcur [Hspec H]; split; last first.
+ by move: H => []; rewrite !size_to_list => /> /#.
+by apply srspec_u128_u256.
 qed.
 
 
@@ -1110,40 +1304,16 @@ if => //.
  by rewrite size_to_list /#.
 (* 16 <= lEN *)
 if => //.
- wp; ecall (SHLDQ_h w (aT-cUR)); auto => |> *.
+ wp; ecall (SHLDQ_h w (aT-cUR)); auto => |> &m *.
  split; first smt().
  move=> ??.
- admit (*by apply (subread_u128 _buf _off _dlt _len _trail _cur _at _).
-msubread Glob.mem{`&hr}
-  (u128bytes (loadW128 Glob.mem{`&hr} _buf `<<<` 8 * (_at - _cur))) _cur _at
-  _buf _len _tb (_cur + 16) (_buf + (16 - (_at - _cur)))
-  (_len - (16 - (_at - _cur))) _tb
-*).
+ by apply msubread_u128.
 (* lEN < 16 *)
 if => //.
  (* CUR+8 <= AT *)
  wp; ecall(m_ilen_read_upto8_at_h buf lEN tRAIL (cUR+8) aT); auto => |>.
  rewrite !negb_or negb_and => |> &m ???????? [dlt0 len0 tb0 at0 w0] /= H.
-admit (*
-_: ! _len < 0
-_: ! _at < _cur
-_: ! _cur + 16 < _at
-_: _cur + 16 <> _at
-_: _len <> 0 \/ _tb <> 0
-_: ! 16 < _len
-_: 16 <> _len
-_: _cur + 8 <= _at
-dlt0: int
-len0: int
-tb0: int
-at0: int
-w0: W64.t
-H: msubread Glob.mem{m} (u64bytes w0) (_cur + 8) _at _buf _len _tb at0 dlt0
-     len0 tb0
-------------------------------------------------------------------------
-msubread Glob.mem{m} (u128bytes (VPINSR_2u64 zero w0 one)) _cur _at _buf _len
-  _tb at0 dlt0 len0 tb0
-*).
+ by apply msubread_u64_u128; smt().
 wp; ecall(m_ilen_read_upto8_at_h buf lEN tRAIL (cUR+8) aT).
 wp; ecall(m_ilen_read_upto8_at_h buf lEN tRAIL cUR aT).
 auto => |>; rewrite !negb_or negb_and => |> &m?????????[]dlt0 len0 tb0 at0 w0 |> H0.
@@ -1182,25 +1352,13 @@ if => //.
 (* 32 <= lEN *)
 sp; if => //.
  auto => |> &m ??.
-admit(* by apply subread_u256.
-_: 32 <= _len
-------------------------------------------------------------------------
-msubread Glob.mem{m} (u256bytes (loadW256 Glob.mem{m} _buf)) _cur _cur _buf
-  _len _tb (_cur + 32) (_buf + 32) (_len - 32) _tb
-*).
+ by apply msubread_u256.
 (* lEN < 16 *)
 if => //.
  (* CUR+16 <= AT *)
  wp; ecall(m_ilen_read_upto16_at_h buf lEN tRAIL (cUR+16) aT); auto => |>.
  rewrite !negb_or negb_and => |> ???????? [dlt0 len0 tb0 at0 w0] /= H.
-admit(*
-w0: W128.t
-H: msubread Glob.mem{`&hr} (u128bytes w0) (_cur + 16) _at _buf _len _tb at0
-     dlt0 len0 tb0
-------------------------------------------------------------------------
-msubread Glob.mem{`&hr} (u256bytes (VINSERTI128 zero w0 one)) _cur _at _buf
-  _len _tb at0 dlt0 len0 tb0
-*).
+ by apply msubread_u128_u256; smt().
 wp; ecall(m_ilen_read_upto16_at_h buf lEN tRAIL (cUR+16) aT).
 wp; ecall(m_ilen_read_upto16_at_h buf lEN tRAIL cUR aT).
 auto => |> &m.
@@ -1375,12 +1533,11 @@ clone import PolyArray as A
 clone import WArray as WA
  with op size <- _ASIZE.
 
-(* Some auxiliary lemmata *)
+(* Some auxiliary lemmata for [sub] *)
 
 lemma sub0 (buf: W8.t A.t) off:
  sub buf off 0 = [].
 proof. by rewrite -size_eq0 size_sub /#. qed.
-
 
 lemma size_sub' ['a] (buf:'a A.t) k len:
  size (sub buf k len) = max 0 len.
@@ -1388,6 +1545,16 @@ proof.
 case: (0<=len) => H.
  by rewrite size_sub /#.
 by rewrite /sub mkseq0_le /#.
+qed.
+
+lemma take_sub n (a:W8.t A.t) k len:
+ take n (sub a k len) = sub a k (min n len).
+proof.
+case: (n < 0) => ?.
+ by rewrite take_le0 1:/# /sub mkseq0_le /#. 
+case: (len < n) => ?.
+ by rewrite take_oversize ?size_sub' /#.
+by rewrite take_mkseq // /#.
 qed.
 
 lemma drop_sub n (buf: W8.t A.t) off len:
@@ -1403,20 +1570,6 @@ case: (n < 0) => ?.
 rewrite nth_drop; 1..2: smt(size_ge0).
 by rewrite nth_sub; smt(size_ge0).
 qed.
-
-(*
-lemma drop_subX (buf: W8.t A.t) off len sz cur at:
- 0 <= sz =>
- drop (srincr sz cur at len) (sub buf off len)
- = sub buf (off+srincr sz cur at len) (len-srincr sz cur at len).
-proof.
-move=> Hsz; apply (eq_from_nth W8.zero).
-rewrite size_drop' /srincr !size_sub' 1:/#.
-rewrite size_drop' size_sub' => i Hi.
-rewrite nth_sub /srl' 1:/# nth_drop; 1..2: smt(size_ge0).
-by rewrite nth_sub; smt(size_ge0).
-qed.
-*)
 
 
 (***************************************
@@ -1467,45 +1620,6 @@ have Hl: sub buf (off + dlt1) len1 = srl (size lw1) cur at (sub buf (off + dlt) 
 by apply (srspec_cat lw1 lw2 cur at (sub buf (off + dlt) len) len tb) => // /#.
 qed.
 
-lemma get64_bytes (buf: W8.t A.t) off k:
- 0 <= off =>
- off + 8 <= _ASIZE =>
- get64_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
- = (sub buf off 8).[k].
-proof.
-move=> Ho1 Ho2; rewrite get64E.
-have->: W8u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W8u8.Pack.of_list (sub buf off 8).
- apply W8u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack8 1:size_sub // !nth_sub.
-qed.
-
-lemma getW64_bytearray (buf: W8.t A.t) off len:
- 0 <= off =>
- off + 8 <= _ASIZE =>
- 8 <= len =>
- u8prefAt (u64bytes (get64_direct (WA.init8 ("_.[_]" buf)) off)) 0 (sub buf off len).
-proof.
-move=> Hoff0 Hoff1 Hlen i; case: (0 <= i < 8) => C; last first.
- by rewrite nth_out size_to_list 1:/# ifF /#.
-rewrite get_u64bytes get64_bytes 1..2:/# // ler_maxr // size_to_list C /=.
-by rewrite !nth_mkseq /#.
-qed.
-
-lemma asubread_u64 (_buf:W8.t A.t) _off _cur _at _dlt _len _tb:
- 8 <= _len =>
- 0 <= _at-_cur < 8 =>
- asubread _buf _off (u64bytes (get64_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt) `<<<`
-      8 * (_at - _cur))) _cur _at
-            _dlt _len _tb (_cur + 8) (_dlt + (_cur + 8 - _at)) (_len - (_cur + 8 - _at)) _tb.
-proof.
-move=> Hlen Hat; rewrite /asubread; split; last first.
- by rewrite size_to_list; smt(size_sub).
-move=> Hppre; apply srspec_shl => //; first smt().
-by apply getW64_bytearray; smt(). 
-qed.
-
 lemma get32_bytes (buf: W8.t A.t) off k:
  0 <= off =>
  off + 4 <= _ASIZE =>
@@ -1547,14 +1661,121 @@ move=> Hppre; apply srspec_u32 => //.
 by rewrite size_sub.
 qed.
 
-lemma take_sub n (a:W8.t A.t) k len:
- take n (sub a k len) = sub a k (min n len).
+lemma get64_bytes (buf: W8.t A.t) off k:
+ 0 <= off =>
+ off + 8 <= _ASIZE =>
+ get64_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
+ = (sub buf off 8).[k].
 proof.
-case: (n < 0) => ?.
- by rewrite take_le0 1:/# /sub mkseq0_le /#. 
-case: (len < n) => ?.
- by rewrite take_oversize ?size_sub' /#.
-by rewrite take_mkseq // /#.
+move=> Ho1 Ho2; rewrite get64E.
+have->: W8u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
+        = W8u8.Pack.of_list (sub buf off 8).
+ apply W8u8.Pack.ext_eq => i Hi.
+ by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
+by rewrite get_pack8 1:size_sub // !nth_sub.
+qed.
+
+lemma getW64_bytearray (buf: W8.t A.t) off len:
+ 0 <= off =>
+ off + 8 <= _ASIZE =>
+ 8 <= len =>
+ u8prefAt (u64bytes (get64_direct (WA.init8 ("_.[_]" buf)) off)) 0 (sub buf off len).
+proof.
+move=> Hoff0 Hoff1 Hlen i; case: (0 <= i < 8) => C; last first.
+ by rewrite nth_out size_to_list 1:/# ifF /#.
+rewrite get_u64bytes get64_bytes 1..2:/# // ler_maxr // size_to_list C /=.
+by rewrite !nth_mkseq /#.
+qed.
+
+lemma asubread_u64 (_buf:W8.t A.t) _off _cur _at _dlt _len _tb:
+ 8 <= _len =>
+ 0 <= _at-_cur < 8 =>
+ asubread _buf _off (u64bytes (get64_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt) `<<<`
+      8 * (_at - _cur))) _cur _at
+            _dlt _len _tb (_cur + 8) (_dlt + (_cur + 8 - _at)) (_len - (_cur + 8 - _at)) _tb.
+proof.
+move=> Hlen Hat; rewrite /asubread; split; last first.
+ by rewrite size_to_list; smt(size_sub).
+move=> Hppre; apply srspec_u64_shl => //; first smt().
+by apply getW64_bytearray; smt(). 
+qed.
+
+lemma get128_bytes (buf: W8.t A.t) off k:
+ 0 <= off =>
+ off + 16 <= _ASIZE =>
+ get128_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
+ = (sub buf off 16).[k].
+proof.
+move=> Ho1 Ho2; rewrite get128E.
+have->: W16u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
+        = W16u8.Pack.of_list (sub buf off 16).
+ apply W16u8.Pack.ext_eq => i Hi.
+ by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
+by rewrite get_pack16 1:size_sub // !nth_sub.
+qed.
+
+lemma getW128_bytearray (buf: W8.t A.t) off len:
+ 0 <= off =>
+ off + 16 <= _ASIZE =>
+ 16 <= len =>
+ u8prefAt (u128bytes (get128_direct (WA.init8 ("_.[_]" buf)) off)) 0 (sub buf off len).
+proof.
+move=> Hoff0 Hoff1 Hlen i; case: (0 <= i < 16) => C; last first.
+ by rewrite nth_out size_to_list 1:/# ifF /#.
+rewrite get_u128bytes get128_bytes 1..2:/# // ler_maxr // size_to_list C /=.
+by rewrite !nth_mkseq /#.
+qed.
+
+lemma asubread_u128 (_buf:W8.t A.t) _off _cur _at _dlt _len _tb:
+ 16 <= _len =>
+ 0 <= _at-_cur < 16 =>
+ asubread _buf _off (u128bytes (get128_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt) `<<<`
+      8 * (_at - _cur))) _cur _at
+            _dlt _len _tb (_cur + 16) (_dlt + (16 - (_at - _cur))) (_len - (16 - (_at - _cur))) _tb.
+proof.
+move=> Hlen Hat; rewrite /asubread; split; last first.
+ by rewrite size_to_list; smt(size_sub).
+move=> Hppre; apply srspec_u128_shl => //; first smt().
+by apply getW128_bytearray; smt(). 
+qed.
+
+lemma get256_bytes (buf: W8.t A.t) off k:
+ 0 <= off =>
+ off + 32 <= _ASIZE =>
+ get256_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
+ = (sub buf off 32).[k].
+proof.
+move=> Ho1 Ho2; rewrite get256E.
+have->: W32u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
+        = W32u8.Pack.of_list (sub buf off 32).
+ apply W32u8.Pack.ext_eq => i Hi.
+ by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
+by rewrite get_pack32 1:size_sub // !nth_sub.
+qed.
+
+lemma getW256_bytearray (buf: W8.t A.t) off len:
+ 0 <= off =>
+ off + 32 <= _ASIZE =>
+ 32 <= len =>
+ u8prefAt (u256bytes (get256_direct (WA.init8 ("_.[_]" buf)) off)) 0 (sub buf off len).
+proof.
+move=> Hoff0 Hoff1 Hlen i; case: (0 <= i < 32) => C; last first.
+ by rewrite nth_out size_to_list 1:/# ifF /#.
+rewrite get_u256bytes get256_bytes 1..2:/# // ler_maxr // size_to_list C /=.
+by rewrite !nth_mkseq /#.
+qed.
+
+lemma asubread_u256 (_buf:W8.t A.t) _off _cur _dlt _len _tb:
+ 32 <= _len =>
+ asubread _buf _off (u256bytes (get256_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt))) _cur _cur _dlt _len _tb
+          (_cur + 32) (_dlt + 32) (_len - 32) _tb.
+proof.
+move=> Hlen; rewrite /asubread; split; last first.
+ by rewrite size_to_list; smt(size_sub).
+move=> Hppre Hpre /=; split.
+ by apply srpre_next; smt(W32u8.size_to_list).
+apply u8prefAbsorbW; first rewrite size_to_list size_sub /#.
+by apply getW256_bytearray; smt().
 qed.
 
 lemma asubread_ahead buf off w1 cur at dlt len at1 dlt1 len1 len2 tb:
@@ -1692,6 +1913,33 @@ move: (H _); first smt().
 by move=> HH; apply (srspec_tb _ _ _ _ _ _ HH); smt().
 qed.
 
+lemma asubread_u64_u128 buf off w cur at dlt len tb at1 dlt1 len1 tb1:
+ 0 <= at-cur < 16 =>
+ cur+8 <= at =>
+ asubread buf off (u64bytes w) (cur+8) at dlt len tb
+          at1 dlt1 len1 tb1 =>
+ asubread buf off (u128bytes (VPINSR_2u64 zero w one)) cur at dlt len tb
+          at1 dlt1 len1 tb1.
+proof.
+move=> Hat Hcur [Hspec H]; split; last first.
+ by move: H => []; rewrite !size_to_list => /> /#.
+move=> Hppre; move: (Hspec Hppre).
+by apply srspec_u64_u128.
+qed.
+
+lemma asubread_u128_u256 buf off w cur at dlt len tb at1 dlt1 len1 tb1:
+ 0 <= at-cur < 32 =>
+ cur+16 <= at =>
+ asubread buf off (u128bytes w) (cur+16) at dlt len tb
+          at1 dlt1 len1 tb1 =>
+ asubread buf off (u256bytes (VINSERTI128  zero w one)) cur at dlt len tb
+          at1 dlt1 len1 tb1.
+proof.
+move=> Hat Hcur [Hspec H]; split; last first.
+ by move: H => []; rewrite !size_to_list => /> /#.
+move=> Hppre; move: (Hspec Hppre).
+by apply srspec_u128_u256.
+qed.
 
 op asubwrite (a a2: W8.t A.t) off lw (dlt len:int) dlt2 len2 =
  a2 = A.fill (fun i => lw.[i-off+dlt]) (off+dlt) len a
@@ -1814,7 +2062,7 @@ module MM = {
         } else {
           (dELTA, lEN, tRAIL, aT, t64_0) <@ __a_ilen_read_upto8_at (buf,
           offset, dELTA, lEN, tRAIL, cUR, aT);
-          w <- (zeroextu128 t64_0);
+          w <- (VMOV_64 t64_0);
           (dELTA, lEN, tRAIL, aT, t64_1) <@ __a_ilen_read_upto8_at (buf,
           offset, dELTA, lEN, tRAIL, (cUR + 8), aT);
           w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
@@ -2320,44 +2568,32 @@ hoare a_ilen_read_upto16_at_h _buf _off _dlt _len _tb _cur _at:
  : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_tb /\ cUR=_cur /\ aT=_at
  ==> asubread _buf _off (u128bytes res.`5) _cur _at _dlt _len _tb res.`4 res.`1 res.`2 res.`3.
 proof.
-admitted(*
 proc; simplify.
-
 if => //.
  auto => |> H.
  apply asubread0.
-  admit.
+  by rewrite size_to_list ?u128bytes0 // /#.
  by rewrite size_to_list /#.
-
 (* 16 <= lEN *)
 if => //.
  wp; ecall (SHLDQ_h w (aT-cUR)); auto => |> *.
  split; first smt().
  move=> ??.
- admit (*by apply (subread_u128 _buf _off _dlt _len _trail _cur _at _).*).
-
+ by apply asubread_u128.
 (* lEN < 16 *)
 if => //.
  (* CUR+8 <= AT *)
  wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL (cUR+8) aT); auto => |>.
- rewrite !negb_or negb_and => |> ????????; split; first smt().
- move=> _ [dlt0 len0 tb0 at0 w0] /= H.
-admit (*
- have H0:= subread_spec_ahead8 _buf _off _dlt _len _trail _cur _at _;first  smt().
- rewrite -zeroextu128_zero -u64bytes_cat.
- by apply (subread_spec_cat 8 8 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0).*).
-
+ rewrite !negb_or negb_and => |> ???????? [dlt0 len0 tb0 at0 w0] /= H.
+ by apply asubread_u64_u128; smt().
 wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL (cUR+8) aT).
 wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL cUR aT).
 auto => |>; rewrite !negb_or negb_and. 
-move => |>*; split; first smt().
-move => _ []dlt0 len0 tb0 at0 w0 |> H0.
-split; first smt().
-move=> _ []dlt1 len1 tb1 at1  w2 /= H1.
+move => ??? []dlt0 len0 tb0 at0 w0 |> H0.
+move=> []dlt1 len1 tb1 at1  w2 /= H1.
 rewrite -u64bytes_cat.
 by apply (asubread_cat _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0).
 qed.
-*).
 
 phoare a_ilen_read_upto16_at_ph _buf _off _dlt _len _tb _cur _at:
  [ MM.__a_ilen_read_upto16_at
@@ -2378,27 +2614,21 @@ hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _tb _cur _at:
  ==> asubread _buf _off (u256bytes res.`5) _cur _at _dlt _len _tb res.`4 res.`1 res.`2 res.`3.
 proof.
 proc; simplify.
-
 if => //.
  auto => |> H. 
  apply asubread0.
-  admit.
+  by rewrite size_to_list ?u256bytes0 // /#.
  by rewrite size_to_list /#.
-
 (* 32 <= lEN *)
 sp; if => //.
  auto => |> ??.
-admit(* by apply subread_u256.*).
-
+ by apply asubread_u256.
 (* lEN < 16 *)
 if => //.
  (* CUR+16 <= AT *)
  wp; ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL (cUR+16) aT); auto => |>.
  rewrite !negb_or negb_and => |> ??????? [dlt0 len0 tb0 at0 w0] /= H.
-admit(*
- have H0:= subread_spec_ahead16 _buf _off _dlt _len _trail _cur _at _;first  smt().
- rewrite -zeroextu256_zero -u128bytes_cat.
- by apply (subread_spec_cat 16 16 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0) => //.*).
+ by apply asubread_u128_u256; smt().
 wp; ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL (cUR+16) aT).
 wp; ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL cUR aT).
 auto => |>.
@@ -2425,14 +2655,15 @@ if => //=.
 sp; if => //=.
  inline*; auto => /> &m *; split.
   move=> *.
-admit(*
+  split; first smt().
+  split; first smt().
   rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=; congr => />.
   by rewrite /W64.(`<<`) trunc_zext_u64_u128 of_uintK modz_small 1:/# of_uintK modz_small /#.
-*).
  move=> *.
-admit(*
+ split; first smt().
+ split; first smt().
  rewrite /VPSLL_4u64 /VPBROADCAST_4u64 /= -iotaredE /=; congr => />.
- by rewrite /W64.(`<<`) trunc_zext_u64_u128 1:/# of_uintK modz_small /#.*).
+ by rewrite /W64.(`<<`) trunc_zext_u64_u128 1:/# of_uintK modz_small /#.
 inline *.
 rcondf {1} 9; first by auto.
 rcondf {1} 9; first by auto.
@@ -2440,6 +2671,7 @@ wp 13 4.
 conseq (: ={buf,offset,dELTA,aT,cUR,lEN,tRAIL} ==> ={w,aT,cUR,buf,offset,dELTA,lEN,tRAIL}) => //.
 by sim.
 qed.
+
 
 lemma a_ilen_write_upto8_ll: islossless MM.__a_ilen_write_upto8
 by islossless.
@@ -2647,227 +2879,6 @@ case: (tb=0) => Ctb.
 by rewrite ifF /#.
 qed.
 *)
-
-(*
-lemma get128_bytes (buf: W8.t A.t) off k:
- 0 <= off =>
- off + 16 <= _ASIZE =>
- get128_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
- = (sub buf off 16).[k].
-proof.
-move=> Ho1 Ho2; rewrite get128E.
-have->: W16u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W16u8.Pack.of_list (sub buf off 16).
- apply W16u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack16 1:size_sub // !nth_sub.
-qed.
-
-lemma get64_bytes (buf: W8.t A.t) off k:
- 0 <= off =>
- off + 8 <= _ASIZE =>
- get64_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
- = (sub buf off 8).[k].
-proof.
-move=> Ho1 Ho2; rewrite get64E.
-have->: W8u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W8u8.Pack.of_list (sub buf off 8).
- apply W8u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack8 1:size_sub // !nth_sub.
-qed.
-
-lemma get32_bytes (buf: W8.t A.t) off k:
- 0 <= off =>
- off + 4 <= _ASIZE =>
- get32_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
- = (sub buf off 4).[k].
-proof.
-move=> Ho1 Ho2; rewrite get32E.
-have->: W4u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W4u8.Pack.of_list (sub buf off 4).
- apply W4u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack4 1:size_sub // !nth_sub.
-qed.
-
-lemma get16_bytes (buf: W8.t A.t) off k:
- 0 <= off =>
- off + 2 <= _ASIZE =>
- get16_direct (WA.init8 ("_.[_]" buf)) off \bits8 k
- = (sub buf off 2).[k].
-proof.
-move=> Ho1 Ho2; rewrite get16E.
-have->: W2u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W2u8.Pack.of_list (sub buf off 2).
- apply W2u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack2 1:size_sub // !nth_sub.
-qed.
-
-lemma get8_bytes (buf: W8.t A.t) off:
- 0 <= off < _ASIZE =>
- get8_direct (WA.init8 ("_.[_]" buf)) off
- = buf.[off].
-proof. by move=> Hoff; rewrite /get8 initiE. qed.
-
-
-lemma bits8_shl_get64 buf off k i:
- 0 <= off =>
- 0 <= k < 8 =>
- 0 <= i < 8 =>
- off + 8 <= _ASIZE =>
- get64_direct (WA.init8 (A."_.[_]" buf)) off `<<<` 8 * k \bits8 i
- = if i < k then W8.zero else buf.[off+i-k].
-proof.
-move=> ????; rewrite bits8_u64_shl8 1:// get64_bytes 1..2:/#.
-case: (i<k) => // C.
-by rewrite nth_sub /#.
-qed.
-
-*)
-(*
-lemma subread_u128 _buf _off _dlt _len _trail _cur _at:
- 16 <= _len =>
- 0 <= _at-_cur < 16 =>
- subread_spec 16 _buf _off _dlt _len _trail _cur _at
-  (_dlt + (16 - (_at - _cur))) (_len - (16 - (_at - _cur))) _trail (_cur + 16)
-  (u128bytes
-     (get128_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt) `<<<`
-      8 * (_at - _cur))).
-proof.
-move=> Hen Hcur _ Hpre; split; first smt().
-split; last smt().
-apply (eq_from_nth W8.zero).
- rewrite size_to_list size_take // size_cat size_nseq ler_maxr //=.
- by rewrite size_drop 1:/# !size_cat size_sub 1:/# size_nseq /= /#.
-move=> i; rewrite size_to_list => Hi.
-rewrite nth_bytes_at //.
-rewrite get_u128bytes bits8_u128_shl8 //.
-case: (_at-_cur <= i) => C.
- by rewrite ifF 1:/# ifT 1:/# nth_cat size_sub 1:/# ifT 1:/# nth_sub 1:/# get128_bytes 1..2:/# nth_sub /#.
-by rewrite ifT 1:/# ifF 1:/#.
-qed.
-
-lemma u64bits8_subread i buf off cur dlt len tb at dlt1 len1 tb1 at1 (w:W64.t):
- subread_pre cur at off dlt len tb =>
- subread_spec 8 buf off dlt len tb cur at dlt1 len1 tb1 at1 (u64bytes w) =>
- w \bits8 i
- = (bytes_at 8 cur at (sub buf (off + dlt) len++[of_int tb])).[i].
-proof.
-move=> Hpre H; move: (H _ Hpre) => // |> ?E???.
-by rewrite -get_u64bytes E.
-qed.
-
-
-hoare a_ilen_read_upto16_at_h _buf _off _dlt _len _trail _cur _at:
- MM.__a_ilen_read_upto16_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
- ==> subread_spec 16 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u128bytes res.`5).
-proof.
-proc; simplify.
-
-if => //.
- auto => |>  [[H|H]|H]. 
- + move=> _; rewrite /subread_pre => /> ?????????.
-   rewrite (:!_cur<=_at) 1:/# /= => [[Elen Etb]].
-   rewrite !Elen !Etb; split; first smt().
-   split.
-    rewrite sub0 bytes_at_zeros 1:/# /u128bytes /= !get_zero.
-    by rewrite -mkseq_nseq /mkseq -iotaredE.
-   smt().
-  + by apply subread_spec_ahead16; smt().
-  by apply subread_spec_empty16; smt().
-
-(* 16 <= lEN *)
-if => //.
- wp; ecall (SHLDQ_h w (aT-cUR)); auto => |> *.
- split; first smt().
- move=> ??.
- by apply (subread_u128 _buf _off _dlt _len _trail _cur _at _).
-
-(* lEN < 16 *)
-if => //.
- (* CUR+8 <= AT *)
- wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL (cUR+8) aT); auto => |>.
- rewrite !negb_or negb_and => |> ??????? [dlt0 len0 tb0 at0 w0] /= H.
- have H0:= subread_spec_ahead8 _buf _off _dlt _len _trail _cur _at _;first  smt().
- rewrite -zeroextu128_zero -u64bytes_cat.
- by apply (subread_spec_cat 8 8 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0).
-
-wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL (cUR+8) aT).
-wp; ecall(a_ilen_read_upto8_at_h buf offset dELTA lEN tRAIL cUR aT).
-auto => |>.
-rewrite !negb_or negb_and. 
-move => ???[]dlt0 len0 tb0 at0 w0 |> H0 []dlt1 len1 tb1 at1 w1 /= H1.
-rewrite -u64bytes_cat.
-by apply (subread_spec_cat 8 8 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0).
-qed.
-
-
-lemma subread_u256 _buf _off _dlt _len _trail _cur _at:
- 32 <= _len =>
- _at-_cur = 0 =>
- subread_spec 32 _buf _off _dlt _len _trail _cur _at
-  (_dlt + 32) (_len - 32) _trail (_at + 32)
-  (u256bytes
-     (get256_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt))).
-proof.
-move=> Hen Hcur _ Hpre; split; first smt().
-split; last smt().
-apply (eq_from_nth W8.zero).
- rewrite size_to_list size_take // size_cat size_nseq ler_maxr //=.
- by rewrite size_drop 1:/# !size_cat size_sub 1:/# size_nseq /= /#.
-move=> i; rewrite size_to_list => Hi.
-rewrite nth_bytes_at 1..2:/#.
-rewrite get_u256bytes get256E pack32bE // initiE //= initiE 1:/#.
-by rewrite ifT 1:/# nth_cat size_sub 1:/# ifT 1:/# nth_sub /#.
-qed.
-
-hoare a_ilen_read_upto32_at_h _buf _off _dlt _len _trail _cur _at:
- MM.__a_ilen_read_upto32_at
- : buf=_buf /\ offset=_off /\ dELTA=_dlt /\ lEN=_len /\ tRAIL=_trail /\ cUR=_cur /\ aT=_at
- ==> subread_spec 32 _buf _off _dlt _len _trail _cur _at res.`1 res.`2 res.`3 res.`4 (u256bytes res.`5).
-proof.
-proc; simplify.
-
-if => //.
- auto => |> [[H|H]|H]. 
- + move=> _; rewrite /subread_pre => /> ?????????.
-   rewrite (:!_cur<=_at) 1:/# /= => [[Elen Etb]].
-   rewrite !Elen !Etb; split; first smt().
-   split.
-    rewrite sub0 bytes_at_zeros /u256bytes 1:/# /= !get_zero.
-    by rewrite -mkseq_nseq /mkseq -iotaredE.
-   smt().
-  + by apply subread_spec_ahead32; smt().
-  by apply subread_spec_empty32; smt().
-
-(* 32 <= lEN *)
-sp; if => //.
- auto => |> ??.
- by apply subread_u256.
-
-(* lEN < 16 *)
-if => //.
- (* CUR+16 <= AT *)
- wp; ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL (cUR+16) aT); auto => |>.
- rewrite !negb_or negb_and => |> ?????? [dlt0 len0 tb0 at0 w0] /= H.
- have H0:= subread_spec_ahead16 _buf _off _dlt _len _trail _cur _at _;first  smt().
- rewrite -zeroextu256_zero -u128bytes_cat.
- by apply (subread_spec_cat 16 16 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0) => //.
-wp; ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL (cUR+16) aT).
-wp; ecall(a_ilen_read_upto16_at_h buf offset dELTA lEN tRAIL cUR aT).
-auto => |>.
-rewrite !negb_or negb_and. 
-move => ???[]dlt0 len0 tb0 at0 w0 |> H0 []dlt1 len1 tb1 at1 w1 /= H1.
-rewrite -u128bytes_cat.
-by apply (subread_spec_cat 16 16 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ H0 _).
-qed.
-
-*)
-
-
 
 
 (*
