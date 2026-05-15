@@ -202,6 +202,50 @@ lemma sponge_state_finish _st:
 proof. admitted.
 
 
+(* ------------------------------------------------------------------------- *)
+(* Bridge lemmas: composition rules for the partial-absorb predicate         *)
+(* `pabsorb_spec_updstate_avx2`. These let a client chain                    *)
+(*   init → update → absorb_m → finish → squeeze                             *)
+(* entirely in the predicate world without ever touching the opaque viewers  *)
+(* `absorb_msg` / `sponge_state`.                                            *)
+(* ------------------------------------------------------------------------- *)
+
+(* (B1) Init produces the empty-message predicate. *)
+lemma init_pabsorb (_st : W64.t Array26.t) (r64 : int) (trailb : W8.t):
+  0 < r64 <= 25 =>
+  pabsorb_spec_updstate_avx2 [] (init_updstate_avx2_spec _st r64 trailb)
+  /\ ststatus_r8     (init_updstate_avx2_spec _st r64 trailb).[25] = r64 * 8
+  /\ ststatus_trailb (init_updstate_avx2_spec _st r64 trailb).[25] = trailb.
+proof. admitted.
+
+(* (B2) absorb_m preserves the predicate, extending the absorbed list by the
+       memory read, and preserves the rate/trailb bytes of st.[25]. *)
+lemma absorb_m_pabsorb _mem (_st : W64.t Array26.t) (_buf _len : int)
+                      (_l : W8.t list):
+  pabsorb_spec_updstate_avx2 _l _st =>
+  0 <= _len =>
+  _buf + _len < W64.modulus =>
+  pabsorb_spec_updstate_avx2
+    (_l ++ memread _mem _buf _len)
+    (absorb_m_updstate_avx2_spec _mem _st _buf _len)
+  /\ ststatus_r8 (absorb_m_updstate_avx2_spec _mem _st _buf _len).[25]
+       = ststatus_r8 _st.[25]
+  /\ ststatus_trailb (absorb_m_updstate_avx2_spec _mem _st _buf _len).[25]
+       = ststatus_trailb _st.[25].
+proof. admitted.
+
+(* (B3) finish lands the first 25 words of the state at ABSORB1600 of the
+       accumulated message, and preserves the rate byte. This is the bridge
+       to the squeeze contract, which reads `Array25.init (fun i => _st.[i])`
+       directly. *)
+lemma finish_absorb (_st : W64.t Array26.t) (_l : W8.t list):
+  pabsorb_spec_updstate_avx2 _l _st =>
+  Array25.init (fun i => (finish_updstate_avx2_spec _st).[i])
+    = ABSORB1600 (ststatus_trailb _st.[25]) (ststatus_r8 _st.[25]) _l
+  /\ ststatus_r8 (finish_updstate_avx2_spec _st).[25] = ststatus_r8 _st.[25].
+proof. admitted.
+
+
 lemma init_updstate_avx2_ll: islossless M._init_updstate_avx2.
 proof. admitted.
 
@@ -666,23 +710,27 @@ qed.
    Absorbs `len` new bytes from `buf[0..len-1]` into the updstate.
    ----------------------------------------------------------------------- *)
 
-hoare update_updstate_avx2_h _l _buf _len:
+hoare update_updstate_avx2_h _l _buf _len _st:
  MM._update_updstate_avx2
- : buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l st
+ : st=_st /\ buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l _st
  /\ 0 <= len <= _ASIZE
- ==> pabsorb_spec_updstate_avx2 (_l ++ sub _buf 0 _len) res.
+ ==> pabsorb_spec_updstate_avx2 (_l ++ sub _buf 0 _len) res
+  /\ ststatus_r8     res.[25] = ststatus_r8     _st.[25]
+  /\ ststatus_trailb res.[25] = ststatus_trailb _st.[25].
 proof.
 proc => /=.
 admitted.
 
-phoare update_updstate_avx2_ph _l _buf _len:
+phoare update_updstate_avx2_ph _l _buf _len _st:
  [ MM._update_updstate_avx2
- : buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l st
+ : st=_st /\ buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l _st
  /\ 0 <= len <= _ASIZE
  ==> pabsorb_spec_updstate_avx2 (_l ++ sub _buf 0 _len) res
+  /\ ststatus_r8     res.[25] = ststatus_r8     _st.[25]
+  /\ ststatus_trailb res.[25] = ststatus_trailb _st.[25]
  ] = 1%r.
 proof.
-by conseq update_updstate_avx2_ll (update_updstate_avx2_h _l _buf _len).
+by conseq update_updstate_avx2_ll (update_updstate_avx2_h _l _buf _len _st).
 qed.
 
 
@@ -690,25 +738,29 @@ qed.
    Correctness of absorb_updstate_avx2 (exported entry point)
    ----------------------------------------------------------------------- *)
 
-hoare absorb_updstate_avx2_h _l _buf _len:
+hoare absorb_updstate_avx2_h _l _buf _len _st:
  MM.absorb_updstate_avx2
- : buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l st
+ : st=_st /\ buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l _st
  /\ 0 <= len <= _ASIZE
- ==> pabsorb_spec_updstate_avx2 (_l ++ sub _buf 0 _len) res.
+ ==> pabsorb_spec_updstate_avx2 (_l ++ sub _buf 0 _len) res
+  /\ ststatus_r8     res.[25] = ststatus_r8     _st.[25]
+  /\ ststatus_trailb res.[25] = ststatus_trailb _st.[25].
 proof.
 proc.
-call (update_updstate_avx2_h _l _buf _len).
+call (update_updstate_avx2_h _l _buf _len _st).
 by auto => />.
 qed.
 
-phoare absorb_updstate_avx2_ph _l _buf _len:
+phoare absorb_updstate_avx2_ph _l _buf _len _st:
  [ MM.absorb_updstate_avx2
- : buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l st
+ : st=_st /\ buf=_buf /\ len=_len /\ pabsorb_spec_updstate_avx2 _l _st
  /\ 0 <= len <= _ASIZE
  ==> pabsorb_spec_updstate_avx2 (_l ++ sub _buf 0 _len) res
+  /\ ststatus_r8     res.[25] = ststatus_r8     _st.[25]
+  /\ ststatus_trailb res.[25] = ststatus_trailb _st.[25]
  ] = 1%r.
 proof.
-by conseq absorb_updstate_avx2_ll (absorb_updstate_avx2_h _l _buf _len).
+by conseq absorb_updstate_avx2_ll (absorb_updstate_avx2_h _l _buf _len _st).
 qed.
 
 
