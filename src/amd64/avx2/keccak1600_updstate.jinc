@@ -10,9 +10,10 @@ type keccak_updstate = u64[26];
 */
 
 
+inline
 fn _init_updstate_avx2
 ( reg mut ptr keccak_updstate st
-, reg ui8 r64 // 9 <= r64 < 25 
+, reg ui8 r64    // 9 <= r64 < 25
 , reg u8 trailb // 0 <= trailb < 256
 ) -> reg ptr keccak_updstate /* st */
 {
