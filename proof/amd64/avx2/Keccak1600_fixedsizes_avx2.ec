@@ -193,8 +193,6 @@ apply (srspecP _ _ _ _ _ _ _ H) => //.
 by rewrite /srpre size_memread 1:/# /#.
 qed.
 
-print M.
-
 module Maux = {
   proc __addstate_m_avx2_aux(st : W256.t Array7.t, aT : int, buf : int, _LEN : int, _TRAILB : int) :
     W256.t Array7.t * int * int = {

@@ -131,7 +131,7 @@ op xor_byte_at_st25 (stk : W64.t Array25.t) (pos : int) (b : W8.t)
   stk.[w <- stk.[w] `^` m].
 
 op clear_at_trailb (s : W64.t) : W64.t =
-  s `&` W64.of_int 0xFFFFFFFFFF00FF00.
+  s `&` W64.of_int 18446744073692839680. (*0xFFFFFFFFFF00FF00*)
 
 
 (* Concrete spec for init: zeros 25 keccak words, packs (at=0, r8-1=r64-1,

@@ -52,6 +52,221 @@ abbrev kECCAK1600_RC =
 (W64.of_int (-9223372034707259384))]).
 
 module M = {
+  proc __ANDN_64 (a:W64.t, b:W64.t) : W64.t = {
+    var t:W64.t;
+    t <- ((invw a) `&` b);
+    return t;
+  }
+  proc keccakf1600_index (x:int, y:int) : int = {
+    var r:int;
+    r <- ((x %% 5) + (5 * (y %% 5)));
+    return r;
+  }
+  proc keccakf1600_rho_offsets (i:int) : int = {
+    var r:int;
+    var x:int;
+    var y:int;
+    var t:int;
+    var z:int;
+    r <- 0;
+    x <- 1;
+    y <- 0;
+    t <- 0;
+    while ((t < 24)) {
+      if ((i = (x + (5 * y)))) {
+        r <- ((((t + 1) * (t + 2)) %/ 2) %% 64);
+      } else {
+        
+      }
+      z <- (((2 * x) + (3 * y)) %% 5);
+      x <- y;
+      y <- z;
+      t <- (t + 1);
+    }
+    return r;
+  }
+  proc keccakf1600_rhotates (x:int, y:int) : int = {
+    var r:int;
+    var i:int;
+    i <@ keccakf1600_index (x, y);
+    r <@ keccakf1600_rho_offsets (i);
+    return r;
+  }
+  proc __rol_u64_ref (x:W64.t, i:int) : W64.t = {
+    var  _0:bool;
+    var  _1:bool;
+    if ((i <> 0)) {
+      ( _0,  _1, x) <- (ROL_64 x (W8.of_int i));
+    } else {
+      
+    }
+    return x;
+  }
+  proc __theta_sum_ref (a:W64.t Array25.t) : W64.t Array5.t = {
+    var c:W64.t Array5.t;
+    var x:int;
+    var y:int;
+    c <- witness;
+    x <- 0;
+    while ((x < 5)) {
+      c.[x] <- a.[(x + 0)];
+      x <- (x + 1);
+    }
+    y <- 1;
+    while ((y < 5)) {
+      x <- 0;
+      while ((x < 5)) {
+        c.[x] <- (c.[x] `^` a.[(x + (y * 5))]);
+        x <- (x + 1);
+      }
+      y <- (y + 1);
+    }
+    return c;
+  }
+  proc __theta_rol_ref (c:W64.t Array5.t) : W64.t Array5.t = {
+    var aux:W64.t;
+    var d:W64.t Array5.t;
+    var x:int;
+    d <- witness;
+    x <- 0;
+    while ((x < 5)) {
+      d.[x] <- c.[((x + 1) %% 5)];
+      aux <@ __rol_u64_ref (d.[x], 1);
+      d.[x] <- aux;
+      d.[x] <- (d.[x] `^` c.[(((x - 1) + 5) %% 5)]);
+      x <- (x + 1);
+    }
+    return d;
+  }
+  proc __rol_sum_ref (a:W64.t Array25.t, d:W64.t Array5.t, y:int) : W64.t Array5.t = {
+    var aux:W64.t;
+    var b:W64.t Array5.t;
+    var x:int;
+    var x_:int;
+    var y_:int;
+    var r:int;
+    b <- witness;
+    x <- 0;
+    while ((x < 5)) {
+      x_ <- ((x + (3 * y)) %% 5);
+      y_ <- x;
+      r <@ keccakf1600_rhotates (x_, y_);
+      b.[x] <- a.[(x_ + (y_ * 5))];
+      b.[x] <- (b.[x] `^` d.[x_]);
+      aux <@ __rol_u64_ref (b.[x], r);
+      b.[x] <- aux;
+      x <- (x + 1);
+    }
+    return b;
+  }
+  proc __set_row_ref (e:W64.t Array25.t, b:W64.t Array5.t, y:int) : W64.t Array25.t = {
+    var x:int;
+    var x1:int;
+    var x2:int;
+    var t:W64.t;
+    x <- 0;
+    while ((x < 5)) {
+      x1 <- ((x + 1) %% 5);
+      x2 <- ((x + 2) %% 5);
+      t <@ __ANDN_64 (b.[x1], b.[x2]);
+      t <- (t `^` b.[x]);
+      e.[(x + (y * 5))] <- t;
+      x <- (x + 1);
+    }
+    return e;
+  }
+  proc _pround_ref (e:W64.t Array25.t, a:W64.t Array25.t) : W64.t Array25.t = {
+    var c:W64.t Array5.t;
+    var d:W64.t Array5.t;
+    var y:int;
+    var b:W64.t Array5.t;
+    b <- witness;
+    c <- witness;
+    d <- witness;
+    c <@ __theta_sum_ref (a);
+    d <@ __theta_rol_ref (c);
+    y <- 0;
+    while ((y < 5)) {
+      b <@ __rol_sum_ref (a, d, y);
+      e <@ __set_row_ref (e, b, y);
+      y <- (y + 1);
+    }
+    return e;
+  }
+  proc __keccakf1600_ref (a:W64.t Array25.t) : W64.t Array25.t = {
+    var s_e:W64.t Array25.t;
+    var e:W64.t Array25.t;
+    var rC:W64.t Array24.t;
+    var rc:W64.t;
+    var c:int;
+    rC <- witness;
+    e <- witness;
+    s_e <- witness;
+    e <- s_e;
+    c <- 0;
+    (* Erased call to spill *)
+    e <@ _pround_ref (e, a);
+    (a, e) <- (swap_ e a);
+    rC <- kECCAK1600_RC;
+    rc <- rC.[c];
+    e.[0] <- (e.[0] `^` rc);
+    a <@ _pround_ref (a, e);
+    (a, e) <- (swap_ e a);
+    rC <- kECCAK1600_RC;
+    rc <- rC.[(c + 1)];
+    a.[0] <- (a.[0] `^` rc);
+    (* Erased call to unspill *)
+    c <- (c + 2);
+    while ((c < (24 - 1))) {
+      (* Erased call to spill *)
+      e <@ _pround_ref (e, a);
+      (a, e) <- (swap_ e a);
+      rC <- kECCAK1600_RC;
+      rc <- rC.[c];
+      e.[0] <- (e.[0] `^` rc);
+      a <@ _pround_ref (a, e);
+      (a, e) <- (swap_ e a);
+      rC <- kECCAK1600_RC;
+      rc <- rC.[(c + 1)];
+      a.[0] <- (a.[0] `^` rc);
+      (* Erased call to unspill *)
+      c <- (c + 2);
+    }
+    return a;
+  }
+  proc _keccakf1600_ref (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    a <@ __keccakf1600_ref (a);
+    return a;
+  }
+  proc _keccakf1600_ref_ (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    a <- a;
+    a <@ _keccakf1600_ref (a);
+    a <- a;
+    return a;
+  }
+  proc __state_init_ref (st:W64.t Array25.t) : W64.t Array25.t = {
+    var z64:W64.t;
+    var i:int;
+    z64 <- (W64.of_int 0);
+    i <- 0;
+    while ((i < 25)) {
+      st.[i] <- z64;
+      i <- (i + 1);
+    }
+    return st;
+  }
+  proc __addratebit_ref (st:W64.t Array25.t, _RATE8:int) : W64.t Array25.t = {
+    
+    st <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)
+    ((get8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)) `^`
+    (W8.of_int 128)))));
+    return st;
+  }
   proc __SHLQ (x:W64.t, shbytes:int) : W64.t = {
     
     if ((shbytes <> 0)) {
@@ -480,220 +695,112 @@ module M = {
     }
     return buf;
   }
-  proc __ANDN_64 (a:W64.t, b:W64.t) : W64.t = {
-    var t:W64.t;
-    t <- ((invw a) `&` b);
-    return t;
-  }
-  proc keccakf1600_index (x:int, y:int) : int = {
-    var r:int;
-    r <- ((x %% 5) + (5 * (y %% 5)));
-    return r;
-  }
-  proc keccakf1600_rho_offsets (i:int) : int = {
-    var r:int;
-    var x:int;
-    var y:int;
-    var t:int;
-    var z:int;
-    r <- 0;
-    x <- 1;
-    y <- 0;
-    t <- 0;
-    while ((t < 24)) {
-      if ((i = (x + (5 * y)))) {
-        r <- ((((t + 1) * (t + 2)) %/ 2) %% 64);
-      } else {
-        
-      }
-      z <- (((2 * x) + (3 * y)) %% 5);
-      x <- y;
-      y <- z;
-      t <- (t + 1);
-    }
-    return r;
-  }
-  proc keccakf1600_rhotates (x:int, y:int) : int = {
-    var r:int;
-    var i:int;
-    i <@ keccakf1600_index (x, y);
-    r <@ keccakf1600_rho_offsets (i);
-    return r;
-  }
-  proc __rol_u64_ref (x:W64.t, i:int) : W64.t = {
-    var  _0:bool;
-    var  _1:bool;
-    if ((i <> 0)) {
-      ( _0,  _1, x) <- (ROL_64 x (W8.of_int i));
+  proc __addstate_m_ref (st:W64.t Array25.t, aT:int, buf:int, _LEN:int,
+                         _TRAILB:int) : W64.t Array25.t * int * int = {
+    var aT8:int;
+    var w:W64.t;
+    var at:int;
+    aT8 <- aT;
+    aT <- (8 * (aT %/ 8));
+    if (((aT8 %% 8) <> 0)) {
+      (buf, _LEN, _TRAILB, aT8, w) <@ __m_ilen_read_upto8_at (buf, _LEN,
+      _TRAILB, aT, aT8);
+      st.[(aT %/ 8)] <- (st.[(aT %/ 8)] `^` w);
+      aT <- aT8;
     } else {
       
     }
-    return x;
-  }
-  proc __theta_sum_ref (a:W64.t Array25.t) : W64.t Array5.t = {
-    var c:W64.t Array5.t;
-    var x:int;
-    var y:int;
-    c <- witness;
-    x <- 0;
-    while ((x < 5)) {
-      c.[x] <- a.[(x + 0)];
-      x <- (x + 1);
+    at <- (aT %/ 8);
+    while ((at < ((aT %/ 8) + (_LEN %/ 8)))) {
+      w <- (loadW64 Glob.mem buf);
+      buf <- (buf + 8);
+      st.[at] <- (st.[at] `^` w);
+      at <- (at + 1);
     }
-    y <- 1;
-    while ((y < 5)) {
-      x <- 0;
-      while ((x < 5)) {
-        c.[x] <- (c.[x] `^` a.[(x + (y * 5))]);
-        x <- (x + 1);
-      }
-      y <- (y + 1);
+    aT <- (aT + (8 * (_LEN %/ 8)));
+    _LEN <- (_LEN %% 8);
+    if (((0 < _LEN) \/ ((_TRAILB %% 256) <> 0))) {
+      (buf, _LEN, _TRAILB, aT, w) <@ __m_ilen_read_upto8_at (buf, _LEN,
+      _TRAILB, aT, aT);
+      st.[at] <- (st.[at] `^` w);
+    } else {
+      
     }
-    return c;
+    return (st, aT, buf);
   }
-  proc __theta_rol_ref (c:W64.t Array5.t) : W64.t Array5.t = {
-    var aux:W64.t;
-    var d:W64.t Array5.t;
-    var x:int;
-    d <- witness;
-    x <- 0;
-    while ((x < 5)) {
-      d.[x] <- c.[((x + 1) %% 5)];
-      aux <@ __rol_u64_ref (d.[x], 1);
-      d.[x] <- aux;
-      d.[x] <- (d.[x] `^` c.[(((x - 1) + 5) %% 5)]);
-      x <- (x + 1);
-    }
-    return d;
-  }
-  proc __rol_sum_ref (a:W64.t Array25.t, d:W64.t Array5.t, y:int) : W64.t Array5.t = {
-    var aux:W64.t;
-    var b:W64.t Array5.t;
-    var x:int;
-    var x_:int;
-    var y_:int;
-    var r:int;
-    b <- witness;
-    x <- 0;
-    while ((x < 5)) {
-      x_ <- ((x + (3 * y)) %% 5);
-      y_ <- x;
-      r <@ keccakf1600_rhotates (x_, y_);
-      b.[x] <- a.[(x_ + (y_ * 5))];
-      b.[x] <- (b.[x] `^` d.[x_]);
-      aux <@ __rol_u64_ref (b.[x], r);
-      b.[x] <- aux;
-      x <- (x + 1);
-    }
-    return b;
-  }
-  proc __set_row_ref (e:W64.t Array25.t, b:W64.t Array5.t, y:int) : W64.t Array25.t = {
-    var x:int;
-    var x1:int;
-    var x2:int;
-    var t:W64.t;
-    x <- 0;
-    while ((x < 5)) {
-      x1 <- ((x + 1) %% 5);
-      x2 <- ((x + 2) %% 5);
-      t <@ __ANDN_64 (b.[x1], b.[x2]);
-      t <- (t `^` b.[x]);
-      e.[(x + (y * 5))] <- t;
-      x <- (x + 1);
-    }
-    return e;
-  }
-  proc _pround_ref (e:W64.t Array25.t, a:W64.t Array25.t) : W64.t Array25.t = {
-    var c:W64.t Array5.t;
-    var d:W64.t Array5.t;
-    var y:int;
-    var b:W64.t Array5.t;
-    b <- witness;
-    c <- witness;
-    d <- witness;
-    c <@ __theta_sum_ref (a);
-    d <@ __theta_rol_ref (c);
-    y <- 0;
-    while ((y < 5)) {
-      b <@ __rol_sum_ref (a, d, y);
-      e <@ __set_row_ref (e, b, y);
-      y <- (y + 1);
-    }
-    return e;
-  }
-  proc __keccakf1600_ref (a:W64.t Array25.t) : W64.t Array25.t = {
-    var s_e:W64.t Array25.t;
-    var e:W64.t Array25.t;
-    var rC:W64.t Array24.t;
-    var rc:W64.t;
-    var c:int;
-    rC <- witness;
-    e <- witness;
-    s_e <- witness;
-    e <- s_e;
-    c <- 0;
-    (* Erased call to spill *)
-    e <@ _pround_ref (e, a);
-    (a, e) <- (swap_ e a);
-    rC <- kECCAK1600_RC;
-    rc <- rC.[c];
-    e.[0] <- (e.[0] `^` rc);
-    a <@ _pround_ref (a, e);
-    (a, e) <- (swap_ e a);
-    rC <- kECCAK1600_RC;
-    rc <- rC.[(c + 1)];
-    a.[0] <- (a.[0] `^` rc);
-    (* Erased call to unspill *)
-    c <- (c + 2);
-    while ((c < (24 - 1))) {
-      (* Erased call to spill *)
-      e <@ _pround_ref (e, a);
-      (a, e) <- (swap_ e a);
-      rC <- kECCAK1600_RC;
-      rc <- rC.[c];
-      e.[0] <- (e.[0] `^` rc);
-      a <@ _pround_ref (a, e);
-      (a, e) <- (swap_ e a);
-      rC <- kECCAK1600_RC;
-      rc <- rC.[(c + 1)];
-      a.[0] <- (a.[0] `^` rc);
-      (* Erased call to unspill *)
-      c <- (c + 2);
-    }
-    return a;
-  }
-  proc _keccakf1600_ref (a:W64.t Array25.t) : W64.t Array25.t = {
-    
-    a <@ __keccakf1600_ref (a);
-    return a;
-  }
-  proc _keccakf1600_ref_ (a:W64.t Array25.t) : W64.t Array25.t = {
-    
-    a <- a;
-    a <@ _keccakf1600_ref (a);
-    a <- a;
-    return a;
-  }
-  proc __state_init_ref (st:W64.t Array25.t) : W64.t Array25.t = {
-    var z64:W64.t;
+  proc __absorb_m_ref (st:W64.t Array25.t, aT:int, buf:int, _LEN:int,
+                       _TRAILB:int, _RATE8:int) : W64.t Array25.t * int * int = {
+    var iTERS:int;
     var i:int;
-    z64 <- (W64.of_int 0);
+    var  _0:int;
+    var  _1:int;
+    if ((_RATE8 <= (aT + _LEN))) {
+      (st,  _0, buf) <@ __addstate_m_ref (st, aT, buf, (_RATE8 - aT), 0);
+      _LEN <- (_LEN - (_RATE8 - aT));
+      aT <- 0;
+      (* Erased call to spill *)
+      st <@ _keccakf1600_ref (st);
+      (* Erased call to unspill *)
+      iTERS <- (_LEN %/ _RATE8);
+      i <- 0;
+      while ((i < iTERS)) {
+        (st,  _1, buf) <@ __addstate_m_ref (st, 0, buf, _RATE8, 0);
+        (* Erased call to spill *)
+        st <@ _keccakf1600_ref (st);
+        (* Erased call to unspill *)
+        i <- (i + 1);
+      }
+      _LEN <- (_LEN %% _RATE8);
+    } else {
+      
+    }
+    (st, aT, buf) <@ __addstate_m_ref (st, aT, buf, _LEN, _TRAILB);
+    if ((_TRAILB <> 0)) {
+      st <@ __addratebit_ref (st, _RATE8);
+    } else {
+      
+    }
+    return (st, aT, buf);
+  }
+  proc __dumpstate_m_ref (buf:int, _LEN:int, st:W64.t Array25.t) : int = {
+    var t:W64.t;
+    var i:int;
+    var  _0:int;
     i <- 0;
-    while ((i < 25)) {
-      st.[i] <- z64;
+    while ((i < (_LEN %/ 8))) {
+      t <- st.[i];
+      Glob.mem <- (storeW64 Glob.mem buf t);
+      buf <- (buf + 8);
       i <- (i + 1);
     }
-    return st;
+    if ((0 < (_LEN %% 8))) {
+      t <- st.[i];
+      (buf,  _0) <@ __m_ilen_write_upto8 (buf, (_LEN %% 8), t);
+    } else {
+      
+    }
+    return buf;
   }
-  proc __addratebit_ref (st:W64.t Array25.t, _RATE8:int) : W64.t Array25.t = {
-    
-    st <-
-    (Array25.init
-    (WArray200.get64
-    (WArray200.set8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)
-    ((get8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)) `^`
-    (W8.of_int 128)))));
-    return st;
+  proc __squeeze_m_ref (st:W64.t Array25.t, buf:int, _LEN:int, _RATE8:int) : 
+  W64.t Array25.t * int = {
+    var i:int;
+    i <- 0;
+    while ((i < (_LEN %/ _RATE8))) {
+      (* Erased call to spill *)
+      st <@ _keccakf1600_ref (st);
+      (* Erased call to unspill *)
+      buf <@ __dumpstate_m_ref (buf, _RATE8, st);
+      i <- (i + 1);
+    }
+    if ((0 < (_LEN %% _RATE8))) {
+      (* Erased call to spill *)
+      st <@ _keccakf1600_ref (st);
+      (* Erased call to unspill *)
+      buf <@ __dumpstate_m_ref (buf, (_LEN %% _RATE8), st);
+    } else {
+      
+    }
+    return (st, buf);
   }
   proc __keccakf1600_pround_avx2 (state:W256.t Array7.t) : W256.t Array7.t = {
     var c00:W256.t;
@@ -2149,6 +2256,317 @@ module M = {
     st.[r] <- (st.[r] `^` t256);
     return st;
   }
+  proc _init_updstate_avx2 (st:W64.t Array26.t, r64:int, trailb:W8.t) : 
+  W64.t Array26.t = {
+    var r256:W256.t;
+    var i:int;
+    var status:W64.t;
+    var t:W64.t;
+    r256 <- (set0_256);
+    i <- 0;
+    while ((i < 6)) {
+      st <-
+      (Array26.init
+      (WArray208.get64
+      (WArray208.set256 (WArray208.init64 (fun i_0 => st.[i_0])) i r256)));
+      i <- (i + 1);
+    }
+    st.[24] <- (W64.of_int 0);
+    status <- (zeroextu64 trailb);
+    status <- (status `<<` (W8.of_int 8));
+    r64 <- (W8.to_uint ((W8.of_int r64) - (W8.of_int 1)));
+    t <- (zeroextu64 (W8.of_int r64));
+    status <- (status + t);
+    status <- (status `<<` (W8.of_int 8));
+    st.[25] <- status;
+    return st;
+  }
+  proc _ststatus_data (ststatus:W64.t) : W8.t * int * int = {
+    var trailb:W8.t;
+    var at:W64.t;
+    var r8:W64.t;
+    var c_200:W64.t;
+    var c_0:W64.t;
+    var r8_ui:int;
+    var at_ui:int;
+    at <- ststatus;
+    at <- (at `&` (W64.of_int 255));
+    ststatus <- (ststatus `>>` (W8.of_int 8));
+    r8 <- ststatus;
+    r8 <- (r8 `&` (W64.of_int 255));
+    r8 <- (r8 + (W64.of_int 1));
+    r8 <- (r8 `<<` (W8.of_int 3));
+    c_200 <- (W64.of_int 200);
+    r8 <- (((W64.of_int 200) \ult r8) ? c_200 : r8);
+    c_0 <- (W64.of_int 0);
+    at <- ((r8 \ule at) ? c_0 : at);
+    ststatus <- (ststatus `>>` (W8.of_int 8));
+    trailb <- (truncateu8 ststatus);
+    r8_ui <- (W64.to_uint r8);
+    at_ui <- (W64.to_uint at);
+    return (trailb, r8_ui, at_ui);
+  }
+  proc _finish_updstate_avx2 (st:W64.t Array26.t) : W64.t Array26.t = {
+    var ststatus:W64.t;
+    var trailb:W8.t;
+    var r8:int;
+    var at:int;
+    ststatus <- st.[25];
+    (trailb, r8, at) <@ _ststatus_data (ststatus);
+    st <-
+    (Array26.init
+    (WArray208.get64
+    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) at
+    ((get8_direct (WArray208.init64 (fun i => st.[i])) at) `^` trailb))));
+    st <-
+    (Array26.init
+    (WArray208.get64
+    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (r8 - 1)
+    ((get8_direct (WArray208.init64 (fun i => st.[i])) (r8 - 1)) `^`
+    (W8.of_int 128)))));
+    st <-
+    (Array26.init
+    (WArray208.get64
+    (WArray208.set32_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
+    ((get32_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)) `&`
+    (W32.of_int 4278255360)))));
+    return st;
+  }
+  proc keccak_ststatus (status:W8.t Array3.t, st:W64.t Array26.t) : W8.t Array3.t = {
+    var ststatus:W64.t;
+    var r8:int;
+    var at:int;
+    var  _0:W8.t;
+    ststatus <- st.[25];
+    ( _0, r8, at) <@ _ststatus_data (ststatus);
+    status.[0] <- (truncateu8 (W64.of_int r8));
+    status.[1] <- (truncateu8 (W64.of_int at));
+    status.[2] <-
+    (get8_direct (WArray208.init64 (fun i => st.[i])) ((8 * 25) + 2));
+    return status;
+  }
+  proc init_updstate_avx2 (st:W64.t Array26.t, r64:int, trailb:W8.t) : 
+  W64.t Array26.t = {
+    
+    st <- st;
+    r64 <- r64;
+    trailb <- trailb;
+    st <@ _init_updstate_avx2 (st, r64, trailb);
+    return st;
+  }
+  proc finish_updstate_avx2 (st:W64.t Array26.t) : W64.t Array26.t = {
+    
+    st <- st;
+    st <@ _finish_updstate_avx2 (st);
+    return st;
+  }
+  proc _add_m_updstate_avx2 (st:W64.t Array25.t, at:int, buf:int, upto:int) : 
+  W64.t Array25.t * int * int = {
+    var at8:W64.t;
+    var t64:W64.t;
+    var sh:W8.t;
+    var upto8:W64.t;
+    var len:int;
+    var buf2:int;
+    var newat:int;
+    at8 <- (W64.of_int at);
+    at8 <- (at8 `&` (W64.of_int 7));
+    if ((at8 <> (W64.of_int 0))) {
+      len <- upto;
+      len <- (len - at);
+      at <- (at `|>>` 3);
+      at <- (at `<<` 3);
+      (buf2, t64) <@ __m_rlen_read_upto8 (buf, len);
+      len <- (len + (W64.to_uint at8));
+      sh <- (truncateu8 at8);
+      sh <- (sh `<<` (W8.of_int 3));
+      t64 <- (t64 `<<` (sh `&` (W8.of_int 63)));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
+      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
+      if ((8 <= len)) {
+        buf <- (buf + 8);
+        buf <- (buf - (W64.to_uint at8));
+        at <- (at + 8);
+      } else {
+        buf <- buf2;
+        at <- upto;
+      }
+    } else {
+      
+    }
+    newat <- at;
+    newat <- (newat + 8);
+    while ((newat <= upto)) {
+      t64 <- (loadW64 Glob.mem buf);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
+      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
+      at <- newat;
+      buf <- (buf + 8);
+      newat <- (newat + 8);
+    }
+    if ((at < upto)) {
+      upto8 <- (W64.of_int upto);
+      upto8 <- (upto8 `&` (W64.of_int 7));
+      (buf, t64) <@ __m_rlen_read_upto8 (buf, (W64.to_uint upto8));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
+      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
+    } else {
+      
+    }
+    at <- upto;
+    return (st, at, buf);
+  }
+  proc _absorb_m_updstate_avx2 (st:W64.t Array26.t, buf:int, len:int) : 
+  W64.t Array26.t = {
+    var ststatus:W64.t;
+    var stk:W64.t Array25.t;
+    var r8:int;
+    var at:int;
+    var  _0:W8.t;
+    var  _1:int;
+    stk <- witness;
+    ststatus <- st.[25];
+    ( _0, r8, at) <@ _ststatus_data (ststatus);
+    stk <- (Array25.init (fun i => st.[(0 + i)]));
+    (* Erased call to spill *)
+    len <- (len + at);
+    while ((r8 <= len)) {
+      (stk, at, buf) <@ _add_m_updstate_avx2 (stk, at, buf, r8);
+      stk <@ _keccakf1600_st25_avx2 (stk);
+      len <- (len - r8);
+      at <- 0;
+    }
+    len <- len;
+    (* Erased call to unspill *)
+    (stk, at,  _1) <@ _add_m_updstate_avx2 (stk, at, buf, len);
+    st <-
+    (Array26.init
+    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
+    st <-
+    (Array26.init
+    (WArray208.get64
+    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
+    (truncateu8 (W64.of_int at)))));
+    return st;
+  }
+  proc _dump_m_updstate_avx2 (buf:int, st:W64.t Array25.t, at:int, upto:int) : 
+  int * int = {
+    var at8:W64.t;
+    var t64:W64.t;
+    var sh:W8.t;
+    var upto8:W64.t;
+    var len:int;
+    var buf2:int;
+    var newat:int;
+    at8 <- (W64.of_int at);
+    at8 <- (at8 `&` (W64.of_int 7));
+    if ((at8 <> (W64.of_int 0))) {
+      len <- upto;
+      len <- (len - at);
+      at <- (at `|>>` 3);
+      at <- (at `<<` 3);
+      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
+      sh <- (truncateu8 at8);
+      sh <- (sh `<<` (W8.of_int 3));
+      t64 <- (t64 `>>` (sh `&` (W8.of_int 63)));
+      buf2 <@ __m_rlen_write_upto8 (buf, t64, len);
+      len <- (len + (W64.to_uint at8));
+      if ((8 <= len)) {
+        buf <- (buf + 8);
+        buf <- (buf - (W64.to_uint at8));
+        at <- (at + 8);
+      } else {
+        buf <- buf2;
+        at <- upto;
+      }
+    } else {
+      
+    }
+    newat <- at;
+    newat <- (newat + 8);
+    while ((newat <= upto)) {
+      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
+      Glob.mem <- (storeW64 Glob.mem buf t64);
+      at <- newat;
+      buf <- (buf + 8);
+      newat <- (newat + 8);
+    }
+    if ((at < upto)) {
+      upto8 <- (W64.of_int upto);
+      upto8 <- (upto8 `&` (W64.of_int 7));
+      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
+      buf <@ __m_rlen_write_upto8 (buf, t64, (W64.to_uint upto8));
+    } else {
+      
+    }
+    at <- upto;
+    return (buf, at);
+  }
+  proc _squeeze_m_updstate_avx2 (buf:int, len:int, st:W64.t Array26.t) : 
+  int * W64.t Array26.t = {
+    var ststatus:W64.t;
+    var stk:W64.t Array25.t;
+    var r8:int;
+    var at:int;
+    var  _0:W8.t;
+    stk <- witness;
+    ststatus <- st.[25];
+    ( _0, r8, at) <@ _ststatus_data (ststatus);
+    stk <- (Array25.init (fun i => st.[(0 + i)]));
+    (* Erased call to spill *)
+    if ((at = 0)) {
+      stk <@ _keccakf1600_st25_avx2 (stk);
+      at <- 0;
+    } else {
+      
+    }
+    len <- (len + at);
+    while ((r8 < len)) {
+      (buf, at) <@ _dump_m_updstate_avx2 (buf, stk, at, r8);
+      (* Erased call to spill *)
+      stk <@ _keccakf1600_st25_avx2 (stk);
+      (* Erased call to unspill *)
+      len <- (len - r8);
+      at <- 0;
+    }
+    len <- len;
+    (buf, at) <@ _dump_m_updstate_avx2 (buf, stk, at, len);
+    (* Erased call to unspill *)
+    st <-
+    (Array26.init
+    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
+    st <-
+    (Array26.init
+    (WArray208.get64
+    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
+    (truncateu8 (W64.of_int at)))));
+    return (buf, st);
+  }
+  proc absorb_m_updstate_avx2 (st:W64.t Array26.t, buf:int, len:int) : 
+  W64.t Array26.t = {
+    
+    st <- st;
+    buf <- buf;
+    st <@ _absorb_m_updstate_avx2 (st, buf, len);
+    return st;
+  }
+  proc squeeze_m_updstate_avx2 (st:W64.t Array26.t, buf:int, len:int) : 
+  W64.t Array26.t = {
+    var  _0:int;
+    st <- st;
+    buf <- buf;
+    ( _0, st) <@ _squeeze_m_updstate_avx2 (buf, len, st);
+    return st;
+  }
   proc _keccakf1600_4x_pround (e:W256.t Array25.t, a:W256.t Array25.t,
                                r8:W256.t, r56:W256.t) : W256.t Array25.t = {
     var c_571:W256.t Array5.t;
@@ -2731,339 +3149,32 @@ module M = {
     st.[((rATE8 - 1) %/ 8)] <- t256;
     return st;
   }
-  proc _init_updstate_avx2 (st:W64.t Array26.t, r64:int, trailb:W8.t) : 
-  W64.t Array26.t = {
-    var r256:W256.t;
-    var i:int;
-    var status:W64.t;
-    var t:W64.t;
-    r256 <- (set0_256);
-    i <- 0;
-    while ((i < 6)) {
-      st <-
-      (Array26.init
-      (WArray208.get64
-      (WArray208.set256 (WArray208.init64 (fun i_0 => st.[i_0])) i r256)));
-      i <- (i + 1);
-    }
-    st.[24] <- (W64.of_int 0);
-    status <- (zeroextu64 trailb);
-    status <- (status `<<` (W8.of_int 8));
-    r64 <- (W8.to_uint ((W8.of_int r64) - (W8.of_int 1)));
-    t <- (zeroextu64 (W8.of_int r64));
-    status <- (status + t);
-    status <- (status `<<` (W8.of_int 8));
-    st.[25] <- status;
-    return st;
-  }
-  proc _ststatus_data (ststatus:W64.t) : W8.t * int * int = {
-    var trailb:W8.t;
-    var at:W64.t;
-    var r8:W64.t;
-    var c_200:W64.t;
-    var c_0:W64.t;
-    var r8_ui:int;
-    var at_ui:int;
-    at <- ststatus;
-    at <- (at `&` (W64.of_int 255));
-    ststatus <- (ststatus `>>` (W8.of_int 8));
-    r8 <- ststatus;
-    r8 <- (r8 `&` (W64.of_int 255));
-    r8 <- (r8 + (W64.of_int 1));
-    r8 <- (r8 `<<` (W8.of_int 3));
-    c_200 <- (W64.of_int 200);
-    r8 <- (((W64.of_int 200) \ult r8) ? c_200 : r8);
-    c_0 <- (W64.of_int 0);
-    at <- ((r8 \ule at) ? c_0 : at);
-    ststatus <- (ststatus `>>` (W8.of_int 8));
-    trailb <- (truncateu8 ststatus);
-    r8_ui <- (W64.to_uint r8);
-    at_ui <- (W64.to_uint at);
-    return (trailb, r8_ui, at_ui);
-  }
-  proc _finish_updstate_avx2 (st:W64.t Array26.t) : W64.t Array26.t = {
-    var ststatus:W64.t;
-    var trailb:W8.t;
-    var r8:int;
-    var at:int;
-    ststatus <- st.[25];
-    (trailb, r8, at) <@ _ststatus_data (ststatus);
-    st <-
-    (Array26.init
-    (WArray208.get64
-    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) at
-    ((get8_direct (WArray208.init64 (fun i => st.[i])) at) `^` trailb))));
-    st <-
-    (Array26.init
-    (WArray208.get64
-    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (r8 - 1)
-    ((get8_direct (WArray208.init64 (fun i => st.[i])) (r8 - 1)) `^`
-    (W8.of_int 128)))));
-    st <-
-    (Array26.init
-    (WArray208.get64
-    (WArray208.set32_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
-    ((get32_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)) `&`
-    (W32.of_int 4278255360)))));
-    return st;
-  }
-  proc keccak_ststatus (status:W8.t Array3.t, st:W64.t Array26.t) : W8.t Array3.t = {
-    var ststatus:W64.t;
-    var r8:int;
-    var at:int;
-    var  _0:W8.t;
-    ststatus <- st.[25];
-    ( _0, r8, at) <@ _ststatus_data (ststatus);
-    status.[0] <- (truncateu8 (W64.of_int r8));
-    status.[1] <- (truncateu8 (W64.of_int at));
-    status.[2] <-
-    (get8_direct (WArray208.init64 (fun i => st.[i])) ((8 * 25) + 2));
-    return status;
-  }
-  proc init_updstate_avx2 (st:W64.t Array26.t, r64:int, trailb:W8.t) : 
-  W64.t Array26.t = {
-    
-    st <- st;
-    r64 <- r64;
-    trailb <- trailb;
-    st <@ _init_updstate_avx2 (st, r64, trailb);
-    return st;
-  }
-  proc finish_updstate_avx2 (st:W64.t Array26.t) : W64.t Array26.t = {
-    
-    st <- st;
-    st <@ _finish_updstate_avx2 (st);
-    return st;
-  }
-  proc _add_m_updstate_avx2 (st:W64.t Array25.t, at:int, buf:int, upto:int) : 
-  W64.t Array25.t * int * int = {
-    var at8:W64.t;
-    var t64:W64.t;
-    var sh:W8.t;
-    var upto8:W64.t;
-    var len:int;
-    var buf2:int;
-    var newat:int;
-    at8 <- (W64.of_int at);
-    at8 <- (at8 `&` (W64.of_int 7));
-    if ((at8 <> (W64.of_int 0))) {
-      len <- upto;
-      len <- (len - at);
-      at <- (at `|>>` 3);
-      at <- (at `<<` 3);
-      (buf2, t64) <@ __m_rlen_read_upto8 (buf, len);
-      len <- (len + (W64.to_uint at8));
-      sh <- (truncateu8 at8);
-      sh <- (sh `<<` (W8.of_int 3));
-      t64 <- (t64 `<<` (sh `&` (W8.of_int 63)));
-      st <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
-      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
-      if ((8 <= len)) {
-        buf <- (buf + 8);
-        buf <- (buf - (W64.to_uint at8));
-        at <- (at + 8);
-      } else {
-        buf <- buf2;
-        at <- upto;
-      }
-    } else {
-      
-    }
-    newat <- at;
-    newat <- (newat + 8);
-    while ((newat <= upto)) {
-      t64 <- (loadW64 Glob.mem buf);
-      st <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
-      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
-      at <- newat;
-      buf <- (buf + 8);
-      newat <- (newat + 8);
-    }
-    if ((at < upto)) {
-      upto8 <- (W64.of_int upto);
-      upto8 <- (upto8 `&` (W64.of_int 7));
-      (buf, t64) <@ __m_rlen_read_upto8 (buf, (W64.to_uint upto8));
-      st <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
-      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
-    } else {
-      
-    }
-    at <- upto;
-    return (st, at, buf);
-  }
-  proc _absorb_m_updstate_avx2 (st:W64.t Array26.t, buf:int, len:int) : 
-  W64.t Array26.t = {
-    var ststatus:W64.t;
-    var stk:W64.t Array25.t;
-    var r8:int;
-    var at:int;
-    var  _0:W8.t;
-    var  _1:int;
-    stk <- witness;
-    ststatus <- st.[25];
-    ( _0, r8, at) <@ _ststatus_data (ststatus);
-    stk <- (Array25.init (fun i => st.[(0 + i)]));
-    (* Erased call to spill *)
-    len <- (len + at);
-    while ((r8 <= len)) {
-      (stk, at, buf) <@ _add_m_updstate_avx2 (stk, at, buf, r8);
-      stk <@ _keccakf1600_st25_avx2 (stk);
-      len <- (len - r8);
-      at <- 0;
-    }
-    len <- len;
-    (* Erased call to unspill *)
-    (stk, at,  _1) <@ _add_m_updstate_avx2 (stk, at, buf, len);
-    st <-
-    (Array26.init
-    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
-    st <-
-    (Array26.init
-    (WArray208.get64
-    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
-    (truncateu8 (W64.of_int at)))));
-    return st;
-  }
-  proc _dump_m_updstate_avx2 (buf:int, st:W64.t Array25.t, at:int, upto:int) : 
-  int * int = {
-    var at8:W64.t;
-    var t64:W64.t;
-    var sh:W8.t;
-    var upto8:W64.t;
-    var len:int;
-    var buf2:int;
-    var newat:int;
-    at8 <- (W64.of_int at);
-    at8 <- (at8 `&` (W64.of_int 7));
-    if ((at8 <> (W64.of_int 0))) {
-      len <- upto;
-      len <- (len - at);
-      at <- (at `|>>` 3);
-      at <- (at `<<` 3);
-      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
-      sh <- (truncateu8 at8);
-      sh <- (sh `<<` (W8.of_int 3));
-      t64 <- (t64 `>>` (sh `&` (W8.of_int 63)));
-      buf2 <@ __m_rlen_write_upto8 (buf, t64, len);
-      len <- (len + (W64.to_uint at8));
-      if ((8 <= len)) {
-        buf <- (buf + 8);
-        buf <- (buf - (W64.to_uint at8));
-        at <- (at + 8);
-      } else {
-        buf <- buf2;
-        at <- upto;
-      }
-    } else {
-      
-    }
-    newat <- at;
-    newat <- (newat + 8);
-    while ((newat <= upto)) {
-      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
-      Glob.mem <- (storeW64 Glob.mem buf t64);
-      at <- newat;
-      buf <- (buf + 8);
-      newat <- (newat + 8);
-    }
-    if ((at < upto)) {
-      upto8 <- (W64.of_int upto);
-      upto8 <- (upto8 `&` (W64.of_int 7));
-      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
-      buf <@ __m_rlen_write_upto8 (buf, t64, (W64.to_uint upto8));
-    } else {
-      
-    }
-    at <- upto;
-    return (buf, at);
-  }
-  proc _squeeze_m_updstate_avx2 (buf:int, len:int, st:W64.t Array26.t) : 
-  int * W64.t Array26.t = {
-    var ststatus:W64.t;
-    var stk:W64.t Array25.t;
-    var r8:int;
-    var at:int;
-    var  _0:W8.t;
-    stk <- witness;
-    ststatus <- st.[25];
-    ( _0, r8, at) <@ _ststatus_data (ststatus);
-    stk <- (Array25.init (fun i => st.[(0 + i)]));
-    (* Erased call to spill *)
-    if ((at = 0)) {
-      stk <@ _keccakf1600_st25_avx2 (stk);
-      at <- 0;
-    } else {
-      
-    }
-    len <- (len + at);
-    while ((r8 < len)) {
-      (buf, at) <@ _dump_m_updstate_avx2 (buf, stk, at, r8);
-      (* Erased call to spill *)
-      stk <@ _keccakf1600_st25_avx2 (stk);
-      (* Erased call to unspill *)
-      len <- (len - r8);
-      at <- 0;
-    }
-    len <- len;
-    (buf, at) <@ _dump_m_updstate_avx2 (buf, stk, at, len);
-    (* Erased call to unspill *)
-    st <-
-    (Array26.init
-    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
-    st <-
-    (Array26.init
-    (WArray208.get64
-    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
-    (truncateu8 (W64.of_int at)))));
-    return (buf, st);
-  }
-  proc absorb_m_updstate_avx2 (st:W64.t Array26.t, buf:int, len:int) : 
-  W64.t Array26.t = {
-    
-    st <- st;
-    buf <- buf;
-    st <@ _absorb_m_updstate_avx2 (st, buf, len);
-    return st;
-  }
-  proc squeeze_m_updstate_avx2 (st:W64.t Array26.t, buf:int, len:int) : 
-  W64.t Array26.t = {
-    var  _0:int;
-    st <- st;
-    buf <- buf;
-    ( _0, st) <@ _squeeze_m_updstate_avx2 (buf, len, st);
-    return st;
-  }
   proc _init_updstate_avx2x4 (st:W64.t Array101.t, r64:int, trailb:W8.t) : 
   W64.t Array101.t = {
-    var zero:W256.t;
+    var kst:W256.t Array25.t;
     var status:W64.t;
     var t:W64.t;
-    var i:int;
-    zero <- (set0_256);
+    kst <- witness;
+    kst <-
+    (Array25.init
+    (fun i => (get256 (WArray808.init64 (fun i => st.[i])) (0 + i))));
+    kst <@ __state_init_avx2x4 (kst);
+    st <-
+    (Array101.init
+    (WArray808.get64
+    (WArray808.init8
+    (fun i => (if ((32 * 0) <= i < ((32 * 0) + 800)) then (WArray800.get8
+                                                          (WArray800.init256
+                                                          (fun i => kst.[i]))
+                                                          (i - (32 * 0))) else 
+              (WArray808.get8 (WArray808.init64 (fun i => st.[i])) i)))
+    )));
     status <- (zeroextu64 trailb);
     status <- (status `<<` (W8.of_int 8));
     r64 <- (W8.to_uint ((W8.of_int r64) - (W8.of_int 1)));
     t <- (zeroextu64 (W8.of_int r64));
     status <- (status + t);
     status <- (status `<<` (W8.of_int 8));
-    i <- 0;
-    while ((i < (32 * 25))) {
-      st <-
-      (Array101.init
-      (WArray808.get64
-      (WArray808.set256_direct (WArray808.init64 (fun i_0 => st.[i_0])) 
-      i zero)));
-      i <- (i + 32);
-    }
     st.[(4 * 25)] <- status;
     return st;
   }
@@ -4101,6 +4212,252 @@ module M = {
     }
     return (st, buf);
   }
+  proc _add_updstate_avx2 (st:W64.t Array25.t, at:int, buf:W8.t Array999.t,
+                           off:int, upto:int) : int * int * W64.t Array25.t = {
+    var at8:W64.t;
+    var t64:W64.t;
+    var sh:W8.t;
+    var r256:W256.t;
+    var t256:W256.t;
+    var upto8:W64.t;
+    var len:int;
+    var off2:int;
+    var newat:int;
+    at8 <- (W64.of_int at);
+    at8 <- (at8 `&` (W64.of_int 7));
+    if ((at8 <> (W64.of_int 0))) {
+      len <- upto;
+      len <- (len - at);
+      at <- (at `|>>` 3);
+      at <- (at `<<` 3);
+      (off2, t64) <@ __a_rlen_read_upto8 (buf, off, len);
+      len <- (len + at);
+      sh <- (truncateu8 at8);
+      sh <- (sh `<<` (W8.of_int 3));
+      t64 <- (t64 `<<` (sh `&` (W8.of_int 63)));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
+      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
+      if ((8 <= len)) {
+        off <- (off + 8);
+        off <- (off - (W64.to_uint at8));
+        at <- (at + 8);
+      } else {
+        off <- off2;
+        at <- upto;
+      }
+    } else {
+      
+    }
+    newat <- at;
+    newat <- (newat + 32);
+    while ((newat <= upto)) {
+      r256 <- (get256_direct (WArray200.init64 (fun i => st.[i])) at);
+      t256 <- (get256_direct (WArray999.init8 (fun i => buf.[i])) off);
+      r256 <- (r256 `^` t256);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i => st.[i])) at r256))
+      );
+      at <- newat;
+      off <- (off + 32);
+      newat <- (newat + 32);
+    }
+    newat <- at;
+    newat <- (newat + 8);
+    while ((newat <= upto)) {
+      t64 <- (get64_direct (WArray999.init8 (fun i => buf.[i])) off);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
+      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
+      at <- newat;
+      off <- (off + 8);
+      newat <- (newat + 8);
+    }
+    if ((at < upto)) {
+      upto8 <- (W64.of_int upto);
+      upto8 <- (upto8 `&` (W64.of_int 7));
+      (off, t64) <@ __a_rlen_read_upto8 (buf, off, (W64.to_uint upto8));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
+      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
+    } else {
+      
+    }
+    at <- upto;
+    return (at, off, st);
+  }
+  proc _update_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t,
+                              len:int) : W64.t Array26.t = {
+    var ststatus:W64.t;
+    var stk:W64.t Array25.t;
+    var r8:int;
+    var at:int;
+    var off:int;
+    var  _0:W8.t;
+    var  _1:int;
+    stk <- witness;
+    ststatus <- st.[25];
+    ( _0, r8, at) <@ _ststatus_data (ststatus);
+    stk <- (Array25.init (fun i => st.[(0 + i)]));
+    (* Erased call to spill *)
+    off <- 0;
+    len <- (len + at);
+    while ((r8 <= len)) {
+      (at, off, stk) <@ _add_updstate_avx2 (stk, at, buf, off, r8);
+      stk <@ _keccakf1600_st25_avx2 (stk);
+      len <- (len - r8);
+      at <- 0;
+    }
+    len <- len;
+    (* Erased call to unspill *)
+    (at,  _1, stk) <@ _add_updstate_avx2 (stk, at, buf, off, len);
+    st <-
+    (Array26.init
+    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
+    st <-
+    (Array26.init
+    (WArray208.get64
+    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
+    (truncateu8 (W64.of_int at)))));
+    return st;
+  }
+  proc _dump_updstate_avx2 (buf:W8.t Array999.t, off:int, st:W64.t Array25.t,
+                            at:int, upto:int) : int * int * W8.t Array999.t = {
+    var at8:W64.t;
+    var t64:W64.t;
+    var sh:W8.t;
+    var t256:W256.t;
+    var upto8:W64.t;
+    var len:int;
+    var off2:int;
+    var newat:int;
+    at8 <- (W64.of_int at);
+    at8 <- (at8 `&` (W64.of_int 7));
+    if ((at8 <> (W64.of_int 0))) {
+      len <- upto;
+      len <- (len - at);
+      at <- (at `|>>` 3);
+      at <- (at `<<` 3);
+      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
+      sh <- (truncateu8 at8);
+      sh <- (sh `<<` (W8.of_int 3));
+      t64 <- (t64 `>>` (sh `&` (W8.of_int 63)));
+      (buf, off2) <@ __a_rlen_write_upto8 (buf, off, t64, len);
+      len <- (len + (W64.to_uint at8));
+      if ((8 <= len)) {
+        off <- (off + 8);
+        off <- (off - (W64.to_uint at8));
+        at <- (at + 8);
+      } else {
+        off <- off2;
+        at <- upto;
+      }
+    } else {
+      
+    }
+    newat <- at;
+    newat <- (newat + 32);
+    while ((newat <= upto)) {
+      t256 <- (get256_direct (WArray200.init64 (fun i => st.[i])) at);
+      buf <-
+      (Array999.init
+      (WArray999.get8
+      (WArray999.set256_direct (WArray999.init8 (fun i => buf.[i])) off t256)
+      ));
+      at <- newat;
+      off <- (off + 32);
+      newat <- (newat + 32);
+    }
+    newat <- at;
+    newat <- (newat + 8);
+    while ((newat <= upto)) {
+      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
+      buf <-
+      (Array999.init
+      (WArray999.get8
+      (WArray999.set64_direct (WArray999.init8 (fun i => buf.[i])) off t64)));
+      at <- newat;
+      off <- (off + 8);
+      newat <- (newat + 8);
+    }
+    if ((at < upto)) {
+      upto8 <- (W64.of_int upto);
+      upto8 <- (upto8 `&` (W64.of_int 7));
+      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
+      (buf, off) <@ __a_rlen_write_upto8 (buf, off, t64,
+      (W64.to_uint upto8));
+    } else {
+      
+    }
+    at <- upto;
+    return (at, off, buf);
+  }
+  proc _squeeze_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t,
+                               len:int) : W64.t Array26.t * W8.t Array999.t = {
+    var ststatus:W64.t;
+    var stk:W64.t Array25.t;
+    var r8:int;
+    var at:int;
+    var off:int;
+    var  _0:W8.t;
+    var  _1:int;
+    stk <- witness;
+    ststatus <- st.[25];
+    ( _0, r8, at) <@ _ststatus_data (ststatus);
+    stk <- (Array25.init (fun i => st.[(0 + i)]));
+    (* Erased call to spill *)
+    if ((at = 0)) {
+      stk <@ _keccakf1600_st25_avx2 (stk);
+      at <- 0;
+    } else {
+      
+    }
+    off <- 0;
+    len <- (len + at);
+    while ((r8 < len)) {
+      (at, off, buf) <@ _dump_updstate_avx2 (buf, off, stk, at, r8);
+      stk <@ _keccakf1600_st25_avx2 (stk);
+      len <- (len - r8);
+      at <- 0;
+    }
+    len <- len;
+    (at,  _1, buf) <@ _dump_updstate_avx2 (buf, off, stk, at, len);
+    (* Erased call to unspill *)
+    st <-
+    (Array26.init
+    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
+    st <-
+    (Array26.init
+    (WArray208.get64
+    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
+    (truncateu8 (W64.of_int at)))));
+    return (st, buf);
+  }
+  proc absorb_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t, len:int) : 
+  W64.t Array26.t = {
+    
+    st <- st;
+    buf <- buf;
+    st <@ _update_updstate_avx2 (st, buf, len);
+    return st;
+  }
+  proc squeeze_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t,
+                              len:int) : W64.t Array26.t * W8.t Array999.t = {
+    
+    st <- st;
+    buf <- buf;
+    len <- len;
+    (st, buf) <@ _squeeze_updstate_avx2 (st, buf, len);
+    return (st, buf);
+  }
   proc __addstate_bcast_avx2x4 (st:W256.t Array25.t, aT:int,
                                 buf:W8.t Array999.t, offset:int, _LEN:int,
                                 _TRAILB:int) : W256.t Array25.t * int * int = {
@@ -4532,252 +4889,6 @@ module M = {
       
     }
     return (st, buf0, buf1, buf2, buf3);
-  }
-  proc _add_updstate_avx2 (st:W64.t Array25.t, at:int, buf:W8.t Array999.t,
-                           off:int, upto:int) : int * int * W64.t Array25.t = {
-    var at8:W64.t;
-    var t64:W64.t;
-    var sh:W8.t;
-    var r256:W256.t;
-    var t256:W256.t;
-    var upto8:W64.t;
-    var len:int;
-    var off2:int;
-    var newat:int;
-    at8 <- (W64.of_int at);
-    at8 <- (at8 `&` (W64.of_int 7));
-    if ((at8 <> (W64.of_int 0))) {
-      len <- upto;
-      len <- (len - at);
-      at <- (at `|>>` 3);
-      at <- (at `<<` 3);
-      (off2, t64) <@ __a_rlen_read_upto8 (buf, off, len);
-      len <- (len + at);
-      sh <- (truncateu8 at8);
-      sh <- (sh `<<` (W8.of_int 3));
-      t64 <- (t64 `<<` (sh `&` (W8.of_int 63)));
-      st <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
-      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
-      if ((8 <= len)) {
-        off <- (off + 8);
-        off <- (off - (W64.to_uint at8));
-        at <- (at + 8);
-      } else {
-        off <- off2;
-        at <- upto;
-      }
-    } else {
-      
-    }
-    newat <- at;
-    newat <- (newat + 32);
-    while ((newat <= upto)) {
-      r256 <- (get256_direct (WArray200.init64 (fun i => st.[i])) at);
-      t256 <- (get256_direct (WArray999.init8 (fun i => buf.[i])) off);
-      r256 <- (r256 `^` t256);
-      st <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set256_direct (WArray200.init64 (fun i => st.[i])) at r256))
-      );
-      at <- newat;
-      off <- (off + 32);
-      newat <- (newat + 32);
-    }
-    newat <- at;
-    newat <- (newat + 8);
-    while ((newat <= upto)) {
-      t64 <- (get64_direct (WArray999.init8 (fun i => buf.[i])) off);
-      st <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
-      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
-      at <- newat;
-      off <- (off + 8);
-      newat <- (newat + 8);
-    }
-    if ((at < upto)) {
-      upto8 <- (W64.of_int upto);
-      upto8 <- (upto8 `&` (W64.of_int 7));
-      (off, t64) <@ __a_rlen_read_upto8 (buf, off, (W64.to_uint upto8));
-      st <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
-      ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
-    } else {
-      
-    }
-    at <- upto;
-    return (at, off, st);
-  }
-  proc _update_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t,
-                              len:int) : W64.t Array26.t = {
-    var ststatus:W64.t;
-    var stk:W64.t Array25.t;
-    var r8:int;
-    var at:int;
-    var off:int;
-    var  _0:W8.t;
-    var  _1:int;
-    stk <- witness;
-    ststatus <- st.[25];
-    ( _0, r8, at) <@ _ststatus_data (ststatus);
-    stk <- (Array25.init (fun i => st.[(0 + i)]));
-    (* Erased call to spill *)
-    off <- 0;
-    len <- (len + at);
-    while ((r8 <= len)) {
-      (at, off, stk) <@ _add_updstate_avx2 (stk, at, buf, off, r8);
-      stk <@ _keccakf1600_st25_avx2 (stk);
-      len <- (len - r8);
-      at <- 0;
-    }
-    len <- len;
-    (* Erased call to unspill *)
-    (at,  _1, stk) <@ _add_updstate_avx2 (stk, at, buf, off, len);
-    st <-
-    (Array26.init
-    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
-    st <-
-    (Array26.init
-    (WArray208.get64
-    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
-    (truncateu8 (W64.of_int at)))));
-    return st;
-  }
-  proc _dump_updstate_avx2 (buf:W8.t Array999.t, off:int, st:W64.t Array25.t,
-                            at:int, upto:int) : int * int * W8.t Array999.t = {
-    var at8:W64.t;
-    var t64:W64.t;
-    var sh:W8.t;
-    var t256:W256.t;
-    var upto8:W64.t;
-    var len:int;
-    var off2:int;
-    var newat:int;
-    at8 <- (W64.of_int at);
-    at8 <- (at8 `&` (W64.of_int 7));
-    if ((at8 <> (W64.of_int 0))) {
-      len <- upto;
-      len <- (len - at);
-      at <- (at `|>>` 3);
-      at <- (at `<<` 3);
-      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
-      sh <- (truncateu8 at8);
-      sh <- (sh `<<` (W8.of_int 3));
-      t64 <- (t64 `>>` (sh `&` (W8.of_int 63)));
-      (buf, off2) <@ __a_rlen_write_upto8 (buf, off, t64, len);
-      len <- (len + (W64.to_uint at8));
-      if ((8 <= len)) {
-        off <- (off + 8);
-        off <- (off - (W64.to_uint at8));
-        at <- (at + 8);
-      } else {
-        off <- off2;
-        at <- upto;
-      }
-    } else {
-      
-    }
-    newat <- at;
-    newat <- (newat + 32);
-    while ((newat <= upto)) {
-      t256 <- (get256_direct (WArray200.init64 (fun i => st.[i])) at);
-      buf <-
-      (Array999.init
-      (WArray999.get8
-      (WArray999.set256_direct (WArray999.init8 (fun i => buf.[i])) off t256)
-      ));
-      at <- newat;
-      off <- (off + 32);
-      newat <- (newat + 32);
-    }
-    newat <- at;
-    newat <- (newat + 8);
-    while ((newat <= upto)) {
-      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
-      buf <-
-      (Array999.init
-      (WArray999.get8
-      (WArray999.set64_direct (WArray999.init8 (fun i => buf.[i])) off t64)));
-      at <- newat;
-      off <- (off + 8);
-      newat <- (newat + 8);
-    }
-    if ((at < upto)) {
-      upto8 <- (W64.of_int upto);
-      upto8 <- (upto8 `&` (W64.of_int 7));
-      t64 <- (get64_direct (WArray200.init64 (fun i => st.[i])) at);
-      (buf, off) <@ __a_rlen_write_upto8 (buf, off, t64,
-      (W64.to_uint upto8));
-    } else {
-      
-    }
-    at <- upto;
-    return (at, off, buf);
-  }
-  proc _squeeze_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t,
-                               len:int) : W64.t Array26.t * W8.t Array999.t = {
-    var ststatus:W64.t;
-    var stk:W64.t Array25.t;
-    var r8:int;
-    var at:int;
-    var off:int;
-    var  _0:W8.t;
-    var  _1:int;
-    stk <- witness;
-    ststatus <- st.[25];
-    ( _0, r8, at) <@ _ststatus_data (ststatus);
-    stk <- (Array25.init (fun i => st.[(0 + i)]));
-    (* Erased call to spill *)
-    if ((at = 0)) {
-      stk <@ _keccakf1600_st25_avx2 (stk);
-      at <- 0;
-    } else {
-      
-    }
-    off <- 0;
-    len <- (len + at);
-    while ((r8 < len)) {
-      (at, off, buf) <@ _dump_updstate_avx2 (buf, off, stk, at, r8);
-      stk <@ _keccakf1600_st25_avx2 (stk);
-      len <- (len - r8);
-      at <- 0;
-    }
-    len <- len;
-    (at,  _1, buf) <@ _dump_updstate_avx2 (buf, off, stk, at, len);
-    (* Erased call to unspill *)
-    st <-
-    (Array26.init
-    (fun i => (if (0 <= i < (0 + 25)) then stk.[(i - 0)] else st.[i])));
-    st <-
-    (Array26.init
-    (WArray208.get64
-    (WArray208.set8_direct (WArray208.init64 (fun i => st.[i])) (8 * 25)
-    (truncateu8 (W64.of_int at)))));
-    return (st, buf);
-  }
-  proc absorb_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t, len:int) : 
-  W64.t Array26.t = {
-    
-    st <- st;
-    buf <- buf;
-    st <@ _update_updstate_avx2 (st, buf, len);
-    return st;
-  }
-  proc squeeze_updstate_avx2 (st:W64.t Array26.t, buf:W8.t Array999.t,
-                              len:int) : W64.t Array26.t * W8.t Array999.t = {
-    
-    st <- st;
-    buf <- buf;
-    len <- len;
-    (st, buf) <@ _squeeze_updstate_avx2 (st, buf, len);
-    return (st, buf);
   }
   proc _add_bcast_updstate_avx2x4 (st:W256.t Array25.t, at:int,
                                    buf:W8.t Array999.t, off:int, upto:int) : 

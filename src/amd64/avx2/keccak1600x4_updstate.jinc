@@ -22,19 +22,18 @@ fn _init_updstate_avx2x4
 , reg u8 trailb // 0 <= trailb < 256
 ) -> reg ptr keccakx4_updstate /* st */
 {
-  reg ui64 i;
+  reg ptr keccakx4_state kst;
   reg u64 status, t;
-  reg u256 zero;
 
-  zero = #set0_256();
+  kst = st[:u256 0:25];
+  kst = __state_init_avx2x4(kst);
+  st[:u256 0:25] = kst;
   status = (64u) trailb;
   status <<= 8;
   r64 = (8ui) ((8u)r64 - 1);
   t = (64u) (8u) r64;
   status += t;
   status <<= 8;
-  i = 0;
-  while (i < 32*25) { st.[:u256 i] = zero; i += 32; }
   st[:u64 4*25] = status;
 
   return st;
