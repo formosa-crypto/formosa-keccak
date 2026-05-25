@@ -9,13 +9,10 @@ CHECKS ?= keccak
 
 default: check
 
-check: jasmin checkxtr checkec
+check: jasmin checkec
 
 jasmin:
-	make -C proof/amd64/extracted
-
-checkxtr:
-	make -C proof/amd64/extracted check
+	make -C proof/amd64/extracted re_extract
 
 checkec:
 	easycrypt runtest $(ECCONF) $(CHECKS)

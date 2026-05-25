@@ -10,23 +10,13 @@ WArray32 WArray40 WArray160 WArray192 WArray200 WArray208 WArray224 WArray800
 WArray808.
 
 abbrev rOL8 =
-(W256.of_int
-13620818001941277694121380808605999856886653716761013959207994299728839901191
-).
-
-abbrev rOL56 =
-(W256.of_int
-10910488462195273559651782724632284871561478246514020268633800075540923875841
-).
-
-abbrev rOL8_0 =
 ((Array1.of_list witness)
 [(W256.of_int
  13620818001941277694121380808605999856886653716761013959207994299728839901191
  )]
 ).
 
-abbrev rOL56_0 =
+abbrev rOL56 =
 ((Array1.of_list witness)
 [(W256.of_int
  10910488462195273559651782724632284871561478246514020268633800075540923875841
@@ -2884,363 +2874,142 @@ module M = {
     ( _0, st) <@ _squeeze_m_updstate_avx2 (buf, len, st);
     return st;
   }
-  proc __f1600_loopbody_native (st:W256.t Array25.t, rol8:W256.t Array1.t,
-                                rol56:W256.t Array1.t, rC:W64.t Array24.t,
-                                i:int, y10:W256.t, y14:W256.t, y8:W256.t,
-                                y15:W256.t, y9:W256.t, y13:W256.t, y3:W256.t,
-                                y7:W256.t, y2:W256.t) : W256.t Array25.t *
-                                                        W256.t * W256.t *
-                                                        W256.t * W256.t *
-                                                        W256.t * W256.t *
-                                                        W256.t * W256.t *
-                                                        W256.t = {
-    var i0:int;
-    var i1:int;
-    var i2:int;
-    var i3:int;
-    var i4:int;
-    var i5:int;
-    var i6:int;
-    var i7:int;
-    var i8:int;
-    var i9:int;
-    var i10:int;
-    var i11:int;
-    var i12:int;
-    var i13:int;
-    var i14:int;
-    var i15:int;
-    var i16:int;
-    var i17:int;
-    var i18:int;
-    var i19:int;
-    var i20:int;
-    var i21:int;
-    var i22:int;
-    var i23:int;
-    var y4:W256.t;
+  proc __u256x4_4u64x4 (x0:W256.t, x1:W256.t, x2:W256.t, x3:W256.t) : 
+  W256.t * W256.t * W256.t * W256.t = {
     var y0:W256.t;
-    var y11:W256.t;
-    var y12:W256.t;
     var y1:W256.t;
-    var y6:W256.t;
-    var y5:W256.t;
-    i0 <- 0;
-    i1 <- 1;
-    i2 <- 2;
-    i3 <- 3;
-    i4 <- 4;
-    i5 <- 5;
-    i6 <- 6;
-    i7 <- 9;
-    i8 <- 10;
-    i9 <- 13;
-    i10 <- 14;
-    i11 <- 16;
-    i12 <- 17;
-    i13 <- 19;
-    i14 <- 20;
-    i15 <- 23;
-    i16 <- 7;
-    i17 <- 8;
-    i18 <- 11;
-    i19 <- 12;
-    i20 <- 15;
-    i21 <- 18;
-    i22 <- 21;
-    i23 <- 22;
-    y4 <- st.[i5];
-    y0 <- (st.[i14] `^` y9);
-    st.[i16] <- y9;
-    y9 <- y10;
-    y11 <- st.[i6];
-    y12 <- st.[i11];
-    st.[i18] <- y3;
-    y1 <- (st.[i8] `^` y4);
-    y10 <- st.[i2];
-    st.[i17] <- y4;
-    y12 <- (y3 `^` y12);
-    y6 <- st.[i1];
-    y4 <- st.[i10];
-    st.[i21] <- y14;
-    y0 <- (y1 `^` y0);
-    y1 <- (y8 `^` y11);
-    y11 <- (st.[i12] `^` y7);
-    st.[i20] <- y10;
-    y12 <- (y1 `^` y12);
-    y1 <- (y15 `^` y9);
-    y3 <- st.[i7];
-    st.[i19] <- y8;
-    y11 <- (y1 `^` y11);
-    y1 <- (st.[i9] `^` y14);
-    y12 <- (y6 `^` y12);
-    y8 <- st.[i3];
-    y11 <- (y10 `^` y11);
-    y10 <- (st.[i15] `^` y13);
-    y3 <- (y4 `^` y3);
-    st.[i22] <- y4;
-    y4 <- (VPSRL_4u64 y12 (W128.of_int 63));
-    y5 <- (VPSRL_4u64 y11 (W128.of_int 63));
-    y0 <- (st.[i0] `^` y0);
-    y10 <- (y1 `^` y10);
-    y1 <- st.[i4];
-    y10 <- (y8 `^` y10);
-    y14 <- y1;
-    y1 <- (st.[i13] `^` y2);
-    st.[i23] <- y14;
-    y1 <- (y3 `^` y1);
-    y3 <- (VPSLL_4u64 y12 (W128.of_int 1));
-    y3 <- (y4 `|` y3);
-    y4 <- (VPSLL_4u64 y11 (W128.of_int 1));
-    y1 <- (y14 `^` y1);
-    y4 <- (y5 `|` y4);
-    y14 <- (VPSRL_4u64 y10 (W128.of_int 63));
-    y3 <- (y1 `^` y3);
-    y5 <- (VPSLL_4u64 y10 (W128.of_int 1));
-    y4 <- (y0 `^` y4);
-    y5 <- (y14 `|` y5);
-    y6 <- (y6 `^` y4);
-    y5 <- (y12 `^` y5);
-    y12 <- (VPSRL_4u64 y1 (W128.of_int 63));
-    y1 <- (VPSLL_4u64 y1 (W128.of_int 1));
-    y7 <- (y7 `^` y5);
-    y9 <- (y9 `^` y5);
-    y1 <- (y12 `|` y1);
-    y12 <- (st.[i0] `^` y3);
-    y1 <- (y11 `^` y1);
-    y11 <- (VPSRL_4u64 y0 (W128.of_int 63));
-    y0 <- (VPSLL_4u64 y0 (W128.of_int 1));
-    y13 <- (y13 `^` y1);
-    y8 <- (y8 `^` y1);
-    y0 <- (y11 `|` y0);
-    y0 <- (y10 `^` y0);
-    y10 <- (st.[i6] `^` y4);
-    y2 <- (y2 `^` y0);
-    y11 <- (VPSRL_4u64 y10 (W128.of_int 20));
-    y10 <- (VPSLL_4u64 y10 (W128.of_int 44));
-    y10 <- (y11 `|` y10);
-    y11 <- (y15 `^` y5);
-    y15 <- (VPBROADCAST_4u64 rC.[(W64.to_uint (W64.of_int i))]);
-    y14 <- (VPSRL_4u64 y11 (W128.of_int 21));
-    y11 <- (VPSLL_4u64 y11 (W128.of_int 43));
-    y11 <- (y14 `|` y11);
-    y14 <- ((invw y10) `&` y11);
-    y14 <- (y15 `^` y14);
-    y15 <- (y12 `^` y14);
-    y14 <- (VPSRL_4u64 y13 (W128.of_int 43));
-    y13 <- (VPSLL_4u64 y13 (W128.of_int 21));
-    st.[i0] <- y15;
-    y13 <- (y14 `|` y13);
-    y14 <- ((invw y11) `&` y13);
-    y15 <- (y10 `^` y14);
-    y14 <- (VPSRL_4u64 y2 (W128.of_int 50));
-    y2 <- (VPSLL_4u64 y2 (W128.of_int 14));
-    st.[i1] <- y15;
-    y2 <- (y14 `|` y2);
-    y14 <- ((invw y13) `&` y2);
-    y11 <- (y11 `^` y14);
-    st.[i2] <- y11;
-    y11 <- ((invw y2) `&` y12);
-    y12 <- ((invw y12) `&` y10);
-    y11 <- (y13 `^` y11);
-    st.[i3] <- y11;
-    y11 <- (y2 `^` y12);
-    y2 <- (VPSRL_4u64 y8 (W128.of_int 36));
-    y8 <- (VPSLL_4u64 y8 (W128.of_int 28));
-    st.[i4] <- y11;
-    y8 <- (y2 `|` y8);
-    y2 <- (st.[i7] `^` y0);
-    y10 <- (VPSRL_4u64 y2 (W128.of_int 44));
-    y2 <- (VPSLL_4u64 y2 (W128.of_int 20));
-    y2 <- (y10 `|` y2);
-    y10 <- (st.[i8] `^` y3);
-    y11 <- (VPSRL_4u64 y10 (W128.of_int 61));
-    y10 <- (VPSLL_4u64 y10 (W128.of_int 3));
-    y10 <- (y11 `|` y10);
-    y11 <- ((invw y2) `&` y10);
-    y11 <- (y8 `^` y11);
-    st.[i5] <- y11;
-    y11 <- (st.[i11] `^` y4);
-    y12 <- (VPSRL_4u64 y11 (W128.of_int 19));
-    y11 <- (VPSLL_4u64 y11 (W128.of_int 45));
-    y11 <- (y12 `|` y11);
-    y12 <- ((invw y10) `&` y11);
-    y12 <- (y2 `^` y12);
-    st.[i6] <- y12;
-    y12 <- (VPSRL_4u64 y7 (W128.of_int 3));
-    y7 <- (VPSLL_4u64 y7 (W128.of_int 61));
-    y7 <- (y12 `|` y7);
-    y12 <- ((invw y11) `&` y7);
-    y10 <- (y10 `^` y12);
-    y12 <- ((invw y7) `&` y8);
-    y8 <- ((invw y8) `&` y2);
-    y2 <- (VPSRL_4u64 y6 (W128.of_int 63));
-    y6 <- (VPSLL_4u64 y6 (W128.of_int 1));
-    y14 <- (y11 `^` y12);
-    y6 <- (y2 `|` y6);
-    y2 <- (VPSRL_4u64 y9 (W128.of_int 58));
-    y12 <- (y7 `^` y8);
-    y9 <- (VPSLL_4u64 y9 (W128.of_int 6));
-    st.[i7] <- y12;
-    y7 <- (st.[i13] `^` y0);
-    y9 <- (y2 `|` y9);
-    y2 <- (st.[i9] `^` y1);
-    y7 <- (VPSHUFB_256 y7 rol56.[0]);
-    y11 <- (VPSRL_4u64 y2 (W128.of_int 39));
-    y2 <- (VPSLL_4u64 y2 (W128.of_int 25));
-    y11 <- (y2 `|` y11);
-    y2 <- ((invw y9) `&` y11);
-    y8 <- ((invw y11) `&` y7);
-    y12 <- (y6 `^` y2);
-    y2 <- (st.[i14] `^` y3);
-    y8 <- (y9 `^` y8);
-    st.[i8] <- y12;
-    y12 <- (VPSRL_4u64 y2 (W128.of_int 46));
-    y2 <- (VPSLL_4u64 y2 (W128.of_int 18));
-    y2 <- (y2 `|` y12);
-    y12 <- ((invw y7) `&` y2);
-    y15 <- (y11 `^` y12);
-    y11 <- ((invw y2) `&` y6);
-    y6 <- ((invw y6) `&` y9);
-    y12 <- (y7 `^` y11);
-    st.[i9] <- y12;
-    y12 <- (y2 `^` y6);
-    y6 <- (st.[i23] `^` y0);
-    y0 <- (st.[i22] `^` y0);
-    st.[i10] <- y12;
-    y2 <- (VPSRL_4u64 y6 (W128.of_int 37));
-    y6 <- (VPSLL_4u64 y6 (W128.of_int 27));
-    y2 <- (y6 `|` y2);
-    y6 <- (st.[i17] `^` y3);
-    y3 <- (st.[i16] `^` y3);
-    y7 <- (VPSRL_4u64 y6 (W128.of_int 28));
-    y6 <- (VPSLL_4u64 y6 (W128.of_int 36));
-    y7 <- (y6 `|` y7);
-    y6 <- (st.[i19] `^` y4);
-    y4 <- (st.[i18] `^` y4);
-    y12 <- (VPSRL_4u64 y6 (W128.of_int 54));
-    y6 <- (VPSLL_4u64 y6 (W128.of_int 10));
-    y12 <- (y6 `|` y12);
-    y6 <- (y5 `^` st.[i12]);
-    y5 <- (st.[i20] `^` y5);
-    y9 <- ((invw y7) `&` y12);
-    y11 <- (VPSRL_4u64 y6 (W128.of_int 49));
-    y6 <- (VPSLL_4u64 y6 (W128.of_int 15));
-    y9 <- (y2 `^` y9);
-    y11 <- (y6 `|` y11);
-    y6 <- ((invw y12) `&` y11);
-    y6 <- (y7 `^` y6);
-    st.[i11] <- y6;
-    y6 <- (st.[i15] `^` y1);
-    y1 <- (st.[i21] `^` y1);
-    y6 <- (VPSHUFB_256 y6 rol8.[0]);
-    y13 <- ((invw y11) `&` y6);
-    y13 <- (y12 `^` y13);
-    st.[i12] <- y13;
-    y13 <- ((invw y6) `&` y2);
-    y2 <- ((invw y2) `&` y7);
-    y2 <- (y6 `^` y2);
-    y6 <- (VPSRL_4u64 y4 (W128.of_int 62));
-    y13 <- (y11 `^` y13);
-    st.[i13] <- y2;
-    y2 <- (VPSRL_4u64 y5 (W128.of_int 2));
-    y5 <- (VPSLL_4u64 y5 (W128.of_int 62));
-    y2 <- (y5 `|` y2);
-    y5 <- (VPSRL_4u64 y1 (W128.of_int 9));
-    y1 <- (VPSLL_4u64 y1 (W128.of_int 55));
-    y4 <- (VPSLL_4u64 y4 (W128.of_int 2));
-    y1 <- (y1 `|` y5);
-    y5 <- (VPSRL_4u64 y0 (W128.of_int 25));
-    y4 <- (y4 `|` y6);
-    y0 <- (VPSLL_4u64 y0 (W128.of_int 39));
-    y5 <- (y0 `|` y5);
-    y0 <- ((invw y1) `&` y5);
-    y0 <- (y2 `^` y0);
-    st.[i14] <- y0;
-    y0 <- (VPSRL_4u64 y3 (W128.of_int 23));
-    y3 <- (VPSLL_4u64 y3 (W128.of_int 41));
-    y0 <- (y3 `|` y0);
-    y7 <- ((invw y0) `&` y4);
-    y3 <- ((invw y5) `&` y0);
-    y7 <- (y5 `^` y7);
-    y5 <- ((invw y4) `&` y2);
-    y2 <- ((invw y2) `&` y1);
-    y5 <- (y0 `^` y5);
-    y3 <- (y1 `^` y3);
-    y2 <- (y4 `^` y2);
-    st.[i15] <- y5;
-    return (st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
-  }
-  proc __regs_fetch (st:W256.t Array25.t) : W256.t * W256.t * W256.t *
-                                            W256.t * W256.t * W256.t *
-                                            W256.t * W256.t * W256.t = {
-    var y10:W256.t;
-    var y14:W256.t;
-    var y8:W256.t;
-    var y15:W256.t;
-    var y9:W256.t;
-    var y13:W256.t;
-    var y3:W256.t;
-    var y7:W256.t;
     var y2:W256.t;
-    y10 <- st.[7];
-    y14 <- st.[8];
-    y8 <- st.[11];
-    y15 <- st.[12];
-    y9 <- st.[15];
-    y13 <- st.[18];
-    y3 <- st.[21];
-    y7 <- st.[22];
-    y2 <- st.[24];
-    return (y10, y14, y8, y15, y9, y13, y3, y7, y2);
-  }
-  proc __regs_unfetch (st:W256.t Array25.t, y10:W256.t, y14:W256.t,
-                       y8:W256.t, y15:W256.t, y9:W256.t, y13:W256.t,
-                       y3:W256.t, y7:W256.t, y2:W256.t) : W256.t Array25.t = {
-    
-    st.[7] <- y10;
-    st.[8] <- y14;
-    st.[11] <- y8;
-    st.[12] <- y15;
-    st.[15] <- y9;
-    st.[18] <- y13;
-    st.[21] <- y3;
-    st.[22] <- y7;
-    st.[24] <- y2;
-    return st;
-  }
-  proc _keccakf1600_native (st:W256.t Array25.t) : W256.t Array25.t = {
-    var y10:W256.t;
-    var y14:W256.t;
-    var y8:W256.t;
-    var y15:W256.t;
-    var y9:W256.t;
-    var y13:W256.t;
     var y3:W256.t;
-    var y7:W256.t;
-    var y2:W256.t;
-    var rol8:W256.t Array1.t;
-    var rol56:W256.t Array1.t;
-    var rc:W64.t Array24.t;
+    y0 <- (VPUNPCKL_4u64 x0 x1);
+    y1 <- (VPUNPCKH_4u64 x0 x1);
+    y2 <- (VPUNPCKL_4u64 x2 x3);
+    y3 <- (VPUNPCKH_4u64 x2 x3);
+    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
+    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
+    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
+    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
+    return (x0, x1, x2, x3);
+  }
+  proc __st4x_pack (st4x:W256.t Array25.t, st0:W64.t Array25.t,
+                    st1:W64.t Array25.t, st2:W64.t Array25.t,
+                    st3:W64.t Array25.t) : W256.t Array25.t = {
     var i:int;
-    rc <- witness;
-    rol56 <- witness;
-    rol8 <- witness;
-    (y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __regs_fetch (st);
-    rol8 <- rOL8_0;
-    rol56 <- rOL56_0;
-    rc <- kECCAK1600_RC;
+    var x0:W256.t;
+    var x1:W256.t;
+    var x2:W256.t;
+    var x3:W256.t;
+    var t0:W64.t;
+    var t1:W64.t;
+    var t2:W64.t;
+    var t3:W64.t;
     i <- 0;
-    (st, y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __f1600_loopbody_native (
-    st, rol8, rol56, rc, i, y10, y14, y8, y15, y9, y13, y3, y7, y2);
-    i <- (i + 1);
-    while ((i < 24)) {
-      (st, y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __f1600_loopbody_native (
-      st, rol8, rol56, rc, i, y10, y14, y8, y15, y9, y13, y3, y7, y2);
+    while ((i < 6)) {
+      x0 <- (get256 (WArray200.init64 (fun i_0 => st0.[i_0])) i);
+      x1 <- (get256 (WArray200.init64 (fun i_0 => st1.[i_0])) i);
+      x2 <- (get256 (WArray200.init64 (fun i_0 => st2.[i_0])) i);
+      x3 <- (get256 (WArray200.init64 (fun i_0 => st3.[i_0])) i);
+      (x0, x1, x2, x3) <@ __u256x4_4u64x4 (x0, x1, x2, x3);
+      st4x.[((4 * i) + 0)] <- x0;
+      st4x.[((4 * i) + 1)] <- x1;
+      st4x.[((4 * i) + 2)] <- x2;
+      st4x.[((4 * i) + 3)] <- x3;
       i <- (i + 1);
     }
-    st <@ __regs_unfetch (st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
-    return st;
+    t0 <- st0.[24];
+    t1 <- st1.[24];
+    t2 <- st2.[24];
+    t3 <- st3.[24];
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 0) t0)));
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 1) t1)));
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 2) t2)));
+    st4x <-
+    (Array25.init
+    (WArray800.get256
+    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
+    ((4 * 24) + 3) t3)));
+    return st4x;
+  }
+  proc __4u64x4_u256x4 (y0:W256.t, y1:W256.t, y2:W256.t, y3:W256.t) : 
+  W256.t * W256.t * W256.t * W256.t = {
+    var x0:W256.t;
+    var x1:W256.t;
+    var x2:W256.t;
+    var x3:W256.t;
+    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
+    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
+    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
+    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
+    y0 <- (VPUNPCKL_4u64 x0 x1);
+    y1 <- (VPUNPCKH_4u64 x0 x1);
+    y2 <- (VPUNPCKL_4u64 x2 x3);
+    y3 <- (VPUNPCKH_4u64 x2 x3);
+    return (y0, y1, y2, y3);
+  }
+  proc __st4x_unpack (st0:W64.t Array25.t, st1:W64.t Array25.t,
+                      st2:W64.t Array25.t, st3:W64.t Array25.t,
+                      st4x:W256.t Array25.t) : W64.t Array25.t *
+                                               W64.t Array25.t *
+                                               W64.t Array25.t *
+                                               W64.t Array25.t = {
+    var i:int;
+    var x0:W256.t;
+    var x1:W256.t;
+    var x2:W256.t;
+    var x3:W256.t;
+    var t0:W64.t;
+    var t1:W64.t;
+    var t2:W64.t;
+    var t3:W64.t;
+    i <- 0;
+    while ((i < 6)) {
+      x0 <- st4x.[((4 * i) + 0)];
+      x1 <- st4x.[((4 * i) + 1)];
+      x2 <- st4x.[((4 * i) + 2)];
+      x3 <- st4x.[((4 * i) + 3)];
+      (x0, x1, x2, x3) <@ __4u64x4_u256x4 (x0, x1, x2, x3);
+      st0 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st0.[i_0]))
+      ((4 * 8) * i) x0)));
+      st1 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st1.[i_0]))
+      ((4 * 8) * i) x1)));
+      st2 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st2.[i_0]))
+      ((4 * 8) * i) x2)));
+      st3 <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st3.[i_0]))
+      ((4 * 8) * i) x3)));
+      i <- (i + 1);
+    }
+    t0 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 0));
+    t1 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 1));
+    t2 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 2));
+    t3 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 3));
+    st0.[24] <- t0;
+    st1.[24] <- t1;
+    st2.[24] <- t2;
+    st3.[24] <- t3;
+    return (st0, st1, st2, st3);
   }
   proc _keccakf1600_4x_pround (e:W256.t Array25.t, a:W256.t Array25.t,
                                r8:W256.t, r56:W256.t) : W256.t Array25.t = {
@@ -3580,7 +3349,7 @@ module M = {
     e.[24] <- t_746;
     return e;
   }
-  proc __keccakf1600_avx2x4 (a:W256.t Array25.t) : W256.t Array25.t = {
+  proc __keccakf1600_avx2x4_orig (a:W256.t Array25.t) : W256.t Array25.t = {
     var rC:W64.t Array24.t;
     var s_e:W256.t Array25.t;
     var e:W256.t Array25.t;
@@ -3594,8 +3363,8 @@ module M = {
     s_e <- witness;
     rC <- kECCAK1600_RC;
     e <- s_e;
-    r8 <- rOL8;
-    r56 <- rOL56;
+    r8 <- rOL8.[0];
+    r56 <- rOL56.[0];
     c <- 0;
     while ((c < 24)) {
       rc <- (VPBROADCAST_4u64 rC.[c]);
@@ -3612,6 +3381,1442 @@ module M = {
     }
     return a;
   }
+  proc __keccakf1600_4x_pround_unpacked (st0:W64.t Array25.t,
+                                         st1:W64.t Array25.t,
+                                         st2:W64.t Array25.t,
+                                         st3:W64.t Array25.t) : W64.t Array25.t *
+                                                                W64.t Array25.t *
+                                                                W64.t Array25.t *
+                                                                W64.t Array25.t = {
+    var r8:W256.t;
+    var r56:W256.t;
+    var st4x1:W256.t Array25.t;
+    var st4x2:W256.t Array25.t;
+    st4x1 <- witness;
+    st4x2 <- witness;
+    r8 <- rOL8.[0];
+    r56 <- rOL56.[0];
+    st4x1 <@ __st4x_pack (st4x1, st0, st1, st2, st3);
+    st4x2 <@ _keccakf1600_4x_pround (st4x2, st4x1, r8, r56);
+    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, st4x2);
+    return (st0, st1, st2, st3);
+  }
+  proc __keccakf1600_4x_pround_equiv (e:W256.t Array25.t, a:W256.t Array25.t) : 
+  W256.t Array25.t = {
+    var st0:W64.t Array25.t;
+    var st1:W64.t Array25.t;
+    var st2:W64.t Array25.t;
+    var st3:W64.t Array25.t;
+    st0 <- witness;
+    st1 <- witness;
+    st2 <- witness;
+    st3 <- witness;
+    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, a);
+    (st0, st1, st2, st3) <@ __keccakf1600_4x_pround_unpacked (st0, st1, 
+    st2, st3);
+    e <@ __st4x_pack (e, st0, st1, st2, st3);
+    return e;
+  }
+  proc __rol_4u64_rho56 (a:W256.t) : W256.t = {
+    var r:W256.t;
+    r <- (VPSHUFB_256 a rOL56.[0]);
+    return r;
+  }
+  proc __rol_4u64_rho8 (a:W256.t) : W256.t = {
+    var r:W256.t;
+    r <- (VPSHUFB_256 a rOL8.[0]);
+    return r;
+  }
+  proc __rol_4u64 (a:W256.t, o:int) : W256.t = {
+    var r:W256.t;
+    var t256:W256.t;
+    r <- (VPSLL_4u64 a (W128.of_int o));
+    t256 <- (VPSRL_4u64 a (W128.of_int (64 - o)));
+    r <- (r `|` t256);
+    return r;
+  }
+  proc __prepare_theta (a_4x:W256.t Array25.t) : W256.t * W256.t * W256.t *
+                                                 W256.t * W256.t = {
+    var ca:W256.t;
+    var ce:W256.t;
+    var ci:W256.t;
+    var co:W256.t;
+    var cu:W256.t;
+    ca <- a_4x.[20];
+    ca <- (ca `^` a_4x.[15]);
+    ca <- (ca `^` a_4x.[10]);
+    ca <- (ca `^` a_4x.[5]);
+    ca <- (ca `^` a_4x.[0]);
+    ce <- a_4x.[21];
+    ce <- (ce `^` a_4x.[16]);
+    ce <- (ce `^` a_4x.[11]);
+    ce <- (ce `^` a_4x.[6]);
+    ce <- (ce `^` a_4x.[1]);
+    ci <- a_4x.[22];
+    ci <- (ci `^` a_4x.[17]);
+    ci <- (ci `^` a_4x.[12]);
+    ci <- (ci `^` a_4x.[7]);
+    ci <- (ci `^` a_4x.[2]);
+    co <- a_4x.[23];
+    co <- (co `^` a_4x.[18]);
+    co <- (co `^` a_4x.[13]);
+    co <- (co `^` a_4x.[8]);
+    co <- (co `^` a_4x.[3]);
+    cu <- a_4x.[24];
+    cu <- (cu `^` a_4x.[19]);
+    cu <- (cu `^` a_4x.[14]);
+    cu <- (cu `^` a_4x.[9]);
+    cu <- (cu `^` a_4x.[4]);
+    return (ca, ce, ci, co, cu);
+  }
+  proc __first (ca:W256.t, ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t) : 
+  W256.t * W256.t * W256.t * W256.t * W256.t = {
+    var da:W256.t;
+    var de:W256.t;
+    var di:W256.t;
+    var do_0:W256.t;
+    var du:W256.t;
+    var ce1:W256.t;
+    var ci1:W256.t;
+    var co1:W256.t;
+    var cu1:W256.t;
+    var ca1:W256.t;
+    ce1 <@ __rol_4u64 (ce, 1);
+    da <- (cu `^` ce1);
+    ci1 <@ __rol_4u64 (ci, 1);
+    de <- (ca `^` ci1);
+    co1 <@ __rol_4u64 (co, 1);
+    di <- (ce `^` co1);
+    cu1 <@ __rol_4u64 (cu, 1);
+    do_0 <- (ci `^` cu1);
+    ca1 <@ __rol_4u64 (ca, 1);
+    du <- (co `^` ca1);
+    return (da, de, di, do_0, du);
+  }
+  proc __second_even (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t,
+                      rc_index:W256.t, ca:W256.t, ce:W256.t, ci:W256.t,
+                      co:W256.t, cu:W256.t, da:W256.t, de:W256.t, di:W256.t,
+                      do_0:W256.t, du:W256.t) : W256.t Array25.t *
+                                                W256.t Array25.t * W256.t *
+                                                W256.t * W256.t * W256.t *
+                                                W256.t = {
+    var t256:W256.t;
+    var bba:W256.t;
+    var bbe:W256.t;
+    var bbi:W256.t;
+    var bbo:W256.t;
+    var bbu:W256.t;
+    t256 <- a_4x.[0];
+    t256 <- (t256 `^` da);
+    a_4x.[0] <- t256;
+    bba <- t256;
+    t256 <- a_4x.[6];
+    t256 <- (t256 `^` de);
+    a_4x.[6] <- t256;
+    bbe <@ __rol_4u64 (t256, 44);
+    t256 <- a_4x.[12];
+    t256 <- (t256 `^` di);
+    a_4x.[12] <- t256;
+    bbi <@ __rol_4u64 (t256, 43);
+    t256 <- (VPANDN_256 bbe bbi);
+    t256 <- (t256 `^` bba);
+    t256 <- (t256 `^` rc_index);
+    e_4x.[0] <- t256;
+    ca <- t256;
+    t256 <- a_4x.[18];
+    t256 <- (t256 `^` do_0);
+    a_4x.[18] <- t256;
+    bbo <@ __rol_4u64 (t256, 21);
+    t256 <- (VPANDN_256 bbi bbo);
+    t256 <- (t256 `^` bbe);
+    e_4x.[1] <- t256;
+    ce <- t256;
+    t256 <- a_4x.[24];
+    t256 <- (t256 `^` du);
+    a_4x.[24] <- t256;
+    bbu <@ __rol_4u64 (t256, 14);
+    t256 <- (VPANDN_256 bbo bbu);
+    t256 <- (t256 `^` bbi);
+    e_4x.[2] <- t256;
+    ci <- t256;
+    t256 <- (VPANDN_256 bbu bba);
+    t256 <- (t256 `^` bbo);
+    e_4x.[3] <- t256;
+    co <- t256;
+    t256 <- (VPANDN_256 bba bbe);
+    t256 <- (t256 `^` bbu);
+    e_4x.[4] <- t256;
+    cu <- t256;
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __third_even (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, ca:W256.t,
+                     ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t, da:W256.t,
+                     de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t * W256.t * W256.t * W256.t * W256.t *
+  W256.t = {
+    var t256:W256.t;
+    var bga:W256.t;
+    var bge:W256.t;
+    var bgi:W256.t;
+    var bgo:W256.t;
+    var bgu:W256.t;
+    t256 <- a_4x.[3];
+    t256 <- (t256 `^` do_0);
+    a_4x.[3] <- t256;
+    bga <@ __rol_4u64 (t256, 28);
+    t256 <- a_4x.[9];
+    t256 <- (t256 `^` du);
+    a_4x.[9] <- t256;
+    bge <@ __rol_4u64 (t256, 20);
+    t256 <- a_4x.[10];
+    t256 <- (t256 `^` da);
+    a_4x.[10] <- t256;
+    bgi <@ __rol_4u64 (t256, 3);
+    t256 <- (VPANDN_256 bge bgi);
+    t256 <- (t256 `^` bga);
+    e_4x.[5] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[16];
+    t256 <- (t256 `^` de);
+    a_4x.[16] <- t256;
+    bgo <@ __rol_4u64 (t256, 45);
+    t256 <- (VPANDN_256 bgi bgo);
+    t256 <- (t256 `^` bge);
+    e_4x.[6] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[22];
+    t256 <- (t256 `^` di);
+    a_4x.[22] <- t256;
+    bgu <@ __rol_4u64 (t256, 61);
+    t256 <- (VPANDN_256 bgo bgu);
+    t256 <- (t256 `^` bgi);
+    e_4x.[7] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bgu bga);
+    t256 <- (t256 `^` bgo);
+    e_4x.[8] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bga bge);
+    t256 <- (t256 `^` bgu);
+    e_4x.[9] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __fourth_even (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t,
+                      ca:W256.t, ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t,
+                      da:W256.t, de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t * W256.t * W256.t * W256.t * W256.t *
+  W256.t = {
+    var t256:W256.t;
+    var bka:W256.t;
+    var bke:W256.t;
+    var bki:W256.t;
+    var bko:W256.t;
+    var bku:W256.t;
+    t256 <- a_4x.[1];
+    t256 <- (t256 `^` de);
+    a_4x.[1] <- t256;
+    bka <@ __rol_4u64 (t256, 1);
+    t256 <- a_4x.[7];
+    t256 <- (t256 `^` di);
+    a_4x.[7] <- t256;
+    bke <@ __rol_4u64 (t256, 6);
+    t256 <- a_4x.[13];
+    t256 <- (t256 `^` do_0);
+    a_4x.[13] <- t256;
+    bki <@ __rol_4u64 (t256, 25);
+    t256 <- (VPANDN_256 bke bki);
+    t256 <- (t256 `^` bka);
+    e_4x.[10] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[19];
+    t256 <- (t256 `^` du);
+    a_4x.[19] <- t256;
+    bko <@ __rol_4u64_rho8 (t256);
+    t256 <- (VPANDN_256 bki bko);
+    t256 <- (t256 `^` bke);
+    e_4x.[11] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[20];
+    t256 <- (t256 `^` da);
+    a_4x.[20] <- t256;
+    bku <@ __rol_4u64 (t256, 18);
+    t256 <- (VPANDN_256 bko bku);
+    t256 <- (t256 `^` bki);
+    e_4x.[12] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bku bka);
+    t256 <- (t256 `^` bko);
+    e_4x.[13] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bka bke);
+    t256 <- (t256 `^` bku);
+    e_4x.[14] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __fifth_even (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, ca:W256.t,
+                     ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t, da:W256.t,
+                     de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t * W256.t * W256.t * W256.t * W256.t *
+  W256.t = {
+    var t256:W256.t;
+    var bma:W256.t;
+    var bme:W256.t;
+    var bmi:W256.t;
+    var bmo:W256.t;
+    var bmu:W256.t;
+    t256 <- a_4x.[4];
+    t256 <- (t256 `^` du);
+    a_4x.[4] <- t256;
+    bma <@ __rol_4u64 (t256, 27);
+    t256 <- a_4x.[5];
+    t256 <- (t256 `^` da);
+    a_4x.[5] <- t256;
+    bme <@ __rol_4u64 (t256, 36);
+    t256 <- a_4x.[11];
+    t256 <- (t256 `^` de);
+    a_4x.[11] <- t256;
+    bmi <@ __rol_4u64 (t256, 10);
+    t256 <- (VPANDN_256 bme bmi);
+    t256 <- (t256 `^` bma);
+    e_4x.[15] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[17];
+    t256 <- (t256 `^` di);
+    a_4x.[17] <- t256;
+    bmo <@ __rol_4u64 (t256, 15);
+    t256 <- (VPANDN_256 bmi bmo);
+    t256 <- (t256 `^` bme);
+    e_4x.[16] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[23];
+    t256 <- (t256 `^` do_0);
+    a_4x.[23] <- t256;
+    bmu <@ __rol_4u64_rho56 (t256);
+    t256 <- (VPANDN_256 bmo bmu);
+    t256 <- (t256 `^` bmi);
+    e_4x.[17] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bmu bma);
+    t256 <- (t256 `^` bmo);
+    e_4x.[18] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bma bme);
+    t256 <- (t256 `^` bmu);
+    e_4x.[19] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __sixth_even (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, ca:W256.t,
+                     ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t, da:W256.t,
+                     de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t * W256.t * W256.t * W256.t * W256.t *
+  W256.t = {
+    var t256:W256.t;
+    var bsa:W256.t;
+    var bse:W256.t;
+    var bsi:W256.t;
+    var bso:W256.t;
+    var bsu:W256.t;
+    t256 <- a_4x.[2];
+    t256 <- (t256 `^` di);
+    a_4x.[2] <- t256;
+    bsa <@ __rol_4u64 (t256, 62);
+    t256 <- a_4x.[8];
+    t256 <- (t256 `^` do_0);
+    a_4x.[8] <- t256;
+    bse <@ __rol_4u64 (t256, 55);
+    t256 <- a_4x.[14];
+    t256 <- (t256 `^` du);
+    a_4x.[14] <- t256;
+    bsi <@ __rol_4u64 (t256, 39);
+    t256 <- (VPANDN_256 bse bsi);
+    t256 <- (t256 `^` bsa);
+    e_4x.[20] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[15];
+    t256 <- (t256 `^` da);
+    a_4x.[15] <- t256;
+    bso <@ __rol_4u64 (t256, 41);
+    t256 <- (VPANDN_256 bsi bso);
+    t256 <- (t256 `^` bse);
+    e_4x.[21] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[21];
+    t256 <- (t256 `^` de);
+    a_4x.[21] <- t256;
+    bsu <@ __rol_4u64 (t256, 2);
+    t256 <- (VPANDN_256 bso bsu);
+    t256 <- (t256 `^` bsi);
+    e_4x.[22] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bsu bsa);
+    t256 <- (t256 `^` bso);
+    e_4x.[23] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bsa bse);
+    t256 <- (t256 `^` bsu);
+    e_4x.[24] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __second_odd (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t,
+                     rc_index:W256.t, ca:W256.t, ce:W256.t, ci:W256.t,
+                     co:W256.t, cu:W256.t, da:W256.t, de:W256.t, di:W256.t,
+                     do_0:W256.t, du:W256.t) : W256.t Array25.t *
+                                               W256.t Array25.t * W256.t *
+                                               W256.t * W256.t * W256.t *
+                                               W256.t = {
+    var t256:W256.t;
+    var bba:W256.t;
+    var bbe:W256.t;
+    var bbi:W256.t;
+    var bbo:W256.t;
+    var bbu:W256.t;
+    t256 <- a_4x.[0];
+    t256 <- (t256 `^` da);
+    a_4x.[0] <- t256;
+    bba <- t256;
+    t256 <- a_4x.[6];
+    t256 <- (t256 `^` de);
+    a_4x.[6] <- t256;
+    bbe <@ __rol_4u64 (t256, 44);
+    t256 <- a_4x.[12];
+    t256 <- (t256 `^` di);
+    a_4x.[12] <- t256;
+    bbi <@ __rol_4u64 (t256, 43);
+    t256 <- (VPANDN_256 bbe bbi);
+    t256 <- (t256 `^` bba);
+    t256 <- (t256 `^` rc_index);
+    e_4x.[0] <- t256;
+    ca <- t256;
+    t256 <- a_4x.[18];
+    t256 <- (t256 `^` do_0);
+    a_4x.[18] <- t256;
+    bbo <@ __rol_4u64 (t256, 21);
+    t256 <- (VPANDN_256 bbi bbo);
+    t256 <- (t256 `^` bbe);
+    e_4x.[1] <- t256;
+    ce <- t256;
+    t256 <- a_4x.[24];
+    t256 <- (t256 `^` du);
+    a_4x.[24] <- t256;
+    bbu <@ __rol_4u64 (t256, 14);
+    t256 <- (VPANDN_256 bbo bbu);
+    t256 <- (t256 `^` bbi);
+    e_4x.[2] <- t256;
+    ci <- t256;
+    t256 <- (VPANDN_256 bbu bba);
+    t256 <- (t256 `^` bbo);
+    e_4x.[3] <- t256;
+    co <- t256;
+    t256 <- (VPANDN_256 bba bbe);
+    t256 <- (t256 `^` bbu);
+    e_4x.[4] <- t256;
+    cu <- t256;
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __third_odd (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, ca:W256.t,
+                    ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t, da:W256.t,
+                    de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : W256.t Array25.t *
+                                                                    W256.t Array25.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t = {
+    var t256:W256.t;
+    var bga:W256.t;
+    var bge:W256.t;
+    var bgi:W256.t;
+    var bgo:W256.t;
+    var bgu:W256.t;
+    t256 <- a_4x.[3];
+    t256 <- (t256 `^` do_0);
+    a_4x.[3] <- t256;
+    bga <@ __rol_4u64 (t256, 28);
+    t256 <- a_4x.[9];
+    t256 <- (t256 `^` du);
+    a_4x.[9] <- t256;
+    bge <@ __rol_4u64 (t256, 20);
+    t256 <- a_4x.[10];
+    t256 <- (t256 `^` da);
+    a_4x.[10] <- t256;
+    bgi <@ __rol_4u64 (t256, 3);
+    t256 <- (VPANDN_256 bge bgi);
+    t256 <- (t256 `^` bga);
+    e_4x.[5] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[16];
+    t256 <- (t256 `^` de);
+    a_4x.[16] <- t256;
+    bgo <@ __rol_4u64 (t256, 45);
+    t256 <- (VPANDN_256 bgi bgo);
+    t256 <- (t256 `^` bge);
+    e_4x.[6] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[22];
+    t256 <- (t256 `^` di);
+    a_4x.[22] <- t256;
+    bgu <@ __rol_4u64 (t256, 61);
+    t256 <- (VPANDN_256 bgo bgu);
+    t256 <- (t256 `^` bgi);
+    e_4x.[7] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bgu bga);
+    t256 <- (t256 `^` bgo);
+    e_4x.[8] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bga bge);
+    t256 <- (t256 `^` bgu);
+    e_4x.[9] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __fourth_odd (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, ca:W256.t,
+                     ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t, da:W256.t,
+                     de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t * W256.t * W256.t * W256.t * W256.t *
+  W256.t = {
+    var t256:W256.t;
+    var bka:W256.t;
+    var bke:W256.t;
+    var bki:W256.t;
+    var bko:W256.t;
+    var bku:W256.t;
+    t256 <- a_4x.[1];
+    t256 <- (t256 `^` de);
+    a_4x.[1] <- t256;
+    bka <@ __rol_4u64 (t256, 1);
+    t256 <- a_4x.[7];
+    t256 <- (t256 `^` di);
+    a_4x.[7] <- t256;
+    bke <@ __rol_4u64 (t256, 6);
+    t256 <- a_4x.[13];
+    t256 <- (t256 `^` do_0);
+    a_4x.[13] <- t256;
+    bki <@ __rol_4u64 (t256, 25);
+    t256 <- (VPANDN_256 bke bki);
+    t256 <- (t256 `^` bka);
+    e_4x.[10] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[19];
+    t256 <- (t256 `^` du);
+    a_4x.[19] <- t256;
+    bko <@ __rol_4u64_rho8 (t256);
+    t256 <- (VPANDN_256 bki bko);
+    t256 <- (t256 `^` bke);
+    e_4x.[11] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[20];
+    t256 <- (t256 `^` da);
+    a_4x.[20] <- t256;
+    bku <@ __rol_4u64 (t256, 18);
+    t256 <- (VPANDN_256 bko bku);
+    t256 <- (t256 `^` bki);
+    e_4x.[12] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bku bka);
+    t256 <- (t256 `^` bko);
+    e_4x.[13] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bka bke);
+    t256 <- (t256 `^` bku);
+    e_4x.[14] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __fifth_odd (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, ca:W256.t,
+                    ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t, da:W256.t,
+                    de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : W256.t Array25.t *
+                                                                    W256.t Array25.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t = {
+    var t256:W256.t;
+    var bma:W256.t;
+    var bme:W256.t;
+    var bmi:W256.t;
+    var bmo:W256.t;
+    var bmu:W256.t;
+    t256 <- a_4x.[4];
+    t256 <- (t256 `^` du);
+    a_4x.[4] <- t256;
+    bma <@ __rol_4u64 (t256, 27);
+    t256 <- a_4x.[5];
+    t256 <- (t256 `^` da);
+    a_4x.[5] <- t256;
+    bme <@ __rol_4u64 (t256, 36);
+    t256 <- a_4x.[11];
+    t256 <- (t256 `^` de);
+    a_4x.[11] <- t256;
+    bmi <@ __rol_4u64 (t256, 10);
+    t256 <- (VPANDN_256 bme bmi);
+    t256 <- (t256 `^` bma);
+    e_4x.[15] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[17];
+    t256 <- (t256 `^` di);
+    a_4x.[17] <- t256;
+    bmo <@ __rol_4u64 (t256, 15);
+    t256 <- (VPANDN_256 bmi bmo);
+    t256 <- (t256 `^` bme);
+    e_4x.[16] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[23];
+    t256 <- (t256 `^` do_0);
+    a_4x.[23] <- t256;
+    bmu <@ __rol_4u64_rho56 (t256);
+    t256 <- (VPANDN_256 bmo bmu);
+    t256 <- (t256 `^` bmi);
+    e_4x.[17] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bmu bma);
+    t256 <- (t256 `^` bmo);
+    e_4x.[18] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bma bme);
+    t256 <- (t256 `^` bmu);
+    e_4x.[19] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __sixth_odd (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, ca:W256.t,
+                    ce:W256.t, ci:W256.t, co:W256.t, cu:W256.t, da:W256.t,
+                    de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : W256.t Array25.t *
+                                                                    W256.t Array25.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t *
+                                                                    W256.t = {
+    var t256:W256.t;
+    var bsa:W256.t;
+    var bse:W256.t;
+    var bsi:W256.t;
+    var bso:W256.t;
+    var bsu:W256.t;
+    t256 <- a_4x.[2];
+    t256 <- (t256 `^` di);
+    a_4x.[2] <- t256;
+    bsa <@ __rol_4u64 (t256, 62);
+    t256 <- a_4x.[8];
+    t256 <- (t256 `^` do_0);
+    a_4x.[8] <- t256;
+    bse <@ __rol_4u64 (t256, 55);
+    t256 <- a_4x.[14];
+    t256 <- (t256 `^` du);
+    a_4x.[14] <- t256;
+    bsi <@ __rol_4u64 (t256, 39);
+    t256 <- (VPANDN_256 bse bsi);
+    t256 <- (t256 `^` bsa);
+    e_4x.[20] <- t256;
+    ca <- (ca `^` t256);
+    t256 <- a_4x.[15];
+    t256 <- (t256 `^` da);
+    a_4x.[15] <- t256;
+    bso <@ __rol_4u64 (t256, 41);
+    t256 <- (VPANDN_256 bsi bso);
+    t256 <- (t256 `^` bse);
+    e_4x.[21] <- t256;
+    ce <- (ce `^` t256);
+    t256 <- a_4x.[21];
+    t256 <- (t256 `^` de);
+    a_4x.[21] <- t256;
+    bsu <@ __rol_4u64 (t256, 2);
+    t256 <- (VPANDN_256 bso bsu);
+    t256 <- (t256 `^` bsi);
+    e_4x.[22] <- t256;
+    ci <- (ci `^` t256);
+    t256 <- (VPANDN_256 bsu bsa);
+    t256 <- (t256 `^` bso);
+    e_4x.[23] <- t256;
+    co <- (co `^` t256);
+    t256 <- (VPANDN_256 bsa bse);
+    t256 <- (t256 `^` bsu);
+    e_4x.[24] <- t256;
+    cu <- (cu `^` t256);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __second_last (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t,
+                      rc_index:W256.t, da:W256.t, de:W256.t, di:W256.t,
+                      do_0:W256.t, du:W256.t) : W256.t Array25.t *
+                                                W256.t Array25.t = {
+    var t256:W256.t;
+    var bba:W256.t;
+    var bbe:W256.t;
+    var bbi:W256.t;
+    var bbo:W256.t;
+    var bbu:W256.t;
+    t256 <- a_4x.[0];
+    t256 <- (t256 `^` da);
+    a_4x.[0] <- t256;
+    bba <- t256;
+    t256 <- a_4x.[6];
+    t256 <- (t256 `^` de);
+    a_4x.[6] <- t256;
+    bbe <@ __rol_4u64 (t256, 44);
+    t256 <- a_4x.[12];
+    t256 <- (t256 `^` di);
+    a_4x.[12] <- t256;
+    bbi <@ __rol_4u64 (t256, 43);
+    t256 <- (VPANDN_256 bbe bbi);
+    t256 <- (t256 `^` bba);
+    t256 <- (t256 `^` rc_index);
+    e_4x.[0] <- t256;
+    t256 <- a_4x.[18];
+    t256 <- (t256 `^` do_0);
+    a_4x.[18] <- t256;
+    bbo <@ __rol_4u64 (t256, 21);
+    t256 <- (VPANDN_256 bbi bbo);
+    t256 <- (t256 `^` bbe);
+    e_4x.[1] <- t256;
+    t256 <- a_4x.[24];
+    t256 <- (t256 `^` du);
+    a_4x.[24] <- t256;
+    bbu <@ __rol_4u64 (t256, 14);
+    t256 <- (VPANDN_256 bbo bbu);
+    t256 <- (t256 `^` bbi);
+    e_4x.[2] <- t256;
+    t256 <- (VPANDN_256 bbu bba);
+    t256 <- (t256 `^` bbo);
+    e_4x.[3] <- t256;
+    t256 <- (VPANDN_256 bba bbe);
+    t256 <- (t256 `^` bbu);
+    e_4x.[4] <- t256;
+    return (a_4x, e_4x);
+  }
+  proc __third_last (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, da:W256.t,
+                     de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t = {
+    var t256:W256.t;
+    var bga:W256.t;
+    var bge:W256.t;
+    var bgi:W256.t;
+    var bgo:W256.t;
+    var bgu:W256.t;
+    t256 <- a_4x.[3];
+    t256 <- (t256 `^` do_0);
+    a_4x.[3] <- t256;
+    bga <@ __rol_4u64 (t256, 28);
+    t256 <- a_4x.[9];
+    t256 <- (t256 `^` du);
+    a_4x.[9] <- t256;
+    bge <@ __rol_4u64 (t256, 20);
+    t256 <- a_4x.[10];
+    t256 <- (t256 `^` da);
+    a_4x.[10] <- t256;
+    bgi <@ __rol_4u64 (t256, 3);
+    t256 <- (VPANDN_256 bge bgi);
+    t256 <- (t256 `^` bga);
+    e_4x.[5] <- t256;
+    t256 <- a_4x.[16];
+    t256 <- (t256 `^` de);
+    a_4x.[16] <- t256;
+    bgo <@ __rol_4u64 (t256, 45);
+    t256 <- (VPANDN_256 bgi bgo);
+    t256 <- (t256 `^` bge);
+    e_4x.[6] <- t256;
+    t256 <- a_4x.[22];
+    t256 <- (t256 `^` di);
+    a_4x.[22] <- t256;
+    bgu <@ __rol_4u64 (t256, 61);
+    t256 <- (VPANDN_256 bgo bgu);
+    t256 <- (t256 `^` bgi);
+    e_4x.[7] <- t256;
+    t256 <- (VPANDN_256 bgu bga);
+    t256 <- (t256 `^` bgo);
+    e_4x.[8] <- t256;
+    t256 <- (VPANDN_256 bga bge);
+    t256 <- (t256 `^` bgu);
+    e_4x.[9] <- t256;
+    return (a_4x, e_4x);
+  }
+  proc __fourth_last (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t,
+                      da:W256.t, de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t = {
+    var t256:W256.t;
+    var bka:W256.t;
+    var bke:W256.t;
+    var bki:W256.t;
+    var bko:W256.t;
+    var bku:W256.t;
+    t256 <- a_4x.[1];
+    t256 <- (t256 `^` de);
+    a_4x.[1] <- t256;
+    bka <@ __rol_4u64 (t256, 1);
+    t256 <- a_4x.[7];
+    t256 <- (t256 `^` di);
+    a_4x.[7] <- t256;
+    bke <@ __rol_4u64 (t256, 6);
+    t256 <- a_4x.[13];
+    t256 <- (t256 `^` do_0);
+    a_4x.[13] <- t256;
+    bki <@ __rol_4u64 (t256, 25);
+    t256 <- (VPANDN_256 bke bki);
+    t256 <- (t256 `^` bka);
+    e_4x.[10] <- t256;
+    t256 <- a_4x.[19];
+    t256 <- (t256 `^` du);
+    a_4x.[19] <- t256;
+    bko <@ __rol_4u64_rho8 (t256);
+    t256 <- (VPANDN_256 bki bko);
+    t256 <- (t256 `^` bke);
+    e_4x.[11] <- t256;
+    t256 <- a_4x.[20];
+    t256 <- (t256 `^` da);
+    a_4x.[20] <- t256;
+    bku <@ __rol_4u64 (t256, 18);
+    t256 <- (VPANDN_256 bko bku);
+    t256 <- (t256 `^` bki);
+    e_4x.[12] <- t256;
+    t256 <- (VPANDN_256 bku bka);
+    t256 <- (t256 `^` bko);
+    e_4x.[13] <- t256;
+    t256 <- (VPANDN_256 bka bke);
+    t256 <- (t256 `^` bku);
+    e_4x.[14] <- t256;
+    return (a_4x, e_4x);
+  }
+  proc __fifth_last (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, da:W256.t,
+                     de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t = {
+    var t256:W256.t;
+    var bma:W256.t;
+    var bme:W256.t;
+    var bmi:W256.t;
+    var bmo:W256.t;
+    var bmu:W256.t;
+    t256 <- a_4x.[4];
+    t256 <- (t256 `^` du);
+    a_4x.[4] <- t256;
+    bma <@ __rol_4u64 (t256, 27);
+    t256 <- a_4x.[5];
+    t256 <- (t256 `^` da);
+    a_4x.[5] <- t256;
+    bme <@ __rol_4u64 (t256, 36);
+    t256 <- a_4x.[11];
+    t256 <- (t256 `^` de);
+    a_4x.[11] <- t256;
+    bmi <@ __rol_4u64 (t256, 10);
+    t256 <- (VPANDN_256 bme bmi);
+    t256 <- (t256 `^` bma);
+    e_4x.[15] <- t256;
+    t256 <- a_4x.[17];
+    t256 <- (t256 `^` di);
+    a_4x.[17] <- t256;
+    bmo <@ __rol_4u64 (t256, 15);
+    t256 <- (VPANDN_256 bmi bmo);
+    t256 <- (t256 `^` bme);
+    e_4x.[16] <- t256;
+    t256 <- a_4x.[23];
+    t256 <- (t256 `^` do_0);
+    a_4x.[23] <- t256;
+    bmu <@ __rol_4u64_rho56 (t256);
+    t256 <- (VPANDN_256 bmo bmu);
+    t256 <- (t256 `^` bmi);
+    e_4x.[17] <- t256;
+    t256 <- (VPANDN_256 bmu bma);
+    t256 <- (t256 `^` bmo);
+    e_4x.[18] <- t256;
+    t256 <- (VPANDN_256 bma bme);
+    t256 <- (t256 `^` bmu);
+    e_4x.[19] <- t256;
+    return (a_4x, e_4x);
+  }
+  proc __sixth_last (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t, da:W256.t,
+                     de:W256.t, di:W256.t, do_0:W256.t, du:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t = {
+    var t256:W256.t;
+    var bsa:W256.t;
+    var bse:W256.t;
+    var bsi:W256.t;
+    var bso:W256.t;
+    var bsu:W256.t;
+    t256 <- a_4x.[2];
+    t256 <- (t256 `^` di);
+    a_4x.[2] <- t256;
+    bsa <@ __rol_4u64 (t256, 62);
+    t256 <- a_4x.[8];
+    t256 <- (t256 `^` do_0);
+    a_4x.[8] <- t256;
+    bse <@ __rol_4u64 (t256, 55);
+    t256 <- a_4x.[14];
+    t256 <- (t256 `^` du);
+    a_4x.[14] <- t256;
+    bsi <@ __rol_4u64 (t256, 39);
+    t256 <- (VPANDN_256 bse bsi);
+    t256 <- (t256 `^` bsa);
+    e_4x.[20] <- t256;
+    t256 <- a_4x.[15];
+    t256 <- (t256 `^` da);
+    a_4x.[15] <- t256;
+    bso <@ __rol_4u64 (t256, 41);
+    t256 <- (VPANDN_256 bsi bso);
+    t256 <- (t256 `^` bse);
+    e_4x.[21] <- t256;
+    t256 <- a_4x.[21];
+    t256 <- (t256 `^` de);
+    a_4x.[21] <- t256;
+    bsu <@ __rol_4u64 (t256, 2);
+    t256 <- (VPANDN_256 bso bsu);
+    t256 <- (t256 `^` bsi);
+    e_4x.[22] <- t256;
+    t256 <- (VPANDN_256 bsu bsa);
+    t256 <- (t256 `^` bso);
+    e_4x.[23] <- t256;
+    t256 <- (VPANDN_256 bsa bse);
+    t256 <- (t256 `^` bsu);
+    e_4x.[24] <- t256;
+    return (a_4x, e_4x);
+  }
+  proc _theta_rho_pi_chi_iota_prepare_theta_even (a_4x:W256.t Array25.t,
+                                                  e_4x:W256.t Array25.t,
+                                                  rc_index:W256.t, ca:W256.t,
+                                                  ce:W256.t, ci:W256.t,
+                                                  co:W256.t, cu:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t * W256.t * W256.t * W256.t * W256.t *
+  W256.t = {
+    var da:W256.t;
+    var de:W256.t;
+    var di:W256.t;
+    var do_0:W256.t;
+    var du:W256.t;
+    (da, de, di, do_0, du) <@ __first (ca, ce, ci, co, cu);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __second_even (a_4x, e_4x, rc_index,
+    ca, ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __third_even (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __fourth_even (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __fifth_even (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __sixth_even (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc _theta_rho_pi_chi_iota_prepare_theta_odd (a_4x:W256.t Array25.t,
+                                                 e_4x:W256.t Array25.t,
+                                                 rc_index:W256.t, ca:W256.t,
+                                                 ce:W256.t, ci:W256.t,
+                                                 co:W256.t, cu:W256.t) : 
+  W256.t Array25.t * W256.t Array25.t * W256.t * W256.t * W256.t * W256.t *
+  W256.t = {
+    var da:W256.t;
+    var de:W256.t;
+    var di:W256.t;
+    var do_0:W256.t;
+    var du:W256.t;
+    (da, de, di, do_0, du) <@ __first (ca, ce, ci, co, cu);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __second_odd (a_4x, e_4x, rc_index,
+    ca, ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __third_odd (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __fourth_odd (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __fifth_odd (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ __sixth_odd (a_4x, e_4x, ca, 
+    ce, ci, co, cu, da, de, di, do_0, du);
+    return (a_4x, e_4x, ca, ce, ci, co, cu);
+  }
+  proc __theta_rho_pi_chi_iota (a_4x:W256.t Array25.t, e_4x:W256.t Array25.t,
+                                rc_index:W256.t, ca:W256.t, ce:W256.t,
+                                ci:W256.t, co:W256.t, cu:W256.t) : W256.t Array25.t *
+                                                                   W256.t Array25.t = {
+    var da:W256.t;
+    var de:W256.t;
+    var di:W256.t;
+    var do_0:W256.t;
+    var du:W256.t;
+    (da, de, di, do_0, du) <@ __first (ca, ce, ci, co, cu);
+    (a_4x, e_4x) <@ __second_last (a_4x, e_4x, rc_index, da, de, di, 
+    do_0, du);
+    (a_4x, e_4x) <@ __third_last (a_4x, e_4x, da, de, di, do_0, du);
+    (a_4x, e_4x) <@ __fourth_last (a_4x, e_4x, da, de, di, do_0, du);
+    (a_4x, e_4x) <@ __fifth_last (a_4x, e_4x, da, de, di, do_0, du);
+    (a_4x, e_4x) <@ __sixth_last (a_4x, e_4x, da, de, di, do_0, du);
+    return (a_4x, e_4x);
+  }
+  proc __keccakf1600_avx2x4_alt (a_4x:W256.t Array25.t) : W256.t Array25.t = {
+    var rC:W64.t Array24.t;
+    var ca:W256.t;
+    var ce:W256.t;
+    var ci:W256.t;
+    var co:W256.t;
+    var cu:W256.t;
+    var rc_index:W256.t;
+    var e_4x:W256.t Array25.t;
+    e_4x <- witness;
+    rC <- witness;
+    rC <- kECCAK1600_RC;
+    (ca, ce, ci, co, cu) <@ __prepare_theta (a_4x);
+    rc_index <- (VPBROADCAST_4u64 rC.[0]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[1]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[2]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[3]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[4]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[5]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[6]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[7]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[8]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[9]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[10]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[11]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[12]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[13]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[14]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[15]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[16]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[17]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[18]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[19]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[20]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[21]);
+    (e_4x, a_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_odd (
+    e_4x, a_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[22]);
+    (a_4x, e_4x, ca, ce, ci, co, cu) <@ _theta_rho_pi_chi_iota_prepare_theta_even (
+    a_4x, e_4x, rc_index, ca, ce, ci, co, cu);
+    rc_index <- (VPBROADCAST_4u64 rC.[23]);
+    (e_4x, a_4x) <@ __theta_rho_pi_chi_iota (e_4x, a_4x, rc_index, ca, 
+    ce, ci, co, cu);
+    return a_4x;
+  }
+  proc __f1600_loopbody_native (st:W256.t Array25.t, rol8:W256.t Array1.t,
+                                rol56:W256.t Array1.t, rC:W64.t Array24.t,
+                                i:int, y10:W256.t, y14:W256.t, y8:W256.t,
+                                y15:W256.t, y9:W256.t, y13:W256.t, y3:W256.t,
+                                y7:W256.t, y2:W256.t) : W256.t Array25.t *
+                                                        W256.t * W256.t *
+                                                        W256.t * W256.t *
+                                                        W256.t * W256.t *
+                                                        W256.t * W256.t *
+                                                        W256.t = {
+    var i0:int;
+    var i1:int;
+    var i2:int;
+    var i3:int;
+    var i4:int;
+    var i5:int;
+    var i6:int;
+    var i7:int;
+    var i8:int;
+    var i9:int;
+    var i10:int;
+    var i11:int;
+    var i12:int;
+    var i13:int;
+    var i14:int;
+    var i15:int;
+    var i16:int;
+    var i17:int;
+    var i18:int;
+    var i19:int;
+    var i20:int;
+    var i21:int;
+    var i22:int;
+    var i23:int;
+    var y4:W256.t;
+    var y0:W256.t;
+    var y11:W256.t;
+    var y12:W256.t;
+    var y1:W256.t;
+    var y6:W256.t;
+    var y5:W256.t;
+    i0 <- 0;
+    i1 <- 1;
+    i2 <- 2;
+    i3 <- 3;
+    i4 <- 4;
+    i5 <- 5;
+    i6 <- 6;
+    i7 <- 9;
+    i8 <- 10;
+    i9 <- 13;
+    i10 <- 14;
+    i11 <- 16;
+    i12 <- 17;
+    i13 <- 19;
+    i14 <- 20;
+    i15 <- 23;
+    i16 <- 7;
+    i17 <- 8;
+    i18 <- 11;
+    i19 <- 12;
+    i20 <- 15;
+    i21 <- 18;
+    i22 <- 21;
+    i23 <- 22;
+    y4 <- st.[i5];
+    y0 <- (y9 `^` st.[i14]);
+    st.[i16] <- y9;
+    y9 <- y10;
+    y11 <- st.[i6];
+    y12 <- st.[i11];
+    st.[i18] <- y3;
+    y1 <- (y4 `^` st.[i8]);
+    y10 <- st.[i2];
+    st.[i17] <- y4;
+    y12 <- (y12 `^` y3);
+    y6 <- st.[i1];
+    y4 <- st.[i10];
+    st.[i21] <- y14;
+    y0 <- (y0 `^` y1);
+    y1 <- (y11 `^` y8);
+    y11 <- (y7 `^` st.[i12]);
+    st.[i20] <- y10;
+    y12 <- (y12 `^` y1);
+    y1 <- (y9 `^` y15);
+    y3 <- st.[i7];
+    st.[i19] <- y8;
+    y11 <- (y11 `^` y1);
+    y1 <- (y14 `^` st.[i9]);
+    y12 <- (y12 `^` y6);
+    y8 <- st.[i3];
+    y11 <- (y11 `^` y10);
+    y10 <- (y13 `^` st.[i15]);
+    y3 <- (y3 `^` y4);
+    st.[i22] <- y4;
+    y4 <- (VPSRL_4u64 y12 (W128.of_int 63));
+    y5 <- (VPSRL_4u64 y11 (W128.of_int 63));
+    y0 <- (y0 `^` st.[i0]);
+    y10 <- (y10 `^` y1);
+    y1 <- st.[i4];
+    y10 <- (y10 `^` y8);
+    y14 <- y1;
+    y1 <- (y2 `^` st.[i13]);
+    st.[i23] <- y14;
+    y1 <- (y1 `^` y3);
+    y3 <- (VPSLL_4u64 y12 (W128.of_int 1));
+    y3 <- (y3 `|` y4);
+    y4 <- (VPSLL_4u64 y11 (W128.of_int 1));
+    y1 <- (y1 `^` y14);
+    y4 <- (y4 `|` y5);
+    y14 <- (VPSRL_4u64 y10 (W128.of_int 63));
+    y3 <- (y3 `^` y1);
+    y5 <- (VPSLL_4u64 y10 (W128.of_int 1));
+    y4 <- (y4 `^` y0);
+    y5 <- (y5 `|` y14);
+    y6 <- (y4 `^` y6);
+    y5 <- (y5 `^` y12);
+    y12 <- (VPSRL_4u64 y1 (W128.of_int 63));
+    y1 <- (VPSLL_4u64 y1 (W128.of_int 1));
+    y7 <- (y5 `^` y7);
+    y9 <- (y5 `^` y9);
+    y1 <- (y1 `|` y12);
+    y12 <- (y3 `^` st.[i0]);
+    y1 <- (y1 `^` y11);
+    y11 <- (VPSRL_4u64 y0 (W128.of_int 63));
+    y0 <- (VPSLL_4u64 y0 (W128.of_int 1));
+    y13 <- (y1 `^` y13);
+    y8 <- (y1 `^` y8);
+    y0 <- (y0 `|` y11);
+    y0 <- (y0 `^` y10);
+    y10 <- (y4 `^` st.[i6]);
+    y2 <- (y0 `^` y2);
+    y11 <- (VPSRL_4u64 y10 (W128.of_int 20));
+    y10 <- (VPSLL_4u64 y10 (W128.of_int 44));
+    y10 <- (y10 `|` y11);
+    y11 <- (y5 `^` y15);
+    y15 <- (VPBROADCAST_4u64 rC.[(W64.to_uint (W64.of_int i))]);
+    y14 <- (VPSRL_4u64 y11 (W128.of_int 21));
+    y11 <- (VPSLL_4u64 y11 (W128.of_int 43));
+    y11 <- (y11 `|` y14);
+    y14 <- ((invw y10) `&` y11);
+    y14 <- (y14 `^` y15);
+    y15 <- (y14 `^` y12);
+    y14 <- (VPSRL_4u64 y13 (W128.of_int 43));
+    y13 <- (VPSLL_4u64 y13 (W128.of_int 21));
+    st.[i0] <- y15;
+    y13 <- (y13 `|` y14);
+    y14 <- ((invw y11) `&` y13);
+    y15 <- (y14 `^` y10);
+    y14 <- (VPSRL_4u64 y2 (W128.of_int 50));
+    y2 <- (VPSLL_4u64 y2 (W128.of_int 14));
+    st.[i1] <- y15;
+    y2 <- (y2 `|` y14);
+    y14 <- ((invw y13) `&` y2);
+    y11 <- (y14 `^` y11);
+    st.[i2] <- y11;
+    y11 <- ((invw y2) `&` y12);
+    y12 <- ((invw y12) `&` y10);
+    y11 <- (y11 `^` y13);
+    st.[i3] <- y11;
+    y11 <- (y12 `^` y2);
+    y2 <- (VPSRL_4u64 y8 (W128.of_int 36));
+    y8 <- (VPSLL_4u64 y8 (W128.of_int 28));
+    st.[i4] <- y11;
+    y8 <- (y8 `|` y2);
+    y2 <- (y0 `^` st.[i7]);
+    y10 <- (VPSRL_4u64 y2 (W128.of_int 44));
+    y2 <- (VPSLL_4u64 y2 (W128.of_int 20));
+    y2 <- (y2 `|` y10);
+    y10 <- (y3 `^` st.[i8]);
+    y11 <- (VPSRL_4u64 y10 (W128.of_int 61));
+    y10 <- (VPSLL_4u64 y10 (W128.of_int 3));
+    y10 <- (y10 `|` y11);
+    y11 <- ((invw y2) `&` y10);
+    y11 <- (y11 `^` y8);
+    st.[i5] <- y11;
+    y11 <- (y4 `^` st.[i11]);
+    y12 <- (VPSRL_4u64 y11 (W128.of_int 19));
+    y11 <- (VPSLL_4u64 y11 (W128.of_int 45));
+    y11 <- (y11 `|` y12);
+    y12 <- ((invw y10) `&` y11);
+    y12 <- (y12 `^` y2);
+    st.[i6] <- y12;
+    y12 <- (VPSRL_4u64 y7 (W128.of_int 3));
+    y7 <- (VPSLL_4u64 y7 (W128.of_int 61));
+    y7 <- (y7 `|` y12);
+    y12 <- ((invw y11) `&` y7);
+    y10 <- (y12 `^` y10);
+    y12 <- ((invw y7) `&` y8);
+    y8 <- ((invw y8) `&` y2);
+    y2 <- (VPSRL_4u64 y6 (W128.of_int 63));
+    y6 <- (VPSLL_4u64 y6 (W128.of_int 1));
+    y14 <- (y12 `^` y11);
+    y6 <- (y6 `|` y2);
+    y2 <- (VPSRL_4u64 y9 (W128.of_int 58));
+    y12 <- (y8 `^` y7);
+    y9 <- (VPSLL_4u64 y9 (W128.of_int 6));
+    st.[i7] <- y12;
+    y7 <- (y0 `^` st.[i13]);
+    y9 <- (y9 `|` y2);
+    y2 <- (y1 `^` st.[i9]);
+    y7 <- (VPSHUFB_256 y7 rol8.[0]);
+    y11 <- (VPSRL_4u64 y2 (W128.of_int 39));
+    y2 <- (VPSLL_4u64 y2 (W128.of_int 25));
+    y11 <- (y11 `|` y2);
+    y2 <- ((invw y9) `&` y11);
+    y8 <- ((invw y11) `&` y7);
+    y12 <- (y2 `^` y6);
+    y2 <- (y3 `^` st.[i14]);
+    y8 <- (y8 `^` y9);
+    st.[i8] <- y12;
+    y12 <- (VPSRL_4u64 y2 (W128.of_int 46));
+    y2 <- (VPSLL_4u64 y2 (W128.of_int 18));
+    y2 <- (y12 `|` y2);
+    y12 <- ((invw y7) `&` y2);
+    y15 <- (y12 `^` y11);
+    y11 <- ((invw y2) `&` y6);
+    y6 <- ((invw y6) `&` y9);
+    y12 <- (y11 `^` y7);
+    st.[i9] <- y12;
+    y12 <- (y6 `^` y2);
+    y6 <- (y0 `^` st.[i23]);
+    y0 <- (y0 `^` st.[i22]);
+    st.[i10] <- y12;
+    y2 <- (VPSRL_4u64 y6 (W128.of_int 37));
+    y6 <- (VPSLL_4u64 y6 (W128.of_int 27));
+    y2 <- (y2 `|` y6);
+    y6 <- (y3 `^` st.[i17]);
+    y3 <- (y3 `^` st.[i16]);
+    y7 <- (VPSRL_4u64 y6 (W128.of_int 28));
+    y6 <- (VPSLL_4u64 y6 (W128.of_int 36));
+    y7 <- (y7 `|` y6);
+    y6 <- (y4 `^` st.[i19]);
+    y4 <- (y4 `^` st.[i18]);
+    y12 <- (VPSRL_4u64 y6 (W128.of_int 54));
+    y6 <- (VPSLL_4u64 y6 (W128.of_int 10));
+    y12 <- (y12 `|` y6);
+    y6 <- (y5 `^` st.[i12]);
+    y5 <- (y5 `^` st.[i20]);
+    y9 <- ((invw y7) `&` y12);
+    y11 <- (VPSRL_4u64 y6 (W128.of_int 49));
+    y6 <- (VPSLL_4u64 y6 (W128.of_int 15));
+    y9 <- (y9 `^` y2);
+    y11 <- (y11 `|` y6);
+    y6 <- ((invw y12) `&` y11);
+    y6 <- (y6 `^` y7);
+    st.[i11] <- y6;
+    y6 <- (y1 `^` st.[i15]);
+    y1 <- (y1 `^` st.[i21]);
+    y6 <- (VPSHUFB_256 y6 rol56.[0]);
+    y13 <- ((invw y11) `&` y6);
+    y13 <- (y13 `^` y12);
+    st.[i12] <- y13;
+    y13 <- ((invw y6) `&` y2);
+    y2 <- ((invw y2) `&` y7);
+    y2 <- (y2 `^` y6);
+    y6 <- (VPSRL_4u64 y4 (W128.of_int 62));
+    y13 <- (y13 `^` y11);
+    st.[i13] <- y2;
+    y2 <- (VPSRL_4u64 y5 (W128.of_int 2));
+    y5 <- (VPSLL_4u64 y5 (W128.of_int 62));
+    y2 <- (y2 `|` y5);
+    y5 <- (VPSRL_4u64 y1 (W128.of_int 9));
+    y1 <- (VPSLL_4u64 y1 (W128.of_int 55));
+    y4 <- (VPSLL_4u64 y4 (W128.of_int 2));
+    y1 <- (y5 `|` y1);
+    y5 <- (VPSRL_4u64 y0 (W128.of_int 25));
+    y4 <- (y6 `|` y4);
+    y0 <- (VPSLL_4u64 y0 (W128.of_int 39));
+    y5 <- (y5 `|` y0);
+    y0 <- ((invw y1) `&` y5);
+    y0 <- (y0 `^` y2);
+    st.[i14] <- y0;
+    y0 <- (VPSRL_4u64 y3 (W128.of_int 23));
+    y3 <- (VPSLL_4u64 y3 (W128.of_int 41));
+    y0 <- (y0 `|` y3);
+    y7 <- ((invw y0) `&` y4);
+    y3 <- ((invw y5) `&` y0);
+    y7 <- (y7 `^` y5);
+    y5 <- ((invw y4) `&` y2);
+    y2 <- ((invw y2) `&` y1);
+    y5 <- (y5 `^` y0);
+    y3 <- (y3 `^` y1);
+    y2 <- (y2 `^` y4);
+    st.[i15] <- y5;
+    return (st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
+  }
+  proc __regs_fetch (st:W256.t Array25.t) : W256.t * W256.t * W256.t *
+                                            W256.t * W256.t * W256.t *
+                                            W256.t * W256.t * W256.t = {
+    var y10:W256.t;
+    var y14:W256.t;
+    var y8:W256.t;
+    var y15:W256.t;
+    var y9:W256.t;
+    var y13:W256.t;
+    var y3:W256.t;
+    var y7:W256.t;
+    var y2:W256.t;
+    y10 <- st.[7];
+    y14 <- st.[8];
+    y8 <- st.[11];
+    y15 <- st.[12];
+    y9 <- st.[15];
+    y13 <- st.[18];
+    y3 <- st.[21];
+    y7 <- st.[22];
+    y2 <- st.[24];
+    return (y10, y14, y8, y15, y9, y13, y3, y7, y2);
+  }
+  proc __regs_unfetch (st:W256.t Array25.t, y10:W256.t, y14:W256.t,
+                       y8:W256.t, y15:W256.t, y9:W256.t, y13:W256.t,
+                       y3:W256.t, y7:W256.t, y2:W256.t) : W256.t Array25.t = {
+    
+    st.[7] <- y10;
+    st.[8] <- y14;
+    st.[11] <- y8;
+    st.[12] <- y15;
+    st.[15] <- y9;
+    st.[18] <- y13;
+    st.[21] <- y3;
+    st.[22] <- y7;
+    st.[24] <- y2;
+    return st;
+  }
+  proc test_keccakf1600x4_native (st:W256.t Array25.t, c:W64.t) : W256.t Array25.t = {
+    var y10:W256.t;
+    var y14:W256.t;
+    var y8:W256.t;
+    var y15:W256.t;
+    var y9:W256.t;
+    var y13:W256.t;
+    var y3:W256.t;
+    var y7:W256.t;
+    var y2:W256.t;
+    var rol8:W256.t Array1.t;
+    var rol56:W256.t Array1.t;
+    var rc:W64.t Array24.t;
+    rc <- witness;
+    rol56 <- witness;
+    rol8 <- witness;
+    (y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __regs_fetch (st);
+    rol8 <- rOL8;
+    rol56 <- rOL56;
+    rc <- kECCAK1600_RC;
+    (st, y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __f1600_loopbody_native (
+    st, rol8, rol56, rc, (W64.to_uint c), y10, y14, y8, y15, y9, y13, 
+    y3, y7, y2);
+    st <@ __regs_unfetch (st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
+    return st;
+  }
+  proc __keccakf1600_avx2x4_native (st:W256.t Array25.t) : W256.t Array25.t = {
+    var y10:W256.t;
+    var y14:W256.t;
+    var y8:W256.t;
+    var y15:W256.t;
+    var y9:W256.t;
+    var y13:W256.t;
+    var y3:W256.t;
+    var y7:W256.t;
+    var y2:W256.t;
+    var rol8:W256.t Array1.t;
+    var rol56:W256.t Array1.t;
+    var rc:W64.t Array24.t;
+    var i:int;
+    rc <- witness;
+    rol56 <- witness;
+    rol8 <- witness;
+    (y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __regs_fetch (st);
+    rol8 <- rOL8;
+    rol56 <- rOL56;
+    rc <- kECCAK1600_RC;
+    i <- 0;
+    (st, y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __f1600_loopbody_native (
+    st, rol8, rol56, rc, i, y10, y14, y8, y15, y9, y13, y3, y7, y2);
+    i <- (i + 1);
+    while ((i < 24)) {
+      (st, y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __f1600_loopbody_native (
+      st, rol8, rol56, rc, i, y10, y14, y8, y15, y9, y13, y3, y7, y2);
+      i <- (i + 1);
+    }
+    st <@ __regs_unfetch (st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
+    return st;
+  }
+  proc __keccakf1600_avx2x4 (a:W256.t Array25.t) : W256.t Array25.t = {
+    
+    a <@ __keccakf1600_avx2x4_native (a);
+    return a;
+  }
   proc _keccakf1600_avx2x4 (a:W256.t Array25.t) : W256.t Array25.t = {
     
     a <@ __keccakf1600_avx2x4 (a);
@@ -3623,179 +4828,6 @@ module M = {
     a <@ _keccakf1600_avx2x4 (a);
     a <- a;
     return a;
-  }
-  proc __u256x4_4u64x4 (x0:W256.t, x1:W256.t, x2:W256.t, x3:W256.t) : 
-  W256.t * W256.t * W256.t * W256.t = {
-    var y0:W256.t;
-    var y1:W256.t;
-    var y2:W256.t;
-    var y3:W256.t;
-    y0 <- (VPUNPCKL_4u64 x0 x1);
-    y1 <- (VPUNPCKH_4u64 x0 x1);
-    y2 <- (VPUNPCKL_4u64 x2 x3);
-    y3 <- (VPUNPCKH_4u64 x2 x3);
-    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
-    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
-    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
-    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
-    return (x0, x1, x2, x3);
-  }
-  proc __st4x_pack (st4x:W256.t Array25.t, st0:W64.t Array25.t,
-                    st1:W64.t Array25.t, st2:W64.t Array25.t,
-                    st3:W64.t Array25.t) : W256.t Array25.t = {
-    var i:int;
-    var x0:W256.t;
-    var x1:W256.t;
-    var x2:W256.t;
-    var x3:W256.t;
-    var t0:W64.t;
-    var t1:W64.t;
-    var t2:W64.t;
-    var t3:W64.t;
-    i <- 0;
-    while ((i < 6)) {
-      x0 <- (get256 (WArray200.init64 (fun i_0 => st0.[i_0])) i);
-      x1 <- (get256 (WArray200.init64 (fun i_0 => st1.[i_0])) i);
-      x2 <- (get256 (WArray200.init64 (fun i_0 => st2.[i_0])) i);
-      x3 <- (get256 (WArray200.init64 (fun i_0 => st3.[i_0])) i);
-      (x0, x1, x2, x3) <@ __u256x4_4u64x4 (x0, x1, x2, x3);
-      st4x.[((4 * i) + 0)] <- x0;
-      st4x.[((4 * i) + 1)] <- x1;
-      st4x.[((4 * i) + 2)] <- x2;
-      st4x.[((4 * i) + 3)] <- x3;
-      i <- (i + 1);
-    }
-    t0 <- st0.[24];
-    t1 <- st1.[24];
-    t2 <- st2.[24];
-    t3 <- st3.[24];
-    st4x <-
-    (Array25.init
-    (WArray800.get256
-    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
-    ((4 * 24) + 0) t0)));
-    st4x <-
-    (Array25.init
-    (WArray800.get256
-    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
-    ((4 * 24) + 1) t1)));
-    st4x <-
-    (Array25.init
-    (WArray800.get256
-    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
-    ((4 * 24) + 2) t2)));
-    st4x <-
-    (Array25.init
-    (WArray800.get256
-    (WArray800.set64 (WArray800.init256 (fun i_0 => st4x.[i_0]))
-    ((4 * 24) + 3) t3)));
-    return st4x;
-  }
-  proc __4u64x4_u256x4 (y0:W256.t, y1:W256.t, y2:W256.t, y3:W256.t) : 
-  W256.t * W256.t * W256.t * W256.t = {
-    var x0:W256.t;
-    var x1:W256.t;
-    var x2:W256.t;
-    var x3:W256.t;
-    x0 <- (VPERM2I128 y0 y2 (W8.of_int 32));
-    x1 <- (VPERM2I128 y1 y3 (W8.of_int 32));
-    x2 <- (VPERM2I128 y0 y2 (W8.of_int 49));
-    x3 <- (VPERM2I128 y1 y3 (W8.of_int 49));
-    y0 <- (VPUNPCKL_4u64 x0 x1);
-    y1 <- (VPUNPCKH_4u64 x0 x1);
-    y2 <- (VPUNPCKL_4u64 x2 x3);
-    y3 <- (VPUNPCKH_4u64 x2 x3);
-    return (y0, y1, y2, y3);
-  }
-  proc __st4x_unpack (st0:W64.t Array25.t, st1:W64.t Array25.t,
-                      st2:W64.t Array25.t, st3:W64.t Array25.t,
-                      st4x:W256.t Array25.t) : W64.t Array25.t *
-                                               W64.t Array25.t *
-                                               W64.t Array25.t *
-                                               W64.t Array25.t = {
-    var i:int;
-    var x0:W256.t;
-    var x1:W256.t;
-    var x2:W256.t;
-    var x3:W256.t;
-    var t0:W64.t;
-    var t1:W64.t;
-    var t2:W64.t;
-    var t3:W64.t;
-    i <- 0;
-    while ((i < 6)) {
-      x0 <- st4x.[((4 * i) + 0)];
-      x1 <- st4x.[((4 * i) + 1)];
-      x2 <- st4x.[((4 * i) + 2)];
-      x3 <- st4x.[((4 * i) + 3)];
-      (x0, x1, x2, x3) <@ __4u64x4_u256x4 (x0, x1, x2, x3);
-      st0 <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st0.[i_0]))
-      ((4 * 8) * i) x0)));
-      st1 <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st1.[i_0]))
-      ((4 * 8) * i) x1)));
-      st2 <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st2.[i_0]))
-      ((4 * 8) * i) x2)));
-      st3 <-
-      (Array25.init
-      (WArray200.get64
-      (WArray200.set256_direct (WArray200.init64 (fun i_0 => st3.[i_0]))
-      ((4 * 8) * i) x3)));
-      i <- (i + 1);
-    }
-    t0 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 0));
-    t1 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 1));
-    t2 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 2));
-    t3 <- (get64 (WArray800.init256 (fun i_0 => st4x.[i_0])) ((4 * 24) + 3));
-    st0.[24] <- t0;
-    st1.[24] <- t1;
-    st2.[24] <- t2;
-    st3.[24] <- t3;
-    return (st0, st1, st2, st3);
-  }
-  proc __keccakf1600_pround_unpacked (st0:W64.t Array25.t,
-                                      st1:W64.t Array25.t,
-                                      st2:W64.t Array25.t,
-                                      st3:W64.t Array25.t) : W64.t Array25.t *
-                                                             W64.t Array25.t *
-                                                             W64.t Array25.t *
-                                                             W64.t Array25.t = {
-    var r8:W256.t;
-    var r56:W256.t;
-    var st4x1:W256.t Array25.t;
-    var st4x2:W256.t Array25.t;
-    st4x1 <- witness;
-    st4x2 <- witness;
-    r8 <- rOL8;
-    r56 <- rOL56;
-    st4x1 <@ __st4x_pack (st4x1, st0, st1, st2, st3);
-    st4x2 <@ _keccakf1600_4x_pround (st4x2, st4x1, r8, r56);
-    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, st4x2);
-    return (st0, st1, st2, st3);
-  }
-  proc __keccakf1600_pround_equiv (e:W256.t Array25.t, a:W256.t Array25.t) : 
-  W256.t Array25.t = {
-    var st0:W64.t Array25.t;
-    var st1:W64.t Array25.t;
-    var st2:W64.t Array25.t;
-    var st3:W64.t Array25.t;
-    st0 <- witness;
-    st1 <- witness;
-    st2 <- witness;
-    st3 <- witness;
-    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, a);
-    (st0, st1, st2, st3) <@ __keccakf1600_pround_unpacked (st0, st1, 
-    st2, st3);
-    e <@ __st4x_pack (e, st0, st1, st2, st3);
-    return e;
   }
   proc __state_init_avx2x4 (st:W256.t Array25.t) : W256.t Array25.t = {
     var z256:W256.t;

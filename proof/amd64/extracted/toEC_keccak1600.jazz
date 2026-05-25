@@ -8,6 +8,5 @@ from Keccak require "avx2/keccak1600_fixedsizes.jinc"
 from Keccak require "avx2/keccak1600_updstate.jinc"
 
 //require "toEC_keccak1600_avx2x4.jazz"
-from Keccak require "avx2/keccakf1600x4_native.jinc"
 from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
 from Keccak require "avx2/keccak1600x4_updstate.jinc"

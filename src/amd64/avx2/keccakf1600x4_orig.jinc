@@ -1,0 +1,81 @@
+from Keccak require "common/keccakf1600_generic.jinc"
+from Keccak require "common/keccakf1600x4_generic.jinc"
+
+require "keccakf1600x4_pround_inlined.jinc"
+
+inline fn __keccakf1600_avx2x4_orig
+( reg ptr u256[25] a
+) -> reg ptr u256[25]
+{
+  reg ptr u64[24] RC;
+
+  stack u256[25] s_e;
+  reg ptr u256[25] e;
+
+  reg u256 rc r8 r56 t;
+  reg ui64 c;
+
+  RC = KECCAK1600_RC;
+  e = s_e;
+  r8 = ROL8[0];
+  r56 = ROL56[0];
+
+  c = 0;
+  while(c < KECCAK_ROUNDS)
+  {
+    rc = #VPBROADCAST_4u64(RC[c]);
+
+    e = _keccakf1600_4x_pround(e, a, r8, r56);
+    t = rc ^ e[0];
+    e[0] = t;
+
+    a, e = #swap(e, a);
+
+    rc = #VPBROADCAST_4u64(RC[c+1]);
+    a = _keccakf1600_4x_pround(a, e, r8, r56);
+    t = rc ^ a[0];
+    a[0] = t;
+
+    a, e = #swap(e, a);
+
+    c += 2;
+  } 
+
+  return a;
+}
+
+/* For the BDEP proof... */
+inline fn __keccakf1600_4x_pround_unpacked
+( reg mut ptr u64[25] st0 st1 st2 st3
+) -> reg ptr u64[25], reg ptr u64[25], reg ptr u64[25], reg ptr u64[25] {
+  stack u256[25] st4x1, st4x2;
+  reg u256 r8 r56;
+
+  r8 = ROL8[0];
+  r56 = ROL56[0];
+  st4x1 = __st4x_pack( st4x1, st0, st1, st2, st3);
+  st4x2 = _keccakf1600_4x_pround(st4x2, st4x1, r8, r56);
+  st0, st1, st2, st3 = __st4x_unpack(st0, st1, st2, st3, st4x2);
+
+  return st0, st1, st2, st3;
+}
+
+#[safety =
+   { requires = is_arr_init(a,0,32*25)
+   , ensures = is_arr_init(e,0,32*25)
+   }
+ ]
+inline fn __keccakf1600_4x_pround_equiv
+( reg mut ptr u256[25] e
+, reg const ptr u256[25] a
+) -> reg ptr u256[25] {
+  stack u64[25] st0, st1, st2, st3;
+
+  st0, st1, st2, st3 = __st4x_unpack(st0, st1, st2, st3, a);
+  st0, st1, st2, st3 = __keccakf1600_4x_pround_unpacked(st0, st1, st2, st3);
+  e = __st4x_pack( e, st0, st1, st2, st3);
+
+  return e;
+}
+
+

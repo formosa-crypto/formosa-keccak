@@ -15,6 +15,11 @@ all: $(PROGS)
 Keccak1600_Jazz.ec : toEC_keccak1600.jazz
 	$(JASMIN2EC) $(JFLAGS) $(JECFLAGS) -o $@ $^
 
+Keccak1600_Jazz_ASIZE.ec : toEC_keccak1600_ASIZE.jazz
+	$(JASMIN2EC) $(JFLAGS) $(JECFLAGS) -o $@ $^
+
+re_extract: clean all
+
 #rmglobals --after unroll  
 #jasmin2ec: option '--after': invalid value 'unused', expected one of
 #           'typing', 'cstexp', 'arraycopy', 'addarrinit', 'lowerspill',
@@ -27,8 +32,6 @@ Keccak1600_Jazz.ec : toEC_keccak1600.jazz
 #inlined pround proc generated (and hand-edited) by:
 #jasminc -pmakeref keccakf1600_pround_avx2x4.jinc > keccakf1600_pround_inlined_avx2x4.jinc
 
-Keccak1600_Jazz_ASIZE.ec : toEC_keccak1600_ASIZE.jazz
-	$(JASMIN2EC) $(JFLAGS) $(JECFLAGS) -o $@ $^
 
 check: $(PROGS)
 	for i in *_checkXtr.ec; do easycrypt compile -no-eco $$i || exit 1; done

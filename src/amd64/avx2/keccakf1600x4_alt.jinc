@@ -1,15 +1,11 @@
 from Keccak require "common/keccakf1600_generic.jinc"
-
-type keccakx4_state = u256[25];
-
-u256 rho56 = 0x181F1E1D1C1B1A191017161514131211080F0E0D0C0B0A090007060504030201;
-u256 rho8 = 0x1E1D1C1B1A19181F16151413121110170E0D0C0B0A09080F0605040302010007;
+from Keccak require "common/keccakf1600x4_generic.jinc"
 
 inline fn __rol_4u64_rho56(reg u256 a) -> reg u256
 {
 	reg u256 r;
 
-	r = #VPSHUFB_256(a, rho56);
+	r = #VPSHUFB_256(a, ROL56[0]);
 
 	return r; 
 }
@@ -19,7 +15,7 @@ inline fn __rol_4u64_rho8(reg u256 a) -> reg u256
 {
 	reg u256 r;
 
-	r = #VPSHUFB_256(a, rho8);
+	r = #VPSHUFB_256(a, ROL8[0]);
 
 	return r; 
 }
@@ -1253,7 +1249,9 @@ reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu)
     return A_4x, E_4x;
 }
 
-fn _keccakf1600_avx2x4(reg ptr u256[25] A_4x) -> reg ptr u256[25]
+inline fn __keccakf1600_avx2x4_alt
+( reg ptr u256[25] A_4x
+) -> reg ptr u256[25]
 {
     reg ptr u64[24] RC;
     reg u256 Ca, Ce, Ci, Co, Cu, rc_index;
@@ -1312,12 +1310,11 @@ fn _keccakf1600_avx2x4(reg ptr u256[25] A_4x) -> reg ptr u256[25]
     rc_index = #VPBROADCAST_4u64(RC[23]);
     E_4x, A_4x = __theta_rho_pi_chi_iota(E_4x, A_4x, rc_index, Ca, Ce, Ci, Co, Cu);
 
-
     return A_4x;
 }
 
 
-
+/*
 inline fn _keccakf1600_avx2x4_
 ( reg ptr u256[25] a
 ) -> reg ptr u256[25]
@@ -1452,3 +1449,4 @@ inline fn __st4x_unpack
   return st0, st1, st2, st3;
 }
 
+*/

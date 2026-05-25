@@ -342,7 +342,7 @@ fn _keccakf1600_4x_pround
   return (e);
 }
 
-
+/*
 export fn test_keccakf1600x4_pround
 ( reg mut ptr u256[25] st
 , reg u64 c
@@ -369,3 +369,4 @@ export fn test_keccakf1600x4_pround
 
   return st;
 }
+*/

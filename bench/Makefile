@@ -1,6 +1,7 @@
 # --------------------------------------------------------------------
 CC ?= clang-14
 CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2
+JASMINC ?= jasminc
 
 BIN ?= bin
 
@@ -10,14 +11,14 @@ TARGETS ?= \
 	$(BIN)/bench_jasmin_ref
 
 
-$(BIN)/bench_XKCP: XKCP | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./src/XKCP/ -I./common/ -DJADE_NAMESPACE=XKCP -DJADE_NAMESPACE_LC=XKCP ./common/crypto_sha.c ./src/XKCP/bench_xkcp.a 
-
 $(BIN)/bench_jasmin_avx2: jasmin_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./src/jasmin/avx2 -I./common/ -DJADE_NAMESPACE=jasmin_avx2 -DJADE_NAMESPACE_LC=jasmin_avx2 ./common/crypto_sha.c ./src/jasmin/avx2/jasmin_avx2.a 
 
 $(BIN)/bench_jasmin_ref: jasmin_ref | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./src/jasmin/ref -I./common/ -DJADE_NAMESPACE=jasmin_ref -DJADE_NAMESPACE_LC=jasmin_ref ./common/crypto_sha.c ./src/jasmin/ref/jasmin_ref.a 
+
+$(BIN)/bench_XKCP: XKCP | $(BIN)
+	$(CC) $(CFLAGS) -o $@ -I./src/XKCP/ -I./common/ -DJADE_NAMESPACE=XKCP -DJADE_NAMESPACE_LC=XKCP ./common/crypto_sha.c ./src/XKCP/bench_xkcp.a 
 
 
 
