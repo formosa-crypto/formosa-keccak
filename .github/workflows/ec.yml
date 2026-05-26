@@ -29,7 +29,7 @@ jobs:
           with:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --run "make -C src/${{matrix.arch}}/extracted" re_extract
+        - run: nix-shell --arg full false --run "make -C proof/${{matrix.arch}}/extracted" re_extract
     test_proofs:
         name: Check Proofs
         runs-on: ubuntu-latest
@@ -38,8 +38,8 @@ jobs:
           matrix:
             scenario:
             - keccak_amd64_common
-            - keccak_correctness_amd64_ref
-            - keccak_correctness_amd64_avx2
+            - keccak_amd64_ref
+            - keccak_amd64_avx2
             - keccak_safety_amd64_ref
             - keccak_safety_amd64_avx2
         steps:

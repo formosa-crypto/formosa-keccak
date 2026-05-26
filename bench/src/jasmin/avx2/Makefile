@@ -1,8 +1,8 @@
 .PHONY: jasmin_avx2.a clean distclean
 
 CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2
-JASMINC ?= jasminc
-JFLAGS ?= -I Keccak=$(PWD)/../../../../src/amd64
+#JASMINC ?= jasminc
+#JFLAGS ?= -I Keccak=$(PWD)/../../../../src/amd64
 
 all: jasmin_avx2.a
 
