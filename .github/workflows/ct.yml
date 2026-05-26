@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [ 'amd64' ]
-        subarch: [ 'ref', 'avx2' ]
+        subarch: [ 'ref', 'avx2', 'avx2x4' ]
     env:
       JASMINPATH: Keccak=${{github.workspace}}/src/${{matrix.arch}}
     steps:
@@ -27,4 +27,4 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
     - run: nix-shell --arg full false --run "echo Dependencies OK…"
-    - run: nix-shell --arg full false --run "make -C src/${{matrix.arch}}/${{matrix.subarch}}/ ct"
+    - run: nix-shell --arg full false --run "make -C proof/${{matrix.arch}}/extracted/ ct-${{matrix.subarch}}"

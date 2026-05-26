@@ -36,5 +36,5 @@ jobs:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --arg full false --run "make -C submodules/XKCP/ x86-64/libXKCP.so"
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --run "make -C src/${{matrix.arch}}/${{matrix.subarch}}/ test"
+        - run: nix-shell --arg full false --run "make -C test/${{matrix.arch}}/${{matrix.subarch}}/ test"
     

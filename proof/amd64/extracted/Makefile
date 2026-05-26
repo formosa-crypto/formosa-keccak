@@ -38,9 +38,9 @@ check: $(PROGS)
 
 ct: ct_ref ct_avx2 ct_avx2x4
 
-ct_ref: keccak1600_ref_ct keccak1600_ref_ASIZE_ct
-ct_avx2: keccak1600_avx2_ct keccak1600_avx2_ASIZE_ct
-ct_avx2x4: keccak1600_avx2x4_ct keccak1600_avx2x4_ASIZE_ct
+ct-ref: keccak1600_ref_ct keccak1600_ref_ASIZE_ct
+ct-avx2: keccak1600_avx2_ct keccak1600_avx2_ASIZE_ct
+ct-avx2x4: keccak1600_avx2x4_ct keccak1600_avx2x4_ASIZE_ct
 
 %_ct: toEC_%.jazz
 	$(JASMINCT) $(JFLAGS) --infer $^
