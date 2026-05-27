@@ -12,7 +12,7 @@ Keccak1600_Jazz.ec : toEC_keccak1600.jazz
 	$(JASMIN2EC) $(JECFLAGS) $(JPATH) -o $@ $^
 
 .PHONY = re_extract_array
-re_extract_array: Keccak1600_Jazz_ASIZE.ec checkXtr
+re_extract_array: Keccak1600_Jazz_ASIZE.ec
 Keccak1600_Jazz_ASIZE.ec : toEC_keccak1600_ASIZE.jazz
 	$(JASMIN2EC) $(JECFLAGS) $(JPATH) -o $@ $^
 

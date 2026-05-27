@@ -37,6 +37,7 @@ jobs:
           fail-fast: false
           matrix:
             scenario:
+            - keccak_amd64_extracted
             - keccak_amd64_common
             - keccak_amd64_ref
             - keccak_amd64_avx2
