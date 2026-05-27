@@ -1,4 +1,4 @@
-name: MLKEM implementation
+name: Keccak implementation
 permissions:
   contents: read
 on:

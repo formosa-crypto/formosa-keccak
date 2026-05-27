@@ -42,7 +42,7 @@ ct-avx2: keccak1600_avx2_ct keccak1600_avx2_ASIZE_ct
 ct-avx2x4: keccak1600_avx2x4_ct keccak1600_avx2x4_ASIZE_ct
 
 %_ct: toEC_%.jazz
-	$(JASMINCT) $(JFLAGS) $(JPATH) --infer $^
+	$(JASMINCT) $(JCTFLAGS) $(JPATH) --infer $^
 
 .PHONY: clean
 clean:
