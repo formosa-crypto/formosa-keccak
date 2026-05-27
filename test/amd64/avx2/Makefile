@@ -1,27 +1,4 @@
-UNAME = $(shell uname)
-ifeq ($(UNAME_S),Linux)
-endif
-ifeq ($(UNAME_S),Darwin)
-endif
-
-UNAME_P := $(shell uname -p)
-ifeq ($(UNAME_P),x86_64)
- GCC ?= gcc
-endif
-ifneq ($(filter %86,$(UNAME_P)),)
- GCC ?= gcc
-endif
-ifneq ($(filter arm%,$(UNAME_P)),)
- GCC ?= arch -x86_64 gcc
-endif
-
-PWD = $(shell pwd)
-SRCDIR = $(PWD)/../../../src/amd64
-
-JASMINDIR = $(PWD)/../../../submodules/jasmin/compiler
-JASMINC  ?= $(JASMINDIR)/jasminc
-JOPTS    ?=
-JASMINC  := $(JASMINC) $(JOPTS) -I Keccak=$(SRCDIR)
+include ../../../../Makefile.conf
 
 .DEFAULT_GOAL := all
 
@@ -30,19 +7,19 @@ PROGS = test_avx2 test_mavx2 test_avx2x4 test_avx2x4_f
 all: $(PROGS)
 
 test_avx2: test_avx2.c test_avx2.s ../ref/test_ref.s
-	$(GCC) -o $@ $^
+	$(CC) -o $@ $^
 
 test_mavx2: test_mavx2.c test_mavx2.s ../ref/test_mref.s
-	$(GCC) -o $@ $^
+	$(CC) -o $@ $^
 
 test_avx2x4: test_avx2x4.c test_avx2x4.s ../ref/test_ref.s
-	$(GCC) -o $@ $^
+	$(CC) -o $@ $^
 
 test_avx2x4_f: test_avx2x4_f.c test_avx2x4_f.s
-	$(GCC) -o $@ $^
+	$(CC) -o $@ $^
 
 %.s: %.jazz
-	$(JASMINC) $(JFLAGS) -o $@ $<
+	$(JASMINC) $(JFLAGS) $(JPATH) -o $@ $<
 
 clean:
 	rm -f test_*.s

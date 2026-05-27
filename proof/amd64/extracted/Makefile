@@ -1,10 +1,4 @@
-PWD = $(shell pwd)
-SRCDIR = $(PWD)/../../../src/amd64
-
-JASMIN2EC ?= jasmin2ec
-JASMINCT ?= jasmin-ct
-JFLAGS ?= --arch x86 -I Keccak=$(SRCDIR)
-JECFLAGS ?= --array-model=old 
+include ../../../Makefile.conf
 
 .DEFAULT_GOAL := all
 
@@ -13,10 +7,10 @@ PROGS = Keccak1600_Jazz.ec Keccak1600_Jazz_ASIZE.ec
 all: $(PROGS)
 
 Keccak1600_Jazz.ec : toEC_keccak1600.jazz
-	$(JASMIN2EC) $(JFLAGS) $(JECFLAGS) -o $@ $^
+	$(JASMIN2EC) $(JFLAGS) $(JECFLAGS) $(JPATH) -o $@ $^
 
 Keccak1600_Jazz_ASIZE.ec : toEC_keccak1600_ASIZE.jazz
-	$(JASMIN2EC) $(JFLAGS) $(JECFLAGS) -o $@ $^
+	$(JASMIN2EC) $(JFLAGS) $(JECFLAGS) $(JPATH) -o $@ $^
 
 re_extract: clean all
 
@@ -33,17 +27,19 @@ re_extract: clean all
 #jasminc -pmakeref keccakf1600_pround_avx2x4.jinc > keccakf1600_pround_inlined_avx2x4.jinc
 
 
+.PHONY: check
 check: $(PROGS)
 	for i in *_checkXtr.ec; do easycrypt compile -no-eco $$i || exit 1; done
 
-ct: ct_ref ct_avx2 ct_avx2x4
-
+.PHONY: ct ct-ref ct-avx2 ct-avx2x4
+ct: ct-ref ct-avx2 ct-avx2x4
 ct-ref: keccak1600_ref_ct keccak1600_ref_ASIZE_ct
 ct-avx2: keccak1600_avx2_ct keccak1600_avx2_ASIZE_ct
 ct-avx2x4: keccak1600_avx2x4_ct keccak1600_avx2x4_ASIZE_ct
 
 %_ct: toEC_%.jazz
-	$(JASMINCT) $(JFLAGS) --infer $^
+	$(JASMINCT) $(JFLAGS) $(JPATH) --infer $^
 
+.PHONY: clean
 clean:
 	rm -f $(PROGS) WArray*.ec Array*.ec *~

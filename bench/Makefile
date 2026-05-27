@@ -1,7 +1,4 @@
-# --------------------------------------------------------------------
-CC ?= clang-14
-CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2
-JASMINC ?= jasminc
+include ../Makefile.conf
 
 BIN ?= bin
 

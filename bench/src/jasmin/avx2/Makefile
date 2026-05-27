@@ -1,17 +1,16 @@
-.PHONY: jasmin_avx2.a clean distclean
+include ../../../../Makefile.conf
 
-CFLAGS ?= -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -mavx2
-#JASMINC ?= jasminc
-#JFLAGS ?= -I Keccak=$(PWD)/../../../../src/amd64
+JFLAGS += -nowarning -lea
 
 all: jasmin_avx2.a
 
+.PHONY: jasmin_avx2.a clean distclean
 jasmin_avx2.a: bench_avx2.s
 	$(CC) $(CFLAGS) -c bench_avx2.s
 	$(AR) -r $@ bench_avx2.o
 
 bench_avx2.s: bench_avx2.jazz
-	$(JASMINC) $(JFLAGS) -nowarning -lea $< -o $@
+	$(JASMINC) $(JFLAGS) $(JPATH) $< -o $@
 
 clean:
 	rm -f *.o *.a

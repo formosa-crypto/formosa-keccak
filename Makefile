@@ -1,11 +1,12 @@
 # -*- Makefile -*-
+include Makefile.conf
 
 # --------------------------------------------------------------------
 ECCONF := config/tests.config 
 CHECKS ?= keccak
 
 # --------------------------------------------------------------------
-.PHONY: default check checkec checkxtr jasmin assembly clean_eco
+.PHONY: default check checkec checkxtr jasmin clean_eco
 
 default: check
 
@@ -19,3 +20,4 @@ checkec:
 
 clean_eco:
 	find proof -name '*.eco' -exec rm '{}' ';'
+
