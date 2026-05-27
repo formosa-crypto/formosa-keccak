@@ -591,7 +591,8 @@ seq 1: (Glob.mem=_mem /\ _RATE8=_r8 /\ _TRAILB = _tb /\ 0 <= _len /\ 0 <= _buf /
    by exists (i{m} + 2 + size _l %/ _r8).
   rewrite /stateabsorb bytes2state0 addstateC addstate_st0.
   rewrite (memread_split ((i{m} + 1) * _r8 - size _l %% _r8)).
-   by rewrite mulrSl /#.
+   rewrite mulrSl; split; last smt().
+   by rewrite -addrA addr_ge0 1:mulr_ge0 1..2:/#; smt(modz_cmp).
   rewrite catA chunk_cat /=.
    rewrite size_cat size_memread 1:/# addzA (addzC (size _l)) -addzA.
    rewrite {1}(divz_eq (size _l) _r8) -addzA /= -mulzDl dvdzP.
