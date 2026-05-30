@@ -41,6 +41,9 @@ while true (aT %/ 8 + _LEN %/ 8 - at).
 by auto; smt().
 qed.
 
+lemma mullR: 
+forall (x y z: int), (x + y) * z = x * z + y * z by smt().
+
 hoare addstate_m_ref_h _mem _st _at _buf _len _tb:
  M.__addstate_m_ref
  : Glob.mem=_mem /\ st=_st /\ aT=_at /\ buf=_buf /\ _LEN=_len /\ _TRAILB=_tb
@@ -48,6 +51,7 @@ hoare addstate_m_ref_h _mem _st _at _buf _len _tb:
  /\ 0 <= _len
  /\ _at+_len <= 200 - b2i (_tb<>0)
  /\ _buf + _len < W64.modulus
+ /\ 0 <= _tb < 256 
  ==> let l = memread _mem _buf _len ++ if _tb<>0 then [W8.of_int _tb] else []
   in Glob.mem=_mem
   /\ res.`1 = addstate_at _st _at l
@@ -55,7 +59,101 @@ hoare addstate_m_ref_h _mem _st _at _buf _len _tb:
   /\ res.`3 = _buf + _len.
 proof.
 proc; simplify.
-admitted.
+conseq (: Glob.mem = _mem /\
+  st = 
+  addstate_at _st _at (memread _mem _buf _len ++ if _tb<>0 then [W8.of_int _tb]
+                                                           else []) /\
+  (aT = _at + _len + if _tb <> 0 then 1 else 0) /\
+  buf = _buf + _len).
+  by auto => />*; rewrite size_cat size_mkseq /#.
+
++ seq 4: (#[/1,6:8]pre /\
+          0 <= _LEN /\
+          #[/10:]pre /\
+          aT = _at /\ 
+          _LEN = (_len - if 0 < _at - _at %/ 8 * 8 < 8 then 
+                           min (max 0 _len) (_at %/ 8 * 8 + 8 - _at)
+                           else 0) /\
+          st = addstate_at _st _at (memread _mem _buf (_len-_LEN)) /\
+          buf = _buf + _len - _LEN). 
+  sp. wp. case(aT8 %% 8 <> 0).
++ rcondt 1. auto => /#. 
+  wp. ecall(m_ilen_read_upto8_at_h _buf _len _tb (_at %/ 8 * 8) _at).
+  auto => /> H0 H1 H2 H3 H4 H5 H6 H7. split. smt().
+ rewrite /srspec /srpre /srincr /memread size_mkseq /u64bytes.
+ rewrite H0 H5 H6 lez_maxr 1:/# /= => H8 result.
+  have->: 0 <= _at %/ 8 * 8 /\ (_at %/ 8 * 8 <= _at \/
+          mkseq (fun (i : int) => _mem.[_buf + i]) _len = [] /\ _tb = 0) by smt().
+  rewrite implyTb ifT ..1:/# => [#] H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19. 
+  rewrite H19 H16 H17 H18.
+  have->: (_len - (_len - min _len (_at %/ 8 * 8 + 8 - _at))) =
+            (min _len (_at %/ 8 * 8 + 8 - _at)) by smt().
+  have->: _at %/ 8 * 8 + 8 - _at = 8 - _at %% 8 by smt().
+  do split.
+  + admit.
+  + smt().
+  + admit. 
+  + rewrite ifT /#.
+  + rewrite /addstate_at /fill size_mkseq lez_maxr 1:/#.
+    pose a:= _st.[8 * (_at %/ 8) %/ 8 <- _st.[8 * (_at %/ 8) %/ 8] `^` result.`5].
+rewrite eq_sym (Array25.ext_eq _ a) 2:/#. move => x x_bnd.
++ rewrite !initE !ifT 1:/# /= get64E /pack8_t.
+  rewrite (W64.ext_eq _ a.[x]) 2:/#. move => x0 x0_bnd.
+  + rewrite /a initE ifT 1:/# /= initE ifT 1:/# /= initE ifT 1:/# /=.
+    rewrite initE. have->: 0 <= 8 * x + x0 %/ 8 < 200 by smt(). simplify.
+    case(x < _at) => min.
+    + rewrite ifF. rewrite lezNgt andaE negb_and /=. search .
+      rewrite (ler_lt_trans (8 * x + x0 %/ 8)). smt().
+
+ 1:/# get_setE 1:/#. HERE!!! print IntDiv.
+      have-
+      rewrite ifF. print IntDiv. rewrite eq_sym. ifT 1:/#.
+
+ ifT. 1:/# /=/(\bits8) initE ifT 1:/# /=.
+    rewrite Ring.IntID.mulrC edivz_eq 1:/# dvdz_modzDl /#. 
+smt().
+  + have->: (_len - (_len - min _len (_at %/ 8 * 8 + 8 - _at))) =
+            (min _len (_at %/ 8 * 8 + 8 - _at)) by smt().
+  + rewrite -opprD.
+  + case(_len < (_at %/ 8 * 8 + 8 - _at)); smt().
+
+
++ rcondf 1. auto => /#. auto => /> *. do split; ..2:smt().  
+rewrite /addstate_at /fill.
+rewrite (init_ext _ (fun (i : int) => (stbytes _st).[i])); 1: smt().
+rewrite eq_sym (Array25.ext_eq _ _st) 2:/#. move => x x_bnd.
++ rewrite !initE !ifT 1:/# /= get64E /pack8_t.
+  rewrite (W64.ext_eq _ _st.[x]) 2:/#. move => x0 x0_bnd.
+  + rewrite initE ifT 1:/# /= initE ifT 1:/# /= initE ifT 1:/#.
+    rewrite initE ifT 1:/# /=/(\bits8) initE ifT 1:/# /=.
+    rewrite Ring.IntID.mulrC edivz_eq 1:/# dvdz_modzDl /#. 
+smt().
+(* Done *)
+
++ seq 3: (#[/:5, 9:]pre /\
+          aT = _at + (8 - _at) %% 8 + (_len - (8 - _at) %% 8) %/ 8 * 8 /\
+          _LEN = _len - (8 - at) %% 8 - (_len - (8 - at) %% 8) %/ 8 * 8).
+  admit. 
+case( _LEN <= 0 /\ _tb = 0).
++ rcondf 1. auto => /#. 
+  auto => /> &hr H0 H1 H2 H3 H4. do split.
++ rewrite cats0 /#.
++ case(_len %% 8 < (8 - _at) %% 8) => c1.
+  have->: (_len - (8 - _at) %% 8) %/ 8 * 8 = _len %/ 8 * 8 - 8.
+  + rewrite {1}(divz_eq _len 8) -Ring.IntID.addrA /#.
+  
+
+
+case((8 - _at) %% 8 = 0) => c0.
+  move: 
+  rewrite c0 /=.
+
+
+ have->:(_len - (8-at{hr})) %% 8 <= 0 = ((_len - (8-at{hr})) %% 8 = 0).
+  smt(). have aux: (8 - at{hr}) %% 8 = 0. smt().
+
+
+qed.
 
 phoare addstate_m_ref_ph _mem _st _at _buf _len _tb:
  [ M.__addstate_m_ref
