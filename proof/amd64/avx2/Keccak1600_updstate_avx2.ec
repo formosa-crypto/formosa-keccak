@@ -620,15 +620,55 @@ proof.
 by conseq finish_updstate_avx2_ll (finish_updstate_avx2_h _st).
 qed.
 
-HERE!!!
+
 lemma absorb_m_updstate_avx2_ll: islossless M._absorb_m_updstate_avx2.
-proof. admitted.
+proof.
+proc. inline 8. wp. seq 6: (true) => //=.
+seq 5: (1 <= r8) => //=; inline; last first.
++ hoare. auto => />. rewrite /(\ult) of_uintK pmod_small 1:/#.
+  move => &hr. rewrite /(\ule). 
+  case(200 < to_uint ((st{hr}.[25] `>>` of_int 8) `&` of_int 255 + one `<<` of_int 3)) => H. 
+  + rewrite  of_uintK pmod_small /#.
+  + rewrite shl_shlw 1:/# to_uint_shl 1:/# to_uintD_small (W64.to_uint_and_mod 8) ..2:/# 1:/# to_uint1 /#.
++ auto => />. rewrite /(\ult) of_uintK pmod_small 1:/#.
+  move => &hr. rewrite /(\ule). 
+  case(200 < to_uint ((st{hr}.[25] `>>` of_int 8) `&` of_int 255 + one `<<` of_int 3)) => H. 
+  + rewrite  of_uintK pmod_small /#.
+  + rewrite shl_shlw 1:/# to_uint_shl 1:/# to_uintD_small (W64.to_uint_and_mod 8) ..2:/# 1:/# to_uint1 /#.
+case(len < r8).
+rcondf 1. auto => /#. auto => /#.
+while(0 <= len /\ 1 <= r8) (len) => //=; last first. auto => /#. move => z.
++ wp. simplify. seq 8: (#pre) => //=; 1: auto => /#; last by hoare; wp; auto => /#.
+  seq 2: (#pre) => //=; last first. 
+  + hoare. sp. case(upto0 < newat0) => //=. rcondf 1; auto => /#.
+    while (((0 <= len /\ 1 <= r8) /\ r8 <= len) /\ len = z). auto => /#. auto => /#.
+    + sp. while(0 <= len /\ r8 <= len /\ len = z) (upto0 + 8 - newat0) => //=. auto => /#. auto => /#.
+    + seq 6: (#pre) => //=. auto => /#.
+      seq 138:(#pre /\ r0 = 1) => //=.
+    + wp; skip; move => &hr H0*; rewrite H0. trivial.
+    wp. while(r0 <= 24) (24 - r0) => //=. move => z0. wp. skip.
+    move => &hr H0 * /=. rewrite opprD /=. rewrite -H0.
+    split. rewrite -ltzS ltr_le_add. rewrite H0. trivial. rewrite addrC ltr_le_sub. trivial. trivial. auto => /#.
+  + hoare. wp. skip. move => &hr H0 * /=. rewrite H0.
+  + hoare. wp. auto => /#.
+
+(* Last Step *)
+islossless.
+while(true) (upto + 8 - newat) => //=. move => z.
++ auto => /#. auto => /#.
+qed.
 
 hoare absorb_m_updstate_avx2_h _mem _st _buf _len:
   M._absorb_m_updstate_avx2
   : Glob.mem = _mem /\ st = _st /\ buf = _buf /\ len = _len
   ==> res = absorb_m_updstate_avx2_spec _mem _st _buf _len.
-proof. admitted.
+proof. 
+
+
+
+
+
+
 
 phoare absorb_m_updstate_avx2_ph _mem _st _buf _len:
   [ M._absorb_m_updstate_avx2
