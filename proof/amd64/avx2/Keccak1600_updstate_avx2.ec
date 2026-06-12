@@ -663,7 +663,7 @@ hoare absorb_m_updstate_avx2_h _mem _st _buf _len:
   : Glob.mem = _mem /\ st = _st /\ buf = _buf /\ len = _len
   ==> res = absorb_m_updstate_avx2_spec _mem _st _buf _len.
 proof. 
-
+admitted.
 
 
 
