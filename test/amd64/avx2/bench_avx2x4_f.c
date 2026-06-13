@@ -9,7 +9,7 @@
 #define TIMINGS 100000
 #define RUNS 20
 #define LOOPS 1
-#define OP 4
+#define OP 5
 
 // ////////////////////////////////////////////////////////////////////////////
 
@@ -19,8 +19,10 @@ extern void get_params_avx2x4(uint64_t*);
 
 // AVX2x4
 typedef uint64_t KeccakState[25];
+typedef uint64_t KeccakStateAvx2[28];
 typedef uint64_t KeccakStateX4[4*25];
 
+extern void testF_avx2(KeccakStateAvx2 st);
 extern void testF_avx2x4_orig(KeccakStateX4 st);
 extern void testF_avx2x4_alt(KeccakStateX4 st);
 extern void testF_avx2x4_native(KeccakStateX4 st);
@@ -132,17 +134,20 @@ int run_bench()
   uint64_t cycles[TIMINGS];
   uint64_t results[OP][LOOPS];
 
+  uint64_t cycles_avx2[RUNS];
   uint64_t cycles_orig[RUNS];
   uint64_t cycles_alt[RUNS];
   uint64_t cycles_native[RUNS];
   uint64_t cycles_native2[RUNS];
 
-  size_t len;
-  uint64_t *_orig, *_alt, *_native, *_native2;
-  uint64_t *orig, *alt, *native, *native2;
+  size_t lenavx2, len;
+  uint64_t *_avx2, *_orig, *_alt, *_native, *_native2;
+  uint64_t *avx2, *orig, *alt, *native, *native2;
 
+  lenavx2 = alignedcalloc_step(sizeof(uint64_t) * 28);
   len = alignedcalloc_step(sizeof(uint64_t) * 4 * 25);
 
+  avx2 = (uint64_t*) alignedcalloc((uint8_t**)&_avx2, lenavx2);
   orig = (uint64_t*) alignedcalloc((uint8_t**)&_orig, len);
   alt = (uint64_t*) alignedcalloc((uint8_t**)&_alt, len);
   native = (uint64_t*) alignedcalloc((uint8_t**)&_native, len);
@@ -152,57 +157,69 @@ int run_bench()
   {
     for(loop = 0; loop < LOOPS; loop++)
     {
-      // orig: 0 
+      // avx2: 0 
+      for (i = 0; i < TIMINGS; i++)
+      { cycles[i] = cpucycles();
+        testF_avx2(avx2); 
+      }
+      results[0][loop] = cpucycles_median(cycles, TIMINGS);
+
+      // orig: 1 
       for (i = 0; i < TIMINGS; i++)
       { cycles[i] = cpucycles();
         testF_avx2x4_orig(orig); 
       }
-      results[0][loop] = cpucycles_median(cycles, TIMINGS);
+      results[1][loop] = cpucycles_median(cycles, TIMINGS);
 
-      // alt: 1
+      // alt: 2
       for (i = 0; i < TIMINGS; i++)
       { cycles[i] = cpucycles();
         testF_avx2x4_alt(alt); 
       }
-      results[1][loop] = cpucycles_median(cycles, TIMINGS);
+      results[2][loop] = cpucycles_median(cycles, TIMINGS);
 
-      // native: 2
+      // native: 3
       for (i = 0; i < TIMINGS; i++)
       { cycles[i] = cpucycles();
         testF_avx2x4_native(native);
       }
-      results[2][loop] = cpucycles_median(cycles, TIMINGS);
+      results[3][loop] = cpucycles_median(cycles, TIMINGS);
       
-      // native2: 3
+      // native2: 4
       for (i = 0; i < TIMINGS; i++)
       { cycles[i] = cpucycles();
         keccak_f1600_x4_avx2_asm(native2, rc, rho8, rho56);
       }
-      results[3][loop] = cpucycles_median(cycles, TIMINGS);
+      results[4][loop] = cpucycles_median(cycles, TIMINGS);
       
     }
     median_fr(results);
-    cycles_orig[run] = results[0][0];
-    cycles_alt[run] = results[1][0];
-    cycles_native[run] = results[2][0];
-    cycles_native2[run] = results[3][0];
+    cycles_avx2[run] = results[0][0];
+    cycles_orig[run] = results[1][0];
+    cycles_alt[run] = results[2][0];
+    cycles_native[run] = results[3][0];
+    cycles_native2[run] = results[4][0];
   }
 
+  qsort(cycles_avx2,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_orig,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_alt,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_native,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_native2,RUNS,sizeof(uint64_t),cmp_uint64);
 
 
+  printf("|avx2 |orig|alt |nat |nAWS|\n");
   for(run = 0; run < RUNS; run++)
   {
-    printf("|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|\n",
+    printf("|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|\n",
+      cycles_avx2[run],
       cycles_orig[run],
       cycles_alt[run],
-      cycles_native[run], cycles_native2[run]);
+      cycles_native[run],
+      cycles_native2[run]);
   }
 
-
+  free(_avx2);
   free(_orig);
   free(_alt);
   free(_native);

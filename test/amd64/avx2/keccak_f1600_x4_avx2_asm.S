@@ -1,7 +1,9 @@
 .text
 .balign 4
 .global keccak_f1600_x4_avx2_asm
+.global _keccak_f1600_x4_avx2_asm
 keccak_f1600_x4_avx2_asm:
+_keccak_f1600_x4_avx2_asm:
 
         .cfi_startproc
         movq %rsp, %r11
