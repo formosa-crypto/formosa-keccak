@@ -1,3 +1,7 @@
+from Keccak require "ref/select_bmi1.jinc"
+from Keccak require "ref/keccakf1600.jinc"
+from Keccak require "ref/keccakf1600_native.jinc"
+
 from Keccak require "avx2/keccakf1600.jinc"
 from Keccak require "avx2/keccakf1600x4.jinc"
 
@@ -5,6 +9,21 @@ from Keccak require "avx2/keccakf1600x4_orig.jinc"
 from Keccak require "avx2/keccakf1600x4_alt.jinc"
 from Keccak require "avx2/keccakf1600x4_native.jinc"
 
+export fn testF_bmi1
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  st = __keccakf1600_ref(st);
+  return st;
+}
+
+export fn testF_nat
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  st = __keccakf1600_native(st);
+  return st;
+}
 export fn testF_avx2
 ( reg mut ptr u256[7] st
 ) -> reg ptr u256[7]

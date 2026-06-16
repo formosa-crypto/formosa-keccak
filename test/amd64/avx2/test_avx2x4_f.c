@@ -14,6 +14,8 @@ typedef uint64_t KeccakState[25];
 typedef uint64_t KeccakStateAvx2[28];
 typedef uint64_t KeccakStateX4[4*25];
 
+extern void testF_bmi1(KeccakState st);
+extern void testF_native(KeccakState st);
 extern void testF_avx2(KeccakStateAvx2 st);
 extern void testF_avx2x4_orig(KeccakStateX4 st);
 extern void testF_avx2x4_alt(KeccakStateX4 st);
