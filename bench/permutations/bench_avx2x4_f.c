@@ -9,7 +9,7 @@
 #define TIMINGS 10000
 #define RUNS 20
 #define LOOPS 1
-#define OP 8
+#define OP 9
 
 // ////////////////////////////////////////////////////////////////////////////
 
@@ -53,6 +53,7 @@ extern void KeccakF1600_StatePermute(KeccakState st);
 extern void sha3_keccak_f1600(KeccakState st, const uint64_t[24]);
 extern void testF_bmi1(KeccakState st);
 extern void testF_nat(KeccakState st);
+extern void testF_ref_opt(KeccakState st);
 extern void testF_avx2(KeccakStateAvx2 st);
 extern void testF_avx2x4_orig(KeccakStateX4 st);
 extern void testF_avx2x4_alt(KeccakStateX4 st);
@@ -168,6 +169,7 @@ int run_bench()
   uint64_t cycles_ref[RUNS];
   uint64_t cycles_bmi1[RUNS];
   uint64_t cycles_nat[RUNS];
+  uint64_t cycles_ropt[RUNS];
   uint64_t cycles_avx2[RUNS];
   uint64_t cycles_orig[RUNS];
   uint64_t cycles_alt[RUNS];
@@ -175,8 +177,8 @@ int run_bench()
   uint64_t cycles_native2[RUNS];
 
   size_t lenavx2, len, lenref;
-  uint64_t *_avx2, *_orig, *_alt, *_native, *_native2, *_ref, *_bmi1, *_nat;
-  uint64_t *avx2, *orig, *alt, *native, *native2, *ref, *bmi1, *nat;
+  uint64_t *_avx2, *_orig, *_alt, *_native, *_native2, *_ref, *_bmi1, *_nat, *_ropt;
+  uint64_t *avx2, *orig, *alt, *native, *native2, *ref, *bmi1, *nat, *ropt;
 
   lenref = alignedcalloc_step(sizeof(uint64_t) * 25);
   lenavx2 = alignedcalloc_step(sizeof(uint64_t) * 28);
@@ -185,6 +187,7 @@ int run_bench()
   ref = (uint64_t*) alignedcalloc((uint8_t**)&_ref, lenref);
   bmi1 = (uint64_t*) alignedcalloc((uint8_t**)&_bmi1, lenref);
   nat = (uint64_t*) alignedcalloc((uint8_t**)&_nat, lenref);
+  ropt = (uint64_t*) alignedcalloc((uint8_t**)&_ropt, lenref);
   avx2 = (uint64_t*) alignedcalloc((uint8_t**)&_avx2, lenavx2);
   orig = (uint64_t*) alignedcalloc((uint8_t**)&_orig, len);
   alt = (uint64_t*) alignedcalloc((uint8_t**)&_alt, len);
@@ -251,7 +254,14 @@ int run_bench()
         testF_nat(nat);
       }
       results[7][loop] = cpucycles_median(cycles, TIMINGS);
-      
+
+      // ref_opt: 8
+      for (i = 0; i < TIMINGS; i++)
+      { cycles[i] = cpucycles();
+        testF_ref_opt(ropt);
+      }
+      results[8][loop] = cpucycles_median(cycles, TIMINGS);
+
     }
     median_fr(results);
     cycles_avx2[run] = results[0][0];
@@ -262,6 +272,7 @@ int run_bench()
     cycles_ref[run] = results[5][0];
     cycles_bmi1[run] = results[6][0];
     cycles_nat[run] = results[7][0];
+    cycles_ropt[run] = results[8][0];
   }
 
   qsort(cycles_avx2,RUNS,sizeof(uint64_t),cmp_uint64);
@@ -272,12 +283,13 @@ int run_bench()
   qsort(cycles_ref,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_bmi1,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_nat,RUNS,sizeof(uint64_t),cmp_uint64);
+  qsort(cycles_ropt,RUNS,sizeof(uint64_t),cmp_uint64);
 
 
-  printf("|avx2|orig|alt |nat |nAWS|ref |bmi1|nat |\n");
+  printf("|avx2|orig|alt |nat |nAWS|ref |bmi1|nat |ropt|\n");
   for(run = 0; run < RUNS; run++)
   {
-    printf("|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|\n",
+    printf("|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|%" PRIu64 "|\n",
       cycles_avx2[run],
       cycles_orig[run],
       cycles_alt[run],
@@ -285,9 +297,15 @@ int run_bench()
       cycles_native2[run],
       cycles_ref[run],
       cycles_bmi1[run],
-      cycles_nat[run]
+      cycles_nat[run],
+      cycles_ropt[run]
     );
   }
+
+  printf("correctness ref_opt vs bmi1: %s\n",
+    memcmp(ropt, bmi1, sizeof(uint64_t)*25) ? "MISMATCH" : "OK");
+  printf("correctness ref_opt vs ref : %s\n",
+    memcmp(ropt, ref, sizeof(uint64_t)*25) ? "MISMATCH" : "OK");
 
   free(_avx2);
   free(_orig);
@@ -297,6 +315,7 @@ int run_bench()
   free(_ref);
   free(_bmi1);
   free(_nat);
+  free(_ropt);
 
   return 0;
 }

@@ -35,10 +35,12 @@ inline fn __rol64_native
 , inline int i
 ) -> reg u64
 {
+  reg u64 y;
+  y = x;
   if (i != 0) {
-    _, _, x = #ROL_64(x, i);
+    y = #RORX_64(x, 64-i);
   }
-  return x;
+  return y;
 }
 
 // B = ROL( a[idx] ^ D[col(idx)], rho(idx) )
