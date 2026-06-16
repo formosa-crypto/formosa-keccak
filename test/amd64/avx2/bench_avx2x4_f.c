@@ -6,22 +6,52 @@
 #include <assert.h>
 
 //
-#define TIMINGS 100000
+#define TIMINGS 10000
 #define RUNS 20
 #define LOOPS 1
-#define OP 5
+#define OP 8
 
 // ////////////////////////////////////////////////////////////////////////////
 
 extern void get_params_ref(uint64_t*);
 extern void get_params_avx2x4(uint64_t*);
 
+#define BIT_INTERLEAVE 0
+static const uint64_t iotas[] = {
+    BIT_INTERLEAVE ? 0x0000000000000001ULL : 0x0000000000000001ULL,
+    BIT_INTERLEAVE ? 0x0000008900000000ULL : 0x0000000000008082ULL,
+    BIT_INTERLEAVE ? 0x8000008b00000000ULL : 0x800000000000808aULL,
+    BIT_INTERLEAVE ? 0x8000808000000000ULL : 0x8000000080008000ULL,
+    BIT_INTERLEAVE ? 0x0000008b00000001ULL : 0x000000000000808bULL,
+    BIT_INTERLEAVE ? 0x0000800000000001ULL : 0x0000000080000001ULL,
+    BIT_INTERLEAVE ? 0x8000808800000001ULL : 0x8000000080008081ULL,
+    BIT_INTERLEAVE ? 0x8000008200000001ULL : 0x8000000000008009ULL,
+    BIT_INTERLEAVE ? 0x0000000b00000000ULL : 0x000000000000008aULL,
+    BIT_INTERLEAVE ? 0x0000000a00000000ULL : 0x0000000000000088ULL,
+    BIT_INTERLEAVE ? 0x0000808200000001ULL : 0x0000000080008009ULL,
+    BIT_INTERLEAVE ? 0x0000800300000000ULL : 0x000000008000000aULL,
+    BIT_INTERLEAVE ? 0x0000808b00000001ULL : 0x000000008000808bULL,
+    BIT_INTERLEAVE ? 0x8000000b00000001ULL : 0x800000000000008bULL,
+    BIT_INTERLEAVE ? 0x8000008a00000001ULL : 0x8000000000008089ULL,
+    BIT_INTERLEAVE ? 0x8000008100000001ULL : 0x8000000000008003ULL,
+    BIT_INTERLEAVE ? 0x8000008100000000ULL : 0x8000000000008002ULL,
+    BIT_INTERLEAVE ? 0x8000000800000000ULL : 0x8000000000000080ULL,
+    BIT_INTERLEAVE ? 0x0000008300000000ULL : 0x000000000000800aULL,
+    BIT_INTERLEAVE ? 0x8000800300000000ULL : 0x800000008000000aULL,
+    BIT_INTERLEAVE ? 0x8000808800000001ULL : 0x8000000080008081ULL,
+    BIT_INTERLEAVE ? 0x8000008800000000ULL : 0x8000000000008080ULL,
+    BIT_INTERLEAVE ? 0x0000800000000001ULL : 0x0000000080000001ULL,
+    BIT_INTERLEAVE ? 0x8000808200000000ULL : 0x8000000080008008ULL
+};
 
 // AVX2x4
 typedef uint64_t KeccakState[25];
 typedef uint64_t KeccakStateAvx2[28];
 typedef uint64_t KeccakStateX4[4*25];
 
+extern void sha3_keccak_f1600(KeccakState st, const uint64_t[24]);
+extern void testF_bmi1(KeccakState st);
+extern void testF_nat(KeccakState st);
 extern void testF_avx2(KeccakStateAvx2 st);
 extern void testF_avx2x4_orig(KeccakStateX4 st);
 extern void testF_avx2x4_alt(KeccakStateX4 st);
@@ -134,19 +164,26 @@ int run_bench()
   uint64_t cycles[TIMINGS];
   uint64_t results[OP][LOOPS];
 
+  uint64_t cycles_ref[RUNS];
+  uint64_t cycles_bmi1[RUNS];
+  uint64_t cycles_nat[RUNS];
   uint64_t cycles_avx2[RUNS];
   uint64_t cycles_orig[RUNS];
   uint64_t cycles_alt[RUNS];
   uint64_t cycles_native[RUNS];
   uint64_t cycles_native2[RUNS];
 
-  size_t lenavx2, len;
-  uint64_t *_avx2, *_orig, *_alt, *_native, *_native2;
-  uint64_t *avx2, *orig, *alt, *native, *native2;
+  size_t lenavx2, len, lenref;
+  uint64_t *_avx2, *_orig, *_alt, *_native, *_native2, *_ref, *_bmi1, *_nat;
+  uint64_t *avx2, *orig, *alt, *native, *native2, *ref, *bmi1, *nat;
 
+  lenref = alignedcalloc_step(sizeof(uint64_t) * 25);
   lenavx2 = alignedcalloc_step(sizeof(uint64_t) * 28);
   len = alignedcalloc_step(sizeof(uint64_t) * 4 * 25);
 
+  ref = (uint64_t*) alignedcalloc((uint8_t**)&_ref, lenref);
+  bmi1 = (uint64_t*) alignedcalloc((uint8_t**)&_bmi1, lenref);
+  nat = (uint64_t*) alignedcalloc((uint8_t**)&_nat, lenref);
   avx2 = (uint64_t*) alignedcalloc((uint8_t**)&_avx2, lenavx2);
   orig = (uint64_t*) alignedcalloc((uint8_t**)&_orig, len);
   alt = (uint64_t*) alignedcalloc((uint8_t**)&_alt, len);
@@ -192,6 +229,27 @@ int run_bench()
       }
       results[4][loop] = cpucycles_median(cycles, TIMINGS);
       
+      // ref: 5
+      for (i = 0; i < TIMINGS; i++)
+      { cycles[i] = cpucycles();
+        sha3_keccak_f1600(ref,iotas);
+      }
+      results[5][loop] = cpucycles_median(cycles, TIMINGS);
+      
+      // bmi1: 6
+      for (i = 0; i < TIMINGS; i++)
+      { cycles[i] = cpucycles();
+        testF_bmi1(bmi1);
+      }
+      results[6][loop] = cpucycles_median(cycles, TIMINGS);
+      
+      // nat: 7
+      for (i = 0; i < TIMINGS; i++)
+      { cycles[i] = cpucycles();
+        testF_nat(nat);
+      }
+      results[7][loop] = cpucycles_median(cycles, TIMINGS);
+      
     }
     median_fr(results);
     cycles_avx2[run] = results[0][0];
@@ -199,6 +257,9 @@ int run_bench()
     cycles_alt[run] = results[2][0];
     cycles_native[run] = results[3][0];
     cycles_native2[run] = results[4][0];
+    cycles_ref[run] = results[5][0];
+    cycles_bmi1[run] = results[6][0];
+    cycles_nat[run] = results[7][0];
   }
 
   qsort(cycles_avx2,RUNS,sizeof(uint64_t),cmp_uint64);
@@ -206,17 +267,24 @@ int run_bench()
   qsort(cycles_alt,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_native,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_native2,RUNS,sizeof(uint64_t),cmp_uint64);
+  qsort(cycles_ref,RUNS,sizeof(uint64_t),cmp_uint64);
+  qsort(cycles_bmi1,RUNS,sizeof(uint64_t),cmp_uint64);
+  qsort(cycles_nat,RUNS,sizeof(uint64_t),cmp_uint64);
 
 
-  printf("|avx2 |orig|alt |nat |nAWS|\n");
+  printf("|avx2|orig|alt |nat |nAWS|ref |bmi1|nat |\n");
   for(run = 0; run < RUNS; run++)
   {
-    printf("|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|\n",
+    printf("|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|\n",
       cycles_avx2[run],
       cycles_orig[run],
       cycles_alt[run],
       cycles_native[run],
-      cycles_native2[run]);
+      cycles_native2[run],
+      cycles_ref[run],
+      cycles_bmi1[run],
+      cycles_nat[run]
+    );
   }
 
   free(_avx2);
@@ -224,6 +292,9 @@ int run_bench()
   free(_alt);
   free(_native);
   free(_native2);
+  free(_ref);
+  free(_bmi1);
+  free(_nat);
 
   return 0;
 }
