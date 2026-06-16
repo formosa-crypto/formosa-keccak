@@ -1,0 +1,243 @@
+/****************************************************************************
+
+   Keccak-f1600 permutation -- "native" scalar variant.
+
+   This is a faithful Jasmin port of the s2n-bignum x86 assembly
+   (x86/sha3/sha3_keccak_f1600.S, written by Andy Polyakov for OpenSSL):
+
+      https://github.com/awslabs/s2n-bignum/blob/main/x86/sha3/sha3_keccak_f1600.S
+
+   It uses the Bertoni et al. "lane complementing" optimisation: the lanes
+
+        { 1, 2, 8, 12, 17, 20 }
+
+   are stored in complemented form between rounds, which lets chi be
+   expressed with a cheaper mix of and / or / not instead of and-not only.
+   The round below (_pround_native) is a literal transcription of the
+   (single) round the asm applies 24 times -- the asm's 2-rounds-per-iteration
+   unrolling is just a register-renaming / pointer-swap scheduling trick.
+
+   The outer loop (buffer ping-pong + iota) is identical to
+   __keccakf1600_ref; only the round computation differs.  The pi (lane
+   permutation) step is folded into the *source* indexing of chi: for output
+   row y, position X reads the rotated lane that pi maps to (X, y) -- see the
+   per-row source tables below, read directly off the asm.
+
+   DEPENDENCIES: this file is self-contained except for the round constants
+   and the rho-offset helper, both from "common/keccakf1600_generic.jinc".
+
+*****************************************************************************/
+
+from Keccak require "common/keccakf1600_generic.jinc"
+
+inline fn __rol64_native
+( reg u64 x
+, inline int i
+) -> reg u64
+{
+  if (i != 0) {
+    _, _, x = #ROL_64(x, i);
+  }
+  return x;
+}
+
+// B = ROL( a[idx] ^ D[col(idx)], rho(idx) )
+inline fn __theta_rho_lane_native
+( reg ptr u64[25] a
+, reg u64[5] d
+, inline int idx
+) -> reg u64
+{
+  reg u64 t;
+  inline int ro;
+  t = a[idx];
+  t ^= d[idx % 5];
+  ro = keccakf1600_rho_offsets(idx);
+  t = __rol64_native(t, ro);
+  return t;
+}
+
+inline fn __not_lane_native
+( reg ptr u64[25] st
+, inline int idx
+) -> reg ptr u64[25]
+{
+  reg u64 t;
+  t = st[idx];
+  t = !t;
+  st[idx] = t;
+  return st;
+}
+
+// complement the lane set { 1, 2, 8, 12, 17, 20 }
+inline fn __complement_lanes_native
+( reg ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  st = __not_lane_native(st, 1);
+  st = __not_lane_native(st, 2);
+  st = __not_lane_native(st, 8);
+  st = __not_lane_native(st, 12);
+  st = __not_lane_native(st, 17);
+  st = __not_lane_native(st, 20);
+  return st;
+}
+
+// One masked Keccak round (theta + rho + pi + chi, no iota):
+// reads `a`, writes the result into `e`.
+#[safety =
+   { requires = is_arr_init(a,0,200)
+   , ensures = is_arr_init(e,0,200) }
+]
+fn _pround_native
+( reg ptr u64[25] e a
+) -> reg ptr u64[25]
+{
+  reg u64[5] c d;
+  reg u64 t u B0 B1 B2 B3 B4;
+  inline int i;
+
+  // theta: column parities  C[x] = XOR_y A[x,y]
+  for i = 0 to 5 { c[i]  = a[i];      }
+  for i = 0 to 5 { c[i] ^= a[i + 5];  }
+  for i = 0 to 5 { c[i] ^= a[i + 10]; }
+  for i = 0 to 5 { c[i] ^= a[i + 15]; }
+  for i = 0 to 5 { c[i] ^= a[i + 20]; }
+
+  // theta: D[x] = C[x-1] ^ ROL(C[x+1], 1)
+  for i = 0 to 5 {
+    t = c[(i + 1) % 5];
+    t = __rol64_native(t, 1);
+    t ^= c[(i + 4) % 5];
+    d[i] = t;
+  }
+
+  // chi (with theta-add + rho + pi folded into the source indexing),
+  // masked form transcribed from the asm.  Written in 2-address idiom.
+
+  // row y=0  (out lanes 0..4),  B-sources = lanes 0,6,12,18,24
+  B0 = __theta_rho_lane_native(a, d, 0);
+  B1 = __theta_rho_lane_native(a, d, 6);
+  B2 = __theta_rho_lane_native(a, d, 12);
+  B3 = __theta_rho_lane_native(a, d, 18);
+  B4 = __theta_rho_lane_native(a, d, 24);
+  t = B1;  t |= B2;  t ^= B0;  e[0] = t;
+  t = B2;  t = !t;  t |= B3;  t ^= B1;  e[1] = t;
+  t = B3;  t &= B4;  t ^= B2;  e[2] = t;
+  t = B0;  t |= B4;  t ^= B3;  e[3] = t;
+  t = B0;  t &= B1;  t ^= B4;  e[4] = t;
+
+  // row y=1  (out lanes 5..9),  B-sources = lanes 3,9,10,16,22
+  B0 = __theta_rho_lane_native(a, d, 3);
+  B1 = __theta_rho_lane_native(a, d, 9);
+  B2 = __theta_rho_lane_native(a, d, 10);
+  B3 = __theta_rho_lane_native(a, d, 16);
+  B4 = __theta_rho_lane_native(a, d, 22);
+  t = B1;  t |= B2;  t ^= B0;  e[5] = t;
+  t = B2;  t &= B3;  t ^= B1;  e[6] = t;
+  t = B4;  t = !t;  t |= B3;  t ^= B2;  e[7] = t;
+  t = B0;  t |= B4;  t ^= B3;  e[8] = t;
+  t = B0;  t &= B1;  t ^= B4;  e[9] = t;
+
+  // row y=2  (out lanes 10..14),  B-sources = lanes 1,7,13,19,20
+  B0 = __theta_rho_lane_native(a, d, 1);
+  B1 = __theta_rho_lane_native(a, d, 7);
+  B2 = __theta_rho_lane_native(a, d, 13);
+  B3 = __theta_rho_lane_native(a, d, 19);
+  B4 = __theta_rho_lane_native(a, d, 20);
+  t = B1;  t |= B2;  t ^= B0;  e[10] = t;
+  t = B2;  t &= B3;  t ^= B1;  e[11] = t;
+  t = B3;  t = !t;  t &= B4;  t ^= B2;  e[12] = t;
+  u = B0;  u |= B4;  t = B3;  t = !t;  t ^= u;  e[13] = t;
+  t = B0;  t &= B1;  t ^= B4;  e[14] = t;
+
+  // row y=3  (out lanes 15..19),  B-sources = lanes 4,5,11,17,23
+  B0 = __theta_rho_lane_native(a, d, 4);
+  B1 = __theta_rho_lane_native(a, d, 5);
+  B2 = __theta_rho_lane_native(a, d, 11);
+  B3 = __theta_rho_lane_native(a, d, 17);
+  B4 = __theta_rho_lane_native(a, d, 23);
+  t = B1;  t &= B2;  t ^= B0;  e[15] = t;
+  t = B2;  t |= B3;  t ^= B1;  e[16] = t;
+  t = B3;  t = !t;  t |= B4;  t ^= B2;  e[17] = t;
+  u = B0;  u &= B4;  t = B3;  t = !t;  t ^= u;  e[18] = t;
+  t = B0;  t |= B1;  t ^= B4;  e[19] = t;
+
+  // row y=4  (out lanes 20..24),  B-sources = lanes 2,8,14,15,21
+  B0 = __theta_rho_lane_native(a, d, 2);
+  B1 = __theta_rho_lane_native(a, d, 8);
+  B2 = __theta_rho_lane_native(a, d, 14);
+  B3 = __theta_rho_lane_native(a, d, 15);
+  B4 = __theta_rho_lane_native(a, d, 21);
+  t = B1;  t = !t;  t &= B2;  t ^= B0;  e[20] = t;
+  u = B2;  u |= B3;  t = B1;  t = !t;  t ^= u;  e[21] = t;
+  t = B3;  t &= B4;  t ^= B2;  e[22] = t;
+  t = B0;  t |= B4;  t ^= B3;  e[23] = t;
+  t = B0;  t &= B1;  t ^= B4;  e[24] = t;
+
+  return e;
+}
+
+#[safety =
+   { requires = is_arr_init(a,0,200)
+   , ensures = is_arr_init(a,0,200) }
+]
+inline fn __keccakf1600_native
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  reg ptr u64[24] RC;
+  stack u64[25] s_e;
+  reg ptr u64[25] e;
+  reg ui64 c;
+  reg u64 rc;
+
+  // lane complementing (input boundary)
+  a = __complement_lanes_native(a);
+
+  e = s_e;
+
+  c = 0;
+  while
+  {
+    () = #spill(c);
+    e = _pround_native(e, a);
+    a, e = #swap(e, a);
+    RC = KECCAK1600_RC;
+    rc = RC[c];
+    e[0] ^= rc;
+
+    a = _pround_native(a, e);
+    a, e = #swap(e, a);
+    RC = KECCAK1600_RC;
+    rc = RC[c+1];
+    a[0] ^= rc;
+    () = #unspill(c);
+    c += 2;
+  } (c < KECCAK_ROUNDS - 1)
+
+  // lane complementing (output boundary, same set)
+  a = __complement_lanes_native(a);
+
+  return a;
+}
+
+
+fn _keccakf1600_native
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  a = __keccakf1600_native(a);
+  return a;
+}
+
+
+inline fn _keccakf1600_native_
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  a = a;
+  a = _keccakf1600_native(a);
+  a = a;
+  return a;
+}

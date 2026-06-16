@@ -11,8 +11,10 @@ extern void get_params_avx2x4(uint64_t*);
 
 // AVX2x4
 typedef uint64_t KeccakState[25];
+typedef uint64_t KeccakStateAvx2[28];
 typedef uint64_t KeccakStateX4[4*25];
 
+extern void testF_avx2(KeccakStateAvx2 st);
 extern void testF_avx2x4_orig(KeccakStateX4 st);
 extern void testF_avx2x4_alt(KeccakStateX4 st);
 extern void testF_avx2x4_native(KeccakStateX4 st);
@@ -55,6 +57,7 @@ void chkeq_buf(char *str, uint8_t a1[], uint8_t a2[], size_t len) {
 int run_test() {
   int i, j;
 
+  _Alignas(32) KeccakStateX4 s;
   _Alignas(32) KeccakStateX4 s0, s1, s2;
 
   // init input states
