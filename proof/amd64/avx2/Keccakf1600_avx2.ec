@@ -73,9 +73,7 @@ hoare keccak_pround_avx2_h _a:
  state = _a /\ stavx2INV _a ==> res = stavx2_keccak_pround _a.
 proof.
 proc.
-admit(*
 circuit.
-*).
 qed.
 
 lemma keccakf1600_avx2_ll': islossless M.__keccakf1600_avx2.

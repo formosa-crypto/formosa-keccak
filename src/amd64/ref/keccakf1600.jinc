@@ -22,7 +22,6 @@ inline fn __rol_u64_ref
   return x;
 }
 
-
 // C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
 inline fn __theta_sum_ref
 ( reg ptr u64[25] a

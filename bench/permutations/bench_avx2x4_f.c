@@ -49,6 +49,7 @@ typedef uint64_t KeccakState[25];
 typedef uint64_t KeccakStateAvx2[28];
 typedef uint64_t KeccakStateX4[4*25];
 
+extern void keccakf1600_refopt(KeccakState st);
 extern void KeccakF1600_StatePermute(KeccakState st);
 extern void sha3_keccak_f1600(KeccakState st, const uint64_t[24]);
 extern void testF_bmi1(KeccakState st);
@@ -258,7 +259,7 @@ int run_bench()
       // ref_opt: 8
       for (i = 0; i < TIMINGS; i++)
       { cycles[i] = cpucycles();
-        testF_ref_opt(ropt);
+        keccakf1600_refopt(ropt);
       }
       results[8][loop] = cpucycles_median(cycles, TIMINGS);
 

@@ -72,8 +72,7 @@ inline fn __theta_rol_opt
 
   for x = 0 to 5
   {
-    d[x] = c[(x + 1) % 5];
-    d[x] = __rol_u64_opt(d[x], 1);
+    d[x] = __rol_u64_opt(c[(x + 1) % 5], 1);
     d[x] ^= c[(x - 1 + 5) % 5];
   }
 

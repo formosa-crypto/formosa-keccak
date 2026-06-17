@@ -12,7 +12,7 @@
                              names, NOT pinned to hardware registers.
      * `movq`            ->  assignment;   `xorq a,b`  ->  `b ^= a`.
      * `rorxq $n,s,d`    ->  `d = #RORX_64(s, n);`
-     * `andnq A,B,C`(AT&T)-> `C = __ANDN_64(B, A);`  (i.e. C = (~B) & A)
+     * `andnq A,B,C`(AT&T)-> `C = !B & A;`  (i.e. C = (~B) & A)
      * round constants   ->  the global `KECCAK1600_RC` table, rematerialized
                              before each of the two iota uses (a local reg ptr
                              `RC`, mirroring clang's `leaq ...(%rip)` per use --
@@ -52,7 +52,7 @@
 
 from Keccak require "common/keccakf1600_generic.jinc"   // KECCAK1600_RC
 
-fn keccakf1600_loop_body
+inline fn keccakf1600_loop_body
 ( reg u64 rax                                   // round counter c
 , reg u64 rbp                                   // a[0]
 , reg u64 rdi                                   // a[10]
@@ -64,13 +64,14 @@ fn keccakf1600_loop_body
 , reg u64 r15                                   // a[22]
 , reg u64 rbx                                   // a[24]
 , reg mut ptr u64[25] a
+, stack u64[25] e
 ) -> reg u64, reg u64, reg u64, reg u64, reg u64
    , reg u64, reg u64, reg u64, reg u64, reg u64
-   , reg mut ptr u64[25]
+   , reg ptr u64[25]
+   , stack u64[25]
 {
   reg u64 rcx rdx r9 r12 r14;
   reg ptr u64[24] RC;
-  stack u64[11] e;
 
   // .LBB0_1:                                   # =>This Inner Loop Header: Depth=1
   e[0] = r11;                                   // movq %r11, -32(%rsp)
@@ -131,21 +132,21 @@ fn keccakf1600_loop_body
   r10 = #RORX_64(r10, 43);                      // rorxq $43, %r10, %r10
   rbx ^= rax;                                   // xorq %rax, %rbx
   rbx = #RORX_64(rbx, 50);                      // rorxq $50, %rbx, %rbx
-  rsi = __ANDN_64(rbx, rbp);                    // andnq %rbp, %rbx, %rsi
+  rsi = !rbx & rbp;                             // andnq %rbp, %rbx, %rsi
   rsi ^= r10;                                   // xorq %r10, %rsi
   a[6] = rsi;                                   // movq %rsi, -88(%rsp)
-  rsi = __ANDN_64(r14, r10);                    // andnq %r10, %r14, %rsi
-  r10 = __ANDN_64(r10, rbx);                    // andnq %rbx, %r10, %r10
+  rsi = !r14 & r10;                             // andnq %r10, %r14, %rsi
+  r10 = !r10 & rbx;                             // andnq %rbx, %r10, %r10
   r10 ^= r14;                                   // xorq %r14, %r10
   e[8] = r10;                                   // movq %r10, 64(%rsp)
-  r12 = __ANDN_64(r9, r14);                     // andnq %r14, %r9, %r12
+  r12 = !r9 & r14;                              // andnq %r14, %r9, %r12
   RC = KECCAK1600_RC;                            // leaq KeccakF_RoundConstants(%rip), %r10
   r14 = e[3];                                   // movq 24(%rsp), %r14   (counter reload)
   r12 ^= RC[(int) r14 + 2];                      // xorq 16(%r10,%r14,8), %r12
   r12 ^= rbp;                                   // xorq %rbp, %r12
   rsi ^= r9;                                    // xorq %r9, %rsi
   e[6] = rsi;                                   // movq %rsi, 48(%rsp)
-  r9 = __ANDN_64(rbp, r9);                      // andnq %r9, %rbp, %r9
+  r9 = !rbp & r9;                               // andnq %r9, %rbp, %r9
   r9 ^= rbx;                                    // xorq %rbx, %r9
   e[7] = r9;                                    // movq %r9, 56(%rsp)
   rdi ^= rcx;                                   // xorq %rcx, %rdi
@@ -165,19 +166,19 @@ fn keccakf1600_loop_body
   rbp = e[10];                                  // movq 88(%rsp), %rbp
   r15 ^= rbp;                                   // xorq %rbp, %r15
   rbx = #RORX_64(r15, 3);                       // rorxq $3, %r15, %rbx
-  r15 = __ANDN_64(rbx, r9);                     // andnq %r9, %rbx, %r15
+  r15 = !rbx & r9;                              // andnq %r9, %rbx, %r15
   r15 ^= rdi;                                   // xorq %rdi, %r15
   e[1] = r15;                                   // movq %r15, -24(%rsp)
-  r15 = __ANDN_64(rsi, rdi);                    // andnq %rdi, %rsi, %r15
-  rdi = __ANDN_64(rdi, rbx);                    // andnq %rbx, %rdi, %rdi
+  r15 = !rsi & rdi;                             // andnq %rdi, %rsi, %r15
+  rdi = !rdi & rbx;                             // andnq %rbx, %rdi, %rdi
   rdi ^= rsi;                                   // xorq %rsi, %rdi
   e[5] = rdi;                                   // movq %rdi, 40(%rsp)
-  rsi = __ANDN_64(r10, rsi);                    // andnq %rsi, %r10, %rsi
+  rsi = !r10 & rsi;                             // andnq %rsi, %r10, %rsi
   rsi ^= r9;                                    // xorq %r9, %rsi
   a[16] = rsi;                                  // movq %rsi, -128(%rsp)
   r15 ^= r10;                                   // xorq %r10, %r15
   a[3] = r15;                                   // movq %r15, -40(%rsp)
-  rsi = __ANDN_64(r9, r10);                     // andnq %r10, %r9, %rsi
+  rsi = !r9 & r10;                              // andnq %r10, %r9, %rsi
   rsi ^= rbx;                                   // xorq %rbx, %rsi
   a[9] = rsi;                                   // movq %rsi, -120(%rsp)
   rsi = a[1];                                   // movq -16(%rsp), %rsi
@@ -195,18 +196,18 @@ fn keccakf1600_loop_body
   r14 = r13;                                    // movq %r13, %r14
   r8 ^= r13;                                    // xorq %r13, %r8
   r8 = #RORX_64(r8, 46);                        // rorxq $46, %r8, %r8
-  r11 = __ANDN_64(r8, rsi);                     // andnq %rsi, %r8, %r11
+  r11 = !r8 & rsi;                              // andnq %rsi, %r8, %r11
   r11 ^= r10;                                   // xorq %r10, %r11
   a[13] = r11;                                  // movq %r11, -104(%rsp)
-  r11 = __ANDN_64(r9, r10);                     // andnq %r10, %r9, %r11
-  r13 = __ANDN_64(r10, r8);                     // andnq %r8, %r10, %r13
+  r11 = !r9 & r10;                              // andnq %r10, %r9, %r11
+  r13 = !r10 & r8;                              // andnq %r8, %r10, %r13
   r13 ^= r9;                                    // xorq %r9, %r13
-  r9 = __ANDN_64(rdi, r9);                      // andnq %r9, %rdi, %r9
+  r9 = !rdi & r9;                               // andnq %r9, %rdi, %r9
   r9 ^= rsi;                                    // xorq %rsi, %r9
   a[7] = r9;                                    // movq %r9, -96(%rsp)
   r11 ^= rdi;                                   // xorq %rdi, %r11
   e[4] = r11;                                   // movq %r11, 32(%rsp)
-  rsi = __ANDN_64(rsi, rdi);                    // andnq %rdi, %rsi, %rsi
+  rsi = !rsi & rdi;                             // andnq %rdi, %rsi, %rsi
   rsi ^= r8;                                    // xorq %r8, %rsi
   e[0] = rsi;                                   // movq %rsi, -32(%rsp)
   rsi = a[4];                                   // movq -8(%rsp), %rsi
@@ -224,18 +225,18 @@ fn keccakf1600_loop_body
   r9 = a[23];                                   // movq -80(%rsp), %r9
   r9 ^= rdx;                                    // xorq %rdx, %r9
   rbx = #RORX_64(r9, 8);                        // rorxq $8, %r9, %rbx
-  r10 = __ANDN_64(rbx, rsi);                    // andnq %rsi, %rbx, %r10
+  r10 = !rbx & rsi;                             // andnq %rsi, %rbx, %r10
   r10 ^= r11;                                   // xorq %r11, %r10
-  r15 = __ANDN_64(r8, r11);                     // andnq %r11, %r8, %r15
-  r11 = __ANDN_64(r11, rbx);                    // andnq %rbx, %r11, %r11
+  r15 = !r8 & r11;                              // andnq %r11, %r8, %r15
+  r11 = !r11 & rbx;                             // andnq %rbx, %r11, %r11
   r11 ^= r8;                                    // xorq %r8, %r11
   a[17] = r11;                                  // movq %r11, -112(%rsp)
-  r8 = __ANDN_64(rdi, r8);                      // andnq %r8, %rdi, %r8
+  r8 = !rdi & r8;                               // andnq %r8, %rdi, %r8
   r8 ^= rsi;                                    // xorq %rsi, %r8
   a[23] = r8;                                   // movq %r8, -80(%rsp)
   r15 ^= rdi;                                   // xorq %rdi, %r15
   a[5] = r15;                                   // movq %r15, -48(%rsp)
-  rsi = __ANDN_64(rsi, rdi);                    // andnq %rdi, %rsi, %rsi
+  rsi = !rsi & rdi;                             // andnq %rdi, %rsi, %rsi
   rsi ^= rbx;                                   // xorq %rbx, %rsi
   a[11] = rsi;                                  // movq %rsi, -64(%rsp)
   rsi = rbp;                                    // movq %rbp, %rsi
@@ -250,19 +251,19 @@ fn keccakf1600_loop_body
   rax = #RORX_64(rax, 25);                      // rorxq $25, %rax, %rax
   rdi = #RORX_64(rdi, 23);                      // rorxq $23, %rdi, %rdi
   rcx = #RORX_64(rcx, 62);                      // rorxq $62, %rcx, %rcx
-  r9 = __ANDN_64(rcx, rsi);                     // andnq %rsi, %rcx, %r9
+  r9 = !rcx & rsi;                              // andnq %rsi, %rcx, %r9
   r9 ^= rdi;                                    // xorq %rdi, %r9
   a[15] = r9;                                   // movq %r9, -72(%rsp)
-  r14 = __ANDN_64(rax, rdi);                    // andnq %rdi, %rax, %r14
-  r11 = __ANDN_64(rdi, rcx);                    // andnq %rcx, %rdi, %r11
+  r14 = !rax & rdi;                             // andnq %rdi, %rax, %r14
+  r11 = !rdi & rcx;                             // andnq %rcx, %rdi, %r11
   r11 ^= rax;                                   // xorq %rax, %r11
-  rax = __ANDN_64(rdx, rax);                    // andnq %rax, %rdx, %rax
+  rax = !rdx & rax;                             // andnq %rax, %rdx, %rax
   rax ^= rsi;                                   // xorq %rsi, %rax
   rbp = rax;                                    // movq %rax, %rbp
   a[14] = rax;                                  // movq %rax, -56(%rsp)
   r14 ^= rdx;                                   // xorq %rdx, %r14
   e[2] = r14;                                   // movq %r14, 16(%rsp)
-  rdi = __ANDN_64(rsi, rdx);                    // andnq %rdx, %rsi, %rdi
+  rdi = !rsi & rdx;                             // andnq %rdx, %rsi, %rdi
   rdi ^= rcx;                                   // xorq %rcx, %rdi
 
   // ===================== round (E -> A), iota RC[c+1] ===================
@@ -317,21 +318,22 @@ fn keccakf1600_loop_body
   rsi = #RORX_64(r10, 43);                      // rorxq $43, %r10, %rsi
   rdi ^= rdx;                                   // xorq %rdx, %rdi
   rdi = #RORX_64(rdi, 50);                      // rorxq $50, %rdi, %rdi
-  r10 = __ANDN_64(rdi, r12);                    // andnq %r12, %rdi, %r10
+  r10 = !rdi & r12;                             // andnq %r12, %rdi, %r10
   r10 ^= rsi;                                   // xorq %rsi, %r10
   a[3] = r10;                                   // movq %r10, -40(%rsp)
-  r10 = __ANDN_64(rcx, rsi);                    // andnq %rsi, %rcx, %r10
-  rsi = __ANDN_64(rsi, rdi);                    // andnq %rdi, %rsi, %rsi
+  r10 = !rcx & rsi;                             // andnq %rsi, %rcx, %r10
+  rsi = !rsi & rdi;                             // andnq %rdi, %rsi, %rsi
   rsi ^= rcx;                                   // xorq %rcx, %rsi
   a[2] = rsi;                                   // movq %rsi, 8(%rsp)
-  rbp = __ANDN_64(rax, rcx);                    // andnq %rcx, %rax, %rbp
+  rbp = !rax & rcx;                             // andnq %rcx, %rax, %rbp
   rcx = e[3];                                   // movq 24(%rsp), %rcx   (counter reload)
   RC = KECCAK1600_RC;                            // leaq KeccakF_RoundConstants(%rip), %rsi
   rbp ^= RC[(int) rcx + 3];                      // xorq 24(%rsi,%rcx,8), %rbp
   rbp ^= r12;                                   // xorq %r12, %rbp
+  e[9] = rbp;                                   // park idle rbp (a[0]) in dead e[9] -> frees 1 GP reg across round-2 tail
   r10 ^= rax;                                   // xorq %rax, %r10
   a[1] = r10;                                   // movq %r10, -16(%rsp)
-  rax = __ANDN_64(r12, rax);                    // andnq %rax, %r12, %rax
+  rax = !r12 & rax;                             // andnq %rax, %r12, %rax
   rax ^= rdi;                                   // xorq %rdi, %rax
   a[4] = rax;                                   // movq %rax, -8(%rsp)
   rax = a[6];                                   // movq -88(%rsp), %rax
@@ -348,19 +350,19 @@ fn keccakf1600_loop_body
   rdi = #RORX_64(rdi, 19);                      // rorxq $19, %rdi, %rdi
   r11 ^= r15;                                   // xorq %r15, %r11
   r10 = #RORX_64(r11, 3);                       // rorxq $3, %r11, %r10
-  r11 = __ANDN_64(r10, rax);                    // andnq %rax, %r10, %r11
+  r11 = !r10 & rax;                             // andnq %rax, %r10, %r11
   r11 ^= rdi;                                   // xorq %rdi, %r11
   a[8] = r11;                                   // movq %r11, (%rsp)
-  r11 = __ANDN_64(rsi, rdi);                    // andnq %rdi, %rsi, %r11
-  rdi = __ANDN_64(rdi, r10);                    // andnq %r10, %rdi, %rdi
+  r11 = !rsi & rdi;                             // andnq %rdi, %rsi, %r11
+  rdi = !rdi & r10;                             // andnq %r10, %rdi, %rdi
   rdi ^= rsi;                                   // xorq %rsi, %rdi
   a[7] = rdi;                                   // movq %rdi, -96(%rsp)
-  rsi = __ANDN_64(rcx, rsi);                    // andnq %rsi, %rcx, %rsi
+  rsi = !rcx & rsi;                             // andnq %rsi, %rcx, %rsi
   rsi ^= rax;                                   // xorq %rax, %rsi
   a[5] = rsi;                                   // movq %rsi, -48(%rsp)
   r11 ^= rcx;                                   // xorq %rcx, %r11
   a[6] = r11;                                   // movq %r11, -88(%rsp)
-  rax = __ANDN_64(rax, rcx);                    // andnq %rcx, %rax, %rax
+  rax = !rax & rcx;                             // andnq %rcx, %rax, %rax
   rax ^= r10;                                   // xorq %r10, %rax
   a[9] = rax;                                   // movq %rax, -120(%rsp)
   rax = e[6];                                   // movq 48(%rsp), %rax
@@ -378,17 +380,17 @@ fn keccakf1600_loop_body
   r10 = a[14];                                  // movq -56(%rsp), %r10
   r10 ^= rbx;                                   // xorq %rbx, %r10
   r10 = #RORX_64(r10, 46);                      // rorxq $46, %r10, %r10
-  r11 = __ANDN_64(r10, rax);                    // andnq %rax, %r10, %r11
+  r11 = !r10 & rax;                             // andnq %rax, %r10, %r11
   r11 ^= rdi;                                   // xorq %rdi, %r11
   a[13] = r11;                                  // movq %r11, -104(%rsp)
-  r11 = __ANDN_64(rsi, rdi);                    // andnq %rdi, %rsi, %r11
-  r13 = __ANDN_64(rdi, r10);                    // andnq %r10, %rdi, %r13
+  r11 = !rsi & rdi;                             // andnq %rdi, %rsi, %r11
+  r13 = !rdi & r10;                             // andnq %r10, %rdi, %r13
   r13 ^= rsi;                                   // xorq %rsi, %r13
-  rdi = __ANDN_64(rcx, rsi);                    // andnq %rsi, %rcx, %rdi
+  rdi = !rcx & rsi;                             // andnq %rsi, %rcx, %rdi
   rdi ^= rax;                                   // xorq %rax, %rdi
   r11 ^= rcx;                                   // xorq %rcx, %r11
   a[11] = r11;                                  // movq %r11, -64(%rsp)
-  rax = __ANDN_64(rax, rcx);                    // andnq %rcx, %rax, %rax
+  rax = !rax & rcx;                             // andnq %rcx, %rax, %rax
   rax ^= r10;                                   // xorq %r10, %rax
   a[14] = rax;                                  // movq %rax, -56(%rsp)
   rax = e[7];                                   // movq 56(%rsp), %rax
@@ -406,18 +408,18 @@ fn keccakf1600_loop_body
   rsi = a[15];                                  // movq -72(%rsp), %rsi
   rsi ^= r9;                                    // xorq %r9, %rsi
   r12 = #RORX_64(rsi, 8);                       // rorxq $8, %rsi, %r12
-  r10 = __ANDN_64(r12, rax);                    // andnq %rax, %r12, %r10
+  r10 = !r12 & rax;                             // andnq %rax, %r12, %r10
   r10 ^= r14;                                   // xorq %r14, %r10
-  rsi = __ANDN_64(r11, r14);                    // andnq %r14, %r11, %rsi
-  r14 = __ANDN_64(r14, r12);                    // andnq %r12, %r14, %r14
+  rsi = !r11 & r14;                             // andnq %r14, %r11, %rsi
+  r14 = !r14 & r12;                             // andnq %r12, %r14, %r14
   r14 ^= r11;                                   // xorq %r11, %r14
   a[17] = r14;                                  // movq %r14, -112(%rsp)
-  r11 = __ANDN_64(rcx, r11);                    // andnq %r11, %rcx, %r11
+  r11 = !rcx & r11;                             // andnq %r11, %rcx, %r11
   r11 ^= rax;                                   // xorq %rax, %r11
   a[15] = r11;                                  // movq %r11, -72(%rsp)
   rsi ^= rcx;                                   // xorq %rcx, %rsi
   a[16] = rsi;                                  // movq %rsi, -128(%rsp)
-  r11 = __ANDN_64(rax, rcx);                    // andnq %rcx, %rax, %r11
+  r11 = !rax & rcx;                             // andnq %rcx, %rax, %r11
   r11 ^= r12;                                   // xorq %r12, %r11
   r15 ^= e[8];                                  // xorq 64(%rsp), %r15
   r9 ^= e[1];                                   // xorq -24(%rsp), %r9
@@ -429,16 +431,16 @@ fn keccakf1600_loop_body
   rdx = #RORX_64(rdx, 25);                      // rorxq $25, %rdx, %rdx
   r9 = #RORX_64(rbx, 23);                       // rorxq $23, %rbx, %r9
   r14 = #RORX_64(r8, 62);                       // rorxq $62, %r8, %r14
-  r8 = __ANDN_64(r14, rax);                     // andnq %rax, %r14, %r8
+  r8 = !r14 & rax;                              // andnq %rax, %r14, %r8
   r8 ^= r9;                                     // xorq %r9, %r8
   a[23] = r8;                                   // movq %r8, -80(%rsp)
-  rsi = __ANDN_64(rdx, r9);                     // andnq %r9, %rdx, %rsi
-  r15 = __ANDN_64(r9, r14);                     // andnq %r14, %r9, %r15
+  rsi = !rdx & r9;                              // andnq %r9, %rdx, %rsi
+  r15 = !r9 & r14;                              // andnq %r14, %r9, %r15
   r15 ^= rdx;                                   // xorq %rdx, %r15
-  r8 = __ANDN_64(rcx, rdx);                     // andnq %rdx, %rcx, %r8
+  r8 = !rcx & rdx;                              // andnq %rdx, %rcx, %r8
   r8 ^= rax;                                    // xorq %rax, %r8
   rsi ^= rcx;                                   // xorq %rcx, %rsi
-  rbx = __ANDN_64(rax, rcx);                    // andnq %rcx, %rax, %rbx
+  rbx = !rax & rcx;                             // andnq %rcx, %rax, %rbx
   rbx ^= r14;                                   // xorq %r14, %rbx
   rcx = e[3];                                   // movq 24(%rsp), %rcx   (counter reload)
   rcx += 2;                                     // addq $2, %rcx
@@ -446,5 +448,53 @@ fn keccakf1600_loop_body
   // cmpq $22, %rcx                             # loop condition rcx < 22
   // jb .LBB0_1                                 # branch back to loop header
 
-  return rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a;
+  rbp = e[9];                                   // restore parked a[0]
+  return rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e;
+}
+
+
+inline fn __rounds
+( reg mut ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  stack u64[25] e;
+  reg u64 rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
+
+
+  rax = 0; // counter
+  rbp = a[0];
+  rdi = a[10];
+  r13 = a[12];
+  r10 = a[18];
+  r11 = a[19];
+  r8 = a[20];
+  rsi = a[21];
+  r15 = a[22];
+  rbx = a[24];
+
+  while (rax < 24) {
+    rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e
+    = keccakf1600_loop_body(rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+    rax -= 1;
+  }
+
+  a[0] = rbp;
+  a[10] = rdi;
+  a[12] = r13;
+  a[18] = r10;
+  a[19] = r11;
+  a[20] = r8;
+  a[21] = rsi;
+  a[22] = r15;
+  a[24] = rbx;
+
+  return a;
+}
+
+export fn keccakf1600_refopt
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  a = __rounds(a);
+  return a;
 }
