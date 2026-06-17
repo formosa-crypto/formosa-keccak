@@ -1,0 +1,191 @@
+/****************************************************************************
+
+   Keccak-f1600 permutation -- "ref_opt": optimized scalar variant.
+
+   Same algorithm as the bmi1 "ref" (keccakf1600.jinc): theta/rho/pi/chi with
+   and-not (chi) on a stack-resident state.  Two codegen changes close most of
+   the gap to the clang -O3 C implementation:
+
+     1) the round (_pround_opt) is an `inline fn`, so it is inlined into the
+        permutation loop -- no per-round `call`, the two unrolled rounds can be
+        scheduled together, and live temporaries are not spilled around a call
+        boundary;
+
+     2) rotations use the flag-free, non-destructive BMI2 `rorx` (#RORX_64)
+        instead of the 2-address, flag-writing `rol`.  Since rorx is a *right*
+        rotate, ROL(x,i) is realized as RORX(x, 64-i); this drops the extra
+        `mov` and the partial-flags dependency that `rol` incurs.
+
+   Jasmin cannot auto-spill a 25-element reg array, so (as in the ref/native
+   variants) the state still lives in a `stack u64[25]`; the win here is the
+   call-barrier removal and flag-free rotates, not full register residency.
+
+   DEPENDENCIES: round constants / rho-offset helper from
+   "common/keccakf1600_generic.jinc", and __ANDN_64 from the selected
+   "ref/select_{bmi1,nobmi1}.jinc" (required by the including .jazz).
+
+*****************************************************************************/
+
+from Keccak require "common/keccakf1600_generic.jinc"
+
+// ROL(x,i) via the flag-free, non-destructive BMI2 rorx:  rol(x,i) == ror(x, 64-i)
+inline fn __rol_u64_opt
+( reg u64 x
+, inline int i
+) -> reg u64
+{
+  reg u64 r;
+  if (i != 0) {
+    r = #RORX_64(x, (64 - i) % 64);
+  } else {
+    r = x;
+  }
+  return r;
+}
+
+// C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
+inline fn __theta_sum_opt
+( reg ptr u64[25] a
+) -> reg u64[5]
+{
+  inline int x y;
+  reg u64[5] c;
+
+  for x=0 to 5
+  { c[x] = a[x + 0]; }
+
+  for y=1 to 5
+  { for x=0 to 5
+    { c[x] ^= a[x + y*5]; }
+  }
+
+  return c;
+}
+
+// D[x] = C[x-1] ^ ROT(C[x+1], 1)
+inline fn __theta_rol_opt
+( reg u64[5] c
+) -> reg u64[5]
+{
+  inline int x;
+  reg u64[5] d;
+
+  for x = 0 to 5
+  {
+    d[x] = c[(x + 1) % 5];
+    d[x] = __rol_u64_opt(d[x], 1);
+    d[x] ^= c[(x - 1 + 5) % 5];
+  }
+
+  return d;
+}
+
+// B[x] = ROT( (A[x',y'] ^ D[x']), r[x',y'] ) with (x',y') = M^-1 (x,y)
+inline fn __rol_sum_opt
+( reg ptr u64[25] a
+, reg u64[5] d
+, inline int y
+) -> reg u64[5]
+{
+  inline int r x x_ y_;
+  reg u64[5] b;
+
+  for x = 0 to 5
+  {
+    x_ = (x + 3*y) % 5;
+    y_ = x;
+    r = keccakf1600_rhotates(x_, y_);
+
+    b[x] = a[x_ + y_*5];
+    b[x] ^= d[x_];
+    b[x] = __rol_u64_opt(b[x], r);
+  }
+
+  return b;
+}
+
+// E[x, y] = B[x] ^ ( (!B[x+1]) & B[x+2] )
+inline fn __set_row_opt
+( reg ptr u64[25] e
+, reg u64[5] b
+, inline int y
+) -> reg ptr u64[25]
+{
+  inline int x x1 x2;
+  reg u64 t;
+
+  for x=0 to 5
+  {
+    x1 = (x + 1) % 5;
+    x2 = (x + 2) % 5;
+
+    t  = __ANDN_64(b[x1], b[x2]); //!b[x1] & b[x2];
+    t ^= b[x];
+    e[x + y*5] = t;
+  }
+
+  return e;
+}
+
+// One Keccak round (theta + rho + pi + chi, no iota): reads `a`, writes `e`.
+// INLINE (the bmi1 ref declares the analogous round as a callable `fn`).
+inline fn _pround_opt
+( reg ptr u64[25] e a
+) -> reg ptr u64[25]
+{
+  inline int y;
+  reg u64[5] b c d;
+
+  c = __theta_sum_opt(a);
+  d = __theta_rol_opt(c);
+
+  for y = 0 to 5
+  { b = __rol_sum_opt(a, d, y);
+    e = __set_row_opt(e, b, y);
+  }
+
+  return e;
+}
+
+inline fn __keccakf1600_ref_opt
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  reg ptr u64[24] RC;
+  stack u64[25] s_e;
+  reg ptr u64[25] e;
+  reg ui64 c;
+  reg u64 rc;
+
+  e = s_e;
+
+  c = 0;
+  while
+  {
+    () = #spill(c);
+    e = _pround_opt(e, a);
+    a, e = #swap(e, a);
+    RC = KECCAK1600_RC;
+    rc = RC[c];
+    e[0] ^= rc;
+
+    a = _pround_opt(a, e);
+    a, e = #swap(e, a);
+    RC = KECCAK1600_RC;
+    rc = RC[c+1];
+    a[0] ^= rc;
+    () = #unspill(c);
+    c += 2;
+  } (c < KECCAK_ROUNDS - 1)
+
+  return a;
+}
+
+
+fn _keccakf1600_ref_opt
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  a = __keccakf1600_ref_opt(a);
+  return a;
+}
