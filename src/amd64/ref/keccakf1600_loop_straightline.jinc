@@ -461,7 +461,7 @@ inline fn __rounds
   reg u64 rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
 
 
-  rax = 0; // counter
+  rax = 0; rax -= 2; // counter starts at -2 (clang: movq $-2,%rax)
   rbp = a[0];
   rdi = a[10];
   r13 = a[12];
@@ -472,11 +472,10 @@ inline fn __rounds
   r15 = a[22];
   rbx = a[24];
 
-  while (rax < 24) {
+  while {
     rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e
     = keccakf1600_loop_body(rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
-    rax -= 1;
-  }
+  } (rax < 22)
 
   a[0] = rbp;
   a[10] = rdi;

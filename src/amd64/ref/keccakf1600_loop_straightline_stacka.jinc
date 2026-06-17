@@ -25,7 +25,9 @@
 
 from Keccak require "common/keccakf1600_generic.jinc"   // KECCAK1600_RC
 
-fn keccakf1600_loop_body_stacka
+inline fn __ANDN_64(reg u64 a b) -> reg u64 { reg u64 r; r = !a & b; return r;}
+
+inline fn keccakf1600_loop_body_stacka
 ( reg u64 rax                                   // round counter c
 , reg u64 rbp                                   // a[0]
 , reg u64 rdi                                   // a[10]
@@ -36,13 +38,15 @@ fn keccakf1600_loop_body_stacka
 , reg u64 rsi                                   // a[21]
 , reg u64 r15                                   // a[22]
 , reg u64 rbx                                   // a[24]
+, stack u64[25] a
+, stack u64[25] e
 ) -> reg u64, reg u64, reg u64, reg u64, reg u64
    , reg u64, reg u64, reg u64, reg u64, reg u64
+   , stack u64[25]
+   , stack u64[25]
 {
   reg u64 rcx rdx r9 r12 r14;
   reg ptr u64[24] RC;
-  stack u64[11] e;
-  stack u64[25] a;
 
   // .LBB0_1:                                   # =>This Inner Loop Header: Depth=1
   e[0] = r11;                                   // movq %r11, -32(%rsp)
@@ -418,5 +422,58 @@ fn keccakf1600_loop_body_stacka
   // cmpq $22, %rcx                             # loop condition rcx < 22
   // jb .LBB0_1                                 # branch back to loop header
 
-  return rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
+  return rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e;
+}
+
+
+inline fn __rounds_stack
+( stack u64[25] a
+) -> stack u64[25]
+{
+  stack u64[25] e;
+  reg u64 rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
+
+
+  rax = 0; // counter
+  rbp = a[0];
+  rdi = a[10];
+  r13 = a[12];
+  r10 = a[18];
+  r11 = a[19];
+  r8 = a[20];
+  rsi = a[21];
+  r15 = a[22];
+  rbx = a[24];
+
+  while (rax < 24) {
+    rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e
+    = keccakf1600_loop_body_stacka(rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+    rax -= 1;
+  }
+
+  a[0] = rbp;
+  a[10] = rdi;
+  a[12] = r13;
+  a[18] = r10;
+  a[19] = r11;
+  a[20] = r8;
+  a[21] = rsi;
+  a[22] = r15;
+  a[24] = rbx;
+
+  return a;
+}
+
+export fn keccakf1600_refoptstack
+( reg mut ptr u64[25] aptr
+) -> reg ptr u64[25]
+{
+  inline int i;
+  stack u64[25] a;
+  for i = 0 to 25 { a[i] = aptr[i]; }
+  () = #spill(aptr);
+  a = __rounds_stack(a);
+  () = #unspill(aptr);
+  for i = 0 to 25 { aptr[i] = a[i]; }
+  return aptr;
 }
