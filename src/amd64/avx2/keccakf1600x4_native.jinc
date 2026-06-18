@@ -283,6 +283,7 @@ inline fn __regs_unfetch
   return st;
 }
 
+/*
 export fn test_keccakf1600x4_native
 ( reg mut ptr u256[25] st
 , reg u64 c
@@ -303,6 +304,7 @@ export fn test_keccakf1600x4_native
 
   return st;
 }
+*/
 
 inline fn __keccakf1600_avx2x4_native
 ( reg mut ptr u256[25] st
