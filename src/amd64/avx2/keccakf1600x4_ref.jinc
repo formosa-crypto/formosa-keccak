@@ -3,7 +3,7 @@ from Keccak require "common/keccakf1600x4_generic.jinc"
 
 require "keccakf1600x4_pround_inlined.jinc"
 
-inline fn __keccakf1600_avx2x4_orig
+inline fn __keccakf1600_avx2x4_ref
 ( reg ptr u256[25] a
 ) -> reg ptr u256[25]
 {
@@ -43,6 +43,17 @@ inline fn __keccakf1600_avx2x4_orig
 
   return a;
 }
+
+inline fn _keccakf1600_avx2x4_ref
+( reg ptr u256[25] a
+) -> reg ptr u256[25]
+{
+  a = __keccakf1600_avx2x4_ref(a);
+  return a;
+}
+
+
+
 
 /* For the BDEP proof... */
 inline fn __keccakf1600_4x_pround_unpacked

@@ -1,9 +1,32 @@
+/*
+ FEATURE SPECIFICATION
+ =====================
+*/
+
+// Feature selection
+//  to be feeded into "KECCAK_FEATURES"
+param int KECCAK_FEATURE_BMI  = 0x1; // (BMI1)
+param int KECCAK_FEATURE_BMI2 = 0x2;
+param int KECCAK_FEATURE_AVX2 = 0x04;
+
+// FEATURE QUERY
+inline fn __HAS_FEATURE
+( inline int SELECTION FEATURES
+) -> inline bool
+{
+  inline bool b;
+  b = (FEATURES & SELECTION)!= 0;
+  return b;
+}
+
+// STANDARD RATES
 param int R72 = 72;
 param int R104 = 104;
 param int R136 = 136;
 param int R144 = 144;
 param int R168 = 168;
 
+// STANDARD TRAIL BYTES
 param int UNFINISHED = 0;
 param int SHA3 = 0x06;
 param int RAWSHAKE = 0x07;

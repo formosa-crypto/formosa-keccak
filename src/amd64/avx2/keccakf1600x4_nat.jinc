@@ -283,28 +283,7 @@ inline fn __regs_unfetch
   return st;
 }
 
-export fn test_keccakf1600x4_native
-( reg mut ptr u256[25] st
-, reg u64 c
-) -> reg ptr u256[25]
-{
-  reg ptr u256[1] rol8, rol56;
-  reg ptr u64[24] rc;
-  reg u256 y10, y14, y8, y15, y9, y13, y3, y7, y2;
-
-  y10, y14, y8, y15, y9, y13, y3, y7, y2 = __regs_fetch(st);
-
-  rol8 = ROL8;
-  rol56 = ROL56;
-  rc = KECCAK1600_RC;
-  st, y10, y14, y8, y15, y9, y13, y3, y7, y2
-   = __f1600_loopbody_native(st, rol8, rol56, rc, (64ui) c, y10, y14, y8, y15, y9, y13, y3, y7, y2);
-  st = __regs_unfetch(st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
-
-  return st;
-}
-
-inline fn __keccakf1600_avx2x4_native
+inline fn __keccakf1600_avx2x4_nat
 ( reg mut ptr u256[25] st
 ) -> reg ptr u256[25]
 {
@@ -330,3 +309,10 @@ inline fn __keccakf1600_avx2x4_native
   return st;
 }
 
+fn _keccakf1600_avx2x4_nat
+( reg mut ptr u256[25] st
+) -> reg ptr u256[25]
+{
+  st = __keccakf1600_avx2x4_nat(st);
+  return st;
+}

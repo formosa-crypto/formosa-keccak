@@ -1,30 +1,41 @@
-/** 
- * Several alternative permutation implementations
- */
-require "keccakf1600x4_orig.jinc"
+/**************************************************************************** 
+
+   DEPENDENCIES:
+   =============
+
+param int KECCAK_PERMUTATION
+
+(e.g.
+param int KECCAK_PERMUTATION = KECCAK_F1600x4_REF;
+)
+
+*****************************************************************************/
+
+from Keccak require "common/keccakf1600_generic.jinc"
+
+require "keccakf1600x4_ref.jinc"
 require "keccakf1600x4_alt.jinc"
-require "keccakf1600x4_native.jinc"
+require "keccakf1600x4_nat.jinc"
 
 type keccakx4_state = u256[25];
 
 /**
  * Select intended KeccalF[1600]x4 permutation:
  */
-inline fn __keccakf1600_avx2x4
+inline fn _keccakf1600_avx2x4
 ( reg ptr u256[25] a
 ) -> reg ptr u256[25]
 {
-  //a = __keccakf1600_avx2x4_orig(a);
-  //a = __keccakf1600_avx2x4_alt(a);
-  a = __keccakf1600_avx2x4_native(a);
-  return a;
-}
+  inline int KECCAK_F;
+  KECCAK_F = __KECCAK_F(KECCAK_PERMUTATION);
 
-fn _keccakf1600_avx2x4
-( reg ptr u256[25] a
-) -> reg ptr u256[25]
-{
-  a = __keccakf1600_avx2x4(a);
+  if (KECCAK_F == KECCAK_F1600x4_ALT) {
+    a = _keccakf1600_avx2x4_alt(a);
+  } else if (KECCAK_F == KECCAK_F1600x4_NAT) {
+    a = _keccakf1600_avx2x4_nat(a);
+  } else {
+    a = _keccakf1600_avx2x4_ref(a);
+  }
   return a;
 }
 
@@ -38,11 +49,4 @@ inline fn _keccakf1600_avx2x4_
   return a;
 }
 
-
-/* For testing:
-export fn testF_avx2x4(reg mut ptr u256[25] st) -> reg ptr u256[25] {
- st = _keccakf1600_avx2x4(st);
- return st;
-}
-*/
 

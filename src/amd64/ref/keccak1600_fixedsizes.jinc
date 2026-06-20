@@ -3,15 +3,21 @@
    DEPENDENCIES:
    =============
 
-  The loading of this file depends on the following context:
+param int KECCAK_FEATURES
+param int KECCAK_PERMUTATION
 
- 1) "select_nobmi1.jinc" or "select_bmi1.jinc"
+(e.g.
+param int KECCAK_FEATURES
+ = KECCAK_FEATURE_AVX2 | KECCAK_FEATURE_BMI | KECCAK_FEATURE_BMI2;
+param int KECCAK_PERMUTATION = KECCAK_F1600_OPT;
+)
 
 *****************************************************************************/
 
+require "keccakf1600.jinc"
+
 require "keccak1600.jinc"
 from Keccak require "common/subreadwrite_imem.jinc"
-
 
 /*
  *  REMARK: the remaining of this file is expected to be kept in sync. with its array version's
@@ -30,44 +36,70 @@ from Keccak require "common/subreadwrite_imem.jinc"
    , ensures = is_arr_init(final_st,0,7*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_buf == buf + _LEN
    }
  ]
-inline fn __addstate_m_ref
+inline fn __addstate_m
 ( reg mut ptr u64[25] st
-, inline int AT /* bytes (0 <= AT < 200) */
+, inline int AT    /* bytes (0 <= AT < 200) */
 , reg ui64 buf
-, inline int _LEN
+, inline int _LEN  /* 0 <= _LEN && AT+_LEN <= 200 */
 , inline int _TRAILB
 ) -> reg ptr u64[25] /* st */
    , inline int      /* AT */
    , reg ui64        /* buf */
 {
-  inline int AT8;
+  inline bool HAS_AVX2;
+  inline int i, AT8;
   reg ui64 at;
   reg u64 w;
+  reg u256 t256;
+  reg u128 t128;
+
+  HAS_AVX2 = __HAS_FEATURE(KECCAK_FEATURE_AVX2, KECCAK_FEATURES);
 
   // fill first word...
-  AT8 = AT;
-  AT = 8*(AT/8);
-  if ( AT8%8 != 0 ) {
-    buf, _LEN, _TRAILB, AT8, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT8);
-    st[AT/8] ^= w;
-    AT = AT8;
+  if ( AT%8 != 0 ) {
+    AT8 = 8*AT/8;
+    buf, _LEN, _TRAILB, AT, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT%8);
+    st.[:u64 AT8] ^= w;
   }
 
+  // at this point: AT == 8*AT/8 || _LEN==0;
+
   // add complete words
-  at = AT/8;
-  while ( at < AT/8 + _LEN/8 ) {
-    w = [:u64 (64u) buf];
-    buf += 8;
-    st[at] ^= w;
-    at += 1;
+  if ( HAS_AVX2 ) {
+    for i = 0 to _LEN/32 {
+      t256 = [:u256 (64u) buf];
+      buf += 32;
+      t256 ^= st.[:u256 AT + 32*i];
+      st.[:u256 AT + 32*i] = t256;
+    }
+    if ( 16 <= _LEN % 32 ) {
+      t128 = [:u256 (64u) buf];
+      buf += 16;
+      t128 ^= st.[:u128 AT + (_LEN/32)*32];
+      st.[:u128 AT + (_LEN/32)*32] = t128;
+    }
+    if ( 8 <= _LEN % 16 ) {
+      w = [:u64 (64u) buf];
+      buf += 8;
+      st.[:u64 AT + (_LEN/16)*16] ^= w;
+    }
+  } else {
+    at = AT;
+    while ( at < AT + (_LEN/8)*8 ) {
+      w = [:u64 (64u) buf];
+      buf += 8;
+      st.[:u64 at] ^= w;
+      at += 8;
+    }
   }
 
   // add last word...
   AT += 8*(_LEN/8);
   _LEN = _LEN%8;
   if ( 0 < _LEN || _TRAILB%256!= 0 ) {
+    AT8 = AT;
     buf, _LEN, _TRAILB, AT, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT);
-    st[at] ^= w;
+    st.[:u64 (64u) AT8] ^= w;
   }
 
   return st, AT, buf;
@@ -80,7 +112,7 @@ inline fn __addstate_m_ref
    , ensures = is_arr_init(final_st,0,7*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
    }
  ]
-inline fn __absorb_m_ref
+inline fn __absorb_m
 ( reg mut ptr u64[25] st
 , inline int AT
 , reg ui64 buf
@@ -95,25 +127,25 @@ inline fn __absorb_m_ref
   inline int ITERS;
 
   if ( AT+_LEN >= _RATE8 ) { // more than one block...
-    st, _, buf = __addstate_m_ref(st, AT, buf, _RATE8-AT, 0);
+    st, _, buf = __addstate_m(st, AT, buf, _RATE8-AT, 0);
     _LEN = _LEN - (_RATE8-AT);
     AT = 0;
     () = #spill(buf);
-    st = _keccakf1600_ref(st);
+    st = _keccakf1600(st);
     () = #unspill(buf);
     ITERS = _LEN/_RATE8;
     i = 0;
     while ( i < ITERS ) {
-      st, _, buf = __addstate_m_ref(st, 0, buf, _RATE8, 0);
+      st, _, buf = __addstate_m(st, 0, buf, _RATE8, 0);
       () = #spill(buf,i);
-      st = _keccakf1600_ref(st);
+      st = _keccakf1600(st);
       () = #unspill(buf,i);
       i += 1;
     }
     _LEN = _LEN % _RATE8;
   }
-  st, AT, buf = __addstate_m_ref(st, AT, buf, _LEN, _TRAILB);
-  if (_TRAILB!=0) { st = __addratebit_ref(st, _RATE8); }
+  st, AT, buf = __addstate_m(st, AT, buf, _LEN, _TRAILB);
+  if (_TRAILB!=0) { st = __addratebit(st, _RATE8); }
 
   return st, AT, buf;
 }
@@ -129,21 +161,45 @@ inline fn __absorb_m_ref
    , ensures = final_buf == buf + _LEN
    }
  ]
-inline fn __dumpstate_m_ref
+inline fn __dumpstate_m
 ( reg ui64 buf
-, inline int _LEN
+, inline int _LEN // 0 <= _LEN <= 200
 , reg const ptr u64[25] st
 ) -> reg ui64     /* buf */
-{ 
+{
+  inline bool HAS_AVX2;
+  inline int j;
   reg ui64 i;
   reg u64 t;
+  reg u128 t128;
+  reg u256 t256;
 
-  i = 0;
-  while (i < _LEN/8) {
-    t = st[i];
-    [:u64 (64u) buf] = t;
-    buf += 8;
-    i += 1;
+  HAS_AVX2 = __HAS_FEATURE(KECCAK_FEATURE_AVX2, KECCAK_FEATURES);
+
+  if ( HAS_AVX2 ) {
+    for j = 0 to _LEN/32 {
+      t256 = st.[:u256 32*j];
+      [:u256 (64u) buf] = t256;
+      buf += 32;
+    }
+    if ( 16 <= _LEN%32 ) {
+      t128 = st.[:u128 (_LEN/32)*32];
+      [:u128 (64u) buf] = t128;
+      buf += 16;
+    }
+    if ( 8 <= _LEN%16 ) {
+      t = st.[:u64 (_LEN/16)*16];
+      [:u64 (64u) buf] = t;
+      buf += 8;
+    }
+  } else {
+    i = 0;
+    while (i < _LEN/8) {
+      t = st[i];
+      [:u64 (64u) buf] = t;
+      buf += 8;
+      i += 1;
+    }
   }
   if (0 < _LEN%8) {
     t = st[i];
@@ -158,7 +214,7 @@ inline fn __dumpstate_m_ref
    , ensures = is_arr_init(st,0,32*7)
    }
  ]
-inline fn __squeeze_m_ref
+inline fn __squeeze_m
 ( reg mut ptr u64[25] st
 , reg ui64 buf
 , inline int _LEN
@@ -171,16 +227,16 @@ inline fn __squeeze_m_ref
   i = 0;
   while (i < _LEN/_RATE8) {
     () = #spill(buf,i);
-    st = _keccakf1600_ref(st);
+    st = _keccakf1600(st);
     () = #unspill(buf,i);
-    buf = __dumpstate_m_ref(buf, _RATE8, st);
+    buf = __dumpstate_m(buf, _RATE8, st);
     i += 1;
   }
   if (0 < _LEN%_RATE8) {
     () = #spill(buf);
-    st = _keccakf1600_ref(st);
+    st = _keccakf1600(st);
     () = #unspill(buf);
-    buf = __dumpstate_m_ref(buf, _LEN%_RATE8, st);
+    buf = __dumpstate_m(buf, _LEN%_RATE8, st);
   }
 
   return st, buf;

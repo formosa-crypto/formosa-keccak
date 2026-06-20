@@ -1,58 +1,35 @@
 /****************************************************************************
 
-   Keccak-f1600 -- direct Jasmin transcription of the *loop body* of
-   KeccakF1600_StatePermute from `bench/permutations/fips202.s` (clang -O3 of
-   the XKCP "optimized C", two rounds unrolled with an A->E / E->A ping-pong).
+   Jasmin transcription of the `clang-22 -O3` generated asm for the *loop body* of `KeccakF1600_StatePermute` from XKCP (https://github.com/XKCP/XKCP).
 
-   This is a straight, line-by-line transliteration of asm lines 74-444 (one
+   This is a straight, line-by-line transliteration of asm (single
    loop iteration), produced mechanically:
 
      * x86 GP registers  ->  reg u64 variables named after the register
                              (rax, rbx, ..., r15).  These are plain Jasmin
                              names, NOT pinned to hardware registers.
-     * `movq`            ->  assignment;   `xorq a,b`  ->  `b ^= a`.
-     * `rorxq $n,s,d`    ->  `d = #RORX_64(s, n);`
-     * `andnq A,B,C`(AT&T)-> `C = !B & A;`  (i.e. C = (~B) & A)
      * round constants   ->  the global `KECCAK1600_RC` table, rematerialized
-                             before each of the two iota uses (a local reg ptr
-                             `RC`, mirroring clang's `leaq ...(%rip)` per use --
-                             NOT a passed-in pointer argument).
+                             before each use.
 
    STACK-SLOT MIRROR (literal: each %rsp offset is a fixed array cell, named the
    same regardless of whether it currently holds an A- or an E-value):
 
-     a[] : the 16 memory-resident state lanes (offset -> lane index, fixed by
-           the function prologue / epilogue):
-             (%rsp)=a[8]   8=a[2]    -8=a[4]    -16=a[1]   -40=a[3]   -48=a[5]
-             -56=a[14] -64=a[11] -72=a[15] -80=a[23] -88=a[6] -96=a[7]
-             -104=a[13] -112=a[17] -120=a[9] -128=a[16]
-     e[] : the 11 scratch slots clang allocated (write-first, dead at iteration
-           end -> local stack):
-             -32=e[0] -24=e[1] 16=e[2] 24=e[3] 32=e[4] 40=e[5]
-             48=e[6] 56=e[7] 64=e[8] 80=e[9] 88=e[10]
-           (e[3] = 24(%rsp) is the round-counter spill slot.)
+     a[] : the memory-resident state
+     e[] : temporary sate (local stack)
 
-   The 9 lanes clang keeps in GP registers across iterations, plus the round
-   counter (rax), are loop-carried -> they are the function arguments AND
-   results:
-             rbp=a[0]  rdi=a[10] r13=a[12] r10=a[18] r11=a[19]
-             r8=a[20]  rsi=a[21] r15=a[22] rbx=a[24]   rax=counter c
-   They get clobbered/reused as scratch mid-body and hold their NEW lane value
-   by the end of the body -- a straight transliteration reproduces this.
+   9 lanes are kept in live regs across iterations, plus the round
+   counter (rax). They get clobbered/reused as scratch mid-body and hold their NEW lane value
+   by the end of the body.
 
-   DEPENDENCIES (provided by the including context, as in keccakf1600_ref_opt2):
-     __ANDN_64 from the selected "ref/select_{bmi1,nobmi1}.jinc";
-     #RORX_64 is a BMI2 intrinsic;
-     KECCAK1600_RC from "common/keccakf1600_generic.jinc" (required below).
+   DEPENDENCIES/ASSUMPTIONS:
 
-   NOTE: not tested for functional correctness (per request); a single loop
-   iteration only -- the surrounding while/branch is left as comments.
+   This file assumes KECCAK_FEATURE_BMI+KECCAK_FEATURE_BMI2.
 
 *****************************************************************************/
 
-from Keccak require "common/keccakf1600_generic.jinc"   // KECCAK1600_RC
+from Keccak require "common/keccakf1600_generic.jinc"
 
-inline fn keccakf1600_loop_body
+inline fn keccakf1600_opt_loop_body
 ( reg u64 rax                                   // round counter c
 , reg u64 rbp                                   // a[0]
 , reg u64 rdi                                   // a[10]
@@ -140,9 +117,9 @@ inline fn keccakf1600_loop_body
   r10 ^= r14;                                   // xorq %r14, %r10
   e[8] = r10;                                   // movq %r10, 64(%rsp)
   r12 = !r9 & r14;                              // andnq %r14, %r9, %r12
-  RC = KECCAK1600_RC;                            // leaq KeccakF_RoundConstants(%rip), %r10
+  RC = KECCAK1600_RC;                           // leaq KeccakF_RoundConstants(%rip), %r10
   r14 = e[3];                                   // movq 24(%rsp), %r14   (counter reload)
-  r12 ^= RC[(int) r14 + 2];                      // xorq 16(%r10,%r14,8), %r12
+  r12 ^= RC[r14 + 2];                           // xorq 16(%r10,%r14,8), %r12
   r12 ^= rbp;                                   // xorq %rbp, %r12
   rsi ^= r9;                                    // xorq %r9, %rsi
   e[6] = rsi;                                   // movq %rsi, 48(%rsp)
@@ -328,7 +305,7 @@ inline fn keccakf1600_loop_body
   rbp = !rax & rcx;                             // andnq %rcx, %rax, %rbp
   rcx = e[3];                                   // movq 24(%rsp), %rcx   (counter reload)
   RC = KECCAK1600_RC;                            // leaq KeccakF_RoundConstants(%rip), %rsi
-  rbp ^= RC[(int) rcx + 3];                      // xorq 24(%rsi,%rcx,8), %rbp
+  rbp ^= RC[rcx + 3];                           // xorq 24(%rsi,%rcx,8), %rbp
   rbp ^= r12;                                   // xorq %r12, %rbp
   e[9] = rbp;                                   // park idle rbp (a[0]) in dead e[9] -> frees 1 GP reg across round-2 tail
   r10 ^= rax;                                   // xorq %rax, %r10
@@ -453,7 +430,7 @@ inline fn keccakf1600_loop_body
 }
 
 
-inline fn __rounds
+inline fn __keccakf1600_opt
 ( reg mut ptr u64[25] a
 ) -> reg ptr u64[25]
 {
@@ -474,7 +451,7 @@ inline fn __rounds
 
   while {
     rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e
-    = keccakf1600_loop_body(rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+    = keccakf1600_opt_loop_body(rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
   } (rax < 22)
 
   a[0] = rbp;
@@ -490,10 +467,10 @@ inline fn __rounds
   return a;
 }
 
-export fn keccakf1600_refopt
-( reg ptr u64[25] a
+fn _keccakf1600_opt
+( reg mut ptr u64[25] a
 ) -> reg ptr u64[25]
 {
-  a = __rounds(a);
+  a = __keccakf1600_opt(a);
   return a;
 }

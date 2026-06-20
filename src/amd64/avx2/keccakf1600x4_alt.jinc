@@ -1313,18 +1313,16 @@ inline fn __keccakf1600_avx2x4_alt
     return A_4x;
 }
 
-
-/*
-inline fn _keccakf1600_avx2x4_
+fn _keccakf1600_avx2x4_alt
 ( reg ptr u256[25] a
 ) -> reg ptr u256[25]
 {
-  a = a;
-  a = _keccakf1600_avx2x4(a);
-  a = a;
+  a = __keccakf1600_avx2x4_alt(a);
   return a;
 }
 
+
+/*
 // pack 4 keccak states (st25) into a 4-way state (st4x)
 inline fn __u256x4_4u64x4
 ( reg u256 x0 x1 x2 x3
