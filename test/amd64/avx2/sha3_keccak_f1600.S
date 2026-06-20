@@ -21,11 +21,13 @@
 // ----------------------------------------------------------------------------
 
         .intel_syntax noprefix
+        .globl sha3_keccak_f1600
         .globl _sha3_keccak_f1600
         
         
         .text
 
+sha3_keccak_f1600:
 _sha3_keccak_f1600:
         .cfi_startproc
         .byte 0xf3,0x0f,0x1e,0xfa
