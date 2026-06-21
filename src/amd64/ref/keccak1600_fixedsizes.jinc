@@ -1,3 +1,6 @@
+/** IMPORTANT!
+  this file shoould be in sync with its array counterpart (keccak1600_fixedsizes_ASIZE.jinc)
+*/
 /**************************************************************************** 
 
    DEPENDENCIES:
@@ -14,16 +17,7 @@ param int KECCAK_PERMUTATION = KECCAK_F1600_OPT;
 
 *****************************************************************************/
 
-require "keccakf1600.jinc"
-
-require "keccak1600.jinc"
 from Keccak require "common/subreadwrite_imem.jinc"
-
-/*
- *  REMARK: the remaining of this file is expected to be kept in sync. with its array version's
- *  counterpart ("keccak1600_fixedsizes_ASIZE.jinc")
- *
- */
 
 
 /*
@@ -57,8 +51,8 @@ inline fn __addstate_m
 
   // fill first word...
   if ( AT%8 != 0 ) {
-    AT8 = 8*AT/8;
-    buf, _LEN, _TRAILB, AT, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT%8);
+    AT8 = 8*(AT/8);
+    buf, _LEN, _TRAILB, AT, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT8, AT);
     st.[:u64 AT8] ^= w;
   }
 
@@ -99,7 +93,7 @@ inline fn __addstate_m
   if ( 0 < _LEN || _TRAILB%256!= 0 ) {
     AT8 = AT;
     buf, _LEN, _TRAILB, AT, w = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, AT, AT);
-    st.[:u64 (64u) AT8] ^= w;
+    st.[:u64 AT8] ^= w;
   }
 
   return st, AT, buf;
@@ -202,7 +196,7 @@ inline fn __dumpstate_m
     }
   }
   if (0 < _LEN%8) {
-    t = st[i];
+    t = st[_LEN/8];
     buf, _ = __m_ilen_write_upto8( buf, _LEN%8, t);
   }
 

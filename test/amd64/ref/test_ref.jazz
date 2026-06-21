@@ -1,8 +1,9 @@
-from Keccak require "ref/select_bmi1.jinc"
+from Keccak require "common/keccak1600_default.jinc"
 
+from Keccak require "ref/keccakf1600.jinc"
+from Keccak require "ref/keccak1600.jinc"
 
 from Keccak require "ref/keccak1600_fixedsizes.jinc"
-
 
 param int RATE8 = 168;
 param int TRAIL = SHAKE;
@@ -23,12 +24,12 @@ export fn get_params_ref
   return params;
 }
 
-export fn init_state_ref
+export fn init_state
 ( reg mut ptr u64[25] st
 ) -> reg ptr u64[25]
 {
   st = st;
-  st = __state_init_ref(st);
+  st = __state_init(st);
   return st;
 }
 
@@ -39,7 +40,7 @@ namespace TEST_AT {
 
   from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
 
-    export fn absorb_ref
+    export fn absorb
     ( reg mut ptr u64[25] st
     , reg const ptr u8[BIGSIZE] buf
     ) -> reg ptr u64[25] /* st */
@@ -52,11 +53,11 @@ namespace TEST_AT {
       for i = 0 to BIGSIZE/SIZE-1 {
 	() = #unspill(buf);
 	b = buf[i*_ASIZE:_ASIZE];
-	st, AT = __absorb_ref(st, AT, b, 0, RATE8);
+	st, AT = __absorb(st, AT, b, 0, RATE8);
       }
       () = #unspill(buf);
       b = buf[(BIGSIZE/SIZE-1)*_ASIZE:_ASIZE];
-      st, AT = __absorb_ref(st, AT, b, TRAIL, RATE8);
+      st, AT = __absorb(st, AT, b, TRAIL, RATE8);
       st = st;
       return st;
     }
@@ -68,30 +69,29 @@ namespace TEST_ONESHOT {
 
   from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
 
-    export fn absorb_ref
+    export fn absorb
     ( reg mut ptr u64[25] st
     , reg const ptr u8[_ASIZE] buf
     ) -> reg ptr u64[25] /* st */
     {
       st = st; buf = buf;
-      st, _ = __absorb_ref(st, 0, buf, TRAIL, RATE8);
+      st, _ = __absorb(st, 0, buf, TRAIL, RATE8);
       st = st;
       return st;
     }
 
-  export fn squeeze_ref
+  export fn squeeze
   ( reg mut ptr u64[25] st
   , reg mut ptr u8[_ASIZE] buf
   ) -> reg ptr u64[25]   /* st */
      , reg ptr u8[_ASIZE] /* buf */
   {
     buf = buf; st = st;
-    st, buf = __squeeze_ref(st, buf, RATE8);
+    st, buf = __squeeze(st, buf, RATE8);
     return st, buf;
   }
 
 }
-
 
 from Keccak require "ref/keccak1600_updstate.jinc"
 
