@@ -132,14 +132,14 @@ inline fn __absorb
     _LEN = _LEN - (_RATE8-AT);
     AT = 0;
     () = #spill(buf,offset);
-    st = _keccakf1600_ref(st);
+    st = _keccakf1600(st);
     () = #unspill(buf,offset);
     ITERS = _LEN/_RATE8;
     i = 0;
     while ( i < ITERS ) {
       st, _, offset = __addstate(st, 0, buf, offset, _RATE8, 0);
       () = #spill(buf,offset,i);
-      st = _keccakf1600_ref(st);
+      st = _keccakf1600(st);
       () = #unspill(buf,offset,i);
       i += 1;
     }
@@ -233,13 +233,13 @@ inline fn __squeeze
   while (i < _ASIZE/_RATE8) {
     i += 1;
     () = #spill(buf,offset,i);
-    st = _keccakf1600_ref(st);
+    st = _keccakf1600(st);
     () = #unspill(buf,offset,i);
     buf, offset = __dumpstate(buf, offset, _RATE8, st);
   }
   if (0 < _ASIZE%_RATE8) {
     () = #spill(buf,offset);
-    st = _keccakf1600_ref(st);
+    st = _keccakf1600(st);
     () = #unspill(buf,offset);
     buf, offset = __dumpstate(buf, offset, _ASIZE%_RATE8, st);
   }
