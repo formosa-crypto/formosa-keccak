@@ -11,7 +11,6 @@ require import List Real Distr Int IntDiv CoreMap.
 require BitEncoding.
 import BitEncoding.BitChunking.
 
-
 from Jasmin require import JModel.
 
 from CryptoSpecs require import JWordList.
