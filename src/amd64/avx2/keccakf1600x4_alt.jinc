@@ -34,31 +34,31 @@ inline fn __rol_4u64(reg u256 a, inline int o) -> reg u256
 	return r; 
 }
 
-param int ba=0;
-param int be=1;
-param int bi=2;
-param int bo=3;
-param int bu=4;
-param int ga=5;
-param int ge=6;
-param int gi=7;
-param int go=8;
-param int gu=9;
-param int ka=10;
-param int ke=11;
-param int ki=12;
-param int ko=13;
-param int ku=14;
-param int ma=15;
-param int me=16;
-param int mi=17;
-param int mo=18;
-param int mu=19;
-param int sa=20;
-param int se=21;
-param int si=22;
-param int so=23;
-param int su=24;
+param int avx2x4_ba=0;
+param int avx2x4_be=1;
+param int avx2x4_bi=2;
+param int avx2x4_bo=3;
+param int avx2x4_bu=4;
+param int avx2x4_ga=5;
+param int avx2x4_ge=6;
+param int avx2x4_gi=7;
+param int avx2x4_go=8;
+param int avx2x4_gu=9;
+param int avx2x4_ka=10;
+param int avx2x4_ke=11;
+param int avx2x4_ki=12;
+param int avx2x4_ko=13;
+param int avx2x4_ku=14;
+param int avx2x4_ma=15;
+param int avx2x4_me=16;
+param int avx2x4_mi=17;
+param int avx2x4_mo=18;
+param int avx2x4_mu=19;
+param int avx2x4_sa=20;
+param int avx2x4_se=21;
+param int avx2x4_si=22;
+param int avx2x4_so=23;
+param int avx2x4_su=24;
 
 /*
 u256[24] KeccakF1600RoundConstants = {
@@ -94,39 +94,39 @@ inline fn __prepare_theta(reg ptr u256[25] A_4x) -> reg u256, reg u256, reg u256
     reg u256 Ca, Ce, Ci, Co, Cu;
 
     // Ca = XOR256(Aba, XOR256(Aga, XOR256(Aka, XOR256(Ama, Asa))));
-    Ca = A_4x[sa];
-    Ca ^= A_4x[ma];
-    Ca ^=  A_4x[ka];
-    Ca ^=  A_4x[ga];
-    Ca ^=  A_4x[ba];
+    Ca = A_4x[avx2x4_sa];
+    Ca ^= A_4x[avx2x4_ma];
+    Ca ^=  A_4x[avx2x4_ka];
+    Ca ^=  A_4x[avx2x4_ga];
+    Ca ^=  A_4x[avx2x4_ba];
 
     // Ce = XOR256(Abe, XOR256(Age, XOR256(Ake, XOR256(Ame, Ase))));
-    Ce = A_4x[se];
-    Ce ^= A_4x[me];
-    Ce ^= A_4x[ke];
-    Ce ^= A_4x[ge];
-    Ce ^= A_4x[be];
+    Ce = A_4x[avx2x4_se];
+    Ce ^= A_4x[avx2x4_me];
+    Ce ^= A_4x[avx2x4_ke];
+    Ce ^= A_4x[avx2x4_ge];
+    Ce ^= A_4x[avx2x4_be];
 
     // Ci = XOR256(Abi, XOR256(Agi, XOR256(Aki, XOR256(Ami, Asi))));
-    Ci = A_4x[si];
-    Ci ^= A_4x[mi];
-    Ci ^= A_4x[ki];
-    Ci ^= A_4x[gi];
-    Ci ^= A_4x[bi];
+    Ci = A_4x[avx2x4_si];
+    Ci ^= A_4x[avx2x4_mi];
+    Ci ^= A_4x[avx2x4_ki];
+    Ci ^= A_4x[avx2x4_gi];
+    Ci ^= A_4x[avx2x4_bi];
 
     // Co = XOR256(Abo, XOR256(Ago, XOR256(Ako, XOR256(Amo, Aso))));
-    Co = A_4x[so];
-    Co ^= A_4x[mo];
-    Co ^= A_4x[ko];
-    Co ^= A_4x[go];
-    Co ^= A_4x[bo];
+    Co = A_4x[avx2x4_so];
+    Co ^= A_4x[avx2x4_mo];
+    Co ^= A_4x[avx2x4_ko];
+    Co ^= A_4x[avx2x4_go];
+    Co ^= A_4x[avx2x4_bo];
 
     // Cu = XOR256(Abu, XOR256(Agu, XOR256(Aku, XOR256(Amu, Asu))));
-    Cu = A_4x[su];
-    Cu ^= A_4x[mu];
-    Cu ^= A_4x[ku];
-    Cu ^= A_4x[gu];
-    Cu ^= A_4x[bu];
+    Cu = A_4x[avx2x4_su];
+    Cu ^= A_4x[avx2x4_mu];
+    Cu ^= A_4x[avx2x4_ku];
+    Cu ^= A_4x[avx2x4_gu];
+    Cu ^= A_4x[avx2x4_bu];
 
     return Ca, Ce, Ci, Co, Cu;
 }
@@ -164,64 +164,64 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bba, Bbe, Bbi, Bbo, Bbu;
     reg u256 t256;
 
-    t256 = A_4x[ba];
+    t256 = A_4x[avx2x4_ba];
     t256 ^= Da;
-    A_4x[ba] = t256;
+    A_4x[avx2x4_ba] = t256;
     Bba = t256;
 
-    t256 = A_4x[ge];
+    t256 = A_4x[avx2x4_ge];
     t256 ^= De;
-    A_4x[ge] = t256;
+    A_4x[avx2x4_ge] = t256;
     Bbe = __rol_4u64(t256, 44);
 
-    t256 = A_4x[ki];
+    t256 = A_4x[avx2x4_ki];
     t256 ^= Di;
-    A_4x[ki] = t256;
+    A_4x[avx2x4_ki] = t256;
     Bbi = __rol_4u64(t256, 43);
 
     // E##ba = XOR256(Bba, ANDnu256(Bbe, Bbi)); XOReq256(E##ba, CONST256_64(KeccakF1600RoundConstants[i]));
     t256 = #VPANDN_256(Bbe, Bbi);
     t256 ^= Bba;
     t256 ^= rc_index; //KeccakF1600RoundConstants[index];
-    E_4x[ba] = t256;
+    E_4x[avx2x4_ba] = t256;
 
     Ca = t256;
 
-    t256 = A_4x[mo];
+    t256 = A_4x[avx2x4_mo];
     t256 ^= Do;
-    A_4x[mo] = t256;
+    A_4x[avx2x4_mo] = t256;
     Bbo = __rol_4u64(t256, 21);
 
     //  E##be = XOR256(Bbe, ANDnu256(Bbi, Bbo));
     t256 = #VPANDN_256(Bbi, Bbo);
     t256 ^= Bbe;
-    E_4x[be] = t256;
+    E_4x[avx2x4_be] = t256;
 
     Ce = t256;
 
-    t256 = A_4x[su];
+    t256 = A_4x[avx2x4_su];
     t256 ^= Du;
-    A_4x[su] = t256;
+    A_4x[avx2x4_su] = t256;
     Bbu = __rol_4u64(t256, 14);
 
     // E##bi = XOR256(Bbi, ANDnu256(Bbo, Bbu)); 
     t256 = #VPANDN_256(Bbo, Bbu);
     t256 ^= Bbi;
-    E_4x[bi] = t256;
+    E_4x[avx2x4_bi] = t256;
 
     Ci = t256;
 
     // E##bo = XOR256(Bbo, ANDnu256(Bbu, Bba));
     t256 = #VPANDN_256(Bbu, Bba);
     t256 ^= Bbo;
-    E_4x[bo] = t256; 
+    E_4x[avx2x4_bo] = t256; 
     
     Co = t256; 
     
     // E##bu = XOR256(Bbu, ANDnu256(Bba, Bbe));
     t256 = #VPANDN_256(Bba, Bbe);
     t256 ^= Bbu; 
-    E_4x[bu] = t256;
+    E_4x[avx2x4_bu] = t256;
 
     Cu = t256;
 
@@ -237,63 +237,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bga, Bge, Bgi, Bgo, Bgu;
     reg u256 t256;
 
-    t256 = A_4x[bo];
+    t256 = A_4x[avx2x4_bo];
     t256 ^= Do;
-    A_4x[bo] = t256;
+    A_4x[avx2x4_bo] = t256;
     Bga = __rol_4u64(t256, 28);
 
-    t256 = A_4x[gu];
+    t256 = A_4x[avx2x4_gu];
     t256 ^= Du;
-    A_4x[gu] = t256;
+    A_4x[avx2x4_gu] = t256;
     Bge = __rol_4u64(t256, 20);
 
-    t256 = A_4x[ka];
+    t256 = A_4x[avx2x4_ka];
     t256 ^= Da;
-    A_4x[ka] = t256;
+    A_4x[avx2x4_ka] = t256;
     Bgi = __rol_4u64(t256, 3);
 
     // E##ga = XOR256(Bga, ANDnu256(Bge, Bgi))
     t256 = #VPANDN_256(Bge, Bgi);
     t256 ^= Bga;
-    E_4x[ga] = t256;
+    E_4x[avx2x4_ga] = t256;
 
     Ca ^= t256;
 
-    t256 = A_4x[me];
+    t256 = A_4x[avx2x4_me];
     t256 ^= De;
-    A_4x[me] = t256;
+    A_4x[avx2x4_me] = t256;
     Bgo = __rol_4u64(t256, 45);
 
     // E##ge = XOR256(Bge, ANDnu256(Bgi, Bgo))
     t256 = #VPANDN_256(Bgi, Bgo);
     t256 ^= Bge;
-    E_4x[ge] = t256;
+    E_4x[avx2x4_ge] = t256;
 
     Ce ^= t256;
 
-    t256 = A_4x[si];
+    t256 = A_4x[avx2x4_si];
     t256 ^= Di;
-    A_4x[si] = t256;
+    A_4x[avx2x4_si] = t256;
     Bgu = __rol_4u64(t256, 61);
 
     //  E##gi = XOR256(Bgi, ANDnu256(Bgo, Bgu))
     t256 = #VPANDN_256(Bgo, Bgu);
     t256 ^= Bgi;
-    E_4x[gi] = t256;
+    E_4x[avx2x4_gi] = t256;
     
     Ci ^= t256;
 
     // E##go = XOR256(Bgo, ANDnu256(Bgu, Bga));
     t256 = #VPANDN_256(Bgu, Bga);
     t256 ^= Bgo;
-    E_4x[go] = t256;
+    E_4x[avx2x4_go] = t256;
     
     Co ^= t256;
 
     // E##gu = XOR256(Bgu, ANDnu256(Bga, Bge));
     t256 = #VPANDN_256(Bga, Bge);
     t256 ^= Bgu;
-    E_4x[gu] = t256;
+    E_4x[avx2x4_gu] = t256;
     
     Cu ^= t256;
 
@@ -309,63 +309,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bka, Bke, Bki, Bko, Bku;
     reg u256 t256;
 
-    t256 = A_4x[be];
+    t256 = A_4x[avx2x4_be];
     t256 ^= De;
-    A_4x[be] = t256;
+    A_4x[avx2x4_be] = t256;
     Bka = __rol_4u64(t256, 1);
 
-    t256 = A_4x[gi];
+    t256 = A_4x[avx2x4_gi];
     t256 ^= Di;
-    A_4x[gi] = t256;
+    A_4x[avx2x4_gi] = t256;
     Bke = __rol_4u64(t256, 6);
 
-    t256 = A_4x[ko];
+    t256 = A_4x[avx2x4_ko];
     t256 ^= Do;
-    A_4x[ko] = t256;
+    A_4x[avx2x4_ko] = t256;
     Bki = __rol_4u64(t256, 25);
 
     // E##ka = XOR256(Bka, ANDnu256(Bke, Bki));
     t256 = #VPANDN_256(Bke, Bki);
     t256 ^= Bka;
-    E_4x[ka] = t256;
+    E_4x[avx2x4_ka] = t256;
 
     Ca ^= t256;
     
-    t256 = A_4x[mu];
+    t256 = A_4x[avx2x4_mu];
     t256 ^= Du;
-    A_4x[mu] = t256;
+    A_4x[avx2x4_mu] = t256;
     Bko = __rol_4u64_rho8(t256);
 
     // E##ke = XOR256(Bke, ANDnu256(Bki, Bko));
     t256 = #VPANDN_256(Bki, Bko);
     t256 ^= Bke;
-    E_4x[ke] = t256;
+    E_4x[avx2x4_ke] = t256;
 
     Ce ^= t256;
     
-    t256 = A_4x[sa];
+    t256 = A_4x[avx2x4_sa];
     t256 ^= Da;
-    A_4x[sa] = t256;
+    A_4x[avx2x4_sa] = t256;
     Bku = __rol_4u64(t256, 18);
 
     // E##ki = XOR256(Bki, ANDnu256(Bko, Bku))
     t256 = #VPANDN_256(Bko, Bku);
     t256 ^= Bki;
-    E_4x[ki] = t256;
+    E_4x[avx2x4_ki] = t256;
 
     Ci ^= t256;
 
     //  E##ko = XOR256(Bko, ANDnu256(Bku, Bka));
     t256 = #VPANDN_256(Bku, Bka);
     t256 ^= Bko;
-    E_4x[ko] = t256;
+    E_4x[avx2x4_ko] = t256;
 
     Co ^= t256;
 
     //  E##ku = XOR256(Bku, ANDnu256(Bka, Bke));
     t256 = #VPANDN_256(Bka, Bke);
     t256 ^= Bku;
-    E_4x[ku] = t256;
+    E_4x[avx2x4_ku] = t256;
 
     Cu ^= t256;
 
@@ -381,63 +381,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bma, Bme, Bmi, Bmo, Bmu;
     reg u256 t256;
 
-    t256 = A_4x[bu];
+    t256 = A_4x[avx2x4_bu];
     t256 ^= Du;
-    A_4x[bu] = t256;
+    A_4x[avx2x4_bu] = t256;
     Bma = __rol_4u64(t256, 27);
 
-    t256 = A_4x[ga];
+    t256 = A_4x[avx2x4_ga];
     t256 ^= Da;
-    A_4x[ga] = t256;
+    A_4x[avx2x4_ga] = t256;
     Bme = __rol_4u64(t256, 36);
 
-    t256 = A_4x[ke];
+    t256 = A_4x[avx2x4_ke];
     t256 ^= De;
-    A_4x[ke] = t256;
+    A_4x[avx2x4_ke] = t256;
     Bmi = __rol_4u64(t256, 10);
 
     // E##ma = XOR256(Bma, ANDnu256(Bme, Bmi));
     t256 = #VPANDN_256(Bme, Bmi);
     t256 ^= Bma;
-    E_4x[ma] = t256;
+    E_4x[avx2x4_ma] = t256;
 
     Ca ^= t256;
 
-    t256 = A_4x[mi];
+    t256 = A_4x[avx2x4_mi];
     t256 ^= Di;
-    A_4x[mi] = t256;
+    A_4x[avx2x4_mi] = t256;
     Bmo = __rol_4u64(t256, 15);
 
     // E##me = XOR256(Bme, ANDnu256(Bmi, Bmo));
     t256 = #VPANDN_256(Bmi, Bmo);
     t256 ^= Bme;
-    E_4x[me] = t256;
+    E_4x[avx2x4_me] = t256;
 
     Ce ^= t256;
 
-    t256 = A_4x[so];
+    t256 = A_4x[avx2x4_so];
     t256 ^= Do;
-    A_4x[so] = t256;
+    A_4x[avx2x4_so] = t256;
     Bmu = __rol_4u64_rho56(t256);
 
     // E##mi = XOR256(Bmi, ANDnu256(Bmo, Bmu));
     t256 = #VPANDN_256(Bmo, Bmu);
     t256 ^= Bmi;
-    E_4x[mi] = t256;
+    E_4x[avx2x4_mi] = t256;
 
     Ci ^= t256;
 
     // E##mo = XOR256(Bmo, ANDnu256(Bmu, Bma));
     t256 = #VPANDN_256(Bmu, Bma);
     t256 ^= Bmo;
-    E_4x[mo] = t256;
+    E_4x[avx2x4_mo] = t256;
 
     Co ^= t256;
 
     // E##mu = XOR256(Bmu, ANDnu256(Bma, Bme));
     t256 = #VPANDN_256(Bma, Bme);
     t256 ^= Bmu;
-    E_4x[mu] = t256;
+    E_4x[avx2x4_mu] = t256;
 
     Cu ^= t256;
 
@@ -453,63 +453,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bsa, Bse, Bsi, Bso, Bsu;
     reg u256 t256;
 
-    t256 = A_4x[bi];
+    t256 = A_4x[avx2x4_bi];
     t256 ^= Di;
-    A_4x[bi] = t256;
+    A_4x[avx2x4_bi] = t256;
     Bsa = __rol_4u64(t256, 62);
 
-    t256 = A_4x[go];
+    t256 = A_4x[avx2x4_go];
     t256 ^= Do;
-    A_4x[go] = t256;
+    A_4x[avx2x4_go] = t256;
     Bse = __rol_4u64(t256, 55);
 
-    t256 = A_4x[ku];
+    t256 = A_4x[avx2x4_ku];
     t256 ^= Du;
-    A_4x[ku] = t256;
+    A_4x[avx2x4_ku] = t256;
     Bsi = __rol_4u64(t256, 39);
 
     // E##sa = XOR256(Bsa, ANDnu256(Bse, Bsi));
     t256 = #VPANDN_256(Bse, Bsi);
     t256 ^= Bsa;
-    E_4x[sa] = t256;
+    E_4x[avx2x4_sa] = t256;
 
     Ca ^= t256;
 
-    t256 = A_4x[ma];
+    t256 = A_4x[avx2x4_ma];
     t256 ^= Da;
-    A_4x[ma] = t256;
+    A_4x[avx2x4_ma] = t256;
     Bso = __rol_4u64(t256, 41);
 
     // E##se = XOR256(Bse, ANDnu256(Bsi, Bso))
     t256 = #VPANDN_256(Bsi, Bso);
     t256 ^= Bse;
-    E_4x[se] = t256;  
+    E_4x[avx2x4_se] = t256;  
 
     Ce ^= t256;
 
-    t256 = A_4x[se];
+    t256 = A_4x[avx2x4_se];
     t256 ^= De;
-    A_4x[se] = t256;
+    A_4x[avx2x4_se] = t256;
     Bsu = __rol_4u64(t256, 2);
 
     // E##si = XOR256(Bsi, ANDnu256(Bso, Bsu)); 
     t256 = #VPANDN_256(Bso, Bsu);
     t256 ^= Bsi;
-    E_4x[si] = t256;
+    E_4x[avx2x4_si] = t256;
 
     Ci ^= t256;
 
     // E##so = XOR256(Bso, ANDnu256(Bsu, Bsa));
     t256 = #VPANDN_256(Bsu, Bsa);
     t256 ^= Bso;
-    E_4x[so] = t256;
+    E_4x[avx2x4_so] = t256;
 
     Co ^= t256;
 
     // E##su = XOR256(Bsu, ANDnu256(Bsa, Bse));
     t256 = #VPANDN_256(Bsa, Bse);
     t256 ^= Bsu;
-    E_4x[su] = t256;
+    E_4x[avx2x4_su] = t256;
 
     Cu ^= t256;
 
@@ -525,64 +525,64 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bba, Bbe, Bbi, Bbo, Bbu;
     reg u256 t256;
 
-    t256 = A_4x[ba];
+    t256 = A_4x[avx2x4_ba];
     t256 ^= Da;
-    A_4x[ba] = t256;
+    A_4x[avx2x4_ba] = t256;
     Bba = t256;
 
-    t256 = A_4x[ge];
+    t256 = A_4x[avx2x4_ge];
     t256 ^= De;
-    A_4x[ge] = t256;
+    A_4x[avx2x4_ge] = t256;
     Bbe = __rol_4u64(t256, 44);
 
-    t256 = A_4x[ki];
+    t256 = A_4x[avx2x4_ki];
     t256 ^= Di;
-    A_4x[ki] = t256;
+    A_4x[avx2x4_ki] = t256;
     Bbi = __rol_4u64(t256, 43);
 
     // E##ba = XOR256(Bba, ANDnu256(Bbe, Bbi)); XOReq256(E##ba, CONST256_64(KeccakF1600RoundConstants[i]));
     t256 = #VPANDN_256(Bbe, Bbi);
     t256 ^= Bba;
     t256 ^= rc_index; //KeccakF1600RoundConstants[index];
-    E_4x[ba] = t256;
+    E_4x[avx2x4_ba] = t256;
 
     Ca = t256;
 
-    t256 = A_4x[mo];
+    t256 = A_4x[avx2x4_mo];
     t256 ^= Do;
-    A_4x[mo] = t256;
+    A_4x[avx2x4_mo] = t256;
     Bbo = __rol_4u64(t256, 21);
 
     //  E##be = XOR256(Bbe, ANDnu256(Bbi, Bbo));
     t256 = #VPANDN_256(Bbi, Bbo);
     t256 ^= Bbe;
-    E_4x[be] = t256;
+    E_4x[avx2x4_be] = t256;
 
     Ce = t256;
 
-    t256 = A_4x[su];
+    t256 = A_4x[avx2x4_su];
     t256 ^= Du;
-    A_4x[su] = t256;
+    A_4x[avx2x4_su] = t256;
     Bbu = __rol_4u64(t256, 14);
 
     // E##bi = XOR256(Bbi, ANDnu256(Bbo, Bbu)); 
     t256 = #VPANDN_256(Bbo, Bbu);
     t256 ^= Bbi;
-    E_4x[bi] = t256;
+    E_4x[avx2x4_bi] = t256;
 
     Ci = t256;
 
     // E##bo = XOR256(Bbo, ANDnu256(Bbu, Bba));
     t256 = #VPANDN_256(Bbu, Bba);
     t256 ^= Bbo;
-    E_4x[bo] = t256; 
+    E_4x[avx2x4_bo] = t256; 
     
     Co = t256; 
     
     // E##bu = XOR256(Bbu, ANDnu256(Bba, Bbe));
     t256 = #VPANDN_256(Bba, Bbe);
     t256 ^= Bbu; 
-    E_4x[bu] = t256;
+    E_4x[avx2x4_bu] = t256;
 
     Cu = t256;
 
@@ -598,63 +598,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bga, Bge, Bgi, Bgo, Bgu;
     reg u256 t256;
 
-    t256 = A_4x[bo];
+    t256 = A_4x[avx2x4_bo];
     t256 ^= Do;
-    A_4x[bo] = t256;
+    A_4x[avx2x4_bo] = t256;
     Bga = __rol_4u64(t256, 28);
 
-    t256 = A_4x[gu];
+    t256 = A_4x[avx2x4_gu];
     t256 ^= Du;
-    A_4x[gu] = t256;
+    A_4x[avx2x4_gu] = t256;
     Bge = __rol_4u64(t256, 20);
 
-    t256 = A_4x[ka];
+    t256 = A_4x[avx2x4_ka];
     t256 ^= Da;
-    A_4x[ka] = t256;
+    A_4x[avx2x4_ka] = t256;
     Bgi = __rol_4u64(t256, 3);   
 
     // E##ga = XOR256(Bga, ANDnu256(Bge, Bgi))
     t256 = #VPANDN_256(Bge, Bgi);
     t256 ^= Bga;
-    E_4x[ga] = t256;
+    E_4x[avx2x4_ga] = t256;
 
     Ca ^= t256;
 
-    t256 = A_4x[me];
+    t256 = A_4x[avx2x4_me];
     t256 ^= De;
-    A_4x[me] = t256;
+    A_4x[avx2x4_me] = t256;
     Bgo = __rol_4u64(t256, 45);
 
     // E##ge = XOR256(Bge, ANDnu256(Bgi, Bgo))
     t256 = #VPANDN_256(Bgi, Bgo);
     t256 ^= Bge;
-    E_4x[ge] = t256;
+    E_4x[avx2x4_ge] = t256;
 
     Ce ^= t256;
 
-    t256 = A_4x[si];
+    t256 = A_4x[avx2x4_si];
     t256 ^= Di;
-    A_4x[si] = t256;
+    A_4x[avx2x4_si] = t256;
     Bgu = __rol_4u64(t256, 61);
 
     //  E##gi = XOR256(Bgi, ANDnu256(Bgo, Bgu))
     t256 = #VPANDN_256(Bgo, Bgu);
     t256 ^= Bgi;
-    E_4x[gi] = t256;
+    E_4x[avx2x4_gi] = t256;
     
     Ci ^= t256;
 
     // E##go = XOR256(Bgo, ANDnu256(Bgu, Bga));
     t256 = #VPANDN_256(Bgu, Bga);
     t256 ^= Bgo;
-    E_4x[go] = t256;
+    E_4x[avx2x4_go] = t256;
     
     Co ^= t256;
 
     // E##gu = XOR256(Bgu, ANDnu256(Bga, Bge));
     t256 = #VPANDN_256(Bga, Bge);
     t256 ^= Bgu;
-    E_4x[gu] = t256;
+    E_4x[avx2x4_gu] = t256;
     
     Cu ^= t256;
 
@@ -670,63 +670,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bka, Bke, Bki, Bko, Bku;
     reg u256 t256;
 
-    t256 = A_4x[be];
+    t256 = A_4x[avx2x4_be];
     t256 ^= De;
-    A_4x[be] = t256;
+    A_4x[avx2x4_be] = t256;
     Bka = __rol_4u64(t256, 1);
 
-    t256 = A_4x[gi];
+    t256 = A_4x[avx2x4_gi];
     t256 ^= Di;
-    A_4x[gi] = t256;
+    A_4x[avx2x4_gi] = t256;
     Bke = __rol_4u64(t256, 6);
 
-    t256 = A_4x[ko];
+    t256 = A_4x[avx2x4_ko];
     t256 ^= Do;
-    A_4x[ko] = t256;
+    A_4x[avx2x4_ko] = t256;
     Bki = __rol_4u64(t256, 25);
 
     // E##ka = XOR256(Bka, ANDnu256(Bke, Bki));
     t256 = #VPANDN_256(Bke, Bki);
     t256 ^= Bka;
-    E_4x[ka] = t256;
+    E_4x[avx2x4_ka] = t256;
 
     Ca ^= t256;
     
-    t256 = A_4x[mu];
+    t256 = A_4x[avx2x4_mu];
     t256 ^= Du;
-    A_4x[mu] = t256;
+    A_4x[avx2x4_mu] = t256;
     Bko = __rol_4u64_rho8(t256);
 
     // E##ke = XOR256(Bke, ANDnu256(Bki, Bko));
     t256 = #VPANDN_256(Bki, Bko);
     t256 ^= Bke;
-    E_4x[ke] = t256;
+    E_4x[avx2x4_ke] = t256;
 
     Ce ^= t256;
     
-    t256 = A_4x[sa];
+    t256 = A_4x[avx2x4_sa];
     t256 ^= Da;
-    A_4x[sa] = t256;
+    A_4x[avx2x4_sa] = t256;
     Bku = __rol_4u64(t256, 18);
 
     // E##ki = XOR256(Bki, ANDnu256(Bko, Bku))
     t256 = #VPANDN_256(Bko, Bku);
     t256 ^= Bki;
-    E_4x[ki] = t256;
+    E_4x[avx2x4_ki] = t256;
 
     Ci ^= t256;
 
     //  E##ko = XOR256(Bko, ANDnu256(Bku, Bka));
     t256 = #VPANDN_256(Bku, Bka);
     t256 ^= Bko;
-    E_4x[ko] = t256;
+    E_4x[avx2x4_ko] = t256;
 
     Co ^= t256;
 
     //  E##ku = XOR256(Bku, ANDnu256(Bka, Bke));
     t256 = #VPANDN_256(Bka, Bke);
     t256 ^= Bku;
-    E_4x[ku] = t256;
+    E_4x[avx2x4_ku] = t256;
 
     Cu ^= t256;
 
@@ -742,63 +742,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bma, Bme, Bmi, Bmo, Bmu;
     reg u256 t256;
 
-    t256 = A_4x[bu];
+    t256 = A_4x[avx2x4_bu];
     t256 ^= Du;
-    A_4x[bu] = t256;
+    A_4x[avx2x4_bu] = t256;
     Bma = __rol_4u64(t256, 27);
 
-    t256 = A_4x[ga];
+    t256 = A_4x[avx2x4_ga];
     t256 ^= Da;
-    A_4x[ga] = t256;
+    A_4x[avx2x4_ga] = t256;
     Bme = __rol_4u64(t256, 36);
 
-    t256 = A_4x[ke];
+    t256 = A_4x[avx2x4_ke];
     t256 ^= De;
-    A_4x[ke] = t256;
+    A_4x[avx2x4_ke] = t256;
     Bmi = __rol_4u64(t256, 10);
 
     // E##ma = XOR256(Bma, ANDnu256(Bme, Bmi));
     t256 = #VPANDN_256(Bme, Bmi);
     t256 ^= Bma;
-    E_4x[ma] = t256;
+    E_4x[avx2x4_ma] = t256;
 
     Ca ^= t256;
 
-    t256 = A_4x[mi];
+    t256 = A_4x[avx2x4_mi];
     t256 ^= Di;
-    A_4x[mi] = t256;
+    A_4x[avx2x4_mi] = t256;
     Bmo = __rol_4u64(t256, 15);
 
     // E##me = XOR256(Bme, ANDnu256(Bmi, Bmo));
     t256 = #VPANDN_256(Bmi, Bmo);
     t256 ^= Bme;
-    E_4x[me] = t256;
+    E_4x[avx2x4_me] = t256;
 
     Ce ^= t256;
 
-    t256 = A_4x[so];
+    t256 = A_4x[avx2x4_so];
     t256 ^= Do;
-    A_4x[so] = t256;
+    A_4x[avx2x4_so] = t256;
     Bmu = __rol_4u64_rho56(t256);
 
     // E##mi = XOR256(Bmi, ANDnu256(Bmo, Bmu));
     t256 = #VPANDN_256(Bmo, Bmu);
     t256 ^= Bmi;
-    E_4x[mi] = t256;
+    E_4x[avx2x4_mi] = t256;
 
     Ci ^= t256;
 
     // E##mo = XOR256(Bmo, ANDnu256(Bmu, Bma));
     t256 = #VPANDN_256(Bmu, Bma);
     t256 ^= Bmo;
-    E_4x[mo] = t256;
+    E_4x[avx2x4_mo] = t256;
 
     Co ^= t256;
 
     // E##mu = XOR256(Bmu, ANDnu256(Bma, Bme));
     t256 = #VPANDN_256(Bma, Bme);
     t256 ^= Bmu;
-    E_4x[mu] = t256;
+    E_4x[avx2x4_mu] = t256;
 
     Cu ^= t256;
 
@@ -814,63 +814,63 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bsa, Bse, Bsi, Bso, Bsu;
     reg u256 t256;
 
-    t256 = A_4x[bi];
+    t256 = A_4x[avx2x4_bi];
     t256 ^= Di;
-    A_4x[bi] = t256;
+    A_4x[avx2x4_bi] = t256;
     Bsa = __rol_4u64(t256, 62);
 
-    t256 = A_4x[go];
+    t256 = A_4x[avx2x4_go];
     t256 ^= Do;
-    A_4x[go] = t256;
+    A_4x[avx2x4_go] = t256;
     Bse = __rol_4u64(t256, 55);
 
-    t256 = A_4x[ku];
+    t256 = A_4x[avx2x4_ku];
     t256 ^= Du;
-    A_4x[ku] = t256;
+    A_4x[avx2x4_ku] = t256;
     Bsi = __rol_4u64(t256, 39);
 
     // E##sa = XOR256(Bsa, ANDnu256(Bse, Bsi));
     t256 = #VPANDN_256(Bse, Bsi);
     t256 ^= Bsa;
-    E_4x[sa] = t256;
+    E_4x[avx2x4_sa] = t256;
 
     Ca ^= t256;
 
-    t256 = A_4x[ma];
+    t256 = A_4x[avx2x4_ma];
     t256 ^= Da;
-    A_4x[ma] = t256;
+    A_4x[avx2x4_ma] = t256;
     Bso = __rol_4u64(t256, 41);
 
     // E##se = XOR256(Bse, ANDnu256(Bsi, Bso))
     t256 = #VPANDN_256(Bsi, Bso);
     t256 ^= Bse;
-    E_4x[se] = t256;  
+    E_4x[avx2x4_se] = t256;  
 
     Ce ^= t256;
 
-    t256 = A_4x[se];
+    t256 = A_4x[avx2x4_se];
     t256 ^= De;
-    A_4x[se] = t256;
+    A_4x[avx2x4_se] = t256;
     Bsu = __rol_4u64(t256, 2);
 
     // E##si = XOR256(Bsi, ANDnu256(Bso, Bsu)); 
     t256 = #VPANDN_256(Bso, Bsu);
     t256 ^= Bsi;
-    E_4x[si] = t256;
+    E_4x[avx2x4_si] = t256;
 
     Ci ^= t256;
 
     // E##so = XOR256(Bso, ANDnu256(Bsu, Bsa));
     t256 = #VPANDN_256(Bsu, Bsa);
     t256 ^= Bso;
-    E_4x[so] = t256;
+    E_4x[avx2x4_so] = t256;
 
     Co ^= t256;
 
     // E##su = XOR256(Bsu, ANDnu256(Bsa, Bse));
     t256 = #VPANDN_256(Bsa, Bse);
     t256 ^= Bsu;
-    E_4x[su] = t256;
+    E_4x[avx2x4_su] = t256;
 
     Cu ^= t256;
 
@@ -885,56 +885,56 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bba, Bbe, Bbi, Bbo, Bbu;
     reg u256 t256;
 
-    t256 = A_4x[ba];
+    t256 = A_4x[avx2x4_ba];
     t256 ^= Da;
-    A_4x[ba] = t256;
+    A_4x[avx2x4_ba] = t256;
     Bba = t256;
 
-    t256 = A_4x[ge];
+    t256 = A_4x[avx2x4_ge];
     t256 ^= De;
-    A_4x[ge] = t256;
+    A_4x[avx2x4_ge] = t256;
     Bbe = __rol_4u64(t256, 44);
 
-    t256 = A_4x[ki];
+    t256 = A_4x[avx2x4_ki];
     t256 ^= Di;
-    A_4x[ki] = t256;
+    A_4x[avx2x4_ki] = t256;
     Bbi = __rol_4u64(t256, 43);
 
     // E##ba = XOR256(Bba, ANDnu256(Bbe, Bbi)); XOReq256(E##ba, CONST256_64(KeccakF1600RoundConstants[i]));
     t256 = #VPANDN_256(Bbe, Bbi);
     t256 ^= Bba;
     t256 ^= rc_index; //KeccakF1600RoundConstants[index];
-    E_4x[ba] = t256;
+    E_4x[avx2x4_ba] = t256;
 
-    t256 = A_4x[mo];
+    t256 = A_4x[avx2x4_mo];
     t256 ^= Do;
-    A_4x[mo] = t256;
+    A_4x[avx2x4_mo] = t256;
     Bbo = __rol_4u64(t256, 21);
 
     //  E##be = XOR256(Bbe, ANDnu256(Bbi, Bbo));
     t256 = #VPANDN_256(Bbi, Bbo);
     t256 ^= Bbe;
-    E_4x[be] = t256;
+    E_4x[avx2x4_be] = t256;
 
-    t256 = A_4x[su];
+    t256 = A_4x[avx2x4_su];
     t256 ^= Du;
-    A_4x[su] = t256;
+    A_4x[avx2x4_su] = t256;
     Bbu = __rol_4u64(t256, 14);
 
     // E##bi = XOR256(Bbi, ANDnu256(Bbo, Bbu)); 
     t256 = #VPANDN_256(Bbo, Bbu);
     t256 ^= Bbi;
-    E_4x[bi] = t256;
+    E_4x[avx2x4_bi] = t256;
 
     // E##bo = XOR256(Bbo, ANDnu256(Bbu, Bba));
     t256 = #VPANDN_256(Bbu, Bba);
     t256 ^= Bbo;
-    E_4x[bo] = t256;
+    E_4x[avx2x4_bo] = t256;
     
     // E##bu = XOR256(Bbu, ANDnu256(Bba, Bbe));
     t256 = #VPANDN_256(Bba, Bbe);
     t256 ^= Bbu; 
-    E_4x[bu] = t256;
+    E_4x[avx2x4_bu] = t256;
 
     return A_4x, E_4x;
 }
@@ -947,55 +947,55 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bga, Bge, Bgi, Bgo, Bgu;
     reg u256 t256;
 
-    t256 = A_4x[bo];
+    t256 = A_4x[avx2x4_bo];
     t256 ^= Do;
-    A_4x[bo] = t256;
+    A_4x[avx2x4_bo] = t256;
     Bga = __rol_4u64(t256, 28);
 
-    t256 = A_4x[gu];
+    t256 = A_4x[avx2x4_gu];
     t256 ^= Du;
-    A_4x[gu] = t256;
+    A_4x[avx2x4_gu] = t256;
     Bge = __rol_4u64(t256, 20);
 
-    t256 = A_4x[ka];
+    t256 = A_4x[avx2x4_ka];
     t256 ^= Da;
-    A_4x[ka] = t256;
+    A_4x[avx2x4_ka] = t256;
     Bgi = __rol_4u64(t256, 3);   
 
     // E##ga = XOR256(Bga, ANDnu256(Bge, Bgi))
     t256 = #VPANDN_256(Bge, Bgi);
     t256 ^= Bga;
-    E_4x[ga] = t256;
+    E_4x[avx2x4_ga] = t256;
 
-    t256 = A_4x[me];
+    t256 = A_4x[avx2x4_me];
     t256 ^= De;
-    A_4x[me] = t256;
+    A_4x[avx2x4_me] = t256;
     Bgo = __rol_4u64(t256, 45);
 
     // E##ge = XOR256(Bge, ANDnu256(Bgi, Bgo))
     t256 = #VPANDN_256(Bgi, Bgo);
     t256 ^= Bge;
-    E_4x[ge] = t256;
+    E_4x[avx2x4_ge] = t256;
 
-    t256 = A_4x[si];
+    t256 = A_4x[avx2x4_si];
     t256 ^= Di;
-    A_4x[si] = t256;
+    A_4x[avx2x4_si] = t256;
     Bgu = __rol_4u64(t256, 61);
 
     //  E##gi = XOR256(Bgi, ANDnu256(Bgo, Bgu))
     t256 = #VPANDN_256(Bgo, Bgu);
     t256 ^= Bgi;
-    E_4x[gi] = t256;
+    E_4x[avx2x4_gi] = t256;
 
     // E##go = XOR256(Bgo, ANDnu256(Bgu, Bga));
     t256 = #VPANDN_256(Bgu, Bga);
     t256 ^= Bgo;
-    E_4x[go] = t256;
+    E_4x[avx2x4_go] = t256;
 
     // E##gu = XOR256(Bgu, ANDnu256(Bga, Bge));
     t256 = #VPANDN_256(Bga, Bge);
     t256 ^= Bgu;
-    E_4x[gu] = t256;
+    E_4x[avx2x4_gu] = t256;
 
     return A_4x, E_4x;
 }
@@ -1008,55 +1008,55 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bka, Bke, Bki, Bko, Bku;
     reg u256 t256;
 
-    t256 = A_4x[be];
+    t256 = A_4x[avx2x4_be];
     t256 ^= De;
-    A_4x[be] = t256;
+    A_4x[avx2x4_be] = t256;
     Bka = __rol_4u64(t256, 1);
 
-    t256 = A_4x[gi];
+    t256 = A_4x[avx2x4_gi];
     t256 ^= Di;
-    A_4x[gi] = t256;
+    A_4x[avx2x4_gi] = t256;
     Bke = __rol_4u64(t256, 6);
 
-    t256 = A_4x[ko];
+    t256 = A_4x[avx2x4_ko];
     t256 ^= Do;
-    A_4x[ko] = t256;
+    A_4x[avx2x4_ko] = t256;
     Bki = __rol_4u64(t256, 25);
 
     // E##ka = XOR256(Bka, ANDnu256(Bke, Bki));
     t256 = #VPANDN_256(Bke, Bki);
     t256 ^= Bka;
-    E_4x[ka] = t256;
+    E_4x[avx2x4_ka] = t256;
     
-    t256 = A_4x[mu];
+    t256 = A_4x[avx2x4_mu];
     t256 ^= Du;
-    A_4x[mu] = t256;
+    A_4x[avx2x4_mu] = t256;
     Bko = __rol_4u64_rho8(t256);
 
     // E##ke = XOR256(Bke, ANDnu256(Bki, Bko));
     t256 = #VPANDN_256(Bki, Bko);
     t256 ^= Bke;
-    E_4x[ke] = t256;
+    E_4x[avx2x4_ke] = t256;
     
-    t256 = A_4x[sa];
+    t256 = A_4x[avx2x4_sa];
     t256 ^= Da;
-    A_4x[sa] = t256;
+    A_4x[avx2x4_sa] = t256;
     Bku = __rol_4u64(t256, 18);
 
     // E##ki = XOR256(Bki, ANDnu256(Bko, Bku))
     t256 = #VPANDN_256(Bko, Bku);
     t256 ^= Bki;
-    E_4x[ki] = t256;
+    E_4x[avx2x4_ki] = t256;
 
     //  E##ko = XOR256(Bko, ANDnu256(Bku, Bka));
     t256 = #VPANDN_256(Bku, Bka);
     t256 ^= Bko;
-    E_4x[ko] = t256;
+    E_4x[avx2x4_ko] = t256;
 
     //  E##ku = XOR256(Bku, ANDnu256(Bka, Bke));
     t256 = #VPANDN_256(Bka, Bke);
     t256 ^= Bku;
-    E_4x[ku] = t256;
+    E_4x[avx2x4_ku] = t256;
 
     return A_4x, E_4x;
 }
@@ -1069,55 +1069,55 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bma, Bme, Bmi, Bmo, Bmu;
     reg u256 t256;
 
-    t256 = A_4x[bu];
+    t256 = A_4x[avx2x4_bu];
     t256 ^= Du;
-    A_4x[bu] = t256;
+    A_4x[avx2x4_bu] = t256;
     Bma = __rol_4u64(t256, 27);
 
-    t256 = A_4x[ga];
+    t256 = A_4x[avx2x4_ga];
     t256 ^= Da;
-    A_4x[ga] = t256;
+    A_4x[avx2x4_ga] = t256;
     Bme = __rol_4u64(t256, 36);
 
-    t256 = A_4x[ke];
+    t256 = A_4x[avx2x4_ke];
     t256 ^= De;
-    A_4x[ke] = t256;
+    A_4x[avx2x4_ke] = t256;
     Bmi = __rol_4u64(t256, 10);
 
     // E##ma = XOR256(Bma, ANDnu256(Bme, Bmi));
     t256 = #VPANDN_256(Bme, Bmi);
     t256 ^= Bma;
-    E_4x[ma] = t256;
+    E_4x[avx2x4_ma] = t256;
 
-    t256 = A_4x[mi];
+    t256 = A_4x[avx2x4_mi];
     t256 ^= Di;
-    A_4x[mi] = t256;
+    A_4x[avx2x4_mi] = t256;
     Bmo = __rol_4u64(t256, 15);
 
     // E##me = XOR256(Bme, ANDnu256(Bmi, Bmo));
     t256 = #VPANDN_256(Bmi, Bmo);
     t256 ^= Bme;
-    E_4x[me] = t256;
+    E_4x[avx2x4_me] = t256;
 
-    t256 = A_4x[so];
+    t256 = A_4x[avx2x4_so];
     t256 ^= Do;
-    A_4x[so] = t256;
+    A_4x[avx2x4_so] = t256;
     Bmu = __rol_4u64_rho56(t256);
 
     // E##mi = XOR256(Bmi, ANDnu256(Bmo, Bmu));
     t256 = #VPANDN_256(Bmo, Bmu);
     t256 ^= Bmi;
-    E_4x[mi] = t256;
+    E_4x[avx2x4_mi] = t256;
 
     // E##mo = XOR256(Bmo, ANDnu256(Bmu, Bma));
     t256 = #VPANDN_256(Bmu, Bma);
     t256 ^= Bmo;
-    E_4x[mo] = t256;
+    E_4x[avx2x4_mo] = t256;
 
     // E##mu = XOR256(Bmu, ANDnu256(Bma, Bme));
     t256 = #VPANDN_256(Bma, Bme);
     t256 ^= Bmu;
-    E_4x[mu] = t256;
+    E_4x[avx2x4_mu] = t256;
 
     return A_4x, E_4x;
 }
@@ -1130,55 +1130,55 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     reg u256 Bsa, Bse, Bsi, Bso, Bsu;
     reg u256 t256;
 
-    t256 = A_4x[bi];
+    t256 = A_4x[avx2x4_bi];
     t256 ^= Di;
-    A_4x[bi] = t256;
+    A_4x[avx2x4_bi] = t256;
     Bsa = __rol_4u64(t256, 62);
 
-    t256 = A_4x[go];
+    t256 = A_4x[avx2x4_go];
     t256 ^= Do;
-    A_4x[go] = t256;
+    A_4x[avx2x4_go] = t256;
     Bse = __rol_4u64(t256, 55);
 
-    t256 = A_4x[ku];
+    t256 = A_4x[avx2x4_ku];
     t256 ^= Du;
-    A_4x[ku] = t256;
+    A_4x[avx2x4_ku] = t256;
     Bsi = __rol_4u64(t256, 39);
 
     // E##sa = XOR256(Bsa, ANDnu256(Bse, Bsi));
     t256 = #VPANDN_256(Bse, Bsi);
     t256 ^= Bsa;
-    E_4x[sa] = t256;
+    E_4x[avx2x4_sa] = t256;
 
-    t256 = A_4x[ma];
+    t256 = A_4x[avx2x4_ma];
     t256 ^= Da;
-    A_4x[ma] = t256;
+    A_4x[avx2x4_ma] = t256;
     Bso = __rol_4u64(t256, 41);
 
     // E##se = XOR256(Bse, ANDnu256(Bsi, Bso))
     t256 = #VPANDN_256(Bsi, Bso);
     t256 ^= Bse;
-    E_4x[se] = t256;
+    E_4x[avx2x4_se] = t256;
 
-    t256 = A_4x[se];
+    t256 = A_4x[avx2x4_se];
     t256 ^= De;
-    A_4x[se] = t256;
+    A_4x[avx2x4_se] = t256;
     Bsu = __rol_4u64(t256, 2);
 
     // E##si = XOR256(Bsi, ANDnu256(Bso, Bsu)); 
     t256 = #VPANDN_256(Bso, Bsu);
     t256 ^= Bsi;
-    E_4x[si] = t256;
+    E_4x[avx2x4_si] = t256;
 
     // E##so = XOR256(Bso, ANDnu256(Bsu, Bsa));
     t256 = #VPANDN_256(Bsu, Bsa);
     t256 ^= Bso;
-    E_4x[so] = t256;
+    E_4x[avx2x4_so] = t256;
 
     // E##su = XOR256(Bsu, ANDnu256(Bsa, Bse));
     t256 = #VPANDN_256(Bsa, Bse);
     t256 ^= Bsu;
-    E_4x[su] = t256;
+    E_4x[avx2x4_su] = t256;
 
     return A_4x, E_4x;
 }
