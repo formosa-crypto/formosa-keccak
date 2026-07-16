@@ -394,29 +394,9 @@ qed.
 op st4x_keccak_pround =
  st4x_map keccak_pround_op.
 *)
-print M.
-phoare keccak_pround_avx2x4_ph _st4x _i:
- [ M.test_keccakf1600x4_native:
- st = _st4x
- /\ c = _i
- ==> res = st4x_keccak_round (kECCAK1600_RC.[to_uint _i]) _st4x] = 1%r.
-proof.
-admitted(*
-bypr => &m /> -> ->.
-have ->:
- Pr[M._keccakf1600_4x_pround(e{m}, a{m}, rOL8.[0], rOL56.[0]) @ &m :
-   res = st4x_keccak_pround a{m}]
- = Pr[Maux.p2(e{m}, a{m}) @ &m :
-   res = st4x_keccak_pround a{m}].
-byequiv keccak_pround_avx2x4_eq => /#.
-byphoare (_: st4x1=a{m} ==> _) => //.
-proc; simplify.
-wp; call (keccak_pround_unpacked_ph (st4x_unpack_spec a{m})).
-auto => /> st4x; rewrite /st4x_unpack_spec !st4x_from_4stK /st4x_keccak_pround.
-rewrite /st4x_map.
-by move=> <- <- <- <- /#.
-qed.
-*).
+(* DEAD WIP removed: the warray re-extraction (newer jasmin2ec) no longer emits
+   the test proc M.test_keccakf1600x4_native that the (unconsumed, admitted)
+   lemma keccak_pround_avx2x4_ph referred to. *)
 
 (*
 hoare keccak_pround_avx2x4_h _st4x:

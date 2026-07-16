@@ -16,6 +16,7 @@ from JazzEC require import Keccak1600_Jazz.
 
 from JazzEC require import WArray200 WArray800.
 from JazzEC require import Array25.
+from JazzEC require import ArrayAccessCastW256_25W256 ArrayAccessCastW64_25W256.
 
 from CryptoSpecs require import JWordList.
 from CryptoSpecs require import FIPS202_Keccakf1600 Keccakf1600_Spec.
@@ -187,13 +188,11 @@ module MM = {
     while ((at < (32 * ((aT %/ 8) + (_LEN %/ 8))))) {
       w <-
       (VPBROADCAST_4u64
-      (get64_direct (WA.init8 (fun i => buf.[i])) offset));
+      (RW.AC64.get_cast_direct buf offset));
       offset <- (offset + 8);
-      w <- (w `^` (get256_direct (WArray800.init256 (fun i => st.[i])) at));
+      w <- (w `^` (ArrayAccessCastW256_25W256.get_cast_direct st at));
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set256_direct (WArray800.init256 (fun i => st.[i])) at w)));
+      (ArrayAccessCastW256_25W256.set_cast_direct st at w);
       at <- (at + 32);
     }
     aT <- (aT + (8 * (_LEN %/ 8)));
@@ -201,11 +200,9 @@ module MM = {
     if (((0 < _LEN) \/ ((_TRAILB %% 256) <> 0))) {
       (dELTA, _LEN, _TRAILB, aT, w) <@ RW.MM.__a_ilen_read_bcast_upto8_at (
       buf, offset, 0, _LEN, _TRAILB, aT, aT);
-      w <- (w `^` (get256_direct (WArray800.init256 (fun i => st.[i])) at));
+      w <- (w `^` (ArrayAccessCastW256_25W256.get_cast_direct st at));
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set256_direct (WArray800.init256 (fun i => st.[i])) at w)));
+      (ArrayAccessCastW256_25W256.set_cast_direct st at w);
       offset <- (offset + dELTA);
     } else {
       
@@ -293,39 +290,23 @@ module MM = {
       ( _0,  _1,  _2,  _3, t0) <@ RW.MM.__a_ilen_read_upto8_at (buf0, offset,
       dELTA, _LEN, _TRAILB, aT, aT8);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i]))
-      ((4 * (aT %/ 8)) + 0)
-      ((get64 (WArray800.init256 (fun i => st.[i])) ((4 * (aT %/ 8)) + 0)) `^`
-      t0))));
+      (ArrayAccessCastW64_25W256.set_cast st ((4 * (aT %/ 8)) + 0) ((ArrayAccessCastW64_25W256.get_cast st ((4 * (aT %/ 8)) + 0)) `^`
+      t0));
       ( _4,  _5,  _6,  _7, t1) <@ RW.MM.__a_ilen_read_upto8_at (buf1, offset,
       dELTA, _LEN, _TRAILB, aT, aT8);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i]))
-      ((4 * (aT %/ 8)) + 1)
-      ((get64 (WArray800.init256 (fun i => st.[i])) ((4 * (aT %/ 8)) + 1)) `^`
-      t1))));
+      (ArrayAccessCastW64_25W256.set_cast st ((4 * (aT %/ 8)) + 1) ((ArrayAccessCastW64_25W256.get_cast st ((4 * (aT %/ 8)) + 1)) `^`
+      t1));
       ( _8,  _9,  _10,  _11, t2) <@ RW.MM.__a_ilen_read_upto8_at (buf2, offset,
       dELTA, _LEN, _TRAILB, aT, aT8);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i]))
-      ((4 * (aT %/ 8)) + 2)
-      ((get64 (WArray800.init256 (fun i => st.[i])) ((4 * (aT %/ 8)) + 2)) `^`
-      t2))));
+      (ArrayAccessCastW64_25W256.set_cast st ((4 * (aT %/ 8)) + 2) ((ArrayAccessCastW64_25W256.get_cast st ((4 * (aT %/ 8)) + 2)) `^`
+      t2));
       (dELTA, _LEN, _TRAILB, aT8, t3) <@ RW.MM.__a_ilen_read_upto8_at (buf3,
       offset, dELTA, _LEN, _TRAILB, aT, aT8);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i]))
-      ((4 * (aT %/ 8)) + 3)
-      ((get64 (WArray800.init256 (fun i => st.[i])) ((4 * (aT %/ 8)) + 3)) `^`
-      t3))));
+      (ArrayAccessCastW64_25W256.set_cast st ((4 * (aT %/ 8)) + 3) ((ArrayAccessCastW64_25W256.get_cast st ((4 * (aT %/ 8)) + 3)) `^`
+      t3));
       aT <- aT8;
     } else {
       
@@ -333,31 +314,19 @@ module MM = {
     offset <- (offset + dELTA);
     at <- (4 * (aT %/ 8));
     while ((at < ((4 * (aT %/ 8)) + (4 * (_LEN %/ 8))))) {
-      t0 <- (get64_direct (WA.init8 (fun i => buf0.[i])) offset);
+      t0 <- (RW.AC64.get_cast_direct buf0 offset);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 0)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 0)) `^` t0))));
-      t1 <- (get64_direct (WA.init8 (fun i => buf1.[i])) offset);
+      (ArrayAccessCastW64_25W256.set_cast st (at + 0) ((ArrayAccessCastW64_25W256.get_cast st (at + 0)) `^` t0));
+      t1 <- (RW.AC64.get_cast_direct buf1 offset);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 1)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 1)) `^` t1))));
-      t2 <- (get64_direct (WA.init8 (fun i => buf2.[i])) offset);
+      (ArrayAccessCastW64_25W256.set_cast st (at + 1) ((ArrayAccessCastW64_25W256.get_cast st (at + 1)) `^` t1));
+      t2 <- (RW.AC64.get_cast_direct buf2 offset);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 2)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 2)) `^` t2))));
-      t3 <- (get64_direct (WA.init8 (fun i => buf3.[i])) offset);
+      (ArrayAccessCastW64_25W256.set_cast st (at + 2) ((ArrayAccessCastW64_25W256.get_cast st (at + 2)) `^` t2));
+      t3 <- (RW.AC64.get_cast_direct buf3 offset);
       offset <- (offset + 8);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 3)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 3)) `^` t3))));
+      (ArrayAccessCastW64_25W256.set_cast st (at + 3) ((ArrayAccessCastW64_25W256.get_cast st (at + 3)) `^` t3));
       at <- (at + 4);
     }
     aT <- (aT + (8 * (_LEN %/ 8)));
@@ -366,31 +335,19 @@ module MM = {
       ( _12,  _13,  _14,  _15, t0) <@ RW.MM.__a_ilen_read_upto8_at (buf0, offset,
       0, _LEN, _TRAILB, aT, aT);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 0)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 0)) `^` t0))));
+      (ArrayAccessCastW64_25W256.set_cast st (at + 0) ((ArrayAccessCastW64_25W256.get_cast st (at + 0)) `^` t0));
       ( _16,  _17,  _18,  _19, t1) <@ RW.MM.__a_ilen_read_upto8_at (buf1, offset,
       0, _LEN, _TRAILB, aT, aT);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 1)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 1)) `^` t1))));
+      (ArrayAccessCastW64_25W256.set_cast st (at + 1) ((ArrayAccessCastW64_25W256.get_cast st (at + 1)) `^` t1));
       ( _20,  _21,  _22,  _23, t2) <@ RW.MM.__a_ilen_read_upto8_at (buf2, offset,
       0, _LEN, _TRAILB, aT, aT);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 2)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 2)) `^` t2))));
+      (ArrayAccessCastW64_25W256.set_cast st (at + 2) ((ArrayAccessCastW64_25W256.get_cast st (at + 2)) `^` t2));
       (dELTA, _LEN, _TRAILB, aT, t3) <@ RW.MM.__a_ilen_read_upto8_at (buf3, 
       offset, 0, _LEN, _TRAILB, aT, aT);
       st <-
-      (Array25.init
-      (WArray800.get256
-      (WArray800.set64 (WArray800.init256 (fun i => st.[i])) (at + 3)
-      ((get64 (WArray800.init256 (fun i => st.[i])) (at + 3)) `^` t3))));
+      (ArrayAccessCastW64_25W256.set_cast st (at + 3) ((ArrayAccessCastW64_25W256.get_cast st (at + 3)) `^` t3));
       offset <- (offset + dELTA);
     } else {
       
@@ -461,95 +418,71 @@ module MM = {
     i <- 0;
     while ((i < (32 * (_LEN %/ 32)))) {
       x0 <-
-      (get256_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW256_25W256.get_cast_direct st
       ((4 * i) + (0 * 32)));
       x1 <-
-      (get256_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW256_25W256.get_cast_direct st
       ((4 * i) + (1 * 32)));
       x2 <-
-      (get256_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW256_25W256.get_cast_direct st
       ((4 * i) + (2 * 32)));
       x3 <-
-      (get256_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW256_25W256.get_cast_direct st
       ((4 * i) + (3 * 32)));
       i <- (i + 32);
       (x0, x1, x2, x3) <@ M.__4u64x4_u256x4 (x0, x1, x2, x3);
       buf0 <-
-      (A.init
-      (WA.get8
-      (WA.set256_direct (WA.init8 (fun i_0 => buf0.[i_0]))
-      offset x0)));
+      (RW.AC256.set_cast_direct buf0 offset x0);
       buf1 <-
-      (A.init
-      (WA.get8
-      (WA.set256_direct (WA.init8 (fun i_0 => buf1.[i_0]))
-      offset x1)));
+      (RW.AC256.set_cast_direct buf1 offset x1);
       buf2 <-
-      (A.init
-      (WA.get8
-      (WA.set256_direct (WA.init8 (fun i_0 => buf2.[i_0]))
-      offset x2)));
+      (RW.AC256.set_cast_direct buf2 offset x2);
       buf3 <-
-      (A.init
-      (WA.get8
-      (WA.set256_direct (WA.init8 (fun i_0 => buf3.[i_0]))
-      offset x3)));
+      (RW.AC256.set_cast_direct buf3 offset x3);
       offset <- (offset + 32);
     }
     while ((i < (8 * (_LEN %/ 8)))) {
       t0 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (0 * 8)));
       buf0 <-
-      (A.init
-      (WA.get8
-      (WA.set64_direct (WA.init8 (fun i_0 => buf0.[i_0]))
-      offset t0)));
+      (RW.AC64.set_cast_direct buf0 offset t0);
       t1 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (1 * 8)));
       buf1 <-
-      (A.init
-      (WA.get8
-      (WA.set64_direct (WA.init8 (fun i_0 => buf1.[i_0]))
-      offset t1)));
+      (RW.AC64.set_cast_direct buf1 offset t1);
       t2 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (2 * 8)));
       buf2 <-
-      (A.init
-      (WA.get8
-      (WA.set64_direct (WA.init8 (fun i_0 => buf2.[i_0]))
-      offset t2)));
+      (RW.AC64.set_cast_direct buf2 offset t2);
       t3 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (3 * 8)));
       buf3 <-
-      (A.init
-      (WA.get8
-      (WA.set64_direct (WA.init8 (fun i_0 => buf3.[i_0]))
-      offset t3)));
+      (RW.AC64.set_cast_direct buf3 offset t3);
       i <- (i + 8);
       offset <- (offset + 8);
     }
     if ((0 < (_LEN %% 8))) {
       t0 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (0 * 8)));
       (buf0,  _0,  _1) <@ RW.MM.__a_ilen_write_upto8 (buf0, offset, 0, (_LEN %% 8),
       t0);
       t1 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (1 * 8)));
       (buf1,  _2,  _3) <@ RW.MM.__a_ilen_write_upto8 (buf1, offset, 0, (_LEN %% 8),
       t1);
       t2 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (2 * 8)));
       (buf2,  _4,  _5) <@ RW.MM.__a_ilen_write_upto8 (buf2, offset, 0, (_LEN %% 8),
       t2);
       t3 <-
-      (get64_direct (WArray800.init256 (fun i_0 => st.[i_0]))
+      (ArrayAccessCastW64_25W256.get_cast_direct st
       ((4 * i) + (3 * 8)));
       (buf3,  _6,  _7) <@ RW.MM.__a_ilen_write_upto8 (buf3, offset, 0, (_LEN %% 8),
       t3);
