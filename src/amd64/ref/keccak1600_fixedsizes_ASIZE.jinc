@@ -112,16 +112,19 @@ inline fn __addstate
                 is_arr_init(buf,0,_ASIZE) && is_arr_init(st,0,7*32)
    , ensures = is_arr_init(st,0,7*32) }
  ]
+/* SCT: values live across _keccakf1600 are spilled to MMX registers
+ * (no Keccak permutation uses them), so the unspill is a register move,
+ * never a transient load — no msf/lfence is needed in the block loop. */
 inline fn __absorb
 ( reg mut ptr u64[25] st
 , inline int AT
-, reg const ptr u8[_ASIZE] buf
+, #[spill_to_mmx] reg const ptr u8[_ASIZE] buf
 , inline int _TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
 , inline int _RATE8
 ) -> reg ptr u64[25] /* st */
    , inline int /* AT */
 {
-  reg ui64 offset, i;
+  #[spill_to_mmx] reg ui64 offset, i;
   inline int ITERS, _LEN;
 
   offset = 0;
@@ -219,14 +222,15 @@ inline fn __dumpstate
    , ensures = is_arr_init(st,0,32*7) 
    , ensures = is_arr_init(buf,0,_ASIZE)}
  ]
+/* SCT: same MMX-spill discipline as __absorb above. */
 inline fn __squeeze
 ( reg mut ptr u64[25] st
-, reg mut ptr u8[_ASIZE] buf
+, #[spill_to_mmx] reg mut ptr u8[_ASIZE] buf
 , inline int _RATE8
 ) -> reg ptr u64[25] /* st */
    , reg ptr u8[_ASIZE] /* buf */
 {
-  reg ui64 offset, i;
+  #[spill_to_mmx] reg ui64 offset, i;
 
   offset = 0;
   i = 0;

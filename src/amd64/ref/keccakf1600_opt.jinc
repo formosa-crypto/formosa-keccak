@@ -49,11 +49,12 @@ inline fn keccakf1600_opt_loop_body
 {
   reg u64 rcx rdx r9 r12 r14;
   reg ptr u64[24] RC;
+  stack u64[1] cnt;
 
   // .LBB0_1:                                   # =>This Inner Loop Header: Depth=1
   e[0] = r11;                                   // movq %r11, -32(%rsp)
   e[1] = rdi;                                   // movq %rdi, -24(%rsp)
-  e[3] = rax;                                   // movq %rax, 24(%rsp)   (counter spill)
+  cnt[0] = rax;                                 // movq %rax, 24(%rsp)   (counter spill; dedicated slot for CT)
   e[2] = rsi;                                   // movq %rsi, 16(%rsp)
   rcx = a[15];                                  // movq -72(%rsp), %rcx
   rcx ^= r8;                                    // xorq %r8, %rcx
@@ -118,7 +119,7 @@ inline fn keccakf1600_opt_loop_body
   e[8] = r10;                                   // movq %r10, 64(%rsp)
   r12 = !r9 & r14;                              // andnq %r14, %r9, %r12
   RC = KECCAK1600_RC;                           // leaq KeccakF_RoundConstants(%rip), %r10
-  r14 = e[3];                                   // movq 24(%rsp), %r14   (counter reload)
+  r14 = cnt[0];                                 // movq 24(%rsp), %r14   (counter reload)
   r12 ^= RC[r14 + 2];                           // xorq 16(%r10,%r14,8), %r12
   r12 ^= rbp;                                   // xorq %rbp, %r12
   rsi ^= r9;                                    // xorq %r9, %rsi
@@ -303,7 +304,7 @@ inline fn keccakf1600_opt_loop_body
   rsi ^= rcx;                                   // xorq %rcx, %rsi
   a[2] = rsi;                                   // movq %rsi, 8(%rsp)
   rbp = !rax & rcx;                             // andnq %rcx, %rax, %rbp
-  rcx = e[3];                                   // movq 24(%rsp), %rcx   (counter reload)
+  rcx = cnt[0];                                 // movq 24(%rsp), %rcx   (counter reload)
   RC = KECCAK1600_RC;                            // leaq KeccakF_RoundConstants(%rip), %rsi
   rbp ^= RC[rcx + 3];                           // xorq 24(%rsi,%rcx,8), %rbp
   rbp ^= r12;                                   // xorq %r12, %rbp
@@ -419,7 +420,7 @@ inline fn keccakf1600_opt_loop_body
   rsi ^= rcx;                                   // xorq %rcx, %rsi
   rbx = !rax & rcx;                             // andnq %rcx, %rax, %rbx
   rbx ^= r14;                                   // xorq %r14, %rbx
-  rcx = e[3];                                   // movq 24(%rsp), %rcx   (counter reload)
+  rcx = cnt[0];                                 // movq 24(%rsp), %rcx   (counter reload)
   rcx += 2;                                     // addq $2, %rcx
   rax = rcx;                                    // movq %rcx, %rax
   // cmpq $22, %rcx                             # loop condition rcx < 22
