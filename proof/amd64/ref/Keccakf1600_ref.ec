@@ -26,15 +26,34 @@ case: (i %% 64 = 0) => [->|//].
 by apply W64.all_eq_eq; rewrite /all_eq.
 qed.
 
+lemma ROR_ROL_64 (x:W64.t) i:
+ 0 < i < 64 =>
+ x `|>>>|` W64.shift_mask (W8.of_int i)
+ = x `|<<<|` W64.shift_mask (W8.of_int (64-i)).
+proof.
+move=> H.
+rewrite wordP => k Hk.
+rewrite rorwE rolwE Hk /=; congr. 
+by rewrite /shift_mask !of_uintK /#.
+qed.
+
 hoare rol_u64_h _x _r:
  M.__rol_u64_ref
  : x = _x /\ i = _r%%64
  ==> res = _x  `|<<<|` _r%%64.
 proof.
+(* This script is independent of KECCAK_FEATURES *)
 proc; simplify.
+seq 1: #pre; first by inline*; auto.
+if => //.
+ case: (i=0).
+ by rcondf 1; auto => /> &m _ ->; rewrite ROL_64_by0.
+ rcondt 1; auto => /> &m _ E.
+ rewrite /RORX_64 ROR_ROL_64 1:/#; congr.
+ by rewrite /shift_mask of_uintK /= /#.
 case: (i=0).
- by rcondf 1; auto => /> ->; rewrite ROL_64_by0.
-rcondt 1; auto => /> E.
+ by rcondf 1; auto => /> &m _ ->; rewrite ROL_64_by0.
+rcondt 1; auto => /> &m _ E.
 rewrite /ROL_64 /shift_mask /=.
 by rewrite !modz_dvd 1..2:/# E.
 qed.
@@ -47,6 +66,23 @@ phoare rol_u64_ph _x _r:
  : x = _x /\ i = _r%%64 ==> res = _x  `|<<<|` _r%%64 ] = 1%r
 by conseq rol_u64_ll (rol_u64_h _x _r).
 
+hoare andn_u64_h _a _b:
+ M.__andn_u64_ref :
+ a = _a /\ b = _b ==> res = invw _a `&` _b.
+proof.
+(* This script is independent of KECCAK_FEATURES *)
+proc; simplify.
+seq 1: #pre; first by inline*; auto.
+by if => //; auto.
+qed.
+
+lemma andn_u64_ll: islossless M.__andn_u64_ref
+by islossless.
+
+phoare andn_u64_ph _a _b:
+ [ M.__andn_u64_ref :
+   a = _a /\ b = _b ==> res = invw _a `&` _b ] = 1%r.
+proof. by conseq andn_u64_ll (andn_u64_h _a _b). qed.
 
 (* *)
 
@@ -57,7 +93,7 @@ proof.
 proc.
 do 6! unroll for ^while.
 auto => />.
-by rewrite -Array5.ext_eq_all /all_eq /keccak_C /idx /invidx /=.
+by rewrite -Array5.ext_eq_all /all_eq /keccak_C /=.
 qed.
 
 hoare theta_rol_ref_h _c:
@@ -65,9 +101,15 @@ hoare theta_rol_ref_h _c:
   c = _c ==> res = keccak_D _c.
 proof.
 proc.
-unroll for ^while; inline*; auto => />.
-rewrite -ext_eq_all /all_eq /keccak_D /idx /invidx /=.
-by rewrite /ROL_64 /shift_mask /init_5_64 /rol_64 /=; smt(W64.xorwC).
+unroll for ^while.
+wp; ecall (rol_u64_h d.[4] 1). 
+wp; ecall (rol_u64_h d.[3] 1). 
+wp; ecall (rol_u64_h d.[2] 1). 
+wp; ecall (rol_u64_h d.[1] 1). 
+wp; ecall (rol_u64_h d.[0] 1). 
+auto => />.
+rewrite -ext_eq_all /all_eq /keccak_D /=.
+by rewrite /init_5_64 /=; smt(W64.xorwC).
 qed.
 
 hoare keccak_rho_offsets_h _i:
@@ -136,29 +178,18 @@ while (#pre /\ 0 <= x <= 5 /\
   rewrite E get_setE 1:/# ifT 1:/#.
   rewrite get_setE 1:/# ifT 1:/#.
   rewrite get_setE 1:/# ifT 1:/#.
-  by rewrite rhotates_idx_mod64 /rol_64 1:/# modz_mod /idx_op /#.
+  by rewrite rhotates_idx_mod64 1:/# modz_mod /#.
  by rewrite get_setE 1:/# ifF 1:/# IH 1:/#.
 auto => /> Hy1 Hy2; split; first by smt().
 move => A k ???; have ->:k=5 by smt().
 move => IH x Hx1 Hx2.
 rewrite IH 1:/#.
 pose R:= rhotates.[_] (*obs: lock reduction *).
-rewrite /rol_64 /init_25_64 /=.
-rewrite Array25.initiE 1:/#; beta. 
-rewrite -/(idx_op (x,_y)) -/(invidx_op _) idxK' /idx_op /=.
-rewrite Array25.initiE 1:/# //= /rol_64 !modz_mod.
-rewrite Array25.initiE 1:/# //= /rol_64; congr; congr; smt(). 
+rewrite /= Array25.initiE 1:/#; beta. 
+rewrite -/(idx_op (x,_y)) -/(invidx_op _) idxK' /=.
+rewrite Array25.initiE 1:/# //= !modz_mod.
+rewrite Array25.initiE 1:/# //=; congr; congr; smt(). 
 qed.
-
-hoare ANDN_64_h _a _b:
- M.__ANDN_64 :
- a = _a /\ b = _b ==> res = invw _a `&` _b.
-proof. by proc; auto. qed.
-
-phoare ANDN_64_ph _a _b:
- [ M.__ANDN_64 :
-   a = _a /\ b = _b ==> res = invw _a `&` _b ] = 1%r.
-proof. by proc; auto. qed.
 
 hoare set_row_ref_h _a _e _b _y:
  M.__set_row_ref :
@@ -171,7 +202,7 @@ proof.
 proc; simplify.
 while (#[/2:6]pre /\ 0 <= x <= 5 /\ 
        forall k, 0 <= k < x+5*_y => e.[k] = (keccak_pround_op _a).[k]).
- wp; ecall (ANDN_64_h b.[x1] b.[x2]).
+ wp; ecall (andn_u64_h b.[x1] b.[x2]).
  auto => /> &m Hy1 Hy2 Hb Hx1 _ IH Hx2; split; first smt().
  move=> k Hk1 Hk2.
  case: (k = x{m}+_y*5) => E.

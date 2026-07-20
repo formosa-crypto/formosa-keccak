@@ -7,7 +7,7 @@ from CryptoSpecs require import FIPS202_SHA3 FIPS202_Keccakf1600 Keccak1600_arra
 
 require import Keccak_bindings.
 
-require import  Keccak1600_avx2.
+time require import  Keccak1600_avx2.
 
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import Array4 Array5 Array7 Array24 Array25.
@@ -67,6 +67,7 @@ qed.
 lemma keccakf1600_pround_avx2_ll: islossless M.__keccakf1600_pround_avx2 
 by islossless.
 
+pragma +Circuit:timing.
 
 hoare keccak_pround_avx2_h _a:
  M.__keccakf1600_pround_avx2 :

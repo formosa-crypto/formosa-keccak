@@ -1,3 +1,12 @@
+// used for the CI target of safety-checking
+from Keccak require "common/keccakf1600_generic.jinc"
+
+param int KECCAK_FEATURES
+ = KECCAK_FEATURE_BMI+KECCAK_FEATURE_BMI2+KECCAK_FEATURE_AVX2;
+param int KECCAK_PERMUTATION
+ = KECCAK_F1600_AVX2+KECCAK_F1600x4_NAT;
+
+from Keccak require "avx2/keccakf1600.jinc"
 from Keccak require "common/subreadwrite_imem.jinc"
-from Keccak require "avx2/keccak1600.jinc"
+from Keccak require "avx2/keccak1600_fixedsizes.jinc"
 from Keccak require "avx2/keccak1600_updstate.jinc"

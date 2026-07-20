@@ -19,6 +19,7 @@ require import Avx2_extra.
 
 op st_inv (_:state) = true.
 
+(*
 module Maux = {
  proc p1(st4x2 st4x1: state4x): state4x = {
   st4x1 <- st4x_pack_spec st4x1;
@@ -50,6 +51,8 @@ module Maux = {
  }
 }.
 
+pragma +Circuit:timing.
+
 hoare keccak_pround_unpacked_h _st4x:
  Maux.p1:
  st4x1 = _st4x
@@ -61,10 +64,10 @@ proof.
 proc; inline*; simplify.
 time by circuit.
 qed.
-
+*)
 lemma keccakf1600_4x_pround_ll: islossless M._keccakf1600_4x_pround.
 proof. by islossless. qed.
-
+(*
 phoare keccak_pround_unpacked_ph _st4x:
  [ Maux.p1
  : st4x1 = _st4x
@@ -90,10 +93,10 @@ proc.
 inline*.
 by circuit.
 qed.
-
+*)
 op st4x_keccak_pround =
  st4x_map keccak_pround_op.
-
+(*
 phoare keccak_pround_avx2x4_ph _st4x:
  [ M._keccakf1600_4x_pround:
  a = _st4x
@@ -136,7 +139,7 @@ auto => /> st4x; rewrite /st4x_unpack_spec !st4x_from_4stK /st4x_keccak_pround.
 rewrite /st4x_map.
 by move=> <- <- <- <- /#.
 qed.
-
+*)
 (* Mas o que gostava mesmo era de 
  provar o último lema directamente! *)
 hoare keccak_pround_avx2x4_h' _st4x:
@@ -146,10 +149,11 @@ hoare keccak_pround_avx2x4_h' _st4x:
  ==> res = st4x_keccak_pround _st4x.
 proof.
 proc; simplify.
-(* não consegue lidar com isto... (grande demais?)*)
-abort. (*
 circuit.
+(* não consegue lidar com isto... (grande demais?)
+JÁ CONSEGUE!!! :-)
 *)
+qed.
 
 from JazzEC require import Array24.
 abbrev keccak_round_i i st =
@@ -186,7 +190,7 @@ by rewrite !st4x_get_pack3 /=.
 qed.
 
 hoare keccakf1600_avx2x4_orig_h _a:
- M.__keccakf1600_avx2x4_orig :
+ M.__keccakf1600_avx2x4_ref :
  a = _a
  ==> res = st4x_map keccak_f1600_op _a.
 proof.
@@ -196,8 +200,8 @@ while (0 <= c <= 24 /\ c %% 2 = 0 /\
        r8 = rOL8.[0] /\
        r56 = rOL56.[0] /\
        a = st4x_map (keccak_round_i c) _a).
- wp; ecall (keccak_pround_avx2x4_h e).
- wp; ecall (keccak_pround_avx2x4_h a); auto => &m /> Hc1 _ Hc2 Hc; split.
+ wp; ecall (keccak_pround_avx2x4_h' e).
+ wp; ecall (keccak_pround_avx2x4_h' a); auto => &m /> Hc1 _ Hc2 Hc; split.
   smt().
  split.
   smt(). 
@@ -224,7 +228,7 @@ auto => |>; split.
 by move=> c ???; have ->: c = 24; smt().
 qed.
 
-lemma keccakf1600_avx2x4_orig_ll: islossless M.__keccakf1600_avx2x4_orig.
+lemma keccakf1600_avx2x4_orig_ll: islossless M.__keccakf1600_avx2x4_ref.
 proof.
 proc.
 wp; while (true) (24-c).
@@ -235,7 +239,7 @@ by auto => /#.
 qed.
 
 phoare keccakf1600_avx2x4_orig_ph _a:
- [ M.__keccakf1600_avx2x4_orig
+ [ M.__keccakf1600_avx2x4_ref
  : a = _a
  ==> res = st4x_map keccak_f1600_op _a
  ] = 1%r.

@@ -6,8 +6,8 @@ import SLH64.
 
 require import
 Array1 Array3 Array5 Array6 Array7 Array24 Array25 Array26 Array101 WArray3
-WArray32 WArray40 WArray160 WArray192 WArray200 WArray208 WArray224 WArray800
-WArray808.
+WArray8 WArray32 WArray40 WArray160 WArray192 WArray200 WArray208 WArray224
+WArray800 WArray808.
 
 abbrev rOL8 =
 ((Array1.of_list witness)
@@ -56,10 +56,49 @@ abbrev kECCAK1600_RC =
 (W64.of_int (-9223372034707259384))]).
 
 module M = {
-  proc __ANDN_64 (a:W64.t, b:W64.t) : W64.t = {
-    var t:W64.t;
-    t <- ((invw a) `&` b);
-    return t;
+  proc __HAS_FEATURE (sELECTION:int, fEATURES:int) : bool = {
+    var b:bool;
+    b <-
+    (((W256.of_int fEATURES) `&` (W256.of_int sELECTION)) <> (W256.of_int 0));
+    return b;
+  }
+  proc __SHLQ (x:W64.t, shbytes:int) : W64.t = {
+    
+    if ((shbytes <> 0)) {
+      x <- (x `<<` (W8.of_int (8 * shbytes)));
+    } else {
+      
+    }
+    return x;
+  }
+  proc __SHLDQ (x:W128.t, shbytes:int) : W128.t = {
+    
+    if ((shbytes <> 0)) {
+      x <- (VPSLLDQ_128 x (W8.of_int shbytes));
+    } else {
+      
+    }
+    return x;
+  }
+  proc __SHLQ_256 (x:W256.t, shbytes:int) : W256.t = {
+    
+    if ((shbytes <> 0)) {
+      x <- (VPSLL_4u64 x (W128.of_int (8 * shbytes)));
+    } else {
+      
+    }
+    return x;
+  }
+  proc __KECCAK_F (pERMUTATION:int) : int = {
+    var perm:int;
+    perm <- (W256.to_uint ((W256.of_int pERMUTATION) `&` (W256.of_int 255)));
+    return perm;
+  }
+  proc __KECCAK_Fx4 (pERMUTATION:int) : int = {
+    var perm:int;
+    perm <-
+    (W256.to_uint ((W256.of_int pERMUTATION) `&` (W256.of_int 65280)));
+    return perm;
   }
   proc keccakf1600_index (x:int, y:int) : int = {
     var r:int;
@@ -96,15 +135,39 @@ module M = {
     r <@ keccakf1600_rho_offsets (i);
     return r;
   }
+  proc __andn_u64_ref (a:W64.t, b:W64.t) : W64.t = {
+    var t:W64.t;
+    var hAS_BMI:bool;
+    hAS_BMI <@ __HAS_FEATURE (1, ((1 + 2) + 4));
+    if (hAS_BMI) {
+      t <- ((invw a) `&` b);
+    } else {
+      t <- a;
+      t <- (invw t);
+      t <- (t `&` b);
+    }
+    return t;
+  }
   proc __rol_u64_ref (x:W64.t, i:int) : W64.t = {
+    var t:W64.t;
+    var hAS_BMI2:bool;
     var  _0:bool;
     var  _1:bool;
-    if ((i <> 0)) {
-      ( _0,  _1, x) <- (ROL_64 x (W8.of_int i));
+    hAS_BMI2 <@ __HAS_FEATURE (2, ((1 + 2) + 4));
+    if (hAS_BMI2) {
+      if ((i <> 0)) {
+        t <- (RORX_64 x (W8.of_int ((64 - i) %% 64)));
+      } else {
+        t <- x;
+      }
     } else {
-      
+      if ((i <> 0)) {
+        ( _0,  _1, t) <- (ROL_64 x (W8.of_int i));
+      } else {
+        t <- x;
+      }
     }
-    return x;
+    return t;
   }
   proc __theta_sum_ref (a:W64.t Array25.t) : W64.t Array5.t = {
     var c:W64.t Array5.t;
@@ -172,7 +235,7 @@ module M = {
     while ((x < 5)) {
       x1 <- ((x + 1) %% 5);
       x2 <- ((x + 2) %% 5);
-      t <@ __ANDN_64 (b.[x1], b.[x2]);
+      t <@ __andn_u64_ref (b.[x1], b.[x2]);
       t <- (t `^` b.[x]);
       e.[(x + (y * 5))] <- t;
       x <- (x + 1);
@@ -250,561 +313,718 @@ module M = {
     a <- a;
     return a;
   }
-  proc __state_init_ref (st:W64.t Array25.t) : W64.t Array25.t = {
-    var z64:W64.t;
-    var i:int;
-    z64 <- (W64.of_int 0);
-    i <- 0;
-    while ((i < 25)) {
-      st.[i] <- z64;
-      i <- (i + 1);
-    }
-    return st;
-  }
-  proc __addratebit_ref (st:W64.t Array25.t, _RATE8:int) : W64.t Array25.t = {
-    
-    st <-
-    (Array25.init
-    (WArray200.get64
-    (WArray200.set8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)
-    ((get8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)) `^`
-    (W8.of_int 128)))));
-    return st;
-  }
-  proc __SHLQ (x:W64.t, shbytes:int) : W64.t = {
-    
-    if ((shbytes <> 0)) {
-      x <- (x `<<` (W8.of_int (8 * shbytes)));
-    } else {
-      
-    }
-    return x;
-  }
-  proc __SHLDQ (x:W128.t, shbytes:int) : W128.t = {
-    
-    if ((shbytes <> 0)) {
-      x <- (VPSLLDQ_128 x (W8.of_int shbytes));
-    } else {
-      
-    }
-    return x;
-  }
-  proc __SHLQ_256 (x:W256.t, shbytes:int) : W256.t = {
-    
-    if ((shbytes <> 0)) {
-      x <- (VPSLL_4u64 x (W128.of_int (8 * shbytes)));
-    } else {
-      
-    }
-    return x;
-  }
-  proc __m_ilen_read_upto8_at (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
-  int * int * int * int * W64.t = {
-    var w:W64.t;
-    var t16:W64.t;
-    var t8:W64.t;
-    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/
-        ((lEN = 0) /\ (tRAIL = 0)))) {
-      w <- (W64.of_int 0);
-    } else {
-      if ((8 <= lEN)) {
-        w <- (loadW64 Glob.mem buf);
-        w <@ __SHLQ (w, (aT - cUR));
-        buf <- (buf + ((cUR + 8) - aT));
-        lEN <- (lEN - ((cUR + 8) - aT));
-        aT <- (cUR + 8);
-      } else {
-        if ((4 <= lEN)) {
-          w <- (zeroextu64 (loadW32 Glob.mem buf));
-          w <@ __SHLQ (w, (aT - cUR));
-          buf <- (buf + (((cUR + 8) <= (aT + 4)) ? ((cUR + 8) - aT) : 4));
-          lEN <- (lEN - (((cUR + 8) <= (aT + 4)) ? ((cUR + 8) - aT) : 4));
-          aT <- (((cUR + 8) <= (aT + 4)) ? (cUR + 8) : (aT + 4));
-        } else {
-          w <- (W64.of_int 0);
-        }
-        if (((aT < (cUR + 8)) /\ (2 <= lEN))) {
-          t16 <- (zeroextu64 (loadW16 Glob.mem buf));
-          buf <- (buf + (((cUR + 8) <= (aT + 2)) ? ((cUR + 8) - aT) : 2));
-          lEN <- (lEN - (((cUR + 8) <= (aT + 2)) ? ((cUR + 8) - aT) : 2));
-          t16 <@ __SHLQ (t16, (aT - cUR));
-          w <- (w `|` t16);
-          aT <- (((cUR + 8) <= (aT + 2)) ? (cUR + 8) : (aT + 2));
-        } else {
-          
-        }
-        if (((aT < (cUR + 8)) /\ (1 <= lEN))) {
-          t8 <- (zeroextu64 (loadW8 Glob.mem buf));
-          buf <- (buf + 1);
-          lEN <- (lEN - 1);
-          t8 <@ __SHLQ (t8, (aT - cUR));
-          w <- (w `|` t8);
-          aT <- (aT + 1);
-        } else {
-          
-        }
-        if (((aT < (cUR + 8)) /\ (tRAIL <> 0))) {
-          t8 <- (W64.of_int (tRAIL %% 256));
-          t8 <- (t8 `<<` (W8.of_int (8 * (aT - cUR))));
-          w <- (w `|` t8);
-          aT <- (aT + 1);
-          tRAIL <- 0;
-        } else {
-          
-        }
-      }
-    }
-    return (buf, lEN, tRAIL, aT, w);
-  }
-  proc __m_ilen_read_upto8_at2 (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
-  int * int * int * int * W64.t = {
-    var w:W64.t;
-    var aT8:int;
-    var t16:W64.t;
-    var t8:W64.t;
-    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/
-        ((lEN = 0) /\ (tRAIL = 0)))) {
-      w <- (W64.of_int 0);
-    } else {
-      aT8 <- (aT - cUR);
-      if ((8 <= lEN)) {
-        w <- (loadW64 Glob.mem buf);
-        w <@ __SHLQ (w, aT8);
-        buf <- (buf + (8 - aT8));
-        lEN <- (lEN - (8 - aT8));
-        aT8 <- 8;
-      } else {
-        if ((4 <= lEN)) {
-          w <- (zeroextu64 (loadW32 Glob.mem buf));
-          w <@ __SHLQ (w, aT8);
-          buf <- (buf + ((8 <= (4 + aT8)) ? (8 - aT8) : 4));
-          lEN <- (lEN - ((8 <= (4 + aT8)) ? (8 - aT8) : 4));
-          aT8 <- ((8 <= (4 + aT8)) ? 8 : (4 + aT8));
-        } else {
-          w <- (W64.of_int 0);
-        }
-        if (((aT8 < 8) /\ (2 <= lEN))) {
-          t16 <- (zeroextu64 (loadW16 Glob.mem buf));
-          buf <- (buf + ((8 <= (2 + aT8)) ? (8 - aT8) : 2));
-          lEN <- (lEN - ((8 <= (2 + aT8)) ? (8 - aT8) : 2));
-          t16 <@ __SHLQ (t16, aT8);
-          w <- (w `|` t16);
-          aT8 <- ((8 <= (2 + aT8)) ? 8 : (2 + aT8));
-        } else {
-          
-        }
-        if ((aT8 < 8)) {
-          if ((1 <= lEN)) {
-            t8 <- (zeroextu64 (loadW8 Glob.mem buf));
-            t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
-            buf <- (buf + 1);
-            lEN <- (lEN - 1);
-            t8 <@ __SHLQ (t8, aT8);
-            w <- (w `|` t8);
-            aT8 <- (aT8 + 1);
-            if (((aT8 < 8) /\ ((tRAIL %% 256) <> 0))) {
-              aT8 <- (aT8 + 1);
-              tRAIL <- 0;
-            } else {
-              
-            }
-          } else {
-            if (((tRAIL %% 256) <> 0)) {
-              t8 <- (W64.of_int (tRAIL %% 256));
-              t8 <@ __SHLQ (t8, aT8);
-              w <- (w `|` t8);
-              tRAIL <- 0;
-              aT8 <- (aT8 + 1);
-            } else {
-              
-            }
-          }
-        } else {
-          
-        }
-      }
-      aT <- (cUR + aT8);
-    }
-    return (buf, lEN, tRAIL, aT, w);
-  }
-  proc __m_ilen_read_upto16_at (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
-  int * int * int * int * W128.t = {
-    var w:W128.t;
-    var t64_0:W64.t;
-    var t64_1:W64.t;
-    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 16) <= aT)) \/
-        ((lEN = 0) /\ (tRAIL = 0)))) {
-      w <- (set0_128);
-    } else {
-      if ((16 <= lEN)) {
-        w <- (loadW128 Glob.mem buf);
-        w <@ __SHLDQ (w, (aT - cUR));
-        buf <- (buf + (16 - (aT - cUR)));
-        lEN <- (lEN - (16 - (aT - cUR)));
-        aT <- (cUR + 16);
-      } else {
-        if (((cUR + 8) <= aT)) {
-          w <- (set0_128);
-          (buf, lEN, tRAIL, aT, t64_1) <@ __m_ilen_read_upto8_at (buf, 
-          lEN, tRAIL, (cUR + 8), aT);
-          w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
-        } else {
-          (buf, lEN, tRAIL, aT, t64_0) <@ __m_ilen_read_upto8_at (buf, 
-          lEN, tRAIL, cUR, aT);
-          w <- (VMOV_64 t64_0);
-          (buf, lEN, tRAIL, aT, t64_1) <@ __m_ilen_read_upto8_at (buf, 
-          lEN, tRAIL, (cUR + 8), aT);
-          w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
-        }
-      }
-    }
-    return (buf, lEN, tRAIL, aT, w);
-  }
-  proc __m_ilen_read_upto32_at (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
-  int * int * int * int * W256.t = {
-    var w:W256.t;
-    var t128_0:W128.t;
-    var t128_1:W128.t;
-    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 32) <= aT)) \/
-        ((lEN = 0) /\ (tRAIL = 0)))) {
-      w <- (set0_256);
-    } else {
-      if (((aT = cUR) /\ (32 <= lEN))) {
-        w <- (loadW256 Glob.mem buf);
-        buf <- (buf + 32);
-        lEN <- (lEN - 32);
-        aT <- (aT + 32);
-      } else {
-        if (((cUR + 16) <= aT)) {
-          w <- (set0_256);
-          (buf, lEN, tRAIL, aT, t128_1) <@ __m_ilen_read_upto16_at (buf, 
-          lEN, tRAIL, (cUR + 16), aT);
-          w <- (VINSERTI128 w t128_1 (W8.of_int 1));
-        } else {
-          (buf, lEN, tRAIL, aT, t128_0) <@ __m_ilen_read_upto16_at (buf, 
-          lEN, tRAIL, cUR, aT);
-          w <- (zeroextu256 t128_0);
-          (buf, lEN, tRAIL, aT, t128_1) <@ __m_ilen_read_upto16_at (buf, 
-          lEN, tRAIL, (cUR + 16), aT);
-          w <- (VINSERTI128 w t128_1 (W8.of_int 1));
-        }
-      }
-    }
-    return (buf, lEN, tRAIL, aT, w);
-  }
-  proc __m_ilen_read_bcast_upto8_at (buf:int, lEN:int, tRAIL:int, cUR:int,
-                                     aT:int) : int * int * int * int * W256.t = {
-    var w256:W256.t;
-    var w:W64.t;
-    var t128:W128.t;
-    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/
-        ((lEN = 0) /\ (tRAIL = 0)))) {
-      w256 <- (set0_256);
-    } else {
-      if ((8 <= lEN)) {
-        w256 <- (VPBROADCAST_4u64 (loadW64 Glob.mem buf));
-        w256 <@ __SHLQ_256 (w256, (aT - cUR));
-        buf <- (buf + ((cUR + 8) - aT));
-        lEN <- (lEN - ((cUR + 8) - aT));
-        aT <- (cUR + 8);
-      } else {
-        (buf, lEN, tRAIL, aT, w) <@ __m_ilen_read_upto8_at (buf, lEN, 
-        tRAIL, cUR, aT);
-        t128 <- (VMOV_64 w);
-        w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
-      }
-    }
-    return (buf, lEN, tRAIL, aT, w256);
-  }
-  proc __m_ilen_write_upto8 (buf:int, lEN:int, w:W64.t) : int * int = {
-    
-    if ((0 < lEN)) {
-      if ((8 <= lEN)) {
-        Glob.mem <- (storeW64 Glob.mem buf w);
-        buf <- (buf + 8);
-        lEN <- (lEN - 8);
-      } else {
-        if ((4 <= lEN)) {
-          Glob.mem <- (storeW32 Glob.mem buf (truncateu32 w));
-          w <- (w `>>` (W8.of_int 32));
-          buf <- (buf + 4);
-          lEN <- (lEN - 4);
-        } else {
-          
-        }
-        if ((2 <= lEN)) {
-          Glob.mem <- (storeW16 Glob.mem buf (truncateu16 w));
-          w <- (w `>>` (W8.of_int 16));
-          buf <- (buf + 2);
-          lEN <- (lEN - 2);
-        } else {
-          
-        }
-        if ((1 <= lEN)) {
-          Glob.mem <- (storeW8 Glob.mem buf (truncateu8 w));
-          buf <- (buf + 1);
-          lEN <- (lEN - 1);
-        } else {
-          
-        }
-      }
-    } else {
-      
-    }
-    return (buf, lEN);
-  }
-  proc __m_ilen_write_upto16 (buf:int, lEN:int, w:W128.t) : int * int = {
-    var t64:W64.t;
-    if ((0 < lEN)) {
-      if ((16 <= lEN)) {
-        Glob.mem <- (storeW128 Glob.mem buf w);
-        buf <- (buf + 16);
-        lEN <- (lEN - 16);
-      } else {
-        if ((8 <= lEN)) {
-          Glob.mem <- (storeW64 Glob.mem buf (MOVV_64 (truncateu64 w)));
-          buf <- (buf + 8);
-          lEN <- (lEN - 8);
-          w <- (VPUNPCKH_2u64 w w);
-        } else {
-          
-        }
-        t64 <- (truncateu64 w);
-        (buf, lEN) <@ __m_ilen_write_upto8 (buf, lEN, t64);
-      }
-    } else {
-      
-    }
-    return (buf, lEN);
-  }
-  proc __m_ilen_write_upto32 (buf:int, lEN:int, w:W256.t) : int * int = {
-    var t128:W128.t;
-    if ((0 < lEN)) {
-      if ((32 <= lEN)) {
-        Glob.mem <- (storeW256 Glob.mem buf w);
-        buf <- (buf + 32);
-        lEN <- (lEN - 32);
-      } else {
-        t128 <- (truncateu128 w);
-        if ((16 <= lEN)) {
-          Glob.mem <- (storeW128 Glob.mem buf t128);
-          buf <- (buf + 16);
-          lEN <- (lEN - 16);
-          t128 <- (VEXTRACTI128 w (W8.of_int 1));
-        } else {
-          
-        }
-        (buf, lEN) <@ __m_ilen_write_upto16 (buf, lEN, t128);
-      }
-    } else {
-      
-    }
-    return (buf, lEN);
-  }
-  proc __m_rlen_read_upto8 (buf:int, len:int) : int * W64.t = {
-    var w:W64.t;
-    var zf:bool;
-    var sh:W8.t;
-    var x:W64.t;
+  proc __rol64_basic (x:W64.t, i:int) : W64.t = {
     var  _0:bool;
     var  _1:bool;
-    var  _2:bool;
-    var  _3:bool;
-    var  _4:bool;
-    var  _5:bool;
-    var  _6:bool;
-    var  _7:bool;
-    var  _8:bool;
-    var  _9:bool;
-    var  _10:bool;
-    var  _11:bool;
-    if ((8 <= len)) {
-      w <- (loadW64 Glob.mem buf);
-      buf <- (buf + 8);
-    } else {
-      ( _0,  _1,  _2,  _3, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 4));
-      if ((! zf)) {
-        w <- (zeroextu64 (loadW32 Glob.mem buf));
-        buf <- (buf + 4);
-        sh <- (W8.of_int 32);
-      } else {
-        w <- (W64.of_int 0);
-        sh <- (W8.of_int 0);
-      }
-      ( _4,  _5,  _6,  _7, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 2));
-      if ((! zf)) {
-        x <- (zeroextu64 (loadW16 Glob.mem buf));
-        x <- (x `<<` (sh `&` (W8.of_int 63)));
-        w <- (w + x);
-        buf <- (buf + 2);
-        sh <- (sh + (W8.of_int 16));
-      } else {
-        
-      }
-      ( _8,  _9,  _10,  _11, zf) <-
-      (TEST_64 (W64.of_int len) (W64.of_int 1));
-      if ((! zf)) {
-        x <- (zeroextu64 (loadW8 Glob.mem buf));
-        x <- (x `<<` (sh `&` (W8.of_int 63)));
-        w <- (w + x);
-        buf <- (buf + 1);
-      } else {
-        
-      }
-    }
-    return (buf, w);
-  }
-  proc __m_rlen_write_upto8 (buf:int, data:W64.t, len:int) : int = {
-    var zf:bool;
-    var  _0:bool;
-    var  _1:bool;
-    var  _2:bool;
-    var  _3:bool;
-    var  _4:bool;
-    var  _5:bool;
-    var  _6:bool;
-    var  _7:bool;
-    var  _8:bool;
-    var  _9:bool;
-    var  _10:bool;
-    var  _11:bool;
-    if ((8 <= len)) {
-      Glob.mem <- (storeW64 Glob.mem buf data);
-      buf <- (buf + 8);
-    } else {
-      ( _0,  _1,  _2,  _3, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 4));
-      if ((! zf)) {
-        Glob.mem <- (storeW32 Glob.mem buf (truncateu32 data));
-        buf <- (buf + 4);
-        data <- (data `>>` (W8.of_int 32));
-      } else {
-        
-      }
-      ( _4,  _5,  _6,  _7, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 2));
-      if ((! zf)) {
-        Glob.mem <- (storeW16 Glob.mem buf (truncateu16 data));
-        buf <- (buf + 2);
-        data <- (data `>>` (W8.of_int 16));
-      } else {
-        
-      }
-      ( _8,  _9,  _10,  _11, zf) <-
-      (TEST_64 (W64.of_int len) (W64.of_int 1));
-      if ((! zf)) {
-        Glob.mem <- (storeW8 Glob.mem buf (truncateu8 data));
-        buf <- (buf + 1);
-      } else {
-        
-      }
-    }
-    return buf;
-  }
-  proc __addstate_m_ref (st:W64.t Array25.t, aT:int, buf:int, _LEN:int,
-                         _TRAILB:int) : W64.t Array25.t * int * int = {
-    var aT8:int;
-    var w:W64.t;
-    var at:int;
-    aT8 <- aT;
-    aT <- (8 * (aT %/ 8));
-    if (((aT8 %% 8) <> 0)) {
-      (buf, _LEN, _TRAILB, aT8, w) <@ __m_ilen_read_upto8_at (buf, _LEN,
-      _TRAILB, aT, aT8);
-      st.[(aT %/ 8)] <- (st.[(aT %/ 8)] `^` w);
-      aT <- aT8;
+    if ((i <> 0)) {
+      ( _0,  _1, x) <- (ROL_64 x (W8.of_int i));
     } else {
       
     }
-    at <- (aT %/ 8);
-    while ((at < ((aT %/ 8) + (_LEN %/ 8)))) {
-      w <- (loadW64 Glob.mem buf);
-      buf <- (buf + 8);
-      st.[at] <- (st.[at] `^` w);
-      at <- (at + 1);
-    }
-    aT <- (aT + (8 * (_LEN %/ 8)));
-    _LEN <- (_LEN %% 8);
-    if (((0 < _LEN) \/ ((_TRAILB %% 256) <> 0))) {
-      (buf, _LEN, _TRAILB, aT, w) <@ __m_ilen_read_upto8_at (buf, _LEN,
-      _TRAILB, aT, aT);
-      st.[at] <- (st.[at] `^` w);
-    } else {
-      
-    }
-    return (st, aT, buf);
+    return x;
   }
-  proc __absorb_m_ref (st:W64.t Array25.t, aT:int, buf:int, _LEN:int,
-                       _TRAILB:int, _RATE8:int) : W64.t Array25.t * int * int = {
-    var iTERS:int;
-    var i:int;
-    var  _0:int;
-    var  _1:int;
-    if ((_RATE8 <= (aT + _LEN))) {
-      (st,  _0, buf) <@ __addstate_m_ref (st, aT, buf, (_RATE8 - aT), 0);
-      _LEN <- (_LEN - (_RATE8 - aT));
-      aT <- 0;
-      (* Erased call to spill *)
-      st <@ _keccakf1600_ref (st);
-      (* Erased call to unspill *)
-      iTERS <- (_LEN %/ _RATE8);
-      i <- 0;
-      while ((i < iTERS)) {
-        (st,  _1, buf) <@ __addstate_m_ref (st, 0, buf, _RATE8, 0);
-        (* Erased call to spill *)
-        st <@ _keccakf1600_ref (st);
-        (* Erased call to unspill *)
-        i <- (i + 1);
-      }
-      _LEN <- (_LEN %% _RATE8);
-    } else {
-      
-    }
-    (st, aT, buf) <@ __addstate_m_ref (st, aT, buf, _LEN, _TRAILB);
-    if ((_TRAILB <> 0)) {
-      st <@ __addratebit_ref (st, _RATE8);
-    } else {
-      
-    }
-    return (st, aT, buf);
-  }
-  proc __dumpstate_m_ref (buf:int, _LEN:int, st:W64.t Array25.t) : int = {
+  proc __theta_rho_lane_basic (a:W64.t Array25.t, d:W64.t Array5.t, idx:int) : 
+  W64.t = {
     var t:W64.t;
-    var i:int;
-    var  _0:int;
-    i <- 0;
-    while ((i < (_LEN %/ 8))) {
-      t <- st.[i];
-      Glob.mem <- (storeW64 Glob.mem buf t);
-      buf <- (buf + 8);
-      i <- (i + 1);
-    }
-    if ((0 < (_LEN %% 8))) {
-      t <- st.[i];
-      (buf,  _0) <@ __m_ilen_write_upto8 (buf, (_LEN %% 8), t);
-    } else {
-      
-    }
-    return buf;
+    var ro:int;
+    t <- a.[idx];
+    t <- (t `^` d.[(idx %% 5)]);
+    ro <@ keccakf1600_rho_offsets (idx);
+    t <@ __rol64_basic (t, ro);
+    return t;
   }
-  proc __squeeze_m_ref (st:W64.t Array25.t, buf:int, _LEN:int, _RATE8:int) : 
-  W64.t Array25.t * int = {
+  proc __not_lane_basic (st:W64.t Array25.t, idx:int) : W64.t Array25.t = {
+    var t:W64.t;
+    t <- st.[idx];
+    t <- (invw t);
+    st.[idx] <- t;
+    return st;
+  }
+  proc __complement_lanes_basic (st:W64.t Array25.t) : W64.t Array25.t = {
+    
+    st <@ __not_lane_basic (st, 1);
+    st <@ __not_lane_basic (st, 2);
+    st <@ __not_lane_basic (st, 8);
+    st <@ __not_lane_basic (st, 12);
+    st <@ __not_lane_basic (st, 17);
+    st <@ __not_lane_basic (st, 20);
+    return st;
+  }
+  proc __pround_basic (e:W64.t Array25.t, a:W64.t Array25.t) : W64.t Array25.t = {
     var i:int;
+    var c:W64.t Array5.t;
+    var t:W64.t;
+    var d:W64.t Array5.t;
+    var b0:W64.t;
+    var b1:W64.t;
+    var b2:W64.t;
+    var b3:W64.t;
+    var b4:W64.t;
+    var u:W64.t;
+    c <- witness;
+    d <- witness;
     i <- 0;
-    while ((i < (_LEN %/ _RATE8))) {
-      (* Erased call to spill *)
-      st <@ _keccakf1600_ref (st);
-      (* Erased call to unspill *)
-      buf <@ __dumpstate_m_ref (buf, _RATE8, st);
+    while ((i < 5)) {
+      c.[i] <- a.[i];
       i <- (i + 1);
     }
-    if ((0 < (_LEN %% _RATE8))) {
-      (* Erased call to spill *)
-      st <@ _keccakf1600_ref (st);
-      (* Erased call to unspill *)
-      buf <@ __dumpstate_m_ref (buf, (_LEN %% _RATE8), st);
-    } else {
-      
+    i <- 0;
+    while ((i < 5)) {
+      c.[i] <- (c.[i] `^` a.[(i + 5)]);
+      i <- (i + 1);
     }
-    return (st, buf);
+    i <- 0;
+    while ((i < 5)) {
+      c.[i] <- (c.[i] `^` a.[(i + 10)]);
+      i <- (i + 1);
+    }
+    i <- 0;
+    while ((i < 5)) {
+      c.[i] <- (c.[i] `^` a.[(i + 15)]);
+      i <- (i + 1);
+    }
+    i <- 0;
+    while ((i < 5)) {
+      c.[i] <- (c.[i] `^` a.[(i + 20)]);
+      i <- (i + 1);
+    }
+    i <- 0;
+    while ((i < 5)) {
+      t <- c.[((i + 1) %% 5)];
+      t <@ __rol64_basic (t, 1);
+      t <- (t `^` c.[((i + 4) %% 5)]);
+      d.[i] <- t;
+      i <- (i + 1);
+    }
+    b0 <@ __theta_rho_lane_basic (a, d, 0);
+    b1 <@ __theta_rho_lane_basic (a, d, 6);
+    b2 <@ __theta_rho_lane_basic (a, d, 12);
+    b3 <@ __theta_rho_lane_basic (a, d, 18);
+    b4 <@ __theta_rho_lane_basic (a, d, 24);
+    t <- b1;
+    t <- (t `|` b2);
+    t <- (t `^` b0);
+    e.[0] <- t;
+    t <- b2;
+    t <- (invw t);
+    t <- (t `|` b3);
+    t <- (t `^` b1);
+    e.[1] <- t;
+    t <- b3;
+    t <- (t `&` b4);
+    t <- (t `^` b2);
+    e.[2] <- t;
+    t <- b0;
+    t <- (t `|` b4);
+    t <- (t `^` b3);
+    e.[3] <- t;
+    t <- b0;
+    t <- (t `&` b1);
+    t <- (t `^` b4);
+    e.[4] <- t;
+    b0 <@ __theta_rho_lane_basic (a, d, 3);
+    b1 <@ __theta_rho_lane_basic (a, d, 9);
+    b2 <@ __theta_rho_lane_basic (a, d, 10);
+    b3 <@ __theta_rho_lane_basic (a, d, 16);
+    b4 <@ __theta_rho_lane_basic (a, d, 22);
+    t <- b1;
+    t <- (t `|` b2);
+    t <- (t `^` b0);
+    e.[5] <- t;
+    t <- b2;
+    t <- (t `&` b3);
+    t <- (t `^` b1);
+    e.[6] <- t;
+    t <- b4;
+    t <- (invw t);
+    t <- (t `|` b3);
+    t <- (t `^` b2);
+    e.[7] <- t;
+    t <- b0;
+    t <- (t `|` b4);
+    t <- (t `^` b3);
+    e.[8] <- t;
+    t <- b0;
+    t <- (t `&` b1);
+    t <- (t `^` b4);
+    e.[9] <- t;
+    b0 <@ __theta_rho_lane_basic (a, d, 1);
+    b1 <@ __theta_rho_lane_basic (a, d, 7);
+    b2 <@ __theta_rho_lane_basic (a, d, 13);
+    b3 <@ __theta_rho_lane_basic (a, d, 19);
+    b4 <@ __theta_rho_lane_basic (a, d, 20);
+    t <- b1;
+    t <- (t `|` b2);
+    t <- (t `^` b0);
+    e.[10] <- t;
+    t <- b2;
+    t <- (t `&` b3);
+    t <- (t `^` b1);
+    e.[11] <- t;
+    t <- b3;
+    t <- (invw t);
+    t <- (t `&` b4);
+    t <- (t `^` b2);
+    e.[12] <- t;
+    u <- b0;
+    u <- (u `|` b4);
+    t <- b3;
+    t <- (invw t);
+    t <- (t `^` u);
+    e.[13] <- t;
+    t <- b0;
+    t <- (t `&` b1);
+    t <- (t `^` b4);
+    e.[14] <- t;
+    b0 <@ __theta_rho_lane_basic (a, d, 4);
+    b1 <@ __theta_rho_lane_basic (a, d, 5);
+    b2 <@ __theta_rho_lane_basic (a, d, 11);
+    b3 <@ __theta_rho_lane_basic (a, d, 17);
+    b4 <@ __theta_rho_lane_basic (a, d, 23);
+    t <- b1;
+    t <- (t `&` b2);
+    t <- (t `^` b0);
+    e.[15] <- t;
+    t <- b2;
+    t <- (t `|` b3);
+    t <- (t `^` b1);
+    e.[16] <- t;
+    t <- b3;
+    t <- (invw t);
+    t <- (t `|` b4);
+    t <- (t `^` b2);
+    e.[17] <- t;
+    u <- b0;
+    u <- (u `&` b4);
+    t <- b3;
+    t <- (invw t);
+    t <- (t `^` u);
+    e.[18] <- t;
+    t <- b0;
+    t <- (t `|` b1);
+    t <- (t `^` b4);
+    e.[19] <- t;
+    b0 <@ __theta_rho_lane_basic (a, d, 2);
+    b1 <@ __theta_rho_lane_basic (a, d, 8);
+    b2 <@ __theta_rho_lane_basic (a, d, 14);
+    b3 <@ __theta_rho_lane_basic (a, d, 15);
+    b4 <@ __theta_rho_lane_basic (a, d, 21);
+    t <- b1;
+    t <- (invw t);
+    t <- (t `&` b2);
+    t <- (t `^` b0);
+    e.[20] <- t;
+    u <- b2;
+    u <- (u `|` b3);
+    t <- b1;
+    t <- (invw t);
+    t <- (t `^` u);
+    e.[21] <- t;
+    t <- b3;
+    t <- (t `&` b4);
+    t <- (t `^` b2);
+    e.[22] <- t;
+    t <- b0;
+    t <- (t `|` b4);
+    t <- (t `^` b3);
+    e.[23] <- t;
+    t <- b0;
+    t <- (t `&` b1);
+    t <- (t `^` b4);
+    e.[24] <- t;
+    return e;
+  }
+  proc __keccakf1600_basic (a:W64.t Array25.t) : W64.t Array25.t = {
+    var s_e:W64.t Array25.t;
+    var e:W64.t Array25.t;
+    var rC:W64.t Array24.t;
+    var rc:W64.t;
+    var c:int;
+    rC <- witness;
+    e <- witness;
+    s_e <- witness;
+    a <@ __complement_lanes_basic (a);
+    e <- s_e;
+    c <- 0;
+    (* Erased call to spill *)
+    e <@ __pround_basic (e, a);
+    (a, e) <- (swap_ e a);
+    rC <- kECCAK1600_RC;
+    rc <- rC.[c];
+    e.[0] <- (e.[0] `^` rc);
+    a <@ __pround_basic (a, e);
+    (a, e) <- (swap_ e a);
+    rC <- kECCAK1600_RC;
+    rc <- rC.[(c + 1)];
+    a.[0] <- (a.[0] `^` rc);
+    (* Erased call to unspill *)
+    c <- (c + 2);
+    while ((c < (24 - 1))) {
+      (* Erased call to spill *)
+      e <@ __pround_basic (e, a);
+      (a, e) <- (swap_ e a);
+      rC <- kECCAK1600_RC;
+      rc <- rC.[c];
+      e.[0] <- (e.[0] `^` rc);
+      a <@ __pround_basic (a, e);
+      (a, e) <- (swap_ e a);
+      rC <- kECCAK1600_RC;
+      rc <- rC.[(c + 1)];
+      a.[0] <- (a.[0] `^` rc);
+      (* Erased call to unspill *)
+      c <- (c + 2);
+    }
+    a <@ __complement_lanes_basic (a);
+    return a;
+  }
+  proc _keccakf1600_basic (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    a <@ __keccakf1600_basic (a);
+    return a;
+  }
+  proc _keccakf1600_basic_ (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    a <- a;
+    a <@ _keccakf1600_basic (a);
+    a <- a;
+    return a;
+  }
+  proc keccakf1600_opt_loop_body (rax:W64.t, rbp:W64.t, rdi:W64.t, r13:W64.t,
+                                  r10:W64.t, r11:W64.t, r8:W64.t, rsi:W64.t,
+                                  r15:W64.t, rbx:W64.t, a:W64.t Array25.t,
+                                  e:W64.t Array25.t) : W64.t * W64.t *
+                                                       W64.t * W64.t *
+                                                       W64.t * W64.t *
+                                                       W64.t * W64.t *
+                                                       W64.t * W64.t *
+                                                       W64.t Array25.t *
+                                                       W64.t Array25.t = {
+    var cnt:W64.t Array1.t;
+    var rcx:W64.t;
+    var rdx:W64.t;
+    var r9:W64.t;
+    var r12:W64.t;
+    var r14:W64.t;
+    var rC:W64.t Array24.t;
+    rC <- witness;
+    cnt <- witness;
+    e.[0] <- r11;
+    e.[1] <- rdi;
+    cnt.[0] <- rax;
+    e.[2] <- rsi;
+    rcx <- a.[15];
+    rcx <- (rcx `^` r8);
+    rax <- rdi;
+    rax <- (rax `^` a.[5]);
+    rax <- (rax `^` rcx);
+    rdx <- a.[16];
+    rdx <- (rdx `^` rsi);
+    rcx <- a.[11];
+    rsi <- a.[6];
+    rcx <- (rcx `^` rsi);
+    rcx <- (rcx `^` rdx);
+    rdx <- a.[17];
+    rdx <- (rdx `^` r15);
+    r9 <- r13;
+    r9 <- (r9 `^` a.[7]);
+    r9 <- (r9 `^` rdx);
+    rdx <- r10;
+    rdx <- (rdx `^` a.[23]);
+    r12 <- a.[13];
+    r12 <- (r12 `^` a.[8]);
+    r12 <- (r12 `^` rdx);
+    rdx <- r11;
+    rdx <- (rdx `^` rbx);
+    r14 <- a.[14];
+    r14 <- (r14 `^` a.[9]);
+    r14 <- (r14 `^` rdx);
+    rax <- (rax `^` rbp);
+    rcx <- (rcx `^` a.[1]);
+    r9 <- (r9 `^` a.[2]);
+    rdi <- a.[3];
+    r12 <- (r12 `^` rdi);
+    r14 <- (r14 `^` a.[4]);
+    rdx <- (RORX_64 r12 (W8.of_int 63));
+    rdx <- (rdx `^` rcx);
+    e.[10] <- rdx;
+    r11 <- (RORX_64 rcx (W8.of_int 63));
+    r11 <- (r11 `^` r14);
+    e.[9] <- r11;
+    rcx <- (RORX_64 r14 (W8.of_int 63));
+    rcx <- (rcx `^` r9);
+    r9 <- (RORX_64 r9 (W8.of_int 63));
+    r9 <- (r9 `^` rax);
+    rax <- (RORX_64 rax (W8.of_int 63));
+    rax <- (rax `^` r12);
+    rbp <- (rbp `^` r11);
+    rsi <- (rsi `^` r9);
+    r11 <- r9;
+    r9 <- (RORX_64 rsi (W8.of_int 20));
+    r13 <- (r13 `^` rdx);
+    r14 <- (RORX_64 r13 (W8.of_int 21));
+    r10 <- (r10 `^` rcx);
+    r10 <- (RORX_64 r10 (W8.of_int 43));
+    rbx <- (rbx `^` rax);
+    rbx <- (RORX_64 rbx (W8.of_int 50));
+    rsi <- ((invw rbx) `&` rbp);
+    rsi <- (rsi `^` r10);
+    a.[6] <- rsi;
+    rsi <- ((invw r14) `&` r10);
+    r10 <- ((invw r10) `&` rbx);
+    r10 <- (r10 `^` r14);
+    e.[8] <- r10;
+    r12 <- ((invw r9) `&` r14);
+    rC <- kECCAK1600_RC;
+    r14 <- cnt.[0];
+    r12 <- (r12 `^` rC.[(W64.to_uint (r14 + (W64.of_int 2)))]);
+    r12 <- (r12 `^` rbp);
+    rsi <- (rsi `^` r9);
+    e.[6] <- rsi;
+    r9 <- ((invw rbp) `&` r9);
+    r9 <- (r9 `^` rbx);
+    e.[7] <- r9;
+    rdi <- (rdi `^` rcx);
+    rdx <- rcx;
+    r9 <- (RORX_64 rdi (W8.of_int 36));
+    rsi <- a.[9];
+    rsi <- (rsi `^` rax);
+    r10 <- (RORX_64 rsi (W8.of_int 44));
+    rsi <- e.[1];
+    r13 <- e.[9];
+    rsi <- (rsi `^` r13);
+    rsi <- (RORX_64 rsi (W8.of_int 61));
+    rdi <- a.[16];
+    rcx <- r11;
+    rdi <- (rdi `^` r11);
+    rdi <- (RORX_64 rdi (W8.of_int 19));
+    rbp <- e.[10];
+    r15 <- (r15 `^` rbp);
+    rbx <- (RORX_64 r15 (W8.of_int 3));
+    r15 <- ((invw rbx) `&` r9);
+    r15 <- (r15 `^` rdi);
+    e.[1] <- r15;
+    r15 <- ((invw rsi) `&` rdi);
+    rdi <- ((invw rdi) `&` rbx);
+    rdi <- (rdi `^` rsi);
+    e.[5] <- rdi;
+    rsi <- ((invw r10) `&` rsi);
+    rsi <- (rsi `^` r9);
+    a.[16] <- rsi;
+    r15 <- (r15 `^` r10);
+    a.[3] <- r15;
+    rsi <- ((invw r9) `&` r10);
+    rsi <- (rsi `^` rbx);
+    a.[9] <- rsi;
+    rsi <- a.[1];
+    rsi <- (rsi `^` r11);
+    rsi <- (RORX_64 rsi (W8.of_int 63));
+    rdi <- a.[7];
+    rdi <- (rdi `^` rbp);
+    rdi <- (RORX_64 rdi (W8.of_int 58));
+    r9 <- a.[13];
+    r9 <- (r9 `^` rdx);
+    r9 <- (RORX_64 r9 (W8.of_int 39));
+    r10 <- e.[0];
+    r10 <- (r10 `^` rax);
+    r10 <- (RORX_64 r10 (W8.of_int 56));
+    r14 <- r13;
+    r8 <- (r8 `^` r13);
+    r8 <- (RORX_64 r8 (W8.of_int 46));
+    r11 <- ((invw r8) `&` rsi);
+    r11 <- (r11 `^` r10);
+    a.[13] <- r11;
+    r11 <- ((invw r9) `&` r10);
+    r13 <- ((invw r10) `&` r8);
+    r13 <- (r13 `^` r9);
+    r9 <- ((invw rdi) `&` r9);
+    r9 <- (r9 `^` rsi);
+    a.[7] <- r9;
+    r11 <- (r11 `^` rdi);
+    e.[4] <- r11;
+    rsi <- ((invw rsi) `&` rdi);
+    rsi <- (rsi `^` r8);
+    e.[0] <- rsi;
+    rsi <- a.[4];
+    rsi <- (rsi `^` rax);
+    rsi <- (RORX_64 rsi (W8.of_int 37));
+    rdi <- a.[5];
+    rdi <- (rdi `^` r14);
+    rdi <- (RORX_64 rdi (W8.of_int 28));
+    r8 <- a.[11];
+    r8 <- (r8 `^` rcx);
+    r8 <- (RORX_64 r8 (W8.of_int 54));
+    r9 <- a.[17];
+    r9 <- (r9 `^` rbp);
+    r11 <- (RORX_64 r9 (W8.of_int 49));
+    r9 <- a.[23];
+    r9 <- (r9 `^` rdx);
+    rbx <- (RORX_64 r9 (W8.of_int 8));
+    r10 <- ((invw rbx) `&` rsi);
+    r10 <- (r10 `^` r11);
+    r15 <- ((invw r8) `&` r11);
+    r11 <- ((invw r11) `&` rbx);
+    r11 <- (r11 `^` r8);
+    a.[17] <- r11;
+    r8 <- ((invw rdi) `&` r8);
+    r8 <- (r8 `^` rsi);
+    a.[23] <- r8;
+    r15 <- (r15 `^` rdi);
+    a.[5] <- r15;
+    rsi <- ((invw rsi) `&` rdi);
+    rsi <- (rsi `^` rbx);
+    a.[11] <- rsi;
+    rsi <- rbp;
+    rsi <- (rsi `^` a.[2]);
+    rdx <- (rdx `^` a.[8]);
+    rax <- (rax `^` a.[14]);
+    rdi <- r14;
+    rdi <- (rdi `^` a.[15]);
+    rcx <- (rcx `^` e.[2]);
+    rsi <- (RORX_64 rsi (W8.of_int 2));
+    rdx <- (RORX_64 rdx (W8.of_int 9));
+    rax <- (RORX_64 rax (W8.of_int 25));
+    rdi <- (RORX_64 rdi (W8.of_int 23));
+    rcx <- (RORX_64 rcx (W8.of_int 62));
+    r9 <- ((invw rcx) `&` rsi);
+    r9 <- (r9 `^` rdi);
+    a.[15] <- r9;
+    r14 <- ((invw rax) `&` rdi);
+    r11 <- ((invw rdi) `&` rcx);
+    r11 <- (r11 `^` rax);
+    rax <- ((invw rdx) `&` rax);
+    rax <- (rax `^` rsi);
+    rbp <- rax;
+    a.[14] <- rax;
+    r14 <- (r14 `^` rdx);
+    e.[2] <- r14;
+    rdi <- ((invw rsi) `&` rdx);
+    rdi <- (rdi `^` rcx);
+    rax <- r8;
+    rax <- (rax `^` a.[7]);
+    rsi <- a.[16];
+    rsi <- (rsi `^` rbp);
+    rsi <- (rsi `^` rax);
+    rbp <- a.[3];
+    rax <- rbp;
+    rax <- (rax `^` e.[6]);
+    rdx <- r15;
+    rdx <- (rdx `^` e.[4]);
+    rdx <- (rdx `^` rax);
+    rax <- e.[5];
+    rax <- (rax `^` a.[17]);
+    r8 <- r11;
+    r8 <- (r8 `^` e.[8]);
+    r8 <- (r8 `^` rax);
+    rbx <- a.[13];
+    rbx <- (rbx `^` e.[1]);
+    rcx <- r9;
+    rcx <- (rcx `^` a.[6]);
+    rcx <- (rcx `^` rbx);
+    rbx <- e.[7];
+    rbx <- (rbx `^` rdi);
+    rax <- e.[0];
+    rax <- (rax `^` a.[9]);
+    rax <- (rax `^` rbx);
+    rsi <- (rsi `^` r12);
+    rdx <- (rdx `^` r14);
+    r8 <- (r8 `^` r13);
+    rcx <- (rcx `^` r10);
+    r14 <- a.[11];
+    rax <- (rax `^` r14);
+    r15 <- (RORX_64 rcx (W8.of_int 63));
+    r15 <- (r15 `^` rdx);
+    rbx <- (RORX_64 rdx (W8.of_int 63));
+    rbx <- (rbx `^` rax);
+    r9 <- (RORX_64 rax (W8.of_int 63));
+    r9 <- (r9 `^` r8);
+    r8 <- (RORX_64 r8 (W8.of_int 63));
+    r8 <- (r8 `^` rsi);
+    rdx <- (RORX_64 rsi (W8.of_int 63));
+    rdx <- (rdx `^` rcx);
+    r12 <- (r12 `^` rbx);
+    rbp <- (rbp `^` r8);
+    rax <- (RORX_64 rbp (W8.of_int 20));
+    r13 <- (r13 `^` r15);
+    rcx <- (RORX_64 r13 (W8.of_int 21));
+    r10 <- (r10 `^` r9);
+    rsi <- (RORX_64 r10 (W8.of_int 43));
+    rdi <- (rdi `^` rdx);
+    rdi <- (RORX_64 rdi (W8.of_int 50));
+    r10 <- ((invw rdi) `&` r12);
+    r10 <- (r10 `^` rsi);
+    a.[3] <- r10;
+    r10 <- ((invw rcx) `&` rsi);
+    rsi <- ((invw rsi) `&` rdi);
+    rsi <- (rsi `^` rcx);
+    a.[2] <- rsi;
+    rbp <- ((invw rax) `&` rcx);
+    rcx <- cnt.[0];
+    rC <- kECCAK1600_RC;
+    rbp <- (rbp `^` rC.[(W64.to_uint (rcx + (W64.of_int 3)))]);
+    rbp <- (rbp `^` r12);
+    e.[9] <- rbp;
+    r10 <- (r10 `^` rax);
+    a.[1] <- r10;
+    rax <- ((invw r12) `&` rax);
+    rax <- (rax `^` rdi);
+    a.[4] <- rax;
+    rax <- a.[6];
+    rax <- (rax `^` r9);
+    rax <- (RORX_64 rax (W8.of_int 36));
+    rcx <- a.[9];
+    rcx <- (rcx `^` rdx);
+    rcx <- (RORX_64 rcx (W8.of_int 44));
+    rsi <- a.[7];
+    rsi <- (rsi `^` rbx);
+    rsi <- (RORX_64 rsi (W8.of_int 61));
+    rdi <- a.[5];
+    rdi <- (rdi `^` r8);
+    rdi <- (RORX_64 rdi (W8.of_int 19));
+    r11 <- (r11 `^` r15);
+    r10 <- (RORX_64 r11 (W8.of_int 3));
+    r11 <- ((invw r10) `&` rax);
+    r11 <- (r11 `^` rdi);
+    a.[8] <- r11;
+    r11 <- ((invw rsi) `&` rdi);
+    rdi <- ((invw rdi) `&` r10);
+    rdi <- (rdi `^` rsi);
+    a.[7] <- rdi;
+    rsi <- ((invw rcx) `&` rsi);
+    rsi <- (rsi `^` rax);
+    a.[5] <- rsi;
+    r11 <- (r11 `^` rcx);
+    a.[6] <- r11;
+    rax <- ((invw rax) `&` rcx);
+    rax <- (rax `^` r10);
+    a.[9] <- rax;
+    rax <- e.[6];
+    rax <- (rax `^` r8);
+    rax <- (RORX_64 rax (W8.of_int 63));
+    rcx <- e.[5];
+    rcx <- (rcx `^` r15);
+    rcx <- (RORX_64 rcx (W8.of_int 58));
+    rsi <- a.[13];
+    rsi <- (rsi `^` r9);
+    rsi <- (RORX_64 rsi (W8.of_int 39));
+    rdi <- r14;
+    rdi <- (rdi `^` rdx);
+    rdi <- (RORX_64 rdi (W8.of_int 56));
+    r10 <- a.[14];
+    r10 <- (r10 `^` rbx);
+    r10 <- (RORX_64 r10 (W8.of_int 46));
+    r11 <- ((invw r10) `&` rax);
+    r11 <- (r11 `^` rdi);
+    a.[13] <- r11;
+    r11 <- ((invw rsi) `&` rdi);
+    r13 <- ((invw rdi) `&` r10);
+    r13 <- (r13 `^` rsi);
+    rdi <- ((invw rcx) `&` rsi);
+    rdi <- (rdi `^` rax);
+    r11 <- (r11 `^` rcx);
+    a.[11] <- r11;
+    rax <- ((invw rax) `&` rcx);
+    rax <- (rax `^` r10);
+    a.[14] <- rax;
+    rax <- e.[7];
+    rax <- (rax `^` rdx);
+    rax <- (RORX_64 rax (W8.of_int 37));
+    rcx <- a.[16];
+    rcx <- (rcx `^` rbx);
+    rcx <- (RORX_64 rcx (W8.of_int 28));
+    rsi <- e.[4];
+    rsi <- (rsi `^` r8);
+    r11 <- (RORX_64 rsi (W8.of_int 54));
+    rsi <- a.[17];
+    rsi <- (rsi `^` r15);
+    r14 <- (RORX_64 rsi (W8.of_int 49));
+    rsi <- a.[15];
+    rsi <- (rsi `^` r9);
+    r12 <- (RORX_64 rsi (W8.of_int 8));
+    r10 <- ((invw r12) `&` rax);
+    r10 <- (r10 `^` r14);
+    rsi <- ((invw r11) `&` r14);
+    r14 <- ((invw r14) `&` r12);
+    r14 <- (r14 `^` r11);
+    a.[17] <- r14;
+    r11 <- ((invw rcx) `&` r11);
+    r11 <- (r11 `^` rax);
+    a.[15] <- r11;
+    rsi <- (rsi `^` rcx);
+    a.[16] <- rsi;
+    r11 <- ((invw rax) `&` rcx);
+    r11 <- (r11 `^` r12);
+    r15 <- (r15 `^` e.[8]);
+    r9 <- (r9 `^` e.[1]);
+    rdx <- (rdx `^` e.[0]);
+    rbx <- (rbx `^` a.[23]);
+    r8 <- (r8 `^` e.[2]);
+    rax <- (RORX_64 r15 (W8.of_int 2));
+    rcx <- (RORX_64 r9 (W8.of_int 9));
+    rdx <- (RORX_64 rdx (W8.of_int 25));
+    r9 <- (RORX_64 rbx (W8.of_int 23));
+    r14 <- (RORX_64 r8 (W8.of_int 62));
+    r8 <- ((invw r14) `&` rax);
+    r8 <- (r8 `^` r9);
+    a.[23] <- r8;
+    rsi <- ((invw rdx) `&` r9);
+    r15 <- ((invw r9) `&` r14);
+    r15 <- (r15 `^` rdx);
+    r8 <- ((invw rcx) `&` rdx);
+    r8 <- (r8 `^` rax);
+    rsi <- (rsi `^` rcx);
+    rbx <- ((invw rax) `&` rcx);
+    rbx <- (rbx `^` r14);
+    rcx <- cnt.[0];
+    rcx <- (rcx + (W64.of_int 2));
+    rax <- rcx;
+    rbp <- e.[9];
+    return (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+  }
+  proc __keccakf1600_opt (a:W64.t Array25.t) : W64.t Array25.t = {
+    var rax:W64.t;
+    var rbp:W64.t;
+    var rdi:W64.t;
+    var r13:W64.t;
+    var r10:W64.t;
+    var r11:W64.t;
+    var r8:W64.t;
+    var rsi:W64.t;
+    var r15:W64.t;
+    var rbx:W64.t;
+    var e:W64.t Array25.t;
+    e <- witness;
+    rax <- (W64.of_int 0);
+    rax <- (rax - (W64.of_int 2));
+    rbp <- a.[0];
+    rdi <- a.[10];
+    r13 <- a.[12];
+    r10 <- a.[18];
+    r11 <- a.[19];
+    r8 <- a.[20];
+    rsi <- a.[21];
+    r15 <- a.[22];
+    rbx <- a.[24];
+    (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e) <@ keccakf1600_opt_loop_body (
+    rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+    while ((rax \ult (W64.of_int 22))) {
+      (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e) <@ keccakf1600_opt_loop_body (
+      rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+    }
+    a.[0] <- rbp;
+    a.[10] <- rdi;
+    a.[12] <- r13;
+    a.[18] <- r10;
+    a.[19] <- r11;
+    a.[20] <- r8;
+    a.[21] <- rsi;
+    a.[22] <- r15;
+    a.[24] <- rbx;
+    return a;
+  }
+  proc _keccakf1600_opt (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    a <@ __keccakf1600_opt (a);
+    return a;
   }
   proc __keccakf1600_pround_avx2 (state:W256.t Array7.t) : W256.t Array7.t = {
     var c00:W256.t;
@@ -1825,6 +2045,696 @@ module M = {
     state <@ __keccakf1600_avx2 (state);
     st25 <@ __stavx2_unpack (st25, state);
     return st25;
+  }
+  proc _keccakf1600 (a:W64.t Array25.t) : W64.t Array25.t = {
+    var kECCAK_F:int;
+    kECCAK_F <@ __KECCAK_F ((2 + 512));
+    if ((kECCAK_F = 2)) {
+      a <@ _keccakf1600_opt (a);
+    } else {
+      if ((kECCAK_F = 1)) {
+        a <@ _keccakf1600_basic (a);
+      } else {
+        if ((kECCAK_F = 3)) {
+          a <@ _keccakf1600_st25_avx2 (a);
+        } else {
+          a <@ _keccakf1600_ref (a);
+        }
+      }
+    }
+    return a;
+  }
+  proc _keccakf1600_ (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    a <- a;
+    a <@ _keccakf1600 (a);
+    a <- a;
+    return a;
+  }
+  proc __state_init (st:W64.t Array25.t) : W64.t Array25.t = {
+    var hAS_AVX2:bool;
+    var z64:W64.t;
+    var z256:W256.t;
+    var i:int;
+    hAS_AVX2 <@ __HAS_FEATURE (4, ((1 + 2) + 4));
+    if (hAS_AVX2) {
+      z256 <- (set0_256);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256 (WArray200.init64 (fun i_0 => st.[i_0])) 0 z256)));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256 (WArray200.init64 (fun i_0 => st.[i_0])) 1 z256)));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256 (WArray200.init64 (fun i_0 => st.[i_0])) 2 z256)));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256 (WArray200.init64 (fun i_0 => st.[i_0])) 3 z256)));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256 (WArray200.init64 (fun i_0 => st.[i_0])) 4 z256)));
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set256 (WArray200.init64 (fun i_0 => st.[i_0])) 5 z256)));
+      st.[24] <- (W64.of_int 0);
+    } else {
+      z64 <- (W64.of_int 0);
+      i <- 0;
+      while ((i < 25)) {
+        st.[i] <- z64;
+        i <- (i + 1);
+      }
+    }
+    return st;
+  }
+  proc __addratebit (st:W64.t Array25.t, _RATE8:int) : W64.t Array25.t = {
+    
+    st <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)
+    ((get8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)) `^`
+    (W8.of_int 128)))));
+    return st;
+  }
+  proc __m_ilen_read_upto8_at (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
+  int * int * int * int * W64.t = {
+    var w:W64.t;
+    var t16:W64.t;
+    var t8:W64.t;
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/
+        ((lEN = 0) /\ (tRAIL = 0)))) {
+      w <- (W64.of_int 0);
+    } else {
+      if ((8 <= lEN)) {
+        w <- (loadW64 Glob.mem buf);
+        w <@ __SHLQ (w, (aT - cUR));
+        buf <- (buf + ((cUR + 8) - aT));
+        lEN <- (lEN - ((cUR + 8) - aT));
+        aT <- (cUR + 8);
+      } else {
+        if ((4 <= lEN)) {
+          w <- (zeroextu64 (loadW32 Glob.mem buf));
+          w <@ __SHLQ (w, (aT - cUR));
+          buf <- (buf + (((cUR + 8) <= (aT + 4)) ? ((cUR + 8) - aT) : 4));
+          lEN <- (lEN - (((cUR + 8) <= (aT + 4)) ? ((cUR + 8) - aT) : 4));
+          aT <- (((cUR + 8) <= (aT + 4)) ? (cUR + 8) : (aT + 4));
+        } else {
+          w <- (W64.of_int 0);
+        }
+        if (((aT < (cUR + 8)) /\ (2 <= lEN))) {
+          t16 <- (zeroextu64 (loadW16 Glob.mem buf));
+          buf <- (buf + (((cUR + 8) <= (aT + 2)) ? ((cUR + 8) - aT) : 2));
+          lEN <- (lEN - (((cUR + 8) <= (aT + 2)) ? ((cUR + 8) - aT) : 2));
+          t16 <@ __SHLQ (t16, (aT - cUR));
+          w <- (w `|` t16);
+          aT <- (((cUR + 8) <= (aT + 2)) ? (cUR + 8) : (aT + 2));
+        } else {
+          
+        }
+        if (((aT < (cUR + 8)) /\ (1 <= lEN))) {
+          t8 <- (zeroextu64 (loadW8 Glob.mem buf));
+          buf <- (buf + 1);
+          lEN <- (lEN - 1);
+          t8 <@ __SHLQ (t8, (aT - cUR));
+          w <- (w `|` t8);
+          aT <- (aT + 1);
+        } else {
+          
+        }
+        if (((aT < (cUR + 8)) /\ (tRAIL <> 0))) {
+          t8 <- (W64.of_int (tRAIL %% 256));
+          t8 <- (t8 `<<` (W8.of_int (8 * (aT - cUR))));
+          w <- (w `|` t8);
+          aT <- (aT + 1);
+          tRAIL <- 0;
+        } else {
+          
+        }
+      }
+    }
+    return (buf, lEN, tRAIL, aT, w);
+  }
+  proc __m_ilen_read_upto8_at2 (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
+  int * int * int * int * W64.t = {
+    var w:W64.t;
+    var aT8:int;
+    var t16:W64.t;
+    var t8:W64.t;
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/
+        ((lEN = 0) /\ (tRAIL = 0)))) {
+      w <- (W64.of_int 0);
+    } else {
+      aT8 <- (aT - cUR);
+      if ((8 <= lEN)) {
+        w <- (loadW64 Glob.mem buf);
+        w <@ __SHLQ (w, aT8);
+        buf <- (buf + (8 - aT8));
+        lEN <- (lEN - (8 - aT8));
+        aT8 <- 8;
+      } else {
+        if ((4 <= lEN)) {
+          w <- (zeroextu64 (loadW32 Glob.mem buf));
+          w <@ __SHLQ (w, aT8);
+          buf <- (buf + ((8 <= (4 + aT8)) ? (8 - aT8) : 4));
+          lEN <- (lEN - ((8 <= (4 + aT8)) ? (8 - aT8) : 4));
+          aT8 <- ((8 <= (4 + aT8)) ? 8 : (4 + aT8));
+        } else {
+          w <- (W64.of_int 0);
+        }
+        if (((aT8 < 8) /\ (2 <= lEN))) {
+          t16 <- (zeroextu64 (loadW16 Glob.mem buf));
+          buf <- (buf + ((8 <= (2 + aT8)) ? (8 - aT8) : 2));
+          lEN <- (lEN - ((8 <= (2 + aT8)) ? (8 - aT8) : 2));
+          t16 <@ __SHLQ (t16, aT8);
+          w <- (w `|` t16);
+          aT8 <- ((8 <= (2 + aT8)) ? 8 : (2 + aT8));
+        } else {
+          
+        }
+        if ((aT8 < 8)) {
+          if ((1 <= lEN)) {
+            t8 <- (zeroextu64 (loadW8 Glob.mem buf));
+            t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
+            buf <- (buf + 1);
+            lEN <- (lEN - 1);
+            t8 <@ __SHLQ (t8, aT8);
+            w <- (w `|` t8);
+            aT8 <- (aT8 + 1);
+            if (((aT8 < 8) /\ ((tRAIL %% 256) <> 0))) {
+              aT8 <- (aT8 + 1);
+              tRAIL <- 0;
+            } else {
+              
+            }
+          } else {
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (W64.of_int (tRAIL %% 256));
+              t8 <@ __SHLQ (t8, aT8);
+              w <- (w `|` t8);
+              tRAIL <- 0;
+              aT8 <- (aT8 + 1);
+            } else {
+              
+            }
+          }
+        } else {
+          
+        }
+      }
+      aT <- (cUR + aT8);
+    }
+    return (buf, lEN, tRAIL, aT, w);
+  }
+  proc __m_ilen_read_upto16_at (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
+  int * int * int * int * W128.t = {
+    var w:W128.t;
+    var t64_0:W64.t;
+    var t64_1:W64.t;
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 16) <= aT)) \/
+        ((lEN = 0) /\ (tRAIL = 0)))) {
+      w <- (set0_128);
+    } else {
+      if ((16 <= lEN)) {
+        w <- (loadW128 Glob.mem buf);
+        w <@ __SHLDQ (w, (aT - cUR));
+        buf <- (buf + (16 - (aT - cUR)));
+        lEN <- (lEN - (16 - (aT - cUR)));
+        aT <- (cUR + 16);
+      } else {
+        if (((cUR + 8) <= aT)) {
+          w <- (set0_128);
+          (buf, lEN, tRAIL, aT, t64_1) <@ __m_ilen_read_upto8_at (buf, 
+          lEN, tRAIL, (cUR + 8), aT);
+          w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
+        } else {
+          (buf, lEN, tRAIL, aT, t64_0) <@ __m_ilen_read_upto8_at (buf, 
+          lEN, tRAIL, cUR, aT);
+          w <- (VMOV_64 t64_0);
+          (buf, lEN, tRAIL, aT, t64_1) <@ __m_ilen_read_upto8_at (buf, 
+          lEN, tRAIL, (cUR + 8), aT);
+          w <- (VPINSR_2u64 w t64_1 (W8.of_int 1));
+        }
+      }
+    }
+    return (buf, lEN, tRAIL, aT, w);
+  }
+  proc __m_ilen_read_upto32_at (buf:int, lEN:int, tRAIL:int, cUR:int, aT:int) : 
+  int * int * int * int * W256.t = {
+    var w:W256.t;
+    var t128_0:W128.t;
+    var t128_1:W128.t;
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 32) <= aT)) \/
+        ((lEN = 0) /\ (tRAIL = 0)))) {
+      w <- (set0_256);
+    } else {
+      if (((aT = cUR) /\ (32 <= lEN))) {
+        w <- (loadW256 Glob.mem buf);
+        buf <- (buf + 32);
+        lEN <- (lEN - 32);
+        aT <- (aT + 32);
+      } else {
+        if (((cUR + 16) <= aT)) {
+          w <- (set0_256);
+          (buf, lEN, tRAIL, aT, t128_1) <@ __m_ilen_read_upto16_at (buf, 
+          lEN, tRAIL, (cUR + 16), aT);
+          w <- (VINSERTI128 w t128_1 (W8.of_int 1));
+        } else {
+          (buf, lEN, tRAIL, aT, t128_0) <@ __m_ilen_read_upto16_at (buf, 
+          lEN, tRAIL, cUR, aT);
+          w <- (zeroextu256 t128_0);
+          (buf, lEN, tRAIL, aT, t128_1) <@ __m_ilen_read_upto16_at (buf, 
+          lEN, tRAIL, (cUR + 16), aT);
+          w <- (VINSERTI128 w t128_1 (W8.of_int 1));
+        }
+      }
+    }
+    return (buf, lEN, tRAIL, aT, w);
+  }
+  proc __m_ilen_read_bcast_upto8_at (buf:int, lEN:int, tRAIL:int, cUR:int,
+                                     aT:int) : int * int * int * int * W256.t = {
+    var w256:W256.t;
+    var w:W64.t;
+    var t128:W128.t;
+    if (((((lEN < 0) \/ (aT < cUR)) \/ ((cUR + 8) <= aT)) \/
+        ((lEN = 0) /\ (tRAIL = 0)))) {
+      w256 <- (set0_256);
+    } else {
+      if ((8 <= lEN)) {
+        w256 <- (VPBROADCAST_4u64 (loadW64 Glob.mem buf));
+        w256 <@ __SHLQ_256 (w256, (aT - cUR));
+        buf <- (buf + ((cUR + 8) - aT));
+        lEN <- (lEN - ((cUR + 8) - aT));
+        aT <- (cUR + 8);
+      } else {
+        (buf, lEN, tRAIL, aT, w) <@ __m_ilen_read_upto8_at (buf, lEN, 
+        tRAIL, cUR, aT);
+        t128 <- (VMOV_64 w);
+        w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
+      }
+    }
+    return (buf, lEN, tRAIL, aT, w256);
+  }
+  proc __m_ilen_write_upto8 (buf:int, lEN:int, w:W64.t) : int * int = {
+    
+    if ((0 < lEN)) {
+      if ((8 <= lEN)) {
+        Glob.mem <- (storeW64 Glob.mem buf w);
+        buf <- (buf + 8);
+        lEN <- (lEN - 8);
+      } else {
+        if ((4 <= lEN)) {
+          Glob.mem <- (storeW32 Glob.mem buf (truncateu32 w));
+          w <- (w `>>` (W8.of_int 32));
+          buf <- (buf + 4);
+          lEN <- (lEN - 4);
+        } else {
+          
+        }
+        if ((2 <= lEN)) {
+          Glob.mem <- (storeW16 Glob.mem buf (truncateu16 w));
+          w <- (w `>>` (W8.of_int 16));
+          buf <- (buf + 2);
+          lEN <- (lEN - 2);
+        } else {
+          
+        }
+        if ((1 <= lEN)) {
+          Glob.mem <- (storeW8 Glob.mem buf (truncateu8 w));
+          buf <- (buf + 1);
+          lEN <- (lEN - 1);
+        } else {
+          
+        }
+      }
+    } else {
+      
+    }
+    return (buf, lEN);
+  }
+  proc __m_ilen_write_upto16 (buf:int, lEN:int, w:W128.t) : int * int = {
+    var t64:W64.t;
+    if ((0 < lEN)) {
+      if ((16 <= lEN)) {
+        Glob.mem <- (storeW128 Glob.mem buf w);
+        buf <- (buf + 16);
+        lEN <- (lEN - 16);
+      } else {
+        if ((8 <= lEN)) {
+          Glob.mem <- (storeW64 Glob.mem buf (MOVV_64 (truncateu64 w)));
+          buf <- (buf + 8);
+          lEN <- (lEN - 8);
+          w <- (VPUNPCKH_2u64 w w);
+        } else {
+          
+        }
+        t64 <- (truncateu64 w);
+        (buf, lEN) <@ __m_ilen_write_upto8 (buf, lEN, t64);
+      }
+    } else {
+      
+    }
+    return (buf, lEN);
+  }
+  proc __m_ilen_write_upto32 (buf:int, lEN:int, w:W256.t) : int * int = {
+    var t128:W128.t;
+    if ((0 < lEN)) {
+      if ((32 <= lEN)) {
+        Glob.mem <- (storeW256 Glob.mem buf w);
+        buf <- (buf + 32);
+        lEN <- (lEN - 32);
+      } else {
+        t128 <- (truncateu128 w);
+        if ((16 <= lEN)) {
+          Glob.mem <- (storeW128 Glob.mem buf t128);
+          buf <- (buf + 16);
+          lEN <- (lEN - 16);
+          t128 <- (VEXTRACTI128 w (W8.of_int 1));
+        } else {
+          
+        }
+        (buf, lEN) <@ __m_ilen_write_upto16 (buf, lEN, t128);
+      }
+    } else {
+      
+    }
+    return (buf, lEN);
+  }
+  proc __m_rlen_read_upto8 (buf:int, len:int) : int * W64.t = {
+    var w:W64.t;
+    var zf:bool;
+    var sh:W8.t;
+    var x:W64.t;
+    var  _0:bool;
+    var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
+    var  _6:bool;
+    var  _7:bool;
+    var  _8:bool;
+    var  _9:bool;
+    var  _10:bool;
+    var  _11:bool;
+    if ((8 <= len)) {
+      w <- (loadW64 Glob.mem buf);
+      buf <- (buf + 8);
+    } else {
+      ( _0,  _1,  _2,  _3, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 4));
+      if ((! zf)) {
+        w <- (zeroextu64 (loadW32 Glob.mem buf));
+        buf <- (buf + 4);
+        sh <- (W8.of_int 32);
+      } else {
+        w <- (W64.of_int 0);
+        sh <- (W8.of_int 0);
+      }
+      ( _4,  _5,  _6,  _7, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 2));
+      if ((! zf)) {
+        x <- (zeroextu64 (loadW16 Glob.mem buf));
+        x <- (x `<<` (sh `&` (W8.of_int 63)));
+        w <- (w + x);
+        buf <- (buf + 2);
+        sh <- (sh + (W8.of_int 16));
+      } else {
+        
+      }
+      ( _8,  _9,  _10,  _11, zf) <-
+      (TEST_64 (W64.of_int len) (W64.of_int 1));
+      if ((! zf)) {
+        x <- (zeroextu64 (loadW8 Glob.mem buf));
+        x <- (x `<<` (sh `&` (W8.of_int 63)));
+        w <- (w + x);
+        buf <- (buf + 1);
+      } else {
+        
+      }
+    }
+    return (buf, w);
+  }
+  proc __m_rlen_write_upto8 (buf:int, data:W64.t, len:int) : int = {
+    var zf:bool;
+    var  _0:bool;
+    var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
+    var  _6:bool;
+    var  _7:bool;
+    var  _8:bool;
+    var  _9:bool;
+    var  _10:bool;
+    var  _11:bool;
+    if ((8 <= len)) {
+      Glob.mem <- (storeW64 Glob.mem buf data);
+      buf <- (buf + 8);
+    } else {
+      ( _0,  _1,  _2,  _3, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 4));
+      if ((! zf)) {
+        Glob.mem <- (storeW32 Glob.mem buf (truncateu32 data));
+        buf <- (buf + 4);
+        data <- (data `>>` (W8.of_int 32));
+      } else {
+        
+      }
+      ( _4,  _5,  _6,  _7, zf) <- (TEST_64 (W64.of_int len) (W64.of_int 2));
+      if ((! zf)) {
+        Glob.mem <- (storeW16 Glob.mem buf (truncateu16 data));
+        buf <- (buf + 2);
+        data <- (data `>>` (W8.of_int 16));
+      } else {
+        
+      }
+      ( _8,  _9,  _10,  _11, zf) <-
+      (TEST_64 (W64.of_int len) (W64.of_int 1));
+      if ((! zf)) {
+        Glob.mem <- (storeW8 Glob.mem buf (truncateu8 data));
+        buf <- (buf + 1);
+      } else {
+        
+      }
+    }
+    return buf;
+  }
+  proc __addstate_m (st:W64.t Array25.t, aT:int, buf:int, _LEN:int,
+                     _TRAILB:int) : W64.t Array25.t * int * int = {
+    var inc:int;
+    var hAS_AVX2:bool;
+    var aT8:int;
+    var w:W64.t;
+    var t256:W256.t;
+    var i:int;
+    var t128:W128.t;
+    var at:int;
+    hAS_AVX2 <@ __HAS_FEATURE (4, ((1 + 2) + 4));
+    if (((aT %% 8) <> 0)) {
+      aT8 <- (8 * (aT %/ 8));
+      (buf, _LEN, _TRAILB, aT, w) <@ __m_ilen_read_upto8_at (buf, _LEN,
+      _TRAILB, aT8, aT);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i_0 => st.[i_0])) 
+      aT8 ((get64_direct (WArray200.init64 (fun i_0 => st.[i_0])) aT8) `^` w)
+      )));
+    } else {
+      
+    }
+    if (hAS_AVX2) {
+      inc <- (_LEN %/ 32);
+      i <- 0;
+      while ((i < inc)) {
+        t256 <- (loadW256 Glob.mem buf);
+        buf <- (buf + 32);
+        t256 <-
+        (t256 `^`
+        (get256_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + (32 * i))));
+        st <-
+        (Array25.init
+        (WArray200.get64
+        (WArray200.set256_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + (32 * i)) t256)));
+        i <- (i + 1);
+      }
+      if ((16 <= (_LEN %% 32))) {
+        t128 <- (truncateu128 (loadW256 Glob.mem buf));
+        buf <- (buf + 16);
+        t128 <-
+        (t128 `^`
+        (get128_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + ((_LEN %/ 32) * 32))));
+        st <-
+        (Array25.init
+        (WArray200.get64
+        (WArray200.set128_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + ((_LEN %/ 32) * 32)) t128)));
+      } else {
+        
+      }
+      if ((8 <= (_LEN %% 16))) {
+        w <- (loadW64 Glob.mem buf);
+        buf <- (buf + 8);
+        st <-
+        (Array25.init
+        (WArray200.get64
+        (WArray200.set64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + ((_LEN %/ 16) * 16))
+        ((get64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+         (aT + ((_LEN %/ 16) * 16))) `^`
+        w))));
+      } else {
+        
+      }
+    } else {
+      at <- aT;
+      while ((at < (aT + ((_LEN %/ 8) * 8)))) {
+        w <- (loadW64 Glob.mem buf);
+        buf <- (buf + 8);
+        st <-
+        (Array25.init
+        (WArray200.get64
+        (WArray200.set64_direct (WArray200.init64 (fun i_0 => st.[i_0])) 
+        at ((get64_direct (WArray200.init64 (fun i_0 => st.[i_0])) at) `^` w)
+        )));
+        at <- (at + 8);
+      }
+    }
+    aT <- (aT + (8 * (_LEN %/ 8)));
+    _LEN <- (_LEN %% 8);
+    if (((0 < _LEN) \/ ((_TRAILB %% 256) <> 0))) {
+      aT8 <- aT;
+      (buf, _LEN, _TRAILB, aT, w) <@ __m_ilen_read_upto8_at (buf, _LEN,
+      _TRAILB, aT, aT);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i_0 => st.[i_0])) 
+      aT8 ((get64_direct (WArray200.init64 (fun i_0 => st.[i_0])) aT8) `^` w)
+      )));
+    } else {
+      
+    }
+    return (st, aT, buf);
+  }
+  proc __absorb_m (st:W64.t Array25.t, aT:int, buf:int, _LEN:int,
+                   _TRAILB:int, _RATE8:int) : W64.t Array25.t * int * int = {
+    var iTERS:int;
+    var i:int;
+    var  _0:int;
+    var  _1:int;
+    if ((_RATE8 <= (aT + _LEN))) {
+      (st,  _0, buf) <@ __addstate_m (st, aT, buf, (_RATE8 - aT), 0);
+      _LEN <- (_LEN - (_RATE8 - aT));
+      aT <- 0;
+      (* Erased call to spill *)
+      st <@ _keccakf1600 (st);
+      (* Erased call to unspill *)
+      iTERS <- (_LEN %/ _RATE8);
+      i <- 0;
+      while ((i < iTERS)) {
+        (st,  _1, buf) <@ __addstate_m (st, 0, buf, _RATE8, 0);
+        (* Erased call to spill *)
+        st <@ _keccakf1600 (st);
+        (* Erased call to unspill *)
+        i <- (i + 1);
+      }
+      _LEN <- (_LEN %% _RATE8);
+    } else {
+      
+    }
+    (st, aT, buf) <@ __addstate_m (st, aT, buf, _LEN, _TRAILB);
+    if ((_TRAILB <> 0)) {
+      st <@ __addratebit (st, _RATE8);
+    } else {
+      
+    }
+    return (st, aT, buf);
+  }
+  proc __dumpstate_m (buf:int, _LEN:int, st:W64.t Array25.t) : int = {
+    var inc:int;
+    var hAS_AVX2:bool;
+    var t:W64.t;
+    var j:int;
+    var t256:W256.t;
+    var t128:W128.t;
+    var i:int;
+    var  _0:int;
+    hAS_AVX2 <@ __HAS_FEATURE (4, ((1 + 2) + 4));
+    if (hAS_AVX2) {
+      inc <- (_LEN %/ 32);
+      j <- 0;
+      while ((j < inc)) {
+        t256 <-
+        (get256_direct (WArray200.init64 (fun i_0 => st.[i_0])) (32 * j));
+        Glob.mem <- (storeW256 Glob.mem buf t256);
+        buf <- (buf + 32);
+        j <- (j + 1);
+      }
+      if ((16 <= (_LEN %% 32))) {
+        t128 <-
+        (get128_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        ((_LEN %/ 32) * 32));
+        Glob.mem <- (storeW128 Glob.mem buf t128);
+        buf <- (buf + 16);
+      } else {
+        
+      }
+      if ((8 <= (_LEN %% 16))) {
+        t <-
+        (get64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        ((_LEN %/ 16) * 16));
+        Glob.mem <- (storeW64 Glob.mem buf t);
+        buf <- (buf + 8);
+      } else {
+        
+      }
+    } else {
+      i <- 0;
+      while ((i < (_LEN %/ 8))) {
+        t <- st.[i];
+        Glob.mem <- (storeW64 Glob.mem buf t);
+        buf <- (buf + 8);
+        i <- (i + 1);
+      }
+    }
+    if ((0 < (_LEN %% 8))) {
+      t <- st.[(_LEN %/ 8)];
+      (buf,  _0) <@ __m_ilen_write_upto8 (buf, (_LEN %% 8), t);
+    } else {
+      
+    }
+    return buf;
+  }
+  proc __squeeze_m (st:W64.t Array25.t, buf:int, _LEN:int, _RATE8:int) : 
+  W64.t Array25.t * int = {
+    var i:int;
+    i <- 0;
+    while ((i < (_LEN %/ _RATE8))) {
+      (* Erased call to spill *)
+      st <@ _keccakf1600 (st);
+      (* Erased call to unspill *)
+      buf <@ __dumpstate_m (buf, _RATE8, st);
+      i <- (i + 1);
+    }
+    if ((0 < (_LEN %% _RATE8))) {
+      (* Erased call to spill *)
+      st <@ _keccakf1600 (st);
+      (* Erased call to unspill *)
+      buf <@ __dumpstate_m (buf, (_LEN %% _RATE8), st);
+    } else {
+      
+    }
+    return (st, buf);
   }
   proc __u64_to_u256 (x:W64.t, l:int) : W256.t = {
     var t256:W256.t;
@@ -3349,7 +4259,7 @@ module M = {
     e.[24] <- t_746;
     return e;
   }
-  proc __keccakf1600_avx2x4_orig (a:W256.t Array25.t) : W256.t Array25.t = {
+  proc __keccakf1600_avx2x4_ref (a:W256.t Array25.t) : W256.t Array25.t = {
     var rC:W64.t Array24.t;
     var s_e:W256.t Array25.t;
     var e:W256.t Array25.t;
@@ -3379,6 +4289,11 @@ module M = {
       (a, e) <- (swap_ e a);
       c <- (c + 2);
     }
+    return a;
+  }
+  proc _keccakf1600_avx2x4_ref (a:W256.t Array25.t) : W256.t Array25.t = {
+    
+    a <@ __keccakf1600_avx2x4_ref (a);
     return a;
   }
   proc __keccakf1600_4x_pround_unpacked (st0:W64.t Array25.t,
@@ -4428,6 +5343,11 @@ module M = {
     ce, ci, co, cu);
     return a_4x;
   }
+  proc _keccakf1600_avx2x4_alt (a:W256.t Array25.t) : W256.t Array25.t = {
+    
+    a <@ __keccakf1600_avx2x4_alt (a);
+    return a;
+  }
   proc __f1600_loopbody_native (st:W256.t Array25.t, rol8:W256.t Array1.t,
                                 rol56:W256.t Array1.t, rC:W64.t Array24.t,
                                 i:int, y10:W256.t, y14:W256.t, y8:W256.t,
@@ -4753,33 +5673,7 @@ module M = {
     st.[24] <- y2;
     return st;
   }
-  proc test_keccakf1600x4_native (st:W256.t Array25.t, c:W64.t) : W256.t Array25.t = {
-    var y10:W256.t;
-    var y14:W256.t;
-    var y8:W256.t;
-    var y15:W256.t;
-    var y9:W256.t;
-    var y13:W256.t;
-    var y3:W256.t;
-    var y7:W256.t;
-    var y2:W256.t;
-    var rol8:W256.t Array1.t;
-    var rol56:W256.t Array1.t;
-    var rc:W64.t Array24.t;
-    rc <- witness;
-    rol56 <- witness;
-    rol8 <- witness;
-    (y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __regs_fetch (st);
-    rol8 <- rOL8;
-    rol56 <- rOL56;
-    rc <- kECCAK1600_RC;
-    (st, y10, y14, y8, y15, y9, y13, y3, y7, y2) <@ __f1600_loopbody_native (
-    st, rol8, rol56, rc, (W64.to_uint c), y10, y14, y8, y15, y9, y13, 
-    y3, y7, y2);
-    st <@ __regs_unfetch (st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
-    return st;
-  }
-  proc __keccakf1600_avx2x4_native (st:W256.t Array25.t) : W256.t Array25.t = {
+  proc __keccakf1600_avx2x4_nat (st:W256.t Array25.t) : W256.t Array25.t = {
     var y10:W256.t;
     var y14:W256.t;
     var y8:W256.t;
@@ -4812,14 +5706,23 @@ module M = {
     st <@ __regs_unfetch (st, y10, y14, y8, y15, y9, y13, y3, y7, y2);
     return st;
   }
-  proc __keccakf1600_avx2x4 (a:W256.t Array25.t) : W256.t Array25.t = {
+  proc _keccakf1600_avx2x4_nat (st:W256.t Array25.t) : W256.t Array25.t = {
     
-    a <@ __keccakf1600_avx2x4_native (a);
-    return a;
+    st <@ __keccakf1600_avx2x4_nat (st);
+    return st;
   }
   proc _keccakf1600_avx2x4 (a:W256.t Array25.t) : W256.t Array25.t = {
-    
-    a <@ __keccakf1600_avx2x4 (a);
+    var kECCAK_F:int;
+    kECCAK_F <@ __KECCAK_Fx4 ((2 + 512));
+    if ((kECCAK_F = 256)) {
+      a <@ _keccakf1600_avx2x4_alt (a);
+    } else {
+      if ((kECCAK_F = 512)) {
+        a <@ _keccakf1600_avx2x4_nat (a);
+      } else {
+        a <@ _keccakf1600_avx2x4_ref (a);
+      }
+    }
     return a;
   }
   proc _keccakf1600_avx2x4_ (a:W256.t Array25.t) : W256.t Array25.t = {
@@ -4846,12 +5749,9 @@ module M = {
   }
   proc __addratebit_avx2x4 (st:W256.t Array25.t, rATE8:int) : W256.t Array25.t = {
     var t64:W64.t;
-    var t128:W128.t;
     var t256:W256.t;
-    t64 <- (W64.of_int 1);
-    t64 <- (t64 `<<` (W8.of_int (((8 * rATE8) - 1) %% 64)));
-    t128 <- (VMOV_64 t64);
-    t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
+    t64 <- (W64.of_int (1 `<<` (((8 * rATE8) - 1) %% 64)));
+    t256 <- (VPBROADCAST_4u64 t64);
     t256 <- (t256 `^` st.[((rATE8 - 1) %/ 8)]);
     st.[((rATE8 - 1) %/ 8)] <- t256;
     return st;

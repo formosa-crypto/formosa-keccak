@@ -19,35 +19,53 @@ require import Keccakf1600_avx2x4_generic.
 require import Keccakf1600_avx2x4_orig.
 require import Keccakf1600_avx2x4_native.
 
-hoare keccakf1600_avx2x4_h' _a:
- M.__keccakf1600_avx2x4 :
+(*
+   The extracted code now dispatches [_keccakf1600_avx2x4] among the
+   ALT / NATIVE / REF (former "orig") 4x-implementations, according to the
+   global parameter KECCAK_PERMUTATION (cf. [__KECCAK_Fx4]).
+*)
+
+(* branch: REF (former "orig") *)
+hoare keccakf1600_avx2x4_ref_h _a:
+ M._keccakf1600_avx2x4_ref :
+ a = _a
+ ==> res = st4x_map keccak_f1600_op _a.
+proof. by proc; ecall (keccakf1600_avx2x4_orig_h a). qed.
+
+lemma keccakf1600_avx2x4_ref_ll: islossless M._keccakf1600_avx2x4_ref.
+proof. by proc; call keccakf1600_avx2x4_orig_ll. qed.
+
+(* branch: NATIVE *)
+hoare keccakf1600_avx2x4_nat_h _a:
+ M._keccakf1600_avx2x4_nat :
+ st = _a
+ ==> res = st4x_map keccak_f1600_op _a.
+proof. by proc; ecall (keccakf1600_avx2x4_native_h st). qed.
+
+lemma keccakf1600_avx2x4_nat_ll: islossless M._keccakf1600_avx2x4_nat.
+proof. by proc; call keccakf1600_avx2x4_native_ll. qed.
+
+(* branch: ALT *)
+lemma keccakf1600_avx2x4_alt_ll: islossless M._keccakf1600_avx2x4_alt.
+proof. by islossless. qed.
+
+(* ADMITTED: no correctness proof is available for the ALT implementation
+   yet. *)
+hoare keccakf1600_avx2x4_alt_h _a:
+ M._keccakf1600_avx2x4_alt :
  a = _a
  ==> res = st4x_map keccak_f1600_op _a.
 proof.
-proc.
-(* Choose de appropriate lemma: (orig/native) *)
-by ecall (keccakf1600_avx2x4_native_h a).
-qed.
+admitted.
 
-lemma keccakf1600_avx2x4_ll': islossless M.__keccakf1600_avx2x4.
-proof.
-proc.
-(* Choose de appropriate lemma: (orig/native) *)
-by call keccakf1600_avx2x4_native_ll.
-qed.
-
-phoare keccakf1600_avx2x4_ph' _a:
- [ M.__keccakf1600_avx2x4
- : a = _a
- ==> res = st4x_map keccak_f1600_op _a
- ] = 1%r.
-proof. 
-by conseq keccakf1600_avx2x4_ll' (keccakf1600_avx2x4_h' _a).
-qed.
-
+(* DISPATCHER (parameter-independent) *)
 lemma keccakf1600_avx2x4_ll: islossless M._keccakf1600_avx2x4.
 proof.
-by proc; call keccakf1600_avx2x4_ll'.
+proc.
+seq 1: true => //; first by inline*; auto.
+if; first by call keccakf1600_avx2x4_alt_ll.
+if; first by call keccakf1600_avx2x4_nat_ll.
+by call keccakf1600_avx2x4_ref_ll.
 qed.
 
 (* FINAL CORRECTNESS THEOREM *)
@@ -56,7 +74,11 @@ hoare keccakf1600_avx2x4_h _a:
  : a = _a
  ==> res = st4x_map keccak_f1600_op _a.
 proof.
-by proc; call (keccakf1600_avx2x4_h' _a).
+proc.
+seq 1: (a = _a); first by inline*; auto.
+if; first by ecall (keccakf1600_avx2x4_alt_h a).
+if; first by ecall (keccakf1600_avx2x4_nat_h a).
+by ecall (keccakf1600_avx2x4_ref_h a).
 qed.
 
 phoare keccakf1600_avx2x4_ph _a:
@@ -65,6 +87,6 @@ phoare keccakf1600_avx2x4_ph _a:
  ==> res = st4x_map keccak_f1600_op _a
  ] = 1%r.
 proof.
-by proc; call (keccakf1600_avx2x4_ph' _a).
+by conseq keccakf1600_avx2x4_ll (keccakf1600_avx2x4_h _a).
 qed.
 

@@ -1,5 +1,5 @@
 (******************************************************************************
-   Keccak1600_imem_ref.ec:
+   Keccak1600_fixedsizes_ref.ec:
 
    Correctness proof for the Keccak (fixed-sized) memory absorb/squeeze
   REF implementation
@@ -25,6 +25,7 @@ from CryptoSpecs require import FIPS202_SHA3_Spec Keccakf1600_Spec.
 
 
 require import Keccak1600_ref Keccakf1600_ref.
+require import Keccakf1600.
 require import Keccak1600_subreadwrite.
 
 require import StdOrder.
@@ -35,31 +36,45 @@ import IntOrder.
    ===================================
 *)
 
-lemma addstate_m_ref_ll: islossless M.__addstate_m_ref.
+lemma addstate_m_ll: islossless M.__addstate_m.
 proof.
-islossless.
-while true (aT %/ 8 + _LEN %/ 8 - at).
+(* This proof script is independent of selected `KECCAK_FEATURES` *)
+proc.
+swap 1 1.
+seq 1: true => />; 1:auto; 1:islossless; last by hoare; auto.
+seq 1: #pre => //; first inline*; auto.
+if => //.
+ seq 3: true => />; 1,4:auto; 2: islossless.
+ while true (_LEN %/ 32 - i).
+  by move=> z; auto; smt().
+ by auto; smt().
+seq 2: true => />; 1,4:auto; 2: islossless.
+while true (aT + _LEN %/ 8 *8 - at).
  by move=> z; auto; smt().
-by auto; smt().
+by auto => /> /#.
 qed.
 
 lemma mullR: 
 forall (x y z: int), (x + y) * z = x * z + y * z by smt().
 
-hoare addstate_m_ref_h _mem _st _at _buf _len _tb:
- M.__addstate_m_ref
+hoare addstate_m_h _mem _st _at _buf _len _tb:
+ M.__addstate_m
  : Glob.mem=_mem /\ st=_st /\ aT=_at /\ buf=_buf /\ _LEN=_len /\ _TRAILB=_tb
  /\ 0 <= _at <= 200
  /\ 0 <= _len
  /\ _at+_len <= 200 - b2i (_tb<>0)
  /\ _buf + _len < W64.modulus
- /\ 0 <= _tb < 256 
+ /\ 0 <= _tb < 256
  ==> let l = memread _mem _buf _len ++ if _tb<>0 then [W8.of_int _tb] else []
      in Glob.mem=_mem
         /\ res.`1 = addstate_at _st _at l
         /\ res.`2 = _at + size l
         /\ res.`3 = _buf + _len.
 proof.
+(* ADMITTED (WIP): the previous (partial) script below stepped through the
+   pre-refactor proc shape; __addstate_m now starts with a __HAS_FEATURE
+   call and branches between an AVX2 wide path and the former scalar path.
+   To be reworked (the scalar branch should reuse most of the old script).
 proc; simplify.
 conseq (: Glob.mem = _mem /\
   st = 
@@ -130,7 +145,7 @@ seq 3: (#[/:5, 9:]pre /\
         _LEN = _len - (8 - at) %% 8 - (_len - (8 - at) %% 8) %/ 8 * 8).
  admit. 
 case( _LEN <= 0 /\ _tb = 0).
- rcondf 1; first by auto => /#. 
+ rcondf 1; first by auto => /#.
  by auto => /> &hr H0 H1 H2 H3 H4; rewrite cats0 /#.
 auto => />.
  move=> &m H0 H1 H2 H3 H4.
@@ -139,11 +154,11 @@ admit(*
 case(_len %% 8 < (8 - _at) %% 8) => c1.
   have->: (_len - (8 - _at) %% 8) %/ 8 * 8 = _len %/ 8 * 8 - 8.
   + rewrite {1}(divz_eq _len 8) -Ring.IntID.addrA /#.
-  
+
 
 
 case((8 - _at) %% 8 = 0) => c0.
-  move: 
+  move:
   rewrite c0 /=.
 
 
@@ -152,9 +167,11 @@ case((8 - _at) %% 8 = 0) => c0.
 *).
 admit.
 qed.
+*)
+admitted.
 
-phoare addstate_m_ref_ph _mem _st _at _buf _len _tb:
- [ M.__addstate_m_ref
+phoare addstate_m_ph _mem _st _at _buf _len _tb:
+ [ M.__addstate_m
  : Glob.mem=_mem /\ st=_st /\ aT=_at /\ buf=_buf /\ _LEN=_len /\ _TRAILB=_tb
  /\ 0 <= _at <= 200
  /\ 0 <= _len
@@ -168,29 +185,29 @@ phoare addstate_m_ref_ph _mem _st _at _buf _len _tb:
         /\ res.`3 = _buf + _len
  ] = 1%r.
 proof.
-by conseq addstate_m_ref_ll (addstate_m_ref_h _mem _st _at _buf _len _tb).
+by conseq addstate_m_ll (addstate_m_h _mem _st _at _buf _len _tb).
 qed.
 
-lemma absorb_m_ref_ll: islossless M.__absorb_m_ref.
+lemma absorb_m_ll: islossless M.__absorb_m.
 proof.
 proc; simplify.
 seq 2: true => //.
- call addstate_m_ref_ll.
+ call addstate_m_ll.
  if => //.
  wp; while true (iTERS-i).
   move=> z; auto.
-  call keccakf1600_ref_ll.
-  call addstate_m_ref_ll.
+  call keccakf1600_ll.
+  call addstate_m_ll.
   by auto => /#.
- wp; call keccakf1600_ref_ll.
- wp; call addstate_m_ref_ll.
+ wp; call keccakf1600_ll.
+ wp; call addstate_m_ll.
  by auto => /#.
 if => //.
-by call addratebit_ref_ll.
+by call addratebit_ll.
 qed.
 
-hoare absorb_m_ref_h _l _mem _buf _len _tb _r8:
- M.__absorb_m_ref
+hoare absorb_m_h _l _mem _buf _len _tb _r8:
+ M.__absorb_m
  : Glob.mem=_mem /\ aT=size _l %% _r8 /\ buf=_buf /\ _LEN=_len /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
  /\ 0 <= _len
@@ -206,8 +223,8 @@ proof.
 proc.
 admitted.
 
-phoare absorb_m_ref_ph _l _mem _buf _len _tb _r8:
- [ M.__absorb_m_ref
+phoare absorb_m_ph _l _mem _buf _len _tb _r8:
+ [ M.__absorb_m
  : Glob.mem=_mem /\ aT=size _l %% _r8 /\ buf=_buf /\ _LEN=_len /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
  /\ 0 <= _len
@@ -221,7 +238,7 @@ phoare absorb_m_ref_ph _l _mem _buf _len _tb _r8:
        /\ res.`3 = _buf + _len
  ] = 1%r.
 proof.
-by conseq absorb_m_ref_ll (absorb_m_ref_h _l _mem _buf _len _tb _r8) => /> /#.
+by conseq absorb_m_ll (absorb_m_h _l _mem _buf _len _tb _r8) => /> /#.
 qed.
 
 (*
@@ -229,18 +246,26 @@ qed.
    ====================================
 *)
 
-lemma dumpstate_m_ref_ll: islossless M.__dumpstate_m_ref.
+lemma dumpstate_m_ll: islossless M.__dumpstate_m.
 proof.
+(* This proof script is independent of selected `KECCAK_FEATURES` *)
 proc => /=.
+seq 1: #pre => //; first by inline*; auto.
+if => //.
+ seq 3: true => //.
+  wp; while true (inc - j).
+   by move=> z; auto => /#.
+  by auto => /#.
+ by islossless.
 seq 2: true => //.
  while true (_LEN %/ 8 - i).
-  by move=> z; auto => /#. 
+  by move=> z; auto => /#.
  by auto => /#.
 by islossless.
 qed.
 
-hoare dumpstate_m_ref_h _mem _buf _len _st:
- M.__dumpstate_m_ref
+hoare dumpstate_m_h _mem _buf _len _st:
+ M.__dumpstate_m
  : Glob.mem=_mem /\ buf=_buf /\ _LEN=_len /\ st=_st
  /\ 0 <= _len <= 200
  /\ _buf + _len < W64.modulus
@@ -250,8 +275,8 @@ proof.
 proc => /=.
 admitted.
 
-phoare dumpstate_m_ref_ph _mem _buf _len _st:
- [ M.__dumpstate_m_ref
+phoare dumpstate_m_ph _mem _buf _len _st:
+ [ M.__dumpstate_m
  : Glob.mem=_mem /\ buf=_buf /\ _LEN=_len /\ st=_st
  /\ 0 <= _len <= 200
  /\ _buf + _len < W64.modulus
@@ -259,27 +284,27 @@ phoare dumpstate_m_ref_ph _mem _buf _len _st:
   /\ res = _buf + _len
  ] = 1%r.
 proof.
-by conseq dumpstate_m_ref_ll (dumpstate_m_ref_h _mem _buf _len _st).
+by conseq dumpstate_m_ll (dumpstate_m_h _mem _buf _len _st).
 qed.
 
-lemma squeeze_m_ref_ll: islossless M.__squeeze_m_ref.
+lemma squeeze_m_ll: islossless M.__squeeze_m.
 proof.
 proc; simplify.
 seq 2: true => //.
  while true (_LEN %/ _RATE8 - i).
   move => z; auto => />.
-  call dumpstate_m_ref_ll.
-  call keccakf1600_ref_ll.
+  call dumpstate_m_ll.
+  call keccakf1600_ll.
   by auto => /#.
  by auto => /#.
 if => //.
-call dumpstate_m_ref_ll.
-call keccakf1600_ref_ll.
+call dumpstate_m_ll.
+call keccakf1600_ll.
 by auto => /#.
 qed.
 
-hoare squeeze_m_ref_h _mem _buf _len _st _r8:
- M.__squeeze_m_ref
+hoare squeeze_m_h _mem _buf _len _st _r8:
+ M.__squeeze_m
  : Glob.mem=_mem /\ buf=_buf /\ _LEN=_len /\ st=_st /\ _RATE8=_r8
  /\ 0 <= _len
  /\ 0 < _r8 <= 200
@@ -291,8 +316,8 @@ proof.
 proc.
 admitted.
 
-phoare squeeze_m_ref_ph _mem _buf _len _st _r8:
- [ M.__squeeze_m_ref
+phoare squeeze_m_ph _mem _buf _len _st _r8:
+ [ M.__squeeze_m
  : Glob.mem=_mem /\ buf=_buf /\ _LEN=_len /\ st=_st /\ _RATE8=_r8
  /\ 0 <= _len
  /\ 0 < _r8 <= 200
@@ -302,7 +327,7 @@ phoare squeeze_m_ref_ph _mem _buf _len _st _r8:
      /\ res.`2 = _buf + _len
  ] = 1%r.
 proof.
-by conseq squeeze_m_ref_ll (squeeze_m_ref_h _mem _buf _len _st _r8).
+by conseq squeeze_m_ll (squeeze_m_h _mem _buf _len _st _r8).
 qed.
 
 
@@ -338,46 +363,116 @@ clone import ReadWriteArray as RW
 
 
 module MM = {
-  proc __addstate_ref (st:W64.t Array25.t, aT:int, buf:W8.t A.t,
-                       offset:int, _LEN:int, _TRAILB:int) : W64.t Array25.t *
-                                                            int * int = {
+  proc __addstate (st:W64.t Array25.t, aT:int, buf:W8.t A.t,
+                   offset:int, _LEN:int, _TRAILB:int) : W64.t Array25.t *
+                                                        int * int = {
+    var inc:int;
+    var hAS_AVX2:bool;
     var dELTA:int;
     var aT8:int;
     var w:W64.t;
+    var t256:W256.t;
+    var i:int;
+    var t128:W128.t;
     var at:int;
+    hAS_AVX2 <@ M.__HAS_FEATURE (4, ((1 + 2) + 4));
     dELTA <- 0;
-    aT8 <- aT;
-    aT <- (8 * (aT %/ 8));
-    if ((aT8 <> 0)) {
-      (dELTA, _LEN, _TRAILB, aT8, w) <@ RW.MM.__a_ilen_read_upto8_at (buf, 
-      offset, dELTA, _LEN, _TRAILB, aT, aT8);
-      st.[(aT %/ 8)] <- (st.[(aT %/ 8)] `^` w);
-      aT <- aT8;
+    if (((aT %% 8) <> 0)) {
+      aT8 <- (8 * (aT %/ 8));
+      (dELTA, _LEN, _TRAILB, aT, w) <@ RW.MM.__a_ilen_read_upto8_at (buf, offset,
+      dELTA, _LEN, _TRAILB, aT8, aT);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+      aT8 ((get64_direct (WArray200.init64 (fun i_0 => st.[i_0])) aT8) `^` w)
+      )));
     } else {
-      
+
     }
-    offset <- (offset + dELTA);
-    at <- (aT %/ 8);
-    while ((at < ((aT %/ 8) + (_LEN %/ 8)))) {
-      w <- (get64_direct (WA.init8 (fun i => buf.[i])) offset);
-      offset <- (offset + 8);
-      st.[at] <- (st.[at] `^` w);
-      at <- (at + 1);
+    if (hAS_AVX2) {
+      inc <- (_LEN %/ 32);
+      i <- 0;
+      while ((i < inc)) {
+        t256 <-
+        (get256_direct (WA.init8 (fun i_0 => buf.[i_0]))
+        (offset + dELTA));
+        dELTA <- (dELTA + 32);
+        t256 <-
+        (t256 `^`
+        (get256_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + (32 * i))));
+        st <-
+        (Array25.init
+        (WArray200.get64
+        (WArray200.set256_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + (32 * i)) t256)));
+        i <- (i + 1);
+      }
+      if ((16 <= (_LEN %% 32))) {
+        t128 <-
+        (get128_direct (WA.init8 (fun i_0 => buf.[i_0]))
+        (offset + dELTA));
+        dELTA <- (dELTA + 16);
+        t128 <-
+        (t128 `^`
+        (get128_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + ((_LEN %/ 32) * 32))));
+        st <-
+        (Array25.init
+        (WArray200.get64
+        (WArray200.set128_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + ((_LEN %/ 32) * 32)) t128)));
+      } else {
+
+      }
+      if ((8 <= (_LEN %% 16))) {
+        w <-
+        (get64_direct (WA.init8 (fun i_0 => buf.[i_0]))
+        (offset + dELTA));
+        dELTA <- (dELTA + 8);
+        st <-
+        (Array25.init
+        (WArray200.get64
+        (WArray200.set64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        (aT + ((_LEN %/ 16) * 16))
+        ((get64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+         (aT + ((_LEN %/ 16) * 16))) `^`
+        w))));
+      } else {
+
+      }
+    } else {
+      at <- (aT %/ 8);
+      offset <- (offset + dELTA);
+      dELTA <- 0;
+      while ((at < ((aT %/ 8) + (_LEN %/ 8)))) {
+        w <- (get64_direct (WA.init8 (fun i_0 => buf.[i_0])) offset);
+        offset <- (offset + 8);
+        st.[at] <- (st.[at] `^` w);
+        at <- (at + 1);
+      }
     }
     aT <- (aT + (8 * (_LEN %/ 8)));
     _LEN <- (_LEN %% 8);
     if (((0 < _LEN) \/ ((_TRAILB %% 256) <> 0))) {
+      aT8 <- aT;
       (dELTA, _LEN, _TRAILB, aT, w) <@ RW.MM.__a_ilen_read_upto8_at (buf, offset,
-      0, _LEN, _TRAILB, aT, aT);
-      st.[at] <- (st.[at] `^` w);
-      offset <- (offset + dELTA);
+      dELTA, _LEN, _TRAILB, aT, aT);
+      st <-
+      (Array25.init
+      (WArray200.get64
+      (WArray200.set64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+      aT8 ((get64_direct (WArray200.init64 (fun i_0 => st.[i_0])) aT8) `^` w)
+      )));
     } else {
-      
+
     }
+    offset <- (offset + dELTA);
     return (st, aT, offset);
   }
-  proc __absorb_ref (st:W64.t Array25.t, aT:int, buf:W8.t A.t,
-                     _TRAILB:int, _RATE8:int) : W64.t Array25.t * int = {
+  proc __absorb (st:W64.t Array25.t, aT:int, buf:W8.t A.t,
+                 _TRAILB:int, _RATE8:int) : W64.t Array25.t * int = {
     var _LEN:int;
     var iTERS:int;
     var offset:int;
@@ -388,97 +483,154 @@ module MM = {
     offset <- 0;
     _LEN <- _ASIZE;
     if ((_RATE8 <= (aT + _LEN))) {
-      (st,  _0, offset) <@ __addstate_ref (st, aT, buf, offset,
-      (_RATE8 - aT), 0);
+      (st,  _0, offset) <@ __addstate (st, aT, buf, offset, (_RATE8 - aT),
+      0);
       _LEN <- (_LEN - (_RATE8 - aT));
       aT <- 0;
       (* Erased call to spill *)
-      st <@ M._keccakf1600_ref (st);
+      st <@ M._keccakf1600 (st);
       (* Erased call to unspill *)
       iTERS <- (_LEN %/ _RATE8);
       i <- 0;
       while ((i < iTERS)) {
-        (st,  _1, offset) <@ __addstate_ref (st, 0, buf, offset, _RATE8, 0);
+        (st,  _1, offset) <@ __addstate (st, 0, buf, offset, _RATE8, 0);
         (* Erased call to spill *)
-        st <@ M._keccakf1600_ref (st);
+        st <@ M._keccakf1600 (st);
         (* Erased call to unspill *)
         i <- (i + 1);
       }
       _LEN <- (_LEN %% _RATE8);
     } else {
-      
+
     }
-    (st, aT,  _2) <@ __addstate_ref (st, aT, buf, offset, _LEN, _TRAILB);
+    (st, aT,  _2) <@ __addstate (st, aT, buf, offset, _LEN, _TRAILB);
     if ((_TRAILB <> 0)) {
-      st <@ M.__addratebit_ref (st, _RATE8);
+      st <@ M.__addratebit (st, _RATE8);
     } else {
-      
+
     }
     return (st, aT);
   }
-  proc __dumpstate_ref (buf:W8.t A.t, offset:int, _LEN:int,
-                        st:W64.t Array25.t) : W8.t A.t * int = {
-    var t:W64.t;
+  proc __dumpstate (buf:W8.t A.t, offset:int, _LEN:int,
+                    st:W64.t Array25.t) : W8.t A.t * int = {
+    var inc:int;
+    var hAS_AVX2:bool;
     var dELTA:int;
+    var t:W64.t;
+    var j:int;
+    var t256:W256.t;
+    var t128:W128.t;
     var i:int;
     var  _0:int;
-    i <- 0;
-    while ((i < (_LEN %/ 8))) {
-      t <- st.[i];
-      buf <-
-      (A.init
-      (WA.get8
-      (WA.set64_direct (WA.init8 (fun i_0 => buf.[i_0])) 
-      offset t)));
-      offset <- (offset + 8);
-      i <- (i + 1);
+    hAS_AVX2 <@ M.__HAS_FEATURE (4, ((1 + 2) + 4));
+    dELTA <- 0;
+    if (hAS_AVX2) {
+      inc <- (_LEN %/ 32);
+      j <- 0;
+      while ((j < inc)) {
+        t256 <-
+        (get256_direct (WArray200.init64 (fun i_0 => st.[i_0])) (32 * j));
+        buf <-
+        (A.init
+        (WA.get8
+        (WA.set256_direct (WA.init8 (fun i_0 => buf.[i_0]))
+        (offset + dELTA) t256)));
+        dELTA <- (dELTA + 32);
+        j <- (j + 1);
+      }
+      if ((16 <= (_LEN %% 32))) {
+        t128 <-
+        (get128_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        ((_LEN %/ 32) * 32));
+        buf <-
+        (A.init
+        (WA.get8
+        (WA.set128_direct (WA.init8 (fun i_0 => buf.[i_0]))
+        (offset + dELTA) t128)));
+        dELTA <- (dELTA + 16);
+      } else {
+
+      }
+      if ((8 <= (_LEN %% 16))) {
+        t <-
+        (get64_direct (WArray200.init64 (fun i_0 => st.[i_0]))
+        ((_LEN %/ 16) * 16));
+        buf <-
+        (A.init
+        (WA.get8
+        (WA.set64_direct (WA.init8 (fun i_0 => buf.[i_0]))
+        (offset + dELTA) t)));
+        dELTA <- (dELTA + 8);
+      } else {
+
+      }
+    } else {
+      i <- 0;
+      while ((i < (_LEN %/ 8))) {
+        t <- st.[i];
+        buf <-
+        (A.init
+        (WA.get8
+        (WA.set64_direct (WA.init8 (fun i_0 => buf.[i_0]))
+        offset t)));
+        offset <- (offset + 8);
+        i <- (i + 1);
+      }
     }
     if ((0 < (_LEN %% 8))) {
-      t <- st.[i];
-      (buf, dELTA,  _0) <@ RW.MM.__a_ilen_write_upto8 (buf, offset, 0, (_LEN %% 8),
-      t);
-      offset <- (offset + dELTA);
+      t <- st.[(_LEN %/ 8)];
+      (buf, dELTA,  _0) <@ RW.MM.__a_ilen_write_upto8 (buf, offset, dELTA,
+      (_LEN %% 8), t);
     } else {
-      
+
     }
+    offset <- (offset + dELTA);
     return (buf, offset);
   }
-  proc __squeeze_ref (st:W64.t Array25.t, buf:W8.t A.t, _RATE8:int) : 
+  proc __squeeze (st:W64.t Array25.t, buf:W8.t A.t, _RATE8:int) :
   W64.t Array25.t * W8.t A.t = {
     var offset:int;
     var i:int;
     offset <- 0;
     i <- 0;
     while ((i < (_ASIZE %/ _RATE8))) {
-      (* Erased call to spill *)
-      st <@ M._keccakf1600_ref (st);
-      (* Erased call to unspill *)
-      (buf, offset) <@ __dumpstate_ref (buf, offset, _RATE8, st);
-      (* Erased call to unspill *)
       i <- (i + 1);
+      (* Erased call to spill *)
+      st <@ M._keccakf1600 (st);
+      (* Erased call to unspill *)
+      (buf, offset) <@ __dumpstate (buf, offset, _RATE8, st);
     }
     if ((0 < (_ASIZE %% _RATE8))) {
       (* Erased call to spill *)
-      st <@ M._keccakf1600_ref (st);
+      st <@ M._keccakf1600 (st);
       (* Erased call to unspill *)
-      (buf, offset) <@ __dumpstate_ref (buf, offset, (_ASIZE %% _RATE8), st);
+      (buf, offset) <@ __dumpstate (buf, offset, (_ASIZE %% _RATE8), st);
     } else {
-      
+
     }
     return (st, buf);
   }
 }.
 
-lemma addstate_ref_ll: islossless MM.__addstate_ref.
+lemma addstate_ll: islossless MM.__addstate.
 proof.
-islossless.
-while true (aT %/ 8 + _LEN %/ 8 - at).
- by move=> z; auto; smt().
-by auto; smt().
+(* This proof script is independent of selected `KECCAK_FEATURES` *)
+proc.
+seq 4: true => //; last by islossless.
+seq 2: true => //; first by inline*; auto.
+seq 1: true => //; first by islossless.
+if => //.
+ seq 3: true => //; last by islossless.
+ wp; while true (inc - i).
+  by move=> z; auto => /#.
+ by auto => /#.
+while true ((aT %/ 8) + (_LEN %/ 8) - at).
+ by move=> z; auto => /#.
+by auto => /#.
 qed.
 
-hoare addstate_ref_h _st _at _buf _off _len _tb:
- MM.__addstate_ref
+hoare addstate_h _st _at _buf _off _len _tb:
+ MM.__addstate
  : st=_st /\ aT=_at /\ buf=_buf /\ offset=_off /\ _LEN=_len /\ _TRAILB=_tb
  /\ 0 <= _at <= 200
  /\ 0 <= _len
@@ -492,8 +644,8 @@ proof.
 proc => /=.
 admitted.
 
-phoare addstate_ref_ph _st _at _buf _off _len _tb:
- [ MM.__addstate_ref
+phoare addstate_ph _st _at _buf _off _len _tb:
+ [ MM.__addstate
    : st=_st /\ aT=_at /\ buf=_buf /\ offset=_off /\ _LEN=_len /\ _TRAILB=_tb
    /\ 0 <= _at <= 200
    /\ 0 <= _len
@@ -504,29 +656,29 @@ phoare addstate_ref_ph _st _at _buf _off _len _tb:
        /\ res.`2 = _at + size l
        /\ res.`3 = _off + _len] = 1%r.
 proof.
-by conseq addstate_ref_ll (addstate_ref_h _st _at _buf _off _len _tb).
+by conseq addstate_ll (addstate_h _st _at _buf _off _len _tb).
 qed.
 
-lemma absorb_ref_ll: islossless MM.__absorb_ref.
+lemma absorb_ll: islossless MM.__absorb.
 proof.
 proc; simplify.
 seq 4: true => //.
- call addstate_ref_ll.
+ call addstate_ll.
  sp 2; if => //.
  wp; while true (iTERS-i).
   move=> z; auto.
-  call keccakf1600_ref_ll.
-  call addstate_ref_ll.
+  call keccakf1600_ll.
+  call addstate_ll.
   by auto => /#.
- wp; call keccakf1600_ref_ll.
- wp; call addstate_ref_ll.
+ wp; call keccakf1600_ll.
+ wp; call addstate_ll.
  by auto => /#.
 if => //.
-by call addratebit_ref_ll.
+by call addratebit_ll.
 qed.
 
-hoare absorb_ref_h _l _buf _tb _r8:
- MM.__absorb_ref
+hoare absorb_h _l _buf _tb _r8:
+ MM.__absorb
  : aT=size _l %% _r8 /\ buf=_buf /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
  ==> if _tb <> 0
@@ -537,8 +689,8 @@ proof.
 proc.
 admitted.
 
-phoare absorb_ref_ph _l _buf _tb _r8:
- [ MM.__absorb_ref
+phoare absorb_ph _l _buf _tb _r8:
+ [ MM.__absorb
  : aT=size _l %% _r8 /\ buf=_buf /\ _RATE8=_r8 /\ _TRAILB=_tb
  /\ pabsorb_spec_ref _r8 _l st
  ==> if _tb <> 0
@@ -547,7 +699,7 @@ phoare absorb_ref_ph _l _buf _tb _r8:
        /\ res.`2 = (size _l + _ASIZE) %% _r8
  ] = 1%r.
 proof.
-by conseq absorb_ref_ll (absorb_ref_h _l _buf _tb _r8); smt(ge0_size).
+by conseq absorb_ll (absorb_h _l _buf _tb _r8); smt(ge0_size).
 qed.
 
 (*
@@ -555,18 +707,24 @@ qed.
    ====================================
 *)
 
-lemma dumpstate_ref_ll: islossless MM.__dumpstate_ref.
+lemma dumpstate_ll: islossless MM.__dumpstate.
 proof.
+(* This proof script is independent of selected `KECCAK_FEATURES` *)
 proc => /=.
-seq 2: true => //.
- while true (_LEN %/ 8 - i).
-  by move=> z; auto => /#. 
+seq 2: true => //; first by inline*; auto.
+if => //.
+ seq 3: true => //; last by islossless.
+ wp; while true (inc - j).
+  by move=> z; auto => /#.
  by auto => /#.
-by islossless.
+seq 2: true => //; last by islossless.
+while true (_LEN %/ 8 - i).
+ by move=> z; auto => /#.
+by auto => /#.
 qed.
 
-hoare dumpstate_ref_h _buf _off _len _st:
- MM.__dumpstate_ref
+hoare dumpstate_h _buf _off _len _st:
+ MM.__dumpstate
  : buf=_buf /\ offset=_off /\ _LEN=_len /\ st=_st
  /\ 0 <= _len <= 200
  /\ _off + _len <= _ASIZE
@@ -576,8 +734,8 @@ proof.
 proc.
 admitted.
 
-phoare dumpstate_ref_ph _buf _off _len _st:
- [ MM.__dumpstate_ref
+phoare dumpstate_ph _buf _off _len _st:
+ [ MM.__dumpstate
  : buf=_buf /\ offset=_off /\ _LEN=_len /\ st=_st
  /\ 0 <= _len <= 200
  /\ _off + _len <= _ASIZE
@@ -585,27 +743,27 @@ phoare dumpstate_ref_ph _buf _off _len _st:
   /\ res.`2 = _off + _len
  ] = 1%r.
 proof.
-by conseq dumpstate_ref_ll (dumpstate_ref_h _buf _off _len _st).
+by conseq dumpstate_ll (dumpstate_h _buf _off _len _st).
 qed.
 
-lemma squeeze_ref_ll: islossless MM.__squeeze_ref.
+lemma squeeze_ll: islossless MM.__squeeze.
 proof.
 proc; simplify.
 seq 3: true => //.
  while true (_ASIZE %/ _RATE8 - i).
-  move => z; auto => />.
-  call dumpstate_ref_ll.
-  call keccakf1600_ref_ll.
+  move => z.
+  call dumpstate_ll.
+  call keccakf1600_ll.
   by auto => /#.
  by auto => /#.
 if => //.
-call dumpstate_ref_ll.
-call keccakf1600_ref_ll.
+call dumpstate_ll.
+call keccakf1600_ll.
 by auto => /#.
 qed.
 
-hoare squeeze_ref_h _buf _st _r8:
- MM.__squeeze_ref
+hoare squeeze_h _buf _st _r8:
+ MM.__squeeze
  : buf=_buf /\ st=_st /\ _RATE8=_r8
  /\ 0 < _r8 <= 200
  ==> res.`1 = st_i _st ((_ASIZE-1) %/ _r8 + 1)
@@ -614,15 +772,15 @@ proof.
 proc.
 admitted.
 
-phoare squeeze_ref_ph _buf _st _r8:
- [ MM.__squeeze_ref
+phoare squeeze_ph _buf _st _r8:
+ [ MM.__squeeze
  : buf=_buf /\ st=_st /\ _RATE8=_r8
  /\ 0 < _r8 <= 200
  ==> res.`1 = st_i _st ((_ASIZE-1) %/ _r8 + 1)
      /\ to_list res.`2 = (SQUEEZE1600 _r8 _ASIZE _st)
  ] = 1%r.
 proof.
-by conseq squeeze_ref_ll (squeeze_ref_h _buf _st _r8).
+by conseq squeeze_ll (squeeze_h _buf _st _r8).
 qed.
 
 end KeccakArrayRef.
