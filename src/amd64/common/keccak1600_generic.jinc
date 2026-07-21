@@ -5,8 +5,8 @@
 
 // Feature selection
 //  to be feeded into "KECCAK_FEATURES"
-param int KECCAK_FEATURE_BMI  = 0x1; // (BMI1)
-param int KECCAK_FEATURE_BMI2 = 0x2;
+param int KECCAK_FEATURE_BMI  = 0x01; // (BMI1)
+param int KECCAK_FEATURE_BMI2 = 0x02;
 param int KECCAK_FEATURE_AVX2 = 0x04;
 
 // FEATURE QUERY

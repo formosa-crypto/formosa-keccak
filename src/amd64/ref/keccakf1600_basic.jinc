@@ -30,32 +30,7 @@
 
 from Keccak require "common/keccakf1600_generic.jinc"
 
-inline fn __rol64_basic
-( reg u64 x
-, inline int i
-) -> reg u64
-{
-  if (i != 0) {
-    _, _, x = #ROL_64(x, i);
-  }
-  return x;
-}
-
-// B = ROL( a[idx] ^ D[col(idx)], rho(idx) )
-inline fn __theta_rho_lane_basic
-( reg ptr u64[25] a
-, reg u64[5] d
-, inline int idx
-) -> reg u64
-{
-  reg u64 t;
-  inline int ro;
-  t = a[idx];
-  t ^= d[idx % 5];
-  ro = keccakf1600_rho_offsets(idx);
-  t = __rol64_basic(t, ro);
-  return t;
-}
+require "keccakf1600_pround_basic_inlined.jinc"
 
 inline fn __not_lane_basic
 ( reg ptr u64[25] st
@@ -83,100 +58,6 @@ inline fn __complement_lanes_basic
   return st;
 }
 
-// One masked Keccak round (theta + rho + pi + chi, no iota):
-// reads `a`, writes the result into `e`.
-#[safety =
-   { requires = is_arr_init(a,0,200)
-   , ensures = is_arr_init(e,0,200) }
-]
-inline fn __pround_basic
-( reg ptr u64[25] e a
-) -> reg ptr u64[25]
-{
-  reg u64[5] c d;
-  reg u64 t u B0 B1 B2 B3 B4;
-  inline int i;
-
-  // theta: column parities  C[x] = XOR_y A[x,y]
-  for i = 0 to 5 { c[i]  = a[i];      }
-  for i = 0 to 5 { c[i] ^= a[i + 5];  }
-  for i = 0 to 5 { c[i] ^= a[i + 10]; }
-  for i = 0 to 5 { c[i] ^= a[i + 15]; }
-  for i = 0 to 5 { c[i] ^= a[i + 20]; }
-
-  // theta: D[x] = C[x-1] ^ ROL(C[x+1], 1)
-  for i = 0 to 5 {
-    t = c[(i + 1) % 5];
-    t = __rol64_basic(t, 1);
-    t ^= c[(i + 4) % 5];
-    d[i] = t;
-  }
-
-  // chi (with theta-add + rho + pi folded into the source indexing),
-
-  // row y=0  (out lanes 0..4),  B-sources = lanes 0,6,12,18,24
-  B0 = __theta_rho_lane_basic(a, d, 0);
-  B1 = __theta_rho_lane_basic(a, d, 6);
-  B2 = __theta_rho_lane_basic(a, d, 12);
-  B3 = __theta_rho_lane_basic(a, d, 18);
-  B4 = __theta_rho_lane_basic(a, d, 24);
-  t = B1;  t |= B2;  t ^= B0;  e[0] = t;
-  t = B2;  t = !t;  t |= B3;  t ^= B1;  e[1] = t;
-  t = B3;  t &= B4;  t ^= B2;  e[2] = t;
-  t = B0;  t |= B4;  t ^= B3;  e[3] = t;
-  t = B0;  t &= B1;  t ^= B4;  e[4] = t;
-
-  // row y=1  (out lanes 5..9),  B-sources = lanes 3,9,10,16,22
-  B0 = __theta_rho_lane_basic(a, d, 3);
-  B1 = __theta_rho_lane_basic(a, d, 9);
-  B2 = __theta_rho_lane_basic(a, d, 10);
-  B3 = __theta_rho_lane_basic(a, d, 16);
-  B4 = __theta_rho_lane_basic(a, d, 22);
-  t = B1;  t |= B2;  t ^= B0;  e[5] = t;
-  t = B2;  t &= B3;  t ^= B1;  e[6] = t;
-  t = B4;  t = !t;  t |= B3;  t ^= B2;  e[7] = t;
-  t = B0;  t |= B4;  t ^= B3;  e[8] = t;
-  t = B0;  t &= B1;  t ^= B4;  e[9] = t;
-
-  // row y=2  (out lanes 10..14),  B-sources = lanes 1,7,13,19,20
-  B0 = __theta_rho_lane_basic(a, d, 1);
-  B1 = __theta_rho_lane_basic(a, d, 7);
-  B2 = __theta_rho_lane_basic(a, d, 13);
-  B3 = __theta_rho_lane_basic(a, d, 19);
-  B4 = __theta_rho_lane_basic(a, d, 20);
-  t = B1;  t |= B2;  t ^= B0;  e[10] = t;
-  t = B2;  t &= B3;  t ^= B1;  e[11] = t;
-  t = B3;  t = !t;  t &= B4;  t ^= B2;  e[12] = t;
-  u = B0;  u |= B4;  t = B3;  t = !t;  t ^= u;  e[13] = t;
-  t = B0;  t &= B1;  t ^= B4;  e[14] = t;
-
-  // row y=3  (out lanes 15..19),  B-sources = lanes 4,5,11,17,23
-  B0 = __theta_rho_lane_basic(a, d, 4);
-  B1 = __theta_rho_lane_basic(a, d, 5);
-  B2 = __theta_rho_lane_basic(a, d, 11);
-  B3 = __theta_rho_lane_basic(a, d, 17);
-  B4 = __theta_rho_lane_basic(a, d, 23);
-  t = B1;  t &= B2;  t ^= B0;  e[15] = t;
-  t = B2;  t |= B3;  t ^= B1;  e[16] = t;
-  t = B3;  t = !t;  t |= B4;  t ^= B2;  e[17] = t;
-  u = B0;  u &= B4;  t = B3;  t = !t;  t ^= u;  e[18] = t;
-  t = B0;  t |= B1;  t ^= B4;  e[19] = t;
-
-  // row y=4  (out lanes 20..24),  B-sources = lanes 2,8,14,15,21
-  B0 = __theta_rho_lane_basic(a, d, 2);
-  B1 = __theta_rho_lane_basic(a, d, 8);
-  B2 = __theta_rho_lane_basic(a, d, 14);
-  B3 = __theta_rho_lane_basic(a, d, 15);
-  B4 = __theta_rho_lane_basic(a, d, 21);
-  t = B1;  t = !t;  t &= B2;  t ^= B0;  e[20] = t;
-  u = B2;  u |= B3;  t = B1;  t = !t;  t ^= u;  e[21] = t;
-  t = B3;  t &= B4;  t ^= B2;  e[22] = t;
-  t = B0;  t |= B4;  t ^= B3;  e[23] = t;
-  t = B0;  t &= B1;  t ^= B4;  e[24] = t;
-
-  return e;
-}
-
 #[safety =
    { requires = is_arr_init(a,0,200)
    , ensures = is_arr_init(a,0,200) }
@@ -200,13 +81,13 @@ inline fn __keccakf1600_basic
   while
   {
     () = #spill(c);
-    e = __pround_basic(e, a);
+    e = __pround_basic_inlined(e, a);
     a, e = #swap(e, a);
     RC = KECCAK1600_RC;
     rc = RC[c];
     e[0] ^= rc;
 
-    a = __pround_basic(a, e);
+    a = __pround_basic_inlined(a, e);
     a, e = #swap(e, a);
     RC = KECCAK1600_RC;
     rc = RC[c+1];

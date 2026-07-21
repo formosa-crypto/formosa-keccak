@@ -375,7 +375,7 @@ module MM = {
     var i:int;
     var t128:W128.t;
     var at:int;
-    hAS_AVX2 <@ M.__HAS_FEATURE (4, ((1 + 2) + 4));
+    hAS_AVX2 <@ M.__HAS_FEATURE (4, 1+2+4);
     dELTA <- 0;
     if (((aT %% 8) <> 0)) {
       aT8 <- (8 * (aT %/ 8));
@@ -522,7 +522,7 @@ module MM = {
     var t128:W128.t;
     var i:int;
     var  _0:int;
-    hAS_AVX2 <@ M.__HAS_FEATURE (4, ((1 + 2) + 4));
+    hAS_AVX2 <@ M.__HAS_FEATURE (4, 1+2+4);
     dELTA <- 0;
     if (hAS_AVX2) {
       inc <- (_LEN %/ 32);
