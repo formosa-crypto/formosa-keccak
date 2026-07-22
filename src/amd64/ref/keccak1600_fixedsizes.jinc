@@ -109,7 +109,7 @@ inline fn __addstate_m
 inline fn __absorb_m
 ( reg mut ptr u64[25] st
 , inline int AT
-, reg ui64 buf
+, #[spill_to_mmx] reg ui64 buf
 , inline int _LEN
 , inline int _TRAILB /* closes state if !=0 (i.e. adds trailbyte and padding) */
 , inline int _RATE8
@@ -117,7 +117,7 @@ inline fn __absorb_m
    , inline int      /* AT */
    , reg ui64        /* buf */
 {
-  reg ui64 i;
+  #[spill_to_mmx] reg ui64 i;
   inline int ITERS;
 
   if ( AT+_LEN >= _RATE8 ) { // more than one block...
@@ -210,13 +210,13 @@ inline fn __dumpstate_m
  ]
 inline fn __squeeze_m
 ( reg mut ptr u64[25] st
-, reg ui64 buf
+, #[spill_to_mmx] reg ui64 buf
 , inline int _LEN
 , inline int _RATE8
 ) -> reg ptr u64[25] /* st */
    , reg ui64        /* buf */
 {
-  reg ui64 i;
+  #[spill_to_mmx] reg ui64 i;
 
   i = 0;
   while (i < _LEN/_RATE8) {

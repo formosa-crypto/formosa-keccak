@@ -6,8 +6,8 @@ import SLH64.
 
 require import
 Array1 Array3 Array5 Array6 Array7 Array24 Array25 Array26 Array101 Array999
-WArray3 WArray8 WArray32 WArray40 WArray160 WArray192 WArray200 WArray208
-WArray224 WArray800 WArray808 WArray999.
+WArray3 WArray32 WArray40 WArray160 WArray192 WArray200 WArray208 WArray224
+WArray800 WArray808 WArray999.
 
 abbrev rOL8 =
 ((Array1.of_list witness)
@@ -866,7 +866,7 @@ module M = {
                                                        W64.t * W64.t *
                                                        W64.t Array25.t *
                                                        W64.t Array25.t = {
-    var cnt:W64.t Array1.t;
+    var cnt:W64.t;
     var rcx:W64.t;
     var rdx:W64.t;
     var r9:W64.t;
@@ -874,10 +874,9 @@ module M = {
     var r14:W64.t;
     var rC:W64.t Array24.t;
     rC <- witness;
-    cnt <- witness;
     e.[0] <- r11;
     e.[1] <- rdi;
-    cnt.[0] <- rax;
+    cnt <- rax;
     e.[2] <- rsi;
     rcx <- a.[15];
     rcx <- (rcx `^` r8);
@@ -942,7 +941,7 @@ module M = {
     e.[8] <- r10;
     r12 <- ((invw r9) `&` r14);
     rC <- kECCAK1600_RC;
-    r14 <- cnt.[0];
+    r14 <- cnt;
     r12 <- (r12 `^` rC.[(W64.to_uint (r14 + (W64.of_int 2)))]);
     r12 <- (r12 `^` rbp);
     rsi <- (rsi `^` r9);
@@ -1125,7 +1124,7 @@ module M = {
     rsi <- (rsi `^` rcx);
     a.[2] <- rsi;
     rbp <- ((invw rax) `&` rcx);
-    rcx <- cnt.[0];
+    rcx <- cnt;
     rC <- kECCAK1600_RC;
     rbp <- (rbp `^` rC.[(W64.to_uint (rcx + (W64.of_int 3)))]);
     rbp <- (rbp `^` r12);
@@ -1241,7 +1240,7 @@ module M = {
     rsi <- (rsi `^` rcx);
     rbx <- ((invw rax) `&` rcx);
     rbx <- (rbx `^` r14);
-    rcx <- cnt.[0];
+    rcx <- cnt;
     rcx <- (rcx + (W64.of_int 2));
     rax <- rcx;
     rbp <- e.[9];

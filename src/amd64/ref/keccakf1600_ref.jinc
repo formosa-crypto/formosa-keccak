@@ -194,7 +194,7 @@ inline fn __keccakf1600_ref
   reg ptr u64[24] RC;
   stack u64[25] s_e;
   reg ptr u64[25] e;
-  reg ui64 c;
+  #[spill_to_mmx] reg ui64 c;
   reg u64 rc;
 
   e = s_e;
