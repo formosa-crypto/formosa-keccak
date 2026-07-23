@@ -119,8 +119,8 @@ inline fn keccakf1600_opt_loop_body
   e[8] = r10;                                   // movq %r10, 64(%rsp)
   r12 = !r9 & r14;                              // andnq %r14, %r9, %r12
   RC = KECCAK1600_RC;                           // leaq KeccakF_RoundConstants(%rip), %r10
-  r14 = cnt;                                 // movq 24(%rsp), %r14   (counter reload)
-  r12 ^= RC[r14 + 2];                           // xorq 16(%r10,%r14,8), %r12
+  r14 = cnt;                                    // movq 24(%rsp), %r14   (counter reload)
+  r12 ^= RC[r14];                               // xorq 16(%r10,%r14,8), %r12  %corrected index
   r12 ^= rbp;                                   // xorq %rbp, %r12
   rsi ^= r9;                                    // xorq %r9, %rsi
   e[6] = rsi;                                   // movq %rsi, 48(%rsp)
@@ -304,9 +304,9 @@ inline fn keccakf1600_opt_loop_body
   rsi ^= rcx;                                   // xorq %rcx, %rsi
   a[2] = rsi;                                   // movq %rsi, 8(%rsp)
   rbp = !rax & rcx;                             // andnq %rcx, %rax, %rbp
-  rcx = cnt;                                 // movq 24(%rsp), %rcx   (counter reload)
-  RC = KECCAK1600_RC;                            // leaq KeccakF_RoundConstants(%rip), %rsi
-  rbp ^= RC[rcx + 3];                           // xorq 24(%rsi,%rcx,8), %rbp
+  rcx = cnt;                                    // movq 24(%rsp), %rcx   (counter reload)
+  RC = KECCAK1600_RC;                           // leaq KeccakF_RoundConstants(%rip), %rsi
+  rbp ^= RC[rcx + 1];                           // xorq 24(%rsi,%rcx,8), %rbp     % corrected index
   rbp ^= r12;                                   // xorq %r12, %rbp
   e[9] = rbp;                                   // park idle rbp (a[0]) in dead e[9] -> frees 1 GP reg across round-2 tail
   r10 ^= rax;                                   // xorq %rax, %r10
@@ -430,16 +430,12 @@ inline fn keccakf1600_opt_loop_body
   return rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e;
 }
 
-
-inline fn __keccakf1600_opt
-( reg mut ptr u64[25] a
-) -> reg ptr u64[25]
+inline fn read_regs_opt
+( reg const ptr u64[25] a
+) -> reg u64, reg u64, reg u64, reg u64, reg u64
+   , reg u64, reg u64, reg u64, reg u64
 {
-  stack u64[25] e;
-  reg u64 rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
-
-
-  rax = 0; rax -= 2; // counter starts at -2 (clang: movq $-2,%rax)
+  reg u64 rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
   rbp = a[0];
   rdi = a[10];
   r13 = a[12];
@@ -449,12 +445,14 @@ inline fn __keccakf1600_opt
   rsi = a[21];
   r15 = a[22];
   rbx = a[24];
+  return rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
+}
 
-  while {
-    rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e
-    = keccakf1600_opt_loop_body(rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
-  } (rax < 22)
-
+inline fn store_regs_opt
+( reg mut ptr u64[25] a
+, reg u64 rbp rdi r13 r10 r11 r8 rsi r15 rbx
+) -> reg ptr u64[25]
+{
   a[0] = rbp;
   a[10] = rdi;
   a[12] = r13;
@@ -464,6 +462,27 @@ inline fn __keccakf1600_opt
   a[21] = rsi;
   a[22] = r15;
   a[24] = rbx;
+
+  return a;  
+}
+
+inline fn __keccakf1600_opt
+( reg mut ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  stack u64[25] e;
+  reg u64 rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx;
+
+
+  rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx = read_regs_opt(a);
+  rax = 0;
+
+  while {
+    rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e
+    = keccakf1600_opt_loop_body(rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+  } (rax < 24)
+
+  a = store_regs_opt(a, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx);
 
   return a;
 }

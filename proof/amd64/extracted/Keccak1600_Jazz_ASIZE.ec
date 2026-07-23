@@ -942,7 +942,7 @@ module M = {
     r12 <- ((invw r9) `&` r14);
     rC <- kECCAK1600_RC;
     r14 <- cnt;
-    r12 <- (r12 `^` rC.[(W64.to_uint (r14 + (W64.of_int 2)))]);
+    r12 <- (r12 `^` rC.[(W64.to_uint r14)]);
     r12 <- (r12 `^` rbp);
     rsi <- (rsi `^` r9);
     e.[6] <- rsi;
@@ -1126,7 +1126,7 @@ module M = {
     rbp <- ((invw rax) `&` rcx);
     rcx <- cnt;
     rC <- kECCAK1600_RC;
-    rbp <- (rbp `^` rC.[(W64.to_uint (rcx + (W64.of_int 3)))]);
+    rbp <- (rbp `^` rC.[(W64.to_uint (rcx + (W64.of_int 1)))]);
     rbp <- (rbp `^` r12);
     e.[9] <- rbp;
     r10 <- (r10 `^` rax);
@@ -1246,8 +1246,9 @@ module M = {
     rbp <- e.[9];
     return (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
   }
-  proc __keccakf1600_opt (a:W64.t Array25.t) : W64.t Array25.t = {
-    var rax:W64.t;
+  proc read_regs_opt (a:W64.t Array25.t) : W64.t * W64.t * W64.t * W64.t *
+                                           W64.t * W64.t * W64.t * W64.t *
+                                           W64.t = {
     var rbp:W64.t;
     var rdi:W64.t;
     var r13:W64.t;
@@ -1257,10 +1258,6 @@ module M = {
     var rsi:W64.t;
     var r15:W64.t;
     var rbx:W64.t;
-    var e:W64.t Array25.t;
-    e <- witness;
-    rax <- (W64.of_int 0);
-    rax <- (rax - (W64.of_int 2));
     rbp <- a.[0];
     rdi <- a.[10];
     r13 <- a.[12];
@@ -1270,12 +1267,12 @@ module M = {
     rsi <- a.[21];
     r15 <- a.[22];
     rbx <- a.[24];
-    (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e) <@ keccakf1600_opt_loop_body (
-    rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
-    while ((rax \ult (W64.of_int 22))) {
-      (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e) <@ keccakf1600_opt_loop_body (
-      rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
-    }
+    return (rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx);
+  }
+  proc store_regs_opt (a:W64.t Array25.t, rbp:W64.t, rdi:W64.t, r13:W64.t,
+                       r10:W64.t, r11:W64.t, r8:W64.t, rsi:W64.t, r15:W64.t,
+                       rbx:W64.t) : W64.t Array25.t = {
+    
     a.[0] <- rbp;
     a.[10] <- rdi;
     a.[12] <- r13;
@@ -1285,6 +1282,30 @@ module M = {
     a.[21] <- rsi;
     a.[22] <- r15;
     a.[24] <- rbx;
+    return a;
+  }
+  proc __keccakf1600_opt (a:W64.t Array25.t) : W64.t Array25.t = {
+    var rbp:W64.t;
+    var rdi:W64.t;
+    var r13:W64.t;
+    var r10:W64.t;
+    var r11:W64.t;
+    var r8:W64.t;
+    var rsi:W64.t;
+    var r15:W64.t;
+    var rbx:W64.t;
+    var rax:W64.t;
+    var e:W64.t Array25.t;
+    e <- witness;
+    (rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx) <@ read_regs_opt (a);
+    rax <- (W64.of_int 0);
+    (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e) <@ keccakf1600_opt_loop_body (
+    rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+    while ((rax \ult (W64.of_int 24))) {
+      (rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e) <@ keccakf1600_opt_loop_body (
+      rax, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx, a, e);
+    }
+    a <@ store_regs_opt (a, rbp, rdi, r13, r10, r11, r8, rsi, r15, rbx);
     return a;
   }
   proc _keccakf1600_opt (a:W64.t Array25.t) : W64.t Array25.t = {

@@ -14,6 +14,9 @@ from JazzEC require import Array5 Array24 Array25.
 
 require import Keccakf1600_ref.
 require import Keccakf1600_basic.
+require import Keccakf1600_opt.
+require import Keccakf1600_avx2.
+
 
 import BitEncoding.BitChunking.
 
@@ -25,11 +28,11 @@ proof.
 proc.
 seq 1: #pre; first by inline*; auto => />.
 if => //.
- admit (* opt *).
+ by ecall (keccakf1600_opt_h _a).
 if => //.
  by ecall (keccakf1600_basic_h _a).
 if => //.
- admit (* st25avx2 *).
+ by ecall (keccakf1600_st25_avx2_h _a).
 by ecall (keccakf1600_ref_h _a).
 qed.
 
@@ -38,11 +41,11 @@ proof.
 proc.
 inline __KECCAK_F.
 sp; if => //.
- admit (* opt *).
+ by call keccakf1600_opt_ll.
 if => //.
  by call keccakf1600_basic_ll.
 if => //.
- admit (* st25avx2 *).
+ by call keccakf1600_st25_avx2_ll.
 by call keccakf1600_ref_ll.
 qed.
 

@@ -327,7 +327,7 @@ by circuit.
 qed.
 
 (* attempt #2: correctness against a spec (4 lanes) *)
-hoare keccakf1600_avx2x4_native_unpacked_h _st4x _rc:
+hoare keccakf1600_avx2x4_native_unpacked_h1 _st4x _rc:
  Maux.p1:
  st4x = _st4x /\ rc = _rc
  ==> (st4x_to_4st res).`1 = keccak_round_op _rc (st4x_to_4st _st4x).`1
@@ -339,16 +339,14 @@ proof.
 proc; inline*; simplify.
 do 24! cfold 28.
 wp -24.
-abort (* It HANGS!!! 
 by circuit.
 qed.
-*).
 
 op st4x_keccak_round c =
  st4x_map (keccak_round_op c).
 
 (* attempt #3: correctness against a spec (direct) *)
-hoare keccakf1600_avx2x4_native_unpacked_h _st4x _rc:
+hoare keccakf1600_avx2x4_native_unpacked_h2 _st4x _rc:
  Maux.p2:
  st4x = _st4x /\ rc = _rc
  ==> res = st4x_keccak_round _rc _st4x.
@@ -356,10 +354,8 @@ proof.
 proc; inline*; simplify.
 do 24! cfold 27.
 wp -24.
-abort (* 
 by circuit.
 qed.
-*).
 
 lemma f1600_loopbody_native_ll: islossless M.__f1600_loopbody_native.
 proof. by islossless. qed.
