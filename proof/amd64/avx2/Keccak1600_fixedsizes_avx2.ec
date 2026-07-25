@@ -57,7 +57,7 @@ lemma stavx2_packE w0 w1 w2 w3 w4 w5 w6 w7 w8 w9:
  stavx2_pack w0 w1 w2 w3 w4 w5 w6 w7 w8 w9
  = bytes2state (stavx2bytes_pack w0 w1 w2 w3 w4 w5 w6 w7 w8 w9).
 proof.
-rewrite /bytes2state /Wpack /w64L_from_bytes /chunkify.
+rewrite /bytes2state /w64L_from_bytes /chunkify.
 have ->/=: size
                 (u64bytes w0 ++ u256bytes w1 ++ u64bytes w2 ++
                  u256bytes w3 ++ u64bytes w4 ++ u256bytes w5 ++

@@ -149,7 +149,7 @@ inline fn keccakf1600_4x_set_row
    , ensures = is_arr_init(e,0,800) 
    }
  ]
-inline fn __keccakf1600_4x_pround
+inline fn __keccakf1600_4x_pround_ref
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25]a
 , reg u256 r8 r56
@@ -169,18 +169,21 @@ inline fn __keccakf1600_4x_pround
   return e;
 }
 
+(**
+  This file is intended to be preprocessed by the Jasmin compiler to generate the
+ file "keccakf1600x4_pround_ref_inlined.jinc". This is the entrypoint for that.
+*)
 #[safety =
    { requires = is_arr_init(a,0,800)
    , ensures = is_arr_init(e,0,800) 
    }
  ]
-export fn __keccakf1600_4x_pround_inlined
+export fn __keccakf1600_4x_pround_ref_inlined
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25]a
 , reg u256 r8 r56
 ) -> reg ptr u256[25]
 {
-  e = __keccakf1600_4x_pround(e, a, r8, r56);
+  e = __keccakf1600_4x_ref_pround(e, a, r8, r56);
   return e;
 }
-

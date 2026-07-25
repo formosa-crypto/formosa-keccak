@@ -13,7 +13,7 @@ move=> H; rewrite size_flatten.
 rewrite StdBigop.Bigint.sumzE.
 rewrite StdBigop.Bigint.BIA.big_map.
 rewrite -(StdBigop.Bigint.BIA.eq_big_seq (fun _ => sz)) /=.
- by move=> x Hx; rewrite /(\o) /= H.
+ by move=> x Hx; rewrite H.
 by rewrite StdBigop.Bigint.big_constz count_predT.
 qed.
 

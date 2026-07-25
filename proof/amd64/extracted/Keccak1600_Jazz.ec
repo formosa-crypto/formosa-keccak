@@ -4208,8 +4208,8 @@ module M = {
     st3.[24] <- t3;
     return (st0, st1, st2, st3);
   }
-  proc _keccakf1600_4x_pround (e:W256.t Array25.t, a:W256.t Array25.t,
-                               r8:W256.t, r56:W256.t) : W256.t Array25.t = {
+  proc _keccakf1600_4x_pround_ref (e:W256.t Array25.t, a:W256.t Array25.t,
+                                   r8:W256.t, r56:W256.t) : W256.t Array25.t = {
     var c_571:W256.t Array5.t;
     var d_619:W256.t Array5.t;
     var t_574:W256.t;
@@ -4565,12 +4565,12 @@ module M = {
     c <- 0;
     while ((c < 24)) {
       rc <- (VPBROADCAST_4u64 rC.[c]);
-      e <@ _keccakf1600_4x_pround (e, a, r8, r56);
+      e <@ _keccakf1600_4x_pround_ref (e, a, r8, r56);
       t <- (rc `^` e.[0]);
       e.[0] <- t;
       (a, e) <- (swap_ e a);
       rc <- (VPBROADCAST_4u64 rC.[(c + 1)]);
-      a <@ _keccakf1600_4x_pround (a, e, r8, r56);
+      a <@ _keccakf1600_4x_pround_ref (a, e, r8, r56);
       t <- (rc `^` a.[0]);
       a.[0] <- t;
       (a, e) <- (swap_ e a);
@@ -4582,42 +4582,6 @@ module M = {
     
     a <@ __keccakf1600_avx2x4_ref (a);
     return a;
-  }
-  proc __keccakf1600_4x_pround_unpacked (st0:W64.t Array25.t,
-                                         st1:W64.t Array25.t,
-                                         st2:W64.t Array25.t,
-                                         st3:W64.t Array25.t) : W64.t Array25.t *
-                                                                W64.t Array25.t *
-                                                                W64.t Array25.t *
-                                                                W64.t Array25.t = {
-    var r8:W256.t;
-    var r56:W256.t;
-    var st4x1:W256.t Array25.t;
-    var st4x2:W256.t Array25.t;
-    st4x1 <- witness;
-    st4x2 <- witness;
-    r8 <- rOL8.[0];
-    r56 <- rOL56.[0];
-    st4x1 <@ __st4x_pack (st4x1, st0, st1, st2, st3);
-    st4x2 <@ _keccakf1600_4x_pround (st4x2, st4x1, r8, r56);
-    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, st4x2);
-    return (st0, st1, st2, st3);
-  }
-  proc __keccakf1600_4x_pround_equiv (e:W256.t Array25.t, a:W256.t Array25.t) : 
-  W256.t Array25.t = {
-    var st0:W64.t Array25.t;
-    var st1:W64.t Array25.t;
-    var st2:W64.t Array25.t;
-    var st3:W64.t Array25.t;
-    st0 <- witness;
-    st1 <- witness;
-    st2 <- witness;
-    st3 <- witness;
-    (st0, st1, st2, st3) <@ __st4x_unpack (st0, st1, st2, st3, a);
-    (st0, st1, st2, st3) <@ __keccakf1600_4x_pround_unpacked (st0, st1, 
-    st2, st3);
-    e <@ __st4x_pack (e, st0, st1, st2, st3);
-    return e;
   }
   proc __rol_4u64_rho56 (a:W256.t) : W256.t = {
     var r:W256.t;

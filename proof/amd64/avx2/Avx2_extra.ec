@@ -12,8 +12,7 @@ lemma u256_bits64E w k:
  0 <= k < 4 =>
  u256_bits64 w k = w \bits64 k.
 proof.
-move=> Hk; rewrite /u256_bits64.
-apply W64.ext_eq => i Hi.
+move=> Hk; apply W64.ext_eq => i Hi.
 by rewrite bits64E initiE 1://= initiE 1://= /#.
 qed.
 

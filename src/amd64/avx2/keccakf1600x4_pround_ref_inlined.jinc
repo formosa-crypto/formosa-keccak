@@ -6,7 +6,7 @@
    , ensures = is_arr_init(e,0,800) 
    }
  ]
-fn _keccakf1600_4x_pround
+fn _keccakf1600_4x_pround_ref
 ( reg mut ptr u256[25] e
 , reg const ptr u256[25] a
 , reg u256 r8, reg u256 r56
@@ -341,32 +341,3 @@ fn _keccakf1600_4x_pround
   e[24] = t_746; /* u256 */
   return (e);
 }
-
-/*
-export fn test_keccakf1600x4_pround
-( reg mut ptr u256[25] st
-, reg u64 c
-) -> reg ptr u256[25]
-{
-  stack u256[25] e;
-  inline int k;
-  reg u256 rol8, rol56, t;
-  reg ptr u64[24] rc;
-
-  rol8 = ROL8[0];
-  rol56 = ROL56[0];
-  rc = KECCAK1600_RC;
-
-  e = _keccakf1600_4x_pround(e, st, rol8, rol56);
-
-  for k = 0 to 25 {
-    t = e[k];
-    st[k] = t;
-  }
-  t = #VPBROADCAST_4u64(rc[c]);
-  t ^= st[0];
-  st[0] = t;
-
-  return st;
-}
-*/

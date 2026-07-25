@@ -94,39 +94,39 @@ inline fn __prepare_theta(reg ptr u256[25] A_4x) -> reg u256, reg u256, reg u256
     reg u256 Ca, Ce, Ci, Co, Cu;
 
     // Ca = XOR256(Aba, XOR256(Aga, XOR256(Aka, XOR256(Ama, Asa))));
-    Ca = A_4x[avx2x4_sa];
-    Ca ^= A_4x[avx2x4_ma];
-    Ca ^=  A_4x[avx2x4_ka];
-    Ca ^=  A_4x[avx2x4_ga];
-    Ca ^=  A_4x[avx2x4_ba];
+    Ca = A_4x[avx2x4_sa];   //[20]
+    Ca ^= A_4x[avx2x4_ma];  //[15]
+    Ca ^=  A_4x[avx2x4_ka]; //[10]
+    Ca ^=  A_4x[avx2x4_ga]; //[ 5]
+    Ca ^=  A_4x[avx2x4_ba]; //[ 0]
 
     // Ce = XOR256(Abe, XOR256(Age, XOR256(Ake, XOR256(Ame, Ase))));
-    Ce = A_4x[avx2x4_se];
-    Ce ^= A_4x[avx2x4_me];
-    Ce ^= A_4x[avx2x4_ke];
-    Ce ^= A_4x[avx2x4_ge];
-    Ce ^= A_4x[avx2x4_be];
+    Ce = A_4x[avx2x4_se];   //[21]
+    Ce ^= A_4x[avx2x4_me];  //[16]
+    Ce ^= A_4x[avx2x4_ke];  //[11]
+    Ce ^= A_4x[avx2x4_ge];  //[ 6]
+    Ce ^= A_4x[avx2x4_be];  //[ 1]
 
     // Ci = XOR256(Abi, XOR256(Agi, XOR256(Aki, XOR256(Ami, Asi))));
-    Ci = A_4x[avx2x4_si];
-    Ci ^= A_4x[avx2x4_mi];
-    Ci ^= A_4x[avx2x4_ki];
-    Ci ^= A_4x[avx2x4_gi];
-    Ci ^= A_4x[avx2x4_bi];
+    Ci = A_4x[avx2x4_si];   //[22]
+    Ci ^= A_4x[avx2x4_mi];  //[17]
+    Ci ^= A_4x[avx2x4_ki];  //[12]
+    Ci ^= A_4x[avx2x4_gi];  //[ 7]
+    Ci ^= A_4x[avx2x4_bi];  //[ 2]
 
     // Co = XOR256(Abo, XOR256(Ago, XOR256(Ako, XOR256(Amo, Aso))));
-    Co = A_4x[avx2x4_so];
-    Co ^= A_4x[avx2x4_mo];
-    Co ^= A_4x[avx2x4_ko];
-    Co ^= A_4x[avx2x4_go];
-    Co ^= A_4x[avx2x4_bo];
+    Co = A_4x[avx2x4_so];   //[23]
+    Co ^= A_4x[avx2x4_mo];  //[18]
+    Co ^= A_4x[avx2x4_ko];  //[13]
+    Co ^= A_4x[avx2x4_go];  //[ 8]
+    Co ^= A_4x[avx2x4_bo];  //[ 3]
 
     // Cu = XOR256(Abu, XOR256(Agu, XOR256(Aku, XOR256(Amu, Asu))));
-    Cu = A_4x[avx2x4_su];
-    Cu ^= A_4x[avx2x4_mu];
-    Cu ^= A_4x[avx2x4_ku];
-    Cu ^= A_4x[avx2x4_gu];
-    Cu ^= A_4x[avx2x4_bu];
+    Cu = A_4x[avx2x4_su];   //[24]
+    Cu ^= A_4x[avx2x4_mu];  //[19]
+    Cu ^= A_4x[avx2x4_ku];  //[14]
+    Cu ^= A_4x[avx2x4_gu];  //[ 9]
+    Cu ^= A_4x[avx2x4_bu];  //[ 4]
 
     return Ca, Ce, Ci, Co, Cu;
 }
