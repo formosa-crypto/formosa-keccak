@@ -140,7 +140,6 @@ qed.
 
 
 
-
 abstract theory KeccakArrayAvx2x4.
 
 op _ASIZE: int.
@@ -798,6 +797,7 @@ hoare dumpstate_avx2x4_h _buf0 _buf1 _buf2 _buf3 _off _len _st:
   /\ res.`3 = A.fill (fun i=> (stbytes (st4x_get _st 2)).[i-_off]) _off _len _buf2
   /\ res.`4 = A.fill (fun i=> (stbytes (st4x_get _st 3)).[i-_off]) _off _len _buf3
   /\ res.`5 = _off + _len.
+proc.
 admitted.
 
 phoare dumpstate_avx2x4_ph _buf0 _buf1 _buf2 _buf3 _off _len _st:
@@ -842,6 +842,8 @@ hoare squeeze_avx2x4_h _buf0 _buf1 _buf2 _buf3 _st _r8:
  /\ res.`3 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 1))
  /\ res.`4 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 2))
  /\ res.`5 = of_list W8.zero (SQUEEZE1600 _r8 _ASIZE (st4x_get _st 3)).
+proof.
+proc.
 admitted.
 
 phoare squeeze_avx2x4_ph _buf0 _buf1 _buf2 _buf3 _st _r8:

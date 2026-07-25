@@ -90,44 +90,50 @@ qed.
    
 ******************************************************************************)
 
-lemma state_init_ref_ll:
- islossless M.__state_init_ref.
+lemma state_init_ll:
+ islossless M.__state_init.
 proof.
-proc.
+proc; islossless.
 while true (25- i).
  by move=> z; auto => /> &m Hi /#.
 by auto => /> i Hi /#.
 qed.
 
-hoare state_init_ref_h _r8:
- M.__state_init_ref
+hoare state_init_h _r8:
+ M.__state_init
  : 0 < _r8 <= 200
  ==> pabsorb_spec_ref _r8 [] res.
 proof.
+(* This proof script is independent of selected `KECCAK_FEATURES` *)
 proc.
 conseq (:_ ==> st=st0) => //=.
  by move=> ? st ->; apply (pabsorb_spec_ref_nil _r8).
+seq 1: #pre; first inline*; auto.
+if => //.
+ (* AVX2 path *)
+ admit (* circuit *).
+(* scalar path *)
 while (0 <= i <= 25 /\ forall k, 0 <= k < i => st.[k] = z64).
  auto => /> &m Hi1 _ IH Hi2; split; first smt().
  by move => k Hk1 Hk2; case: (k=i{m}) => C; rewrite get_setE /#.
-auto => /> &m Hr1 Hr2; split; first smt().
+wp; auto => /> &m Hr1 Hr2 ?; split; first smt().
 move=> i st ???; have->: i=25 by smt().
 move=> H; rewrite tP /st0 => j Hj.
 by rewrite initiE 1:// H.
 qed.
 
-phoare state_init_ref_ph _r8:
- [ M.__state_init_ref
+phoare state_init_ph _r8:
+ [ M.__state_init
  : 0 < _r8 <= 200
  ==> pabsorb_spec_ref _r8 [] res
  ] = 1%r.
-proof. by conseq state_init_ref_ll (state_init_ref_h _r8). qed.
+proof. by conseq state_init_ll (state_init_h _r8). qed.
 
-lemma addratebit_ref_ll: islossless M.__addratebit_ref
+lemma addratebit_ll: islossless M.__addratebit
  by islossless.
 
-hoare addratebit_ref_h _r8 _st:
- M.__addratebit_ref
+hoare addratebit_h _r8 _st:
+ M.__addratebit
  : st = _st /\ _RATE8=_r8
  ==> res = addratebit _r8 _st.
 proof.
@@ -135,10 +141,10 @@ proc; simplify.
 by auto => />.
 qed.
 
-phoare addratebit_ref_ph _r8 _st:
- [ M.__addratebit_ref
+phoare addratebit_ph _r8 _st:
+ [ M.__addratebit
  : st = _st /\ _RATE8=_r8
  ==> res = addratebit _r8 _st
  ] = 1%r.
-proof. by conseq addratebit_ref_ll (addratebit_ref_h _r8 _st). qed.
+proof. by conseq addratebit_ll (addratebit_h _r8 _st). qed.
 

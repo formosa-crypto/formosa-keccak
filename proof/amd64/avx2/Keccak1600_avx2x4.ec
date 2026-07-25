@@ -104,6 +104,38 @@ congr;
      rewrite st4x_getiE //= initiE //= u256_pack4E pack4bE //).
 qed.
 
+lemma st4x_get_pack0 sts:
+ st4x_get (st4x_pack sts) 0 = sts.`1.
+proof.
+move: sts => [st0 st1 st2 st3] /=.
+by circuit.
+qed.
+
+lemma st4x_get_pack1 sts:
+ st4x_get (st4x_pack sts) 1 = sts.`2.
+proof.
+move: sts => [st0 st1 st2 st3] /=.
+by circuit.
+qed.
+
+lemma st4x_get_pack2 sts:
+ st4x_get (st4x_pack sts) 2 = sts.`3.
+proof.
+move: sts => [st0 st1 st2 st3] /=.
+by circuit.
+qed.
+
+lemma st4x_get_pack3 sts:
+ st4x_get (st4x_pack sts) 3 = sts.`4.
+proof.
+move: sts => [st0 st1 st2 st3] /=.
+by circuit.
+qed.
+
+
+op st4x_match st4x sts = (st4x = st4x_pack sts).
+
+
 op st4x_map (f:W64.t Array25.t->W64.t Array25.t) (st4x:W256.t Array25.t): W256.t Array25.t =
  st4x_pack (f (st4x_get st4x 0), f (st4x_get st4x 1), f (st4x_get st4x 2), f (st4x_get st4x 3)).
 
@@ -115,7 +147,81 @@ apply Array25.ext_eq => i Hi.
 by rewrite initiE //= st4x_packiE. 
 qed.
 
-op st4x_match st4x sts = (st4x = st4x_pack sts).
+lemma st4x_get_map f st4x k:
+ 0 <= k < 4 =>
+ st4x_get (st4x_map f st4x) k
+ = f (st4x_get st4x k).
+proof.
+move=> Hk.
+have: k=0 \/ k=1 \/ k=2 \/ k=3 by smt().
+move=> [->|]; first by rewrite st4x_get_pack0.
+move=> [->|]; first by rewrite st4x_get_pack1.
+move=> [->|]; first by rewrite st4x_get_pack2.
+move=> ->; by rewrite st4x_get_pack3.
+qed.
+
+lemma st4x_map_comp (f g: state -> state) st4x:
+ st4x_map f (st4x_map g st4x) = st4x_map (fun s => f (g s)) st4x.
+proof.
+rewrite {1}/st4x_map /=.
+rewrite (st4x_get_map g st4x 0) 1:// (st4x_get_map g st4x 1) 1://.
+rewrite (st4x_get_map g st4x 2) 1:// (st4x_get_map g st4x 3) 1://.
+by rewrite /st4x_map.
+qed.
+
+abbrev st4x_keccak_iota rc (st4x:state4x) =
+ st4x.[0 <- VPBROADCAST_4u64 rc `^` st4x.[0]].
+
+lemma sliceget64_256_25E k i st4x:
+ 0 <= k < 4 =>
+ 0 <= i < 25 =>
+ sliceget64_256_25 st4x (8 * (4 * i + k) * 8)
+ = st4x.[i] \bits64 k.
+proof.
+move=> Hk Hi.
+rewrite /sliceget64_256_25 ifT 1:/# get64E bits64E /=.
+apply W64.ext_eq => b Hb.
+rewrite !initiE //= pack8E initiE //= initiE 1:/# /= initiE 1:/# /=.
+by rewrite bits8iE 1:/# /#.
+qed.
+
+lemma VPBROADCAST_4u64_bits64 w k:
+ 0 <= k < 4 =>
+ VPBROADCAST_4u64 w \bits64 k = w.
+proof.
+move=> Hk; have: k\in iota_ 0 4 by smt(mem_iota).
+move: {Hk} k; apply/List.allP.
+rewrite -iotaredE /=.
+by circuit.
+qed.
+
+lemma st4x_keccak_iotaE rc st4x:
+ st4x_keccak_iota rc st4x
+ = st4x_map (fun st=>st.[0 <- st.[0] `^` rc]) st4x.
+proof.
+rewrite tP => i Hi.
+rewrite get_setE //.
+rewrite initiE //= !get_setE // !initiE //=.
+rewrite -(W4u64.unpack64K) u256_pack4E.
+congr.
+rewrite unpack64E.
+rewrite W4u64.Pack.init_of_list; congr.
+rewrite -iotaredE /=.
+case: (i=0) => Ei.
+ rewrite (sliceget64_256_25E 0 0) // (sliceget64_256_25E 1 0) //.
+ rewrite (sliceget64_256_25E 2 0) // (sliceget64_256_25E 3 0) //.
+ by rewrite xorwC !xorb64E !VPBROADCAST_4u64_bits64 //.
+rewrite (sliceget64_256_25E 0 i) // (sliceget64_256_25E 1 i) //.
+by rewrite (sliceget64_256_25E 2 i) // (sliceget64_256_25E 3 i) //.
+qed.
+
+
+op st4x_keccak_pround =  st4x_map keccak_pround_op.
+
+abbrev keccak_round_i i st =
+ foldl (fun s i => keccak_round_op rc_spec.[i] s) st (iota_ 0 i).
+
+
 
 
 (******************************************************************************

@@ -1,16 +1,33 @@
 /**************************************************************************** 
 
-   DEPENDENCIES:
-   =============
+   AVX sponge ops with scalar (BMI2) optimized permutation
+   =======================================================
 
-  The loading of this file depends on the following context:
-
- 1) "keccak1600.jinc"
  2) param int _ASIZE
 
 *****************************************************************************/
 
 from Keccak require "common/subreadwrite_ASIZE.jinc"
+from Keccak require "ref/keccakf1600_loop_straightline.jinc"
+
+inline fn __state_init_opt
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  reg ui64 i;
+  reg u64 z64;
+  reg u256 z256;
+  z64 = #SET0_64();
+  z256 = #SET0_256();
+  st[:256 0] = z256;
+  st[:256 1] = z256;
+  st[:256 2] = z256;
+  st[:256 3] = z256;
+  st[:256 4] = z256;
+  st[:256 5] = z256;
+  st[24] = z64;
+  return st;
+}
 
 /*
    INCREMENTAL ARRAY ABSORB
@@ -23,7 +40,7 @@ from Keccak require "common/subreadwrite_ASIZE.jinc"
    , ensures = is_arr_init(final_st,0,25*8) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_offset == offset + _LEN
    }
  ]
-inline fn __addstate_avx2ref
+inline fn __addstate_opt
 ( reg mut ptr u64[25] st
 , inline int AT /* bytes (0 <= AT < 200) */
 , reg const ptr u8[_ASIZE] buf
@@ -89,7 +106,7 @@ inline fn __addstate_avx2ref
    res = { final_st, final_AT },
    ensures = is_arr_init(final_st,0,25*8) && final_AT == (AT + _ASIZE) % _RATE8 + (_TRAILB != 0 ? 1 : 0)
 }]
-inline fn __absorb_avx2ref
+inline fn __absorb_opt
 ( reg mut ptr u64[25] st
 , inline int AT
 , reg const ptr u8[_ASIZE] buf
@@ -108,17 +125,21 @@ inline fn __absorb_avx2ref
     st, _, offset = __addstate_avx2ref(st, AT, buf, offset, _RATE8-AT, 0);
     _LEN = _LEN - (_RATE8-AT);
     AT = 0;
+    () = #spill(offset);
     st = _keccakf1600_st25_avx2(st);
+    () = #unspill(offset);
     ITERS = _LEN/_RATE8;
     i = 0;
     while ( i < ITERS ) {
-      st, _, offset = __addstate_avx2ref(st, 0, buf, offset, _RATE8, 0);
-      st = _keccakf1600_st25_avx2(st);
+      st, _, offset = __addstate_opt(st, 0, buf, offset, _RATE8, 0);
       i += 1;
+      () = #spill(i,offset);
+      st = _keccakf1600_opt(st);
+      () = #unspill(i,offset);
     }
     _LEN = _LEN % _RATE8;
   }
-  st, AT, _ = __addstate_avx2ref(st, AT, buf, offset, _LEN, _TRAILB);
+  st, AT, _ = __addstate_opt(st, AT, buf, offset, _LEN, _TRAILB);
   if (_TRAILB!=0) { st = __addratebit_ref(st, _RATE8); }
 
   return st, AT;
@@ -136,7 +157,7 @@ inline fn __absorb_avx2ref
    , ensures = final_offset == offset + _LEN
    }
  ]
-inline fn __dumpstate_avx2ref
+inline fn __dumpstate_opt
 ( reg mut ptr u8[_ASIZE] buf
 , reg ui64 offset
 , inline int _LEN
@@ -178,7 +199,7 @@ inline fn __dumpstate_avx2ref
      && is_arr_init(st,0,25*8)
    }
  ]
-inline fn __squeeze_avx2ref
+inline fn __squeeze_opt
 ( reg mut ptr u64[25] st
 , reg mut ptr u8[_ASIZE] buf
 , inline int _RATE8
@@ -190,13 +211,13 @@ inline fn __squeeze_avx2ref
   offset = 0;
   i = 0;
   while (i < _ASIZE/_RATE8) {
-    st = _keccakf1600_st25_avx2(st);
-    buf, offset = __dumpstate_avx2ref(buf, offset, _RATE8, st);
+    st = _keccakf1600_opt(st);
+    buf, offset = __dumpstate_opt(buf, offset, _RATE8, st);
     i += 1;
   }
   if (0 < _ASIZE%_RATE8) {
-    st = _keccakf1600_st25_avx2(st);
-    buf, offset = __dumpstate_avx2ref(buf, offset, _ASIZE%_RATE8, st);
+    st = _keccakf1600_opt(st);
+    buf, offset = __dumpstate_opt(buf, offset, _ASIZE%_RATE8, st);
   }
 
   return st, buf;

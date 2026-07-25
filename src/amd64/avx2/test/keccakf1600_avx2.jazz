@@ -1,0 +1,27 @@
+from Keccak require "common/keccak1600_default.jinc"
+
+/* it makes no sense to redefine default KECCAK_FEATURES, as
+ the avx2 permutations always assume AVX2 feature.
+*/
+
+from Keccak require "avx2/keccakf1600.jinc"
+
+export fn keccakf1600_avx2
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+ st = _keccakf1600_st25_avx2(st);
+ return st;
+}
+
+export fn keccakf1600x1_avx2
+( reg mut ptr u256[7] st
+) -> reg ptr u256[7]
+{
+  inline int i;
+  reg u256[7] str;
+  for i = 0 to 7 { str[i] = st[i]; }
+  str = _keccakf1600_avx2(str);
+  for i = 0 to 7 { st[i] = str[i]; }
+  return st;
+}

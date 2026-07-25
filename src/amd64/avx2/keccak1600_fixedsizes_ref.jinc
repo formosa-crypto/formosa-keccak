@@ -27,7 +27,7 @@ inline fn __addstate_m_avx2
   reg u128 t128_0, t128_1, t128_2;
 
   buf, _LEN, _TRAILB, AT, t64_1 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 0, AT);
-  t128_0 = (128u) t64_1;
+  t128_0 = #VMOV_64(t64_1);
   r0 = #VPBROADCAST_4u64(t128_0);
   st[0] ^= r0;
 
@@ -35,12 +35,12 @@ inline fn __addstate_m_avx2
   st[1] ^= r1;
 
   buf, _LEN, _TRAILB, AT, t64_2 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 40, AT);
-  t128_1 = (128u) t64_2;
+  t128_1 = #VMOV_64(t64_2);
   t128_2 = #set0_128();
   if ( 0 < _LEN || _TRAILB != 0) {
     buf, _LEN, _TRAILB, AT, r3 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 48, AT);
     buf, _LEN, _TRAILB, AT, t64_3 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 80, AT);
-    t128_2 = (128u) t64_3;
+    t128_2 = #VMOV_64(t64_3);
     buf, _LEN, _TRAILB, AT, r4 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 88, AT);
     buf, _LEN, _TRAILB, AT, t64_4 = __m_ilen_read_upto8_at(buf, _LEN, _TRAILB, 120, AT);
     t128_1 = #VPINSR_2u64(t128_1, t64_4, 1);
@@ -50,7 +50,8 @@ inline fn __addstate_m_avx2
     buf, _LEN, _TRAILB, AT, r6 = __m_ilen_read_upto32_at(buf, _LEN, _TRAILB, 168, AT);
     st = __addstate_r3456_avx2( st, r3, r4, r5, r6);
   }
-  r2 = (2u128)[t128_1, t128_2];
+  r2 = (256u) t128_2;
+  r2 = #VINSERTI128(r2, t128_1, 1);
   st[2] ^= r2;
   return st, AT, buf;
 }
@@ -130,9 +131,9 @@ inline fn __dumpstate_m_avx2
 
   // reg2 (5)
   if (0 < _LEN) {
-    t128_0 = (128u) st[2];
     t128_1 = #VEXTRACTI128(st[2], 1);
-    t = (64u) t128_1;
+    t128_0 = (128u) st[2];
+    t = #MOVV_64(t128_1);
     buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
     t128_1 = #VPUNPCKH_2u64(t128_1, t128_1);
 
@@ -152,7 +153,7 @@ inline fn __dumpstate_m_avx2
       
       // reg2 (10)
       if (0 < _LEN) {
-	t = (64u) t128_0;
+	t = #VMOV_64(t128_0);
 	buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
 	t128_0 = #VPUNPCKH_2u64(t128_0, t128_0);
       }
@@ -164,7 +165,7 @@ inline fn __dumpstate_m_avx2
 
       // reg2 (15)
       if (0 < _LEN) {
-	t = (64u) t128_1;
+	t = #VMOV_64(t128_1);
 	buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
       }
 
@@ -175,7 +176,7 @@ inline fn __dumpstate_m_avx2
 
       // reg2 (20)
       if (0 < _LEN) {
-	t = (64u) t128_0;
+	t = #VMOV_64(t128_0);
 	buf, _LEN = __m_ilen_write_upto8(buf, _LEN, t);
       }
 
@@ -256,12 +257,12 @@ inline fn __addstate_imem_avx2
 
   if (0 < LEN ) {
     buf, LEN, TRAILB, t64 = __mread_subu64(buf, LEN, TRAILB);
-    t128_1 = (128u) t64;
+    t128_1 = #VMOV_64(t64);
 
     buf, LEN, TRAILB, r3 = __mread_subu256(buf, LEN, TRAILB);
 
     buf, LEN, TRAILB, t64 = __mread_subu64(buf, LEN, TRAILB);
-    t128_0 = (128u) t64;
+    t128_0 = #VMOV_64(t64);
 
     buf, LEN, TRAILB, r4 = __mread_subu256(buf, LEN, TRAILB);
 
@@ -272,7 +273,8 @@ inline fn __addstate_imem_avx2
 
     buf, LEN, TRAILB, t64 = __mread_subu64(buf, LEN, TRAILB);
     t128_0 = #VPINSR_2u64(t128_0, t64, 1);
-    r2 = (2u128)[t128_1, t128_0];
+    r2 = (256u) t128_0;
+    r2 = #VINSERTI128(r2, t128_1, 1);
     st[2] ^= r2;
 
     buf, LEN, TRAILB, r6 = __mread_subu256(buf, LEN, TRAILB);
@@ -517,9 +519,9 @@ inline fn __dumpstate_imem_avx2
 
   // reg2 (5)
   if (0 <s LEN) {
-    t128_0 = (128u) st[2];
     t128_1 = #VEXTRACTI128(st[2], 1);
-    t = (64u) t128_1;
+    t128_0 = (128u) st[2];
+    t = #MOVV_64(t128_1);
     buf, LEN = __mwrite_subu64(buf, LEN, t);
     t128_1 = #VPUNPCKH_2u64(t128_1, t128_1);
   }
@@ -541,7 +543,7 @@ inline fn __dumpstate_imem_avx2
 
     // reg2 (10)
     if (0 <s LEN) {
-      t = (64u) t128_0;
+      t = #VMOV_64(t128_0);
       buf, LEN = __mwrite_subu64(buf, LEN, t);
       t128_0 = #VPUNPCKH_2u64(t128_0, t128_0);
     }
@@ -553,7 +555,7 @@ inline fn __dumpstate_imem_avx2
 
     // reg2 (15)
     if (0 <s LEN) {
-      t = (64u) t128_1;
+      t = #VMOV_64(t128_1);
       buf, LEN = __mwrite_subu64(buf, LEN, t);
     }
 
@@ -564,7 +566,7 @@ inline fn __dumpstate_imem_avx2
 
     // reg2 (20)
     if (0 <s LEN) {
-      t = (64u) t128_0;
+      t = #VMOV_64(t128_0);
       buf, LEN = __mwrite_subu64(buf, LEN, t);
     }
 

@@ -1,0 +1,14 @@
+from Keccak require "common/keccak1600_default.jinc"
+
+from Keccak require "ref/test/keccakf1600.jazz"
+from Keccak require "ref/test/keccakf1600_ref.jazz"
+from Keccak require "ref/test/keccakf1600_basic.jazz"
+from Keccak require "ref/test/keccakf1600_opt.jazz"
+
+from Keccak require "avx2/test/keccakf1600_avx2.jazz"
+
+from Keccak require "avx2/test/keccakf1600_avx2x4.jazz"
+from Keccak require "avx2/test/keccakf1600_avx2x4_ref.jazz"
+from Keccak require "avx2/test/keccakf1600_avx2x4_alt.jazz"
+from Keccak require "avx2/test/keccakf1600_avx2x4_nat.jazz"
+

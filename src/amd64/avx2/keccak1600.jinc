@@ -12,7 +12,7 @@ inline fn __u64_to_u256
   reg u128 t128;
 
   if (L % 2 == 0) {
-    t128 = (128u) x;
+    t128 = #VMOV_64(x);
   } else {
     t128 = #set0_128();
     t128 = #VPINSR_2u64(t128, x, 1);

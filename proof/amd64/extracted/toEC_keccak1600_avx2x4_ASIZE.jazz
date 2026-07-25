@@ -1,0 +1,6 @@
+require "toEC_keccak1600_avx2x4.jazz"
+
+param int _ASIZE=999;
+
+from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
+from Keccak require "avx2/keccak1600x4_updstate_ASIZE.jinc"

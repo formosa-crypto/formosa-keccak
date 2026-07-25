@@ -3,9 +3,12 @@
    DEPENDENCIES:
    =============
 
-  The loading of this file depends on the following context:
+param int KECCAK_FEATURES
 
- 1) "select_nobmi1.jinc" or "select_bmi1.jinc"
+(e.g.
+param int KECCAK_FEATURES
+ = KECCAK_FEATURE_AVX2 + KECCAK_FEATURE_BMI + KECCAK_FEATURE_BMI2;
+)
 
 *****************************************************************************/
 
@@ -18,17 +21,33 @@ require "keccakf1600.jinc"
 #[safety =
    { ensures = is_arr_init(st,0,200) }
 ]
-inline fn __state_init_ref
+inline fn __state_init
 ( reg mut ptr u64[25] st
 ) -> reg ptr u64[25]
 {
+  inline bool HAS_AVX2;
   reg ui64 i;
+  reg u256 z256;
   reg u64 z64;
-  z64 = 0;
-  i = 0;
-  while (i < 25) {
-    st[(uint) i] = z64;
-    i += 1; 
+
+  HAS_AVX2 = __HAS_FEATURE(KECCAK_FEATURE_AVX2, KECCAK_FEATURES);
+
+  if (HAS_AVX2) {
+   z256 = #set0_256();
+   st[:u256 0] = z256;
+   st[:u256 1] = z256;
+   st[:u256 2] = z256;
+   st[:u256 3] = z256;
+   st[:u256 4] = z256;
+   st[:u256 5] = z256;
+   st[24] = 0;
+  } else {
+   z64 = 0;
+   i = 0;
+   while (i < 25) {
+     st[(uint) i] = z64;
+     i += 1; 
+   }
   }
   return st;
 }
@@ -41,17 +60,11 @@ inline fn __state_init_ref
    { requires = is_arr_init(st,0,200) && 0 < _RATE8 && _RATE8 <= 200
    , ensures = is_arr_init(st,0,200) }
 ]
-inline fn __addratebit_ref
+inline fn __addratebit
 ( reg mut ptr u64[25] st
 , inline int _RATE8
 ) -> reg ptr u64[25]
 {
-/*  reg u64 t64;
-  t64 = 1;
-  t64 <<= (8*_RATE8-1) % 64; // obs: should be 63 for all admissible rates!
-  t64 ^= st[(_RATE8-1)/8];
-  st[(_RATE8-1)/8] = t64;
-*/
   st.[:u8 _RATE8-1] ^= 0x80;
   return st;
 }

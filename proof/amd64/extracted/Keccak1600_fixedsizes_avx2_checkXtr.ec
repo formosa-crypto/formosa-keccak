@@ -35,4 +35,3 @@ equiv a999_squeeze_avx2_eq:
  M.__squeeze_avx2 ~ MM.__squeeze_avx2
  : ={arg} ==> ={res}
 by sim.
-

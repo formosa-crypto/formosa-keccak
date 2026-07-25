@@ -1,0 +1,4 @@
+from Keccak require "common/subreadwrite_imem.jinc"
+from Keccak require "avx2/keccak1600x4.jinc"
+//from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
+from Keccak require "avx2/keccak1600x4_updstate.jinc"

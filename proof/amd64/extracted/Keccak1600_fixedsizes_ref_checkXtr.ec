@@ -16,23 +16,23 @@ clone import KeccakArrayRef as A999ref
       theory WA <- WArray999
       proof _ASIZE_ge0 by done.
 
-equiv a999_addstate_ref_eq:
- M.__addstate_ref ~ MM.__addstate_ref
+equiv a999_addstate_eq:
+ M.__addstate ~ MM.__addstate
  : ={arg} ==> ={res}
 by sim.
 
-equiv a999_absorb_ref_eq:
- M.__absorb_ref ~ MM.__absorb_ref
+equiv a999_absorb_eq:
+ M.__absorb ~ MM.__absorb
  : ={arg} ==> ={res}
 by sim.
 
-equiv a999_dumpstate_ref_eq:
- M.__dumpstate_ref ~ MM.__dumpstate_ref
+equiv a999_dumpstate_eq:
+ M.__dumpstate ~ MM.__dumpstate
  : ={arg} ==> ={res}
 by sim.
 
-equiv a999_squeeze_ref_eq:
- M.__squeeze_ref ~ MM.__squeeze_ref
+equiv a999_squeeze_eq:
+ M.__squeeze ~ MM.__squeeze
  : ={arg} ==> ={res}
 by sim.
 

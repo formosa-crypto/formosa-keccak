@@ -1,4 +1,14 @@
-from Keccak require "ref/select_bmi1.jinc"
+//require "toEC_keccak1600_ref.jazz"
+from Keccak require "common/keccak1600_default.jinc"
+from Keccak require "ref/keccakf1600.jinc"
+from Keccak require "ref/keccak1600.jinc"
 from Keccak require "ref/keccak1600_fixedsizes.jinc"
+//from Keccak require "ref/keccak1600_updstate.jinc"
+
+//require "toEC_keccak1600_avx2.jazz"
 from Keccak require "avx2/keccak1600_fixedsizes.jinc"
+from Keccak require "avx2/keccak1600_updstate.jinc"
+
+//require "toEC_keccak1600_avx2x4.jazz"
 from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
+from Keccak require "avx2/keccak1600x4_updstate.jinc"
