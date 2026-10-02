@@ -2854,7 +2854,7 @@ module M = {
         i <- (i + 1);
       }
       if ((16 <= (_LEN %% 32))) {
-        t128 <- (truncateu128 (loadW256 Glob.mem buf));
+        t128 <- (loadW128 Glob.mem buf);
         buf <- (buf + 16);
         t128 <-
         (t128 `^`
