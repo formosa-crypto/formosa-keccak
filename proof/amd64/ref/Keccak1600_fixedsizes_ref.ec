@@ -351,12 +351,16 @@ tb' = (u8pref at ++ l ++ [tb]).[at+size l]
 msubread _mem (u64bytes w) (8 * (_at %/ 8)) _at _buf _len _tb buf _LEN aT _TRAILB
 *)
 
-op addstate_spec st at l tb sz st' at' len' tb' =
+(* (cur0,cur') is an abstract input cursor (memory pointer `buf` / array
+   `offset`): the consumed count is recoverable from the remaining data, so
+   the cursor is pinned by `cur' = cur0 + (size l - len')`. *)
+op addstate_spec st at l tb sz cur0 cur' st' at' len' tb' =
  0 <= at
  /\ st' = addstate st (bytes2state (take sz (u8zeros at ++ l ++[of_int tb])))
  /\ len' = (if at < sz then max 0 (at + size l - sz) else size l)
  /\ at' = max at (min sz (at + size l + b2i (tb<>0)))
- /\ tb' = if at+size l < sz then 0 else tb.
+ /\ tb' = (if at+size l < sz then 0 else tb)
+ /\ cur' = cur0 + (size l - len').
 
 
 (*
@@ -369,10 +373,10 @@ addstate_AT base (8 * b2i true) _st _at (memread _mem _buf _len) _tb
   at0 len0 tb0
 *)
 
-lemma addstate_spec_init st at l tb sz st1 at1 len1 tb1:
+lemma addstate_spec_init st at l tb sz cur0 cur1 st1 at1 len1 tb1:
  0 <= sz <= at =>
- st1=st => at1=at => len1=size l => tb1=tb =>
- addstate_spec st at l tb sz st1 at1 len1 tb1.
+ cur1=cur0 => st1=st => at1=at => len1=size l => tb1=tb =>
+ addstate_spec st at l tb sz cur0 cur1 st1 at1 len1 tb1.
 proof.
 move => Hsz />; split; first smt().
 split.
@@ -381,21 +385,26 @@ split.
 smt(size_ge0).
 qed.
  
-lemma addstate_spec_len st at l tb sz st1 at1 len1 tb1:
- addstate_spec st at l tb sz st1 at1 len1 tb1 =>
+lemma addstate_spec_len st at l tb sz cur0 cur1 st1 at1 len1 tb1:
+ addstate_spec st at l tb sz cur0 cur1 st1 at1 len1 tb1 =>
  0 <= len1 <= size l.
 proof. move=> />; smt(size_ge0). qed.
 
-lemma addstate_spec_sz st at l tb sz st1 at1 len1 tb1:
+lemma addstate_spec_cur st at l tb sz cur0 cur1 st1 at1 len1 tb1:
+ addstate_spec st at l tb sz cur0 cur1 st1 at1 len1 tb1 =>
+ cur1 = cur0 + (size l - len1).
+proof. by move=> />. qed.
+
+lemma addstate_spec_sz st at l tb sz cur0 cur1 st1 at1 len1 tb1:
  at <= sz =>
  (0 < len1 \/ tb1<>0) =>
- addstate_spec st at l tb sz st1 at1 len1 tb1 =>
+ addstate_spec st at l tb sz cur0 cur1 st1 at1 len1 tb1 =>
  at1 = sz.
 proof. by move => />* /#. qed.
 
-lemma addstate_spec_finished st at l tb sz st1 at1 len1 tb1:
+lemma addstate_spec_finished st at l tb sz cur0 cur1 st1 at1 len1 tb1:
  len1=0 => tb1=0 =>
- addstate_spec st at l tb sz st1 at1 len1 tb1 =>
+ addstate_spec st at l tb sz cur0 cur1 st1 at1 len1 tb1 =>
  st1 = addstate_at st at (l++[of_int tb]) /\ at1 = at+size l+b2i (tb<>0).
 proof.
 move => /> Hat.
@@ -420,15 +429,16 @@ qed.
 
 lemma addstate_msubread_u64 mem w cur st at buf len tb at0 buf0 len0 tb0 cur1 at1 buf1 len1 tb1:
  0 <= at => 0 <= len =>
- 0 <= cur <= at0 < cur+8 => 
- buf0 = buf + len - len0 =>
+ 0 <= cur <= at0 < cur+8 =>
  cur1 = cur + 8 =>
- addstate_spec st at (memread mem buf len) tb cur st0 at0 len0 tb0 =>
+ addstate_spec st at (memread mem buf len) tb cur buf buf0 st0 at0 len0 tb0 =>
  msubread mem (u64bytes w) cur at0 buf0 len0 tb0 at1 buf1 len1 tb1 =>
- addstate_spec st at (memread mem buf len) tb cur1 (addstate_at st cur (u64bytes w)) at1 len1 tb1.
+ addstate_spec st at (memread mem buf len) tb cur1 buf buf1 (addstate_at st cur (u64bytes w)) at1 len1 tb1.
 proof.
 move => |> Hat Hlen Hcur Hat0_1 Hat0_2; rewrite /addstate_spec addstate_atE // Hat /= => [#].
-move => Hst0 -> -> ->; rewrite size_memread 1:// => Hsub.
+move => Hst0 -> -> -> ->; rewrite size_memread 1:// => Hsub.
+split.
+ admit.
 split.
  admit.
 split.
@@ -509,7 +519,7 @@ pose base:= 8 * (_at %/ 8).
 pose nbase:= 8 * ((_at-1) %/ 8 + 1).
 seq 2: (Glob.mem=_mem /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
        /\ 0 <= _len /\ _at + _len <= 200 - b2i (_tb<>0) /\ _buf + _len < W64.modulus
-       /\ addstate_spec _st _at (memread _mem _buf _len) _tb nbase st aT _LEN _TRAILB).
+       /\ addstate_spec _st _at (memread _mem _buf _len) _tb nbase _buf buf st aT _LEN _TRAILB).
 (*
 seq 2: (Glob.mem=_mem /\ _TRAILB=_tb /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
        /\ 0 <= _len /\ _at + _len <= 200 - b2i (_tb<>0) /\ _buf + _len < W64.modulus
@@ -533,16 +543,16 @@ addstate_spec _st _at (memread _mem _buf _len) _tb nbase
   have ->@/base: nbase = base by smt().
   by apply addstate_spec_init; smt(size_memread).
 (* stmt 3 : if hAS_AVX2 — both branches consume `8*(_LEN%/8)` further aligned bytes. *)
-seq 3: (Glob.mem=_mem /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
+seq 1: (Glob.mem=_mem /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
        /\ 0 <= _len /\ _at + _len <= 200 - b2i (_tb<>0) /\ _buf + _len < W64.modulus
-       /\ addstate_spec _st _at (memread _mem _buf _len) _tb (nbase+8*(_LEN%/8)) st (aT+8*(_LEN%/8)) (_LEN-8*(_LEN%/8)) _TRAILB).
- wp; if => //.
+       /\ addstate_spec _st _at (memread _mem _buf _len) _tb (nbase+8*(_LEN%/8)) _buf buf st (aT+8*(_LEN%/8)) (_LEN-8*(_LEN%/8)) _TRAILB).
+ if => //.
  - seq 3: (Glob.mem=_mem /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
        /\ 0 <= _len /\ _at + _len <= 200 - b2i (_tb<>0) /\ _buf + _len < W64.modulus
-       /\ addstate_spec _st _at (memread _mem _buf _len) _tb (nbase+32*(_LEN%/32)) st (aT+32*(_LEN%/32)) (_LEN-32*(_LEN%/32)) _TRAILB).
+       /\ addstate_spec _st _at (memread _mem _buf _len) _tb (nbase+32*(_LEN%/32)) _buf buf st (aT+32*(_LEN%/32)) (_LEN-32*(_LEN%/32)) _TRAILB).
    while (#[/1:8]pre /\ inc = _LEN%/32 /\
           0 <= i <= _LEN%/32 /\ 
-          addstate_spec _st _at (memread _mem _buf _len) _tb (nbase+32*i) st (aT+32*i) (_LEN-32*i) _TRAILB).
+          addstate_spec _st _at (memread _mem _buf _len) _tb (nbase+32*i) _buf buf st (aT+32*i) (_LEN-32*i) _TRAILB).
     auto => |> &m ????????? IH Hb; split; first smt().
     rewrite xorwC set256_addstate_at 1:/#.
     admit (*
@@ -558,10 +568,10 @@ addstate_spec _st _at (memread _mem _buf _len) _tb (nbase + 32 * (i{m} + 1))
 have ?: 0<= _LEN{m}.
  move: H; rewrite /addstate_spec => />. smt(size_ge0).
     smt().
-   by move => i st1 ???; have ->: i=_LEN{m} %/ 32 by smt().
+   by move => buf1 i st1 ???; have ->: i=_LEN{m} %/ 32 by smt().
    seq 1: (Glob.mem=_mem /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
        /\ 0 <= _len /\ _at + _len <= 200 - b2i (_tb<>0) /\ _buf + _len < W64.modulus
-       /\ addstate_AT nbase (16 * (len0 %/ 16)) _st _at (memread _mem _buf _len) _tb st aT _LEN _TRAILB).
+       /\ addstate_spec _st _at (memread _mem _buf _len) _tb (nbase+16*(_LEN%/16)) _buf buf st (aT+16*(_LEN%/16)) (_LEN-16*(_LEN%/16)) _TRAILB).
    if => //.
      auto => |> &m ??????? IH Hb.
      admit (*
@@ -606,26 +616,12 @@ Hb: ! 8 <= _LEN{`&hr} %% 16
 addstate_AT nbase (8 * (len0 %/ 8)) _st _at (memread _mem _buf _len) _tb
   st{`&hr} aT{`&hr} _LEN{`&hr} _TRAILB{`&hr}
 *).
- - 
-sp; if => //.
- admit.
-admit.
-qed.
-
- + (* AVX2 branch : 32-byte `while` then the 16- and 8-byte tails.
-       while-invariant (iteration i, consumed c_i = (_len-_LEN)+32*i):
-         st = addstate_at _st _at (memread _mem _buf c_i) /\ buf = _buf + c_i
-         /\ 0 <= i <= _LEN%/32.
-       body: `loadW256_memread` + `set256_addstate_at` + `addstate_at_cat`
-             + `memread_split` (append 32 bytes); tails: `set128_addstate_at`
-             (16 <= _LEN%%32) and `set64_addstate_at` (8 <= _LEN%%16). *)
-    admit.
-  (* scalar branch : 8-byte `while`.
-     while-invariant (iteration i, consumed (_len-_LEN)+8*i):
-       st = addstate_at _st _at (memread _mem _buf ((_len-_LEN)+8*i))
-       /\ buf = _buf + (_len-_LEN)+8*i /\ at = aT + 8*i /\ 0 <= i <= _LEN%/8.
-     body: `loadW64_memread` + `set64_addstate_at` + `addstate_at_cat`. *)
-  admit.
+ - (* scalar branch : 8-byte `while`.
+      while-invariant (iteration i, consumed (_len-_LEN)+8*i):
+        st = addstate_at _st _at (memread _mem _buf ((_len-_LEN)+8*i))
+        /\ buf = _buf + (_len-_LEN)+8*i /\ at = aT + 8*i /\ 0 <= i <= _LEN%/8.
+      body: `loadW64_memread` + `set64_addstate_at` + `addstate_at_cat`. *)
+   admit.
 (* stmts 4-5 : aT += 8*(_LEN/8); _LEN %%= 8 — bookkeeping; restores the invariant
    since (_len-_LEN)+8*(_LEN%/8) = _len - _LEN%%8. *)
 seq 2: (Glob.mem=_mem /\ _TRAILB=_tb /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
@@ -635,7 +631,12 @@ seq 2: (Glob.mem=_mem /\ _TRAILB=_tb /\ 0 <= _tb < 256 /\ 0 <= _at <= 200
        /\ 0 <= _LEN < 8).
 + auto => /> &m *.
   have E: (_len - _LEN{m}) + 8 * (_LEN{m} %/ 8) = _len - _LEN{m} %% 8 by smt().
-  rewrite !E; smt(modz_ge0 ltz_pmod).
+  admit. (* bridge addstate_spec (post stmt-3 invariant) back to the explicit
+    `st = addstate_at _st _at (memread _mem _buf (_len - _LEN%%8))` form:
+    unfold addstate_spec, rewrite with addstate_atE and E; the cursor fact
+    `buf = _buf + (_len - _LEN%%8)` comes from the spec's cur' clause
+    (addstate_spec_cur) + E.  Previous (old-form) closing script:
+    `rewrite !E; smt(modz_ge0 ltz_pmod).` *)
 (* stmt 6 : final partial word + trailing byte. *)
 if.
 + wp; ecall (m_ilen_read_upto8_at_h buf _LEN _TRAILB aT aT); auto => /> &m ????????? Hlast.
@@ -645,7 +646,7 @@ if.
      the running invariant, gives st = addstate_at _st _at (memread _mem _buf _len
      ++ [tb]); `msubreadP` finalises the msubread chain and `bytes2state_zext`
      drops the trailing byte when _tb = 0.  aT = _at + _len + b2i(_tb<>0). *)
-  by rewrite Eat0 Ebuf0 /srincr size_to_list /srfnsh size_cat size_memread /#. 
+  by rewrite Eat0 Ebuf0 size_to_list /srat /srincr /srfnsh /= /#.
 (* guard false: _LEN = 0 /\ _tb = 0, so l = memread _mem _buf _len and the running
    invariant already gives the postcondition. *)
 auto => /> &m *.
@@ -669,7 +670,7 @@ phoare addstate_m_ph _mem _st _at _buf _len _tb:
         /\ res.`3 = _buf + _len
  ] = 1%r.
 proof.
-by conseq addstate_m_ll (addstate_m_h _mem _st _at _buf _len _tb).
+by conseq addstate_m_ll (addstate_m_h _mem _st _at _buf _len _tb) => />; smt(size_memread size_cat).
 qed.
 
 lemma absorb_m_ll: islossless M.__absorb_m.
