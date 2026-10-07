@@ -14,7 +14,7 @@ clone import KeccakArrayAvx2x4 as A999avx2x4
  with op _ASIZE <- 999,
       theory A <- Array999,
       theory WA <- WArray999
-      proof _ASIZE_ge0 by done.
+      proof _ASIZE_ge0 by done, _ASIZE_u64 by done.
 
 (* The ASIZE extraction instantiates KECCAK_PERMUTATION with a different
    scalar component (3+512, from toEC_keccak1600_avx2.jazz) than the memory

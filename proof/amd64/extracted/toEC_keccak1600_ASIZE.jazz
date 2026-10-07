@@ -8,11 +8,10 @@ from Keccak require "common/subreadwrite_ASIZE.jinc"
 
 //require "toEC_keccak1600_ref_ASIZE.jazz"
 from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
-//from Keccak require "ref/keccak1600_updstate_ASIZE.jinc"
+from Keccak require "ref/keccak1600_updstate_ASIZE.jinc"
 
 //require "toEC_keccak1600_avx2_ASIZE.jazz"
 from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
-from Keccak require "avx2/keccak1600_updstate_ASIZE.jinc"
 
 //require "toEC_keccak1600_avx2x4_ASIZE.jazz"
 from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"

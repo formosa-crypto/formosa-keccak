@@ -1,5 +1,4 @@
 from Keccak require "avx2/keccak1600_fixedsizes.jinc"
-from Keccak require "avx2/keccak1600_updstate.jinc"
 
 
 param int RATE8 = R168;

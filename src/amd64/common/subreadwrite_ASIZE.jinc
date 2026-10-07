@@ -449,60 +449,6 @@ inline fn __a_rlen_read_upto8
   return off, w;
 }
 
-#[safety =
-   { requires = is_arr_init(a,off_,min(len_,8))
-     && 0 <= off_ && off_ + min(len_,8) <= _ASIZE
-   , res = { final_off, final_w }
-   , ensures = final_off == off_ + max(0,min(len_,8))
-   }
-]
-fn __a_rlen_read_upto8_noninline
-( reg const ptr u8[_ASIZE] a
-, reg ui64 off_ 
-, reg ui64 len_ // off + len <= _ASIZE
-) -> reg ui64 /* off */
-   , reg u64  /* data */
-{
-  reg ui64 off, len;
-  reg u64 w, x;
-  reg u8 sh;
-  reg bool zf;
-
-  off = (64ui) off_;
-  len = (64ui) len_;
-  if (len >= 8) {
-    w = a.[:u64 off];
-    off += 8;
-  } else {
-    _, _, _, _, zf = #TEST((64u)len, 4);
-    if (!zf) {
-      w = (64u) a.[:u32 off];
-      off += 4;
-      sh = 32;
-    } else {
-      w = 0;
-      sh = 0;
-    }
-    _, _, _, _, zf = #TEST((64u)len, 2);
-    if (!zf) {
-      x = (64u) a.[:u16 off];
-      x <<= (sh & 63);
-      w += x;
-      off += 2;
-      sh += 16;
-    }
-    _, _, _, _, zf = #TEST((64u)len, 1);
-    if (!zf) {
-      x = (64u) a.[:u8 off];
-      x <<= (sh & 63);
-      w += x;
-      off += 1;
-    }
-  }
-  off_ = off;
-  return off_, w;
-}
-
 /**
     WRITE A VARIABLE NUMBER OF BYTES FROM AN ARRAY INTO A WORD
 **/

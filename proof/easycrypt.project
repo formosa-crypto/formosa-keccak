@@ -1,8 +1,11 @@
 [general]
-timeout = 2
+timeout = 5
 
-provers = CVC5@1.0
-provers = Z3@4.12
+provers = CVC5@1.3
+provers = Z3@4.13
+
+pragmas = -Warn:uninit
+pragmas = -Warn:unused_unfold
 
 spec = amd64/common/avx2.spec
 

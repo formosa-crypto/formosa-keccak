@@ -4,4 +4,4 @@ param int _ASIZE=999;
 
 from Keccak require "common/subreadwrite_ASIZE.jinc"
 from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
-//from Keccak require "ref/keccak1600_updstate_ASIZE.jinc"
+from Keccak require "ref/keccak1600_updstate_ASIZE.jinc"
