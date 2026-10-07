@@ -29,12 +29,12 @@ extern void finish_updstate_avx2x4(KeccakUpdStateX4 st);
 extern void TEST_UPD__absorb_updstate_avx2x4(KeccakUpdStateX4 st, const uint8_t buf0[], const uint8_t buf1[], const uint8_t buf2[], const uint8_t buf3[], uint64_t len);
 extern void TEST_UPD__squeeze_updstate_avx2x4(KeccakUpdStateX4 st, uint8_t buf0[], uint8_t buf1[], uint8_t buf2[], uint8_t buf3[], uint64_t len);
 
-// REF
+// REF (from ../ref/test_ref.s)
 
-extern void init_updstate_ref(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
-extern void TEST_UPD__absorb_updstate_ref(KeccakUpdState st, const uint8_t buf[], uint64_t len);
-extern void finish_updstate_ref(KeccakUpdState st);
-extern void TEST_UPD__squeeze_updstate_ref(KeccakUpdState st, uint8_t buf[], uint64_t len);
+extern void init_updstate(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
+extern void TEST_UPD__absorb_updstate(KeccakUpdState st, const uint8_t buf[], uint64_t len);
+extern void finish_updstate(KeccakUpdState st);
+extern void TEST_UPD__squeeze_updstate(KeccakUpdState st, uint8_t buf[], uint64_t len);
 
 
 
@@ -91,10 +91,10 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
   }
 
   // init states
-  init_updstate_ref(s0ref, rate8/8, trail);
-  init_updstate_ref(s1ref, rate8/8, trail);
-  init_updstate_ref(s2ref, rate8/8, trail);
-  init_updstate_ref(s3ref, rate8/8, trail);
+  init_updstate(s0ref, rate8/8, trail);
+  init_updstate(s1ref, rate8/8, trail);
+  init_updstate(s2ref, rate8/8, trail);
+  init_updstate(s3ref, rate8/8, trail);
   init_updstate_avx2x4(s0, rate8/8, trail);
   init_updstate_avx2x4(s1, 0, 0); // fixedsizes
   init_updstate_avx2x4(s2, 0, 0); // fixedsizes
@@ -105,16 +105,16 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
   chkeq_buf("init_updstate (ref3 vs. avx2x4_3)", (uint8_t*) s3ref, (uint8_t*) su3, 8*26);
 
   for (i=0; i < niters; i++) {
-    TEST_UPD__absorb_updstate_ref(s0ref,buf_in0+i*size,size);
-    TEST_UPD__absorb_updstate_ref(s1ref,buf_in1+i*size,size);
-    TEST_UPD__absorb_updstate_ref(s2ref,buf_in2+i*size,size);
-    TEST_UPD__absorb_updstate_ref(s3ref,buf_in3+i*size,size);
+    TEST_UPD__absorb_updstate(s0ref,buf_in0+i*size,size);
+    TEST_UPD__absorb_updstate(s1ref,buf_in1+i*size,size);
+    TEST_UPD__absorb_updstate(s2ref,buf_in2+i*size,size);
+    TEST_UPD__absorb_updstate(s3ref,buf_in3+i*size,size);
     TEST_UPD__absorb_updstate_avx2x4(s0,buf_in0+i*size,buf_in1+i*size,buf_in2+i*size,buf_in3+i*size,size);
   }
-  finish_updstate_ref(s0ref);
-  finish_updstate_ref(s1ref);
-  finish_updstate_ref(s2ref);
-  finish_updstate_ref(s3ref);
+  finish_updstate(s0ref);
+  finish_updstate(s1ref);
+  finish_updstate(s2ref);
+  finish_updstate(s3ref);
   finish_updstate_avx2x4(s0);
   unpack_updstate_avx2x4(su0, su1, su2, su3, s0);
   chkeq_buf("absorb (updref0 vs. avx2x4)", (uint8_t*) s0ref, (uint8_t*) su0, 8*26);
@@ -134,13 +134,13 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
   for (i=0; i < niters; i++) {
     TEST_UPD__squeeze_updstate_avx2x4(s0, buf_o1+i*size, buf_o2+i*size, buf_o3+i*size, buf_o4+i*size, size);
   }
-  TEST_UPD__squeeze_updstate_ref(s0ref, buf_o0, bigsize);
+  TEST_UPD__squeeze_updstate(s0ref, buf_o0, bigsize);
   chkeq_buf("squeeze (updref0 vs. updx4)", (uint8_t*) buf_o0, (uint8_t*) buf_o1, bigsize);
-  TEST_UPD__squeeze_updstate_ref(s1ref, buf_o0, bigsize);
+  TEST_UPD__squeeze_updstate(s1ref, buf_o0, bigsize);
   chkeq_buf("squeeze (updref1 vs. updx4)", (uint8_t*) buf_o0, (uint8_t*) buf_o2, bigsize);
-  TEST_UPD__squeeze_updstate_ref(s2ref, buf_o0, bigsize);
+  TEST_UPD__squeeze_updstate(s2ref, buf_o0, bigsize);
   chkeq_buf("squeeze (updref2 vs. updx4)", (uint8_t*) buf_o0, (uint8_t*) buf_o3, bigsize);
-  TEST_UPD__squeeze_updstate_ref(s3ref, buf_o0, bigsize);
+  TEST_UPD__squeeze_updstate(s3ref, buf_o0, bigsize);
   chkeq_buf("squeeze (updref3 vs. updx4)", (uint8_t*) buf_o0, (uint8_t*) buf_o4, bigsize);
 
   return 0;
