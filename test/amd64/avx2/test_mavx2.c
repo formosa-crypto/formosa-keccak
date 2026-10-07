@@ -18,14 +18,14 @@ extern void init_state_avx2(KeccakState st);
 extern void absorb_m_avx2(KeccakState st, const uint8_t buf[]);
 extern void squeeze_m_avx2(KeccakState st, uint8_t buf[]);
 
-// UPDSTATE
-typedef uint64_t KeccakUpdState[26];
+// UPDSTATE (ref procedures, from ../ref/test_mref.s; there is no AVX2
+// single-lane updstate: it was the ref code with the AVX2 permutation)
 
-extern void init_updstate_avx2(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
+extern void init_updstate(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
 extern void ststatus_updstate(uint8_t status[3], const KeccakUpdState st);
-extern void finish_updstate_avx2(KeccakUpdState st);
-extern void absorb_m_updstate_avx2(KeccakUpdState st, const uint8_t buf[], uint64_t len);
-extern void squeeze_m_updstate_avx2(KeccakUpdState st, uint8_t buf[], uint64_t len);
+extern void finish_updstate(KeccakUpdState st);
+extern void absorb_m_updstate(KeccakUpdState st, const uint8_t buf[], uint64_t len);
+extern void squeeze_m_updstate(KeccakUpdState st, uint8_t buf[], uint64_t len);
 
 
 
@@ -80,20 +80,20 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
   }
 
   // init states
-  init_updstate_avx2(s1, rate8/8, trail);
-  init_updstate_avx2(s2, 0, 0);
+  init_updstate(s1, rate8/8, trail);
+  init_updstate(s2, 0, 0);
   chkeq_buf("init_updstate (ref vs. avx2)", (uint8_t*) s1, (uint8_t*) s2, 8*25);
 
 
   for (i=0; i < niters; i++) {
-    absorb_m_updstate_avx2(s1, buf_in+i*size, size);
+    absorb_m_updstate(s1, buf_in+i*size, size);
   }
-  finish_updstate_avx2(s1);
+  finish_updstate(s1);
   absorb_m_avx2(s2, buf_in);
   chkeq_buf("absorb (updstate vs. avx2)", (uint8_t*) s1, (uint8_t*) s2, 8*25);
 
   for (i=0; i < niters; i++) {
-    squeeze_m_updstate_avx2(s1, buf_o1+i*size, size);
+    squeeze_m_updstate(s1, buf_o1+i*size, size);
   }
   squeeze_m_avx2(s2, buf_o2);
   chkeq_buf("squeeze (updstate vs. avx2)", (uint8_t*) buf_o2, (uint8_t*) buf_o1, bigsize);

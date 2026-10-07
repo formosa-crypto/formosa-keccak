@@ -28,33 +28,25 @@ have ? : size s = size s'.
 + have ? := size_flatten_ctt n s _;1:smt().
   have ? := size_flatten_ctt n s' _;1:smt().
   have ? : n * size s' = n * size s.
-  have : size (flatten s) = size (flatten s') by smt(). smt().
+   by have /# : size (flatten s) = size (flatten s') by smt().
   by smt().
 apply (eq_from_nth []); 1:smt().
 move => i ib.
 apply (eq_from_nth witness);1:smt(mem_nth).
-     move => ii iib.
-
-
-have -> : nth witness (nth [] s i) ii  = nth witness (flatten s) (i * n + ii). rewrite (nth_flatten witness n). rewrite allP => /#. 
-have : 0 <= ii < n. 
-have n_sz : size (nth [] s i) = n.
-apply H1. smt(mem_nth). smt(). move => ii_bnd.
-have -> : (i * n + ii) %/ n = i. 
-have -> : (i * n + ii) %/ n = i + (ii %/ n); smt(@IntDiv).
-have -> : (i * n + ii) %% n = ii %% n by smt(@IntDiv).
-have -> : ii %% n = ii by smt(@IntDiv). trivial.
-
-have -> : nth witness (nth [] s' i) ii = nth witness (flatten s') (i * n + ii). 
-rewrite (nth_flatten witness n). rewrite allP => /#. 
-have : 0 <= ii < n. 
-have n_sz : size (nth [] s' i) = n. smt(mem_nth).
-have : size (nth [] s' i) = size (nth [] s i) by smt(mem_nth).
-smt(). move => ii_bnd2.
-have -> : (i * n + ii) %/ n = i. 
-have -> : (i * n + ii) %/ n = i + (ii %/ n); smt(@IntDiv).
-have -> : (i * n + ii) %% n = ii %% n by smt(@IntDiv).
-have -> : ii %% n = ii by smt(@IntDiv). trivial. smt().
+move => ii iib.
+have ii_bnd: 0 <= ii < n. 
+ have n_sz : size (nth [] s i) = n.
+  by apply H1; smt(mem_nth).
+ smt().
+have ?: (i * n + ii) %/ n = i.
+ by have ->/# : (i * n + ii) %/ n = i + (ii %/ n) by smt(). 
+have -> : nth witness (nth [] s i) ii  = nth witness (flatten s) (i * n + ii).  rewrite (nth_flatten witness n).
+  by rewrite allP /#.
+ smt().
+have ->/# : nth witness (nth [] s' i) ii = nth witness (flatten s') (i * n + ii).
+rewrite (nth_flatten witness n).
+ by rewrite allP /#. 
+smt().
 qed.
 
 
@@ -88,11 +80,7 @@ realize oflistP by smt(W8.bits2wK).
 realize ofintP by move => *;rewrite /of_int int2bs_mod //=.
 realize tosintP. move => bv /=;rewrite /to_sint /smod /BVA_Top_JWord_W8_t.msb.
 have -> /=: nth false (w2bits bv) (8 - 1) = 2 ^ (8 - 1) <= to_uint bv; last by smt().
-rewrite /to_uint. 
-rewrite -{2}(cat_take_drop 7 (w2bits bv)).
-rewrite bs2int_cat size_take 1:// W8.size_w2bits /=.
-rewrite -bs2int_div 1:// /= get_to_uint /=.
-rewrite -bs2int_mod 1:// /= /to_uint.
+rewrite (divz_eq (to_uint bv) 128) /= get_to_uint /=.
 by smt(bs2int_range mem_range W8.size_w2bits pow2_8).
 qed.
 realize touintP by smt().
@@ -179,41 +167,35 @@ op size : int.
 
 clone import BitWordSH as W with op size <- size.
 
-
 bind bitstring W.w2bits W.bits2w W.to_uint W.to_sint W.of_int W.t size.
 realize size_tolist by auto.
 realize tolistP by auto.
 realize oflistP by smt(W.bits2wK). 
 realize ofintP by move => *;  rewrite /of_int int2bs_mod.
-realize tosintP. 
-move => bv /=. rewrite /to_sint /smod.
-have <- /=: nth false (w2bits bv) (JCircuits.size - 1) = 2 ^ (JCircuits.size - 1) <= to_uint bv; last first. 
-rewrite /to_uint. 
-rewrite -{2}(cat_take_drop (JCircuits.size - 1) (w2bits bv)).
-rewrite bs2int_cat size_take 1://. 
-smt(W.gt0_size).
-rewrite -bs2int_div 1:// /=. smt(W.gt0_size). rewrite get_to_uint /=.
-rewrite -bs2int_mod 1:// /= /to_uint. smt(W.gt0_size).
-have -> : 0 <= JCircuits.size - 1 < JCircuits.size by smt(W.gt0_size). 
-rewrite /msb.
-case (JCircuits.size <= 1) => sz.
-have : 1 = JCircuits.size by smt(W.gt0_size). smt().
-have -> /=: JCircuits.size <> 1 by smt(W.gt0_size).
-case (bv.[JCircuits.size - 1]) => msb.
-rewrite -touintP.
-move : msb. 
-rewrite get_to_uint. 
-move => [] _ bnd. smt().
-smt(get_to_uint).
-simplify.
-rewrite get_to_uint. 
-have -> : 0 <= JCircuits.size - 1 < JCircuits.size = true by smt(W.gt0_size).
-simplify.
-case (2 ^ (JCircuits.size - 1) <= to_uint bv) => val.
-have E : to_uint bv < 2 * (2 ^ (JCircuits.size - 1)) by rewrite -exprS; smt(W.gt0_size to_uint_cmp).
-have E2 : to_uint bv %/ (2 ^ (JCircuits.size - 1)) = 1 by smt(divz_eqP).
-smt(@IntDiv). 
-smt(@IntDiv to_uint_cmp).
+realize tosintP.
+have ?:= W.gt0_size.
+move => bv /=; rewrite /to_sint /smod /msb.
+case: (JCircuits.size = 1) => Hsz /=; first smt().
+have <- /=: nth false (w2bits bv) (JCircuits.size - 1)
+           = 2 ^ (JCircuits.size - 1) <= to_uint bv; last smt().
+rewrite (divz_eq (to_uint bv) (2^(JCircuits.size-1))) /= get_to_uint /=.
+have ->/= : 0 <= JCircuits.size - 1 < JCircuits.size by smt().
+rewrite {2}(:2 = 2^(JCircuits.size-(JCircuits.size-1))).
+ by rewrite {1}(:2=2^1) 1://; congr; ring.
+rewrite -IntDiv.modz_pow2_div 1:/# modz_small; first smt(W.to_uint_cmp).
+case: (to_uint bv %/ 2 ^ (JCircuits.size - 1) = 0) => /= C.
+ rewrite C /= eq_sym.
+ have ?:= modz_cmp (to_uint bv) (2 ^ (JCircuits.size - 1)) _.
+  smt(gt0_pow2).
+ smt().
+rewrite eq_sym eqT.
+have ?: 1 <= to_uint bv %/ 2 ^ (JCircuits.size - 1).
+ smt(gt0_pow2 to_uint_cmp).
+have ?:= modz_cmp (to_uint bv) ( 2 ^ (JCircuits.size - 1)).
+apply (lez_trans (to_uint bv %/ 2 ^ (JCircuits.size - 1) * 2 ^ (JCircuits.size - 1))).
+rewrite -{1}(mul1z).
+ by apply ler_pmul2r; smt(gt0_pow2).
+smt(modz_cmp gt0_pow2).
 qed.
 realize touintP by smt().
 realize gt0_size by done.
@@ -223,7 +205,6 @@ realize bvaddP by exact W.to_uintD.
 
 bind op W.t W.( * ) "mul".
 realize bvmulP by exact W.to_uintM. 
-
 
 bind op [bool & W.t] W.\ult "ult".
 realize bvultP by move=> bv1 bv2; rewrite W.ultE /#.
@@ -279,7 +260,6 @@ rewrite (nth_map (false,false)) /=; 1: rewrite size_zip !size_w2bits /#.
 by rewrite !nth_zip /=; 1:smt(W64.size_w2bits).
 qed.
 
-
 bind op [W.t] W.invw "not".
 realize bvnotP.
 move=> bv1.
@@ -288,13 +268,12 @@ move => i; rewrite size_w2bits /= => ib.
 by rewrite (nth_map false) 1:// /= /#.
 qed.
 
-
 (* FIXME: Might not be needed anymore *)
 op W_sub (a : W.t, b: W.t) : W.t = 
   a - b.
 
 bind op W.t W_sub "sub".
-realize bvsubP by rewrite /W_sub => bv1 bv2; rewrite W.to_uintD to_uintN /=; smt(@IntDiv).
+realize bvsubP by rewrite /W_sub => bv1 bv2; rewrite W.to_uintD to_uintN modzDmr.
 
 op sll (w1 w2 : W.t) : W.t =
   W.(`<<<`) w1 (W.to_uint w2).
@@ -332,17 +311,16 @@ lemma W_msbE (w: W.t):
 proof.
 rewrite /msb; split; last by apply W_get_ule.
 rewrite get_to_uint => H.
-have L0: 0 < to_uint w %/ 2^(JCircuits.size-1).
- move: H; rewrite /=; smt(W.to_uint_cmp @IntDiv W.gt0_size).
+have L0: 1 <= to_uint w %/ 2^(JCircuits.size-1).
+ by rewrite lez_divRL; smt(gt0_pow2).
 have: to_uint w \in range (1 * 2^(JCircuits.size-1)) ((1 + 1) * 2^(JCircuits.size-1)).
  rewrite /range /= mem_iota; split => //=.
  move: (W.to_uint_cmp w) => /=. 
  have -> : 2 ^ (JCircuits.size - 1) +
-(2 * 2 ^ (JCircuits.size - 1) - 2 ^ (JCircuits.size - 1)) = 
-2 * 2 ^ (JCircuits.size - 1) by smt(). 
-rewrite -exprS. smt(W.gt0_size).
-smt(@IntDiv W.gt0_size to_uint_cmp).
-rewrite -eq_div_range //. smt(W.gt0_size gt0_pow2). smt(W.gt0_size).
+      (2 * 2 ^ (JCircuits.size - 1) - 2 ^ (JCircuits.size - 1)) = 
+      2 * 2 ^ (JCircuits.size - 1) by smt(). 
+ rewrite -exprS; smt(W.gt0_size to_uint_cmp).
+rewrite -eq_div_range //; smt(W.gt0_size gt0_pow2).
 qed.
 
 
@@ -351,23 +329,17 @@ proof.
 pose n' := n-1.
 have -> : n = n' + 1 by trivial.
 elim/natind: (n').
-
-move => n2 nb nb2.
-rewrite iotaS. smt().
-rewrite iota0; trivial.
-rewrite iota0; trivial.
-smt().
+ move => n2 nb nb2.
+ rewrite iotaS. smt().
+ rewrite iota0; trivial.
+ rewrite iota0; trivial.
+ smt().
 move => n2 N IH np1.
-rewrite iotaS; [trivial |].
-smt().
+rewrite iotaS; [trivial |]; first smt().
 rewrite addrC iota_addl.
-rewrite IH. smt(). simplify.
+rewrite IH /=; first smt().
 rewrite map_cat. do! simplify. 
-rewrite -cat_cons.
-rewrite -iota_addl.
-rewrite addrC.
-rewrite -iotaS; trivial.
-smt().
+by rewrite -cat_cons -iota_addl addrC -iotaS /#.
 qed.
 
 lemma W_min_sintE:
@@ -391,15 +363,19 @@ move => st.
 have -> : W.min_sint %% W.modulus = 2 ^ (JCircuits.size - 1).
 + rewrite -(emodz_eq W.modulus 1 _).
   + by smt(mem_range_mod W.gt0_size gt0_pow2 to_uint_cmp).
-  have -> : (1 * W.modulus + W.min_sint %% W.modulus) %% W.modulus = 
-     (1 * W.modulus + W.min_sint) %% W.modulus by smt(@IntDiv).
+  have -> : (1 * W.modulus + W.min_sint %% W.modulus) %% W.modulus
+            = (1 * W.modulus + W.min_sint) %% W.modulus.
+   by rewrite /= modzDmr.
   + have -> : (1 * W.modulus + W.min_sint) = 2 ^ (JCircuits.size - 1).
-    + have -> : W.modulus = 2 * 2 ^ (JCircuits.size - 1) by rewrite -exprS; smt(W.gt0_size).
-      by smt(@IntDiv W.gt0_size to_uint_cmp gt0_pow2 exprS).
+    + have ->/= : W.modulus = 2 * 2 ^ (JCircuits.size - 1) by rewrite -exprS; smt(W.gt0_size).
+      by ring.
   rewrite modz_small.
   + apply bound_abs;split; 1: by smt(gt0_pow2).
     move => a.
-    rewrite st; case (0 < JCircuits.size - 1) => ?; smt(@StdOrder.IntOrder @Ring.IntID).
+    rewrite st; case (0 < JCircuits.size - 1) => ?.
+     rewrite {2}(:size=size-1+1) 1:// exprS 1:/# -{1}mul1z ltr_pmul2r 2:/#.
+     by smt(gt0_pow2).
+    smt(W.ge2_modulus).
   by smt().
 
 have -> : (map ("_.[_]" W.zero.[JCircuits.size - 1 <- true]) (iota_ 0 JCircuits.size)) = nseq (JCircuits.size - 1) false ++ [true].
@@ -540,7 +516,7 @@ rewrite to_uint_shr; first smt(to_uint_cmp).
 rewrite W_shl_onew; first smt(to_uint_cmp).
 rewrite lez_maxr 1:/# to_uint_invw.
 rewrite of_uintK modz_small.
- apply bound_abs; split; first smt(@IntDiv).
+ apply bound_abs; split; first smt(gt0_pow2).
  move => ?.
  have /=?: 2 ^ (JCircuits.size - k) <= W.modulus.
   by apply ler_weexpn2l => // /#.

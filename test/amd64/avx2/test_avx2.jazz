@@ -1,5 +1,4 @@
 from Keccak require "avx2/keccak1600_fixedsizes.jinc"
-from Keccak require "avx2/keccak1600_updstate.jinc"
 
 param int RATE8 = R168;
 param int TRAIL = SHAKE;
@@ -97,14 +96,5 @@ namespace TEST_ONESHOT {
     state = __stavx2_unpack(state, st);    
     return state, buf;
   }
-
-}
-
-
-namespace TEST_UPD {
-
-  param int _ASIZE = SIZE;
-
-  from Keccak require "avx2/keccak1600_updstate_ASIZE.jinc"
 
 }

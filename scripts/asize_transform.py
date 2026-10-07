@@ -46,7 +46,6 @@ SUBRW_PROCS = (
     "__a_ilen_write_upto16",
     "__a_ilen_write_upto32",
     "__a_rlen_read_upto8",
-    "__a_rlen_read_upto8_noninline",
     "__a_rlen_write_upto8",
 )
 

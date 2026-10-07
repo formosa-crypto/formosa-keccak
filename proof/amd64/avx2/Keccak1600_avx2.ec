@@ -17,6 +17,7 @@ from Jasmin require import JModel.
 from CryptoSpecs require import JWordList.
 from CryptoSpecs require import Keccakf1600_Spec FIPS202_SHA3_Spec.
 from CryptoSpecs require export Keccak1600_Spec.
+require export Keccak1600_statebytes.
 
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import WArray200.
@@ -116,9 +117,6 @@ op stavx2_keccakf1600 = stF_avx2 keccak_f1600_op.
 op absorb_spec_avx2 (r8: int) (tb: int) (l: W8.t list) st =
  st = stavx2_from_st25 (ABSORB1600 (W8.of_int tb) r8 l).
 
-op PABSORB1600 r8 m =
- stateabsorb (stateabsorb_iblocks (chunk r8 m) st0) (chunkremains r8 m).
-
 op pabsorb_spec_avx2 r8 l (st: W256.t Array7.t): bool =
  0 < r8 <= 200 /\
  st=stavx2_from_st25 (PABSORB1600 r8 l).
@@ -143,11 +141,6 @@ rewrite /pabsorb_spec_avx2 => /> Hr0 Hr1; split.
 admit.
 qed.
 *)
-
-op fillpst_at (st: W64.t Array25.t) (at:int) (l: W8.t list) =
- stwords
-  (WArray200.fill 
-   (fun i => nth W8.zero l (i-at)) at (size l) (stbytes st)).
 
 (*
 op squeeze_spec_avx2 r8 st l =
@@ -276,6 +269,14 @@ op stavx2_pos n =
            ;(2,0);(4,0);(6,1);(5,2);(3,3);(2,3);(3,0);(5,1);(6,2);(4,3)
            ;(2,1);(5,0);(4,1);(3,2);(6,3) ] n.
 
+lemma stavx2_pos_bnd n:
+ 0 <= n < 25 =>
+ 0 <= (stavx2_pos n).`1 < 7 /\ 0 <= (stavx2_pos n).`2 < 4.
+proof.
+move=> Hn; have: n \in iota_ 0 25 by smt(mem_iota).
+by move: {Hn} n; rewrite -List.allP -iotaredE /stavx2_pos /=.
+qed.
+
 hoare stavx2_pos_avx2_h _n:
  M.__stavx2_pos_avx2
  : pOS=_n ==> res = stavx2_pos _n.
@@ -346,32 +347,23 @@ seq 1: (#pre /\ (r,l) = stavx2_pos ((rATE_8 - 1) %/ 8)).
  by ecall (stavx2_pos_avx2_h ((rATE_8 - 1) %/ 8)); auto => /> /#.
 case: (r=0).
  rcondt 1; first by auto.
- auto => |> &m  ??Hinv H.
+ auto => |> &m ??Hinv H.
  have := stavx2_pos0 ((_r8 - 1) %/ 8) _; first smt().
  rewrite -H /= => {H} H.
- rewrite (stavx2_pos0' _ (stavx2_to_st25 _stavx2)).
-  admit.
- pose x:= (W64.one `<<` W8.of_int ((8 * _r8 - 1) %% 64)).
- congr.
- move: (Top.stavx2_to_st25 _stavx2) => _s.
- rewrite /addratebit /addratebit8 -stbytesK.
- apply stbytes_inj; rewrite !stwordsK tP => i Hi.
- rewrite initiE 1:/# /= initiE 1:/# get_setE // get_setE 1:/# /=.
- case: (i%/8=0) => C1.
-  case: (i=_r8-1) => C2.
-   rewrite -C2 C1 xorb8E; congr.
-   admit.
-  rewrite xorb8E initiE //= C1. 
-   have ->: (x \bits8 i %% 8) = W8.zero. admit.
-   smt().
- case: (i=_r8-1) => ?; first smt().
- by rewrite initiE //=. 
+ rewrite (stavx2_pos0' _ (stavx2_to_st25 _stavx2)); first by rewrite stavx2_to_st25K.
+ rewrite /addratebit -addratebitE 1:/# H /=.
+ by congr; rewrite u64_xorbitE /#.
 rcondf 1; first by auto.
-wp; ecall (u64_to_u256_h l t64); auto => |> &m ??Hinv H ?.
-split.
- admit.
+wp; ecall (u64_to_u256_h l t64); auto => |> &m ??Hinv H Hr.
+have Hn: 0 < (_r8 - 1) %/ 8 < 25.
+ case: ((_r8 - 1) %/ 8 = 0) => [E|]; last smt().
+ by move: H Hr; rewrite E /stavx2_pos /= /#.
+have Hl: 0 <= l{m} < 4.
+ have := stavx2_pos_bnd ((_r8 - 1) %/ 8) _; first smt().
+ by rewrite -H /#.
+split; first smt().
 move=> ??.
-rewrite (stavx2_posP _stavx2 ((_r8 - 1) %/ 8) r{m} l{m} _ Hinv _ H). admit.
+rewrite (stavx2_posP _stavx2 ((_r8 - 1) %/ 8) r{m} l{m} _ Hinv Hn H).
 rewrite /addratebit -addratebitE 1:/#.
 congr.
 move: H; rewrite u64_xorbitE /#.

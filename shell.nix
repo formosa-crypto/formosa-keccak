@@ -35,21 +35,21 @@ let
     ideSupport = false;
     coqPackages = { coq = null; flocq = null; };
   };
-  bitwuzla = callPackage ./config/bitwuzla.nix { inherit (oc) buildDunePackage zarith; };
-  ecVersion = "5d4da0b5e935a01a598a93c84f31ddc1ec782f66";
+  # EasyCrypt branch "jasmin-nist" (same EasyCrypt as formosa-crypto/jasmin-nist)
+  ecVersion = "598d8bfd8ba4585cfa8601c0962814338c8d7f8a";
   ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
-      owner = "vbgl";
+      owner = "EasyCrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-5v5XgcPBI5wSXaxroNEtftwQV4TJmvBNoWcBjjnoFBc=";
+      hash = "sha256-rmtIIq/9UA02AW6GJJtkRIj/3LwwaDBDHJiXL3Wilk8=";
     };
     postPatch = ''
       substituteInPlace dune-project \
         --replace-warn '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
     '';
     buildInputs = o.buildInputs ++ (with oc; [
-      bitwuzla hex iter markdown progress ppx_deriving_yojson pcre2 tyxml
+      bitwuzla-cxx hex iter markdown progress ppx_deriving_yojson pcre2 tyxml
     ]);
   })).override {
     ocamlPackages = oc;

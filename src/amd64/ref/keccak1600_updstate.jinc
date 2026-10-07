@@ -22,14 +22,8 @@ require "keccak1600.jinc"
 
 from Keccak require "common/subreadwrite_imem.jinc"
 
-type keccak_updstate = u64[26];
+from Keccak require "common/keccak1600_updstate_generic.jinc"
 
-/**
- Last u64 word of keccak_updstate is filled with:
-  - byte[0] - at_position (pre: 0 <= at <= 200)
-  - byte[1] - r64-1, where r64 = 8*r8 (rate in bytes) -- (pre: 0 < r64 <= 25)
-  - byte[2] - Trail Byte
-*/
 
 
 fn _init_updstate
@@ -57,45 +51,6 @@ fn _init_updstate
 }
 
 
-/**
- When we read the update-data from the state (r8 and at-position), we guarantee
- that it is wellformed, that is:
-  - rate in bytes (r8):  0 < r8 < 200  &&  r8 %| 8
-  - at-position (at):  0 <= at < r8
- This would allow to establish safety independently of the given state.
-*/
-fn _ststatus_data
-( reg u64 ststatus
-) -> reg u8    /* trailb */
-   , reg ui64  /* r8 ; 8 %| r8 /\ 0 < r8 <= 200  */
-   , reg ui64  /* at  ; 0 <= at < r8 */
-/* ensures:
-    8 |% r8
-    0 < r8 <= 200
-    0 <= at < r8  */
-{
- reg u64 r8, at, c_0, c_200;
- reg ui64 r8_ui, at_ui;
- reg u8 trailb;
-
- at = ststatus;
- at &= 0xFF;
- ststatus >>= 8;
- r8 = ststatus;
- r8 &= 255; // 0 <= r8 < 256
- r8 += 1;   // 0 < r8 <= 256
- r8 <<= 3;  // 8 %| r8  /\  0 < r8 <= 2048
- c_200 = 200;
- r8 = c_200 if r8 > 200;  // 8 %| r8  /\  0 < r8 <= 200
- c_0 = 0;
- at = c_0 if r8 <= at;  // 0 <= at < r8
- ststatus >>= 8;
- trailb = (8u) ststatus;
-
- r8_ui = (64ui)r8;
- at_ui = (64ui)at;
- return trailb, r8_ui, at_ui;
-}
 
 fn _finish_updstate
 ( reg mut ptr keccak_updstate st

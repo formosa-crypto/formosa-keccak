@@ -14,7 +14,7 @@ clone import KeccakArrayAvx2 as A999avx2
  with op _ASIZE <- 999,
       theory A <- Array999,
       theory WA <- WArray999
-      proof _ASIZE_ge0 by done.
+      proof _ASIZE_ge0 by done, _ASIZE_u64 by done.
 
 equiv a999_addstate_avx2_eq:
  M.__addstate_avx2 ~ MM.__addstate_avx2

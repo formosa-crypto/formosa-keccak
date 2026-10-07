@@ -6,6 +6,7 @@ from Jasmin require import JModel.
  used for correctness proofs are in sync. with the Jasmin source code *)
 
 from JazzEC require import Keccak1600_Jazz_ASIZE.
+from JazzEC require Keccak1600_Jazz.
 from JazzEC require import Array999 WArray999.
 
 require import Keccak1600_updstate_avx2x4.
@@ -14,7 +15,7 @@ clone import KeccakUpdstateAvx2x4 as A999updstateavx2x4
  with op _ASIZE <- 999,
       theory A <- Array999,
       theory WA <- WArray999
-      proof _ASIZE_ge0 by done.
+      proof _ASIZE_ge0 by done, _ASIZE_u64 by done.
 
 (* The ASIZE extraction instantiates KECCAK_PERMUTATION with a different
    scalar component (3+512, from toEC_keccak1600_avx2.jazz) than the memory
@@ -34,8 +35,9 @@ if => //; first by sim.
 by sim.
 qed.
 
+(* MM calls the (size-independent) decoder of the memory model *)
 equiv a999_ststatus_data_avx2x4_eq:
- M._ststatus_data_avx2x4 ~ MM._ststatus_data_avx2x4
+ M._ststatus_data_avx2x4 ~ Keccak1600_Jazz.M._ststatus_data_avx2x4
  : ={arg} ==> ={res}
 by sim.
 
@@ -80,3 +82,18 @@ proc.
 sim (M._keccakf1600_avx2x4 ~ Keccak1600_Jazz.M._keccakf1600_avx2x4 : true).
 by conseq a999_keccakf1600_avx2x4_eq.
 qed.
+
+equiv a999_absorb_updstate_avx2x4_export_eq:
+ M.absorb_updstate_avx2x4 ~ MM.absorb_updstate_avx2x4
+ : ={arg} ==> ={res}.
+proof. proc; call a999_absorb_updstate_avx2x4_eq; auto. qed.
+
+equiv a999_absorb_bcast_updstate_avx2x4_export_eq:
+ M.absorb_bcast_updstate_avx2x4 ~ MM.absorb_bcast_updstate_avx2x4
+ : ={arg} ==> ={res}.
+proof. proc; call a999_absorb_bcast_updstate_avx2x4_eq; auto. qed.
+
+equiv a999_squeeze_updstate_avx2x4_export_eq:
+ M.squeeze_updstate_avx2x4 ~ MM.squeeze_updstate_avx2x4
+ : ={arg} ==> ={res}.
+proof. proc; call a999_squeeze_updstate_avx2x4_eq; auto. qed.

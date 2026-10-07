@@ -18,8 +18,8 @@ from Keccak require "common/subreadwrite_imem.jinc"
 #[safety =
    { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 
                 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,25*32) 
-   , res = { final_st, final_AT }
-   , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   , res = { final_st, final_AT, final_buf }
+   , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_buf == buf + _LEN
    }
  ]
 inline fn __addstate_m_bcast_avx2x4
@@ -30,6 +30,7 @@ inline fn __addstate_m_bcast_avx2x4
 , inline int _TRAILB
 ) -> reg ptr u256[25] /* st */
    , inline int /* AT */
+   , reg ui64 /* buf */
 {
   inline int AT8;
   reg ui64 at;
@@ -65,7 +66,7 @@ inline fn __addstate_m_bcast_avx2x4
     st.[:u256 at] = w;
   }
 
-  return st, AT;
+  return st, AT, buf;
 }
 
 #[safety =
@@ -90,20 +91,20 @@ inline fn __absorb_m_bcast_avx2x4
   inline int ITERS;
 
   if ( AT+_LEN >= _RATE8 ) { // more than one block...
-    st, _ = __addstate_m_bcast_avx2x4(st, AT, buf, _RATE8-AT, 0);
+    st, _, buf = __addstate_m_bcast_avx2x4(st, AT, buf, _RATE8-AT, 0);
     _LEN = _LEN - (_RATE8-AT);
     AT = 0;
     st = _keccakf1600_avx2x4(st);
     ITERS = _LEN/_RATE8;
     i = 0;
     while ( i < ITERS ) {
-      st, _ = __addstate_m_bcast_avx2x4(st, 0, buf, _RATE8, 0);
+      st, _, buf = __addstate_m_bcast_avx2x4(st, 0, buf, _RATE8, 0);
       st = _keccakf1600_avx2x4(st);
       i += 1;
     }
     _LEN = _LEN % _RATE8;
   }
-  st, AT = __addstate_m_bcast_avx2x4(st, AT, buf, _LEN, _TRAILB);
+  st, AT, _ = __addstate_m_bcast_avx2x4(st, AT, buf, _LEN, _TRAILB);
   if (_TRAILB!=0) { st = __addratebit_avx2x4(st, _RATE8); }
 
   return st, AT;
@@ -277,19 +278,19 @@ inline fn __dumpstate_m_avx2x4
   } // 0 32 (64) 
   while ( i < 8*(_LEN/8)) {
     t0 = st.[:u64 4*i+0*8];
-    [:u64 (64u) (buf0 + i)] = t0;
+    [:u64 (64u) buf0] = t0;
     t1 = st.[:u64 4*i+1*8];
-    [:u64 (64u) (buf1 + i)] = t1;
+    [:u64 (64u) buf1] = t1;
     t2 = st.[:u64 4*i+2*8];
-    [:u64 (64u) (buf2 + i)] = t2;
+    [:u64 (64u) buf2] = t2;
     t3 = st.[:u64 4*i+3*8];
-    [:u64 (64u) (buf3 + i)] = t3;
+    [:u64 (64u) buf3] = t3;
     i += 8;
+    buf0 += 8;
+    buf1 += 8;
+    buf2 += 8;
+    buf3 += 8;
   }
-  buf0 += i;
-  buf1 += i;
-  buf2 += i;
-  buf3 += i;
   if (0 < _LEN%8) {
     t0 = st.[:u64 4*i+0*8];
     buf0, _ = __m_ilen_write_upto8( buf0, _LEN%8, t0);
