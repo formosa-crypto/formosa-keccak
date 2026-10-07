@@ -1,3 +1,5 @@
+from Keccak require "common/keccak1600_default.jinc"
+
 from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
 from Keccak require "avx2/keccak1600x4_updstate.jinc"
 
