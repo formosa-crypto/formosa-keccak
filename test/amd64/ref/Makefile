@@ -15,6 +15,10 @@ test_mref: test_mref.c test_mref.s
 %.s: %.jazz
 	$(JASMINC) $(JFLAGS) $(JPATH) -o $@ $<
 
+.PHONY: run
+run: $(PROGS)
+	@r=0; for p in $(PROGS); do ./$$p || { echo "FAILED: $$p"; r=1; }; done; exit $$r
+
 clean:
 	rm -f test_*.s
 

@@ -18,6 +18,10 @@ test_avx2x4: test_avx2x4.c test_avx2x4.s ../ref/test_ref.s
 %.s: %.jazz
 	$(JASMINC) $(JFLAGS) $(JPATH) -o $@ $<
 
+.PHONY: run
+run: $(PROGS)
+	@r=0; for p in $(PROGS); do ./$$p || { echo "FAILED: $$p"; r=1; }; done; exit $$r
+
 clean:
 	rm -f test_*.s
 
