@@ -83,14 +83,21 @@ let
     why3 = why;
   };
   # proof/easycrypt.project asks for Z3@4.13 and CVC5@1.3. These are lower
-  # bounds (EasyCrypt picks the oldest installed version >= the pin), so the
-  # nixpkgs default Z3 (4.16) would be accepted silently; the smt calls were
-  # tuned with Z3 4.13.4, which the pinned nixpkgs no longer has. Take it from
-  # nixos-24.11 (binary-cached for Linux and macOS, so no source build).
-  z3_4_13 = (import (fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/50ab793786d9de88ee30ec4e4c24fb4236fc2674.tar.gz";
-    sha256 = "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=";
-  }) { inherit (stdenv.hostPlatform) system; }).z3_4_13;
+  # bounds (EasyCrypt picks the oldest installed version >= the pin), and
+  # why3config must recognise the provers' version. Use the versions the smt
+  # calls were tuned with, Z3 4.13.4 and CVC5 1.3.2, from older nixpkgs
+  # releases (binary-cached for Linux and macOS): nixos-26.05 has Z3 4.16,
+  # and its CVC5 1.3.4 prints a version string Why3 1.8.2 does not recognise.
+  pinnedPkgs = rev: sha256: import (fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
+    inherit sha256;
+  }) { inherit (stdenv.hostPlatform) system; };
+  z3_4_13 = (pinnedPkgs # nixos-24.11
+    "50ab793786d9de88ee30ec4e4c24fb4236fc2674"
+    "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=").z3_4_13;
+  cvc5_1_3 = (pinnedPkgs # nixos-25.11
+    "b6018f87da91d19d0ab4cf979885689b469cdd41"
+    "sha256-twXPFqFsrrY5r28Zh7Homgcp2gUMBgQ6WDS98Q/3xFI=").cvc5;
 in
 
 let mkECvar = lib.strings.concatMapStringsSep ";" ({key, val}: "${key}:${val}"); in
@@ -105,7 +112,7 @@ mkShell ({
     valgrind
   ] ++ lib.optionals full [
     ec
-    cvc5
+    cvc5_1_3
     z3_4_13
   ];
 } // lib.optionalAttrs full {
