@@ -20,7 +20,7 @@ jobs:
     env:
       JASMINPATH: Keccak=${{github.workspace}}/src/${{matrix.arch}}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: false
     - uses: cachix/install-nix-action@v31
