@@ -7,7 +7,8 @@ on:
 
 env:
   NIXPKGS_ALLOW_UNFREE: 1
-  ECRJOBS: 8
+  # GitHub-hosted runners have 4 vCPUs / 16 GB; 8 jobs peaked at 14 GB
+  ECRJOBS: 4
 
 
 jobs:
@@ -18,18 +19,23 @@ jobs:
           fail-fast: false
           matrix:
             arch: [ 'amd64' ]
-            subarch: [ 'ref', 'avx2' ]
+            subarch: [ 'mem', 'array' ]
         env:
           JASMINPATH: Keccak=${{github.workspace}}/src/${{matrix.arch}}
         steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
           with:
             submodules: false
         - uses: cachix/install-nix-action@v31
           with:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --run "make -C src/${{matrix.arch}}/${{matrix.subarch}}"
+        - run: nix-shell --arg full false --run "make -B -C proof/${{matrix.arch}}/extracted re_extract_${{matrix.subarch}}"
+        # The committed model must be what the pinned jasmin2ec extracts.
+        # Whitespace is ignored: the committed files come from jasmin2ec
+        # 2026.03.1 (byte-identical with jasmin-nist's), which spaces
+        # `abbrev` differently from the pinned safety-assert2 snapshot.
+        - run: git diff -w --exit-code -- proof/${{matrix.arch}}/extracted
     test_proofs:
         name: Check Proofs
         runs-on: ubuntu-latest
@@ -37,13 +43,13 @@ jobs:
           fail-fast: false
           matrix:
             scenario:
+            - keccak_amd64_extracted
             - keccak_amd64_common
-            - keccak_correctness_amd64_ref
-            - keccak_correctness_amd64_avx2
-            - keccak_safety_amd64_ref
+            - keccak_amd64_ref
+            - keccak_amd64_avx2
             - keccak_safety_amd64_avx2
         steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
           with:
             submodules: false
         - uses: cachix/install-nix-action@v31
@@ -51,4 +57,6 @@ jobs:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --run "echo Dependencies OK…"
         - run: nix-shell --run 'easycrypt why3config'
+        # Toolchain actually in use: EasyCrypt version, load path, provers
+        - run: nix-shell --run 'easycrypt config'
         - run: nix-shell --run "make CHECKS=${{matrix.scenario}} checkec"

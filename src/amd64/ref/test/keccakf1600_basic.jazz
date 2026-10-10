@@ -1,0 +1,15 @@
+from Keccak require "common/keccak1600_default.jinc"
+
+/* it makes no sense to redefine default KECCAK_FEATURES, as
+ the basic permutation never rely on them.
+*/
+
+from Keccak require "ref/keccakf1600_basic.jinc"
+
+export fn keccakf1600_basic
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+ st = _keccakf1600_basic(st);
+ return st;
+}

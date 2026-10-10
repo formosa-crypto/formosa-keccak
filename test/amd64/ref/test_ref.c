@@ -9,20 +9,20 @@ extern void get_params_ref(uint64_t*);
 // FIXEDSIZES
 typedef uint64_t KeccakState[25];
 
-extern void init_state_ref(KeccakState st);
-extern void TEST_AT__absorb_ref(KeccakState st, const uint8_t buf[]);
-extern void TEST_ONESHOT__absorb_ref(KeccakState st, const uint8_t buf[]);
-extern void TEST_ONESHOT__squeeze_ref(KeccakState st, uint8_t buf[]);
+extern void init_state(KeccakState st);
+extern void TEST_AT__absorb(KeccakState st, const uint8_t buf[]);
+extern void TEST_ONESHOT__absorb(KeccakState st, const uint8_t buf[]);
+extern void TEST_ONESHOT__squeeze(KeccakState st, uint8_t buf[]);
 
 
 // UPDSTATE
 typedef uint64_t KeccakUpdState[26];
 
-extern void init_updstate_ref(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
-extern void ststatus_updstate_ref(uint8_t status[3], const KeccakUpdState st);
-extern void finish_updstate_ref(KeccakUpdState st);
-extern void TEST_UPD__absorb_updstate_ref(KeccakUpdState st, const uint8_t buf[], uint64_t len);
-extern void TEST_UPD__squeeze_updstate_ref(KeccakUpdState st, uint8_t buf[], uint64_t len);
+extern void init_updstate(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
+extern void ststatus_updstate(uint8_t status[3], const KeccakUpdState st);
+extern void finish_updstate(KeccakUpdState st);
+extern void TEST_UPD__absorb_updstate(KeccakUpdState st, const uint8_t buf[], uint64_t len);
+extern void TEST_UPD__squeeze_updstate(KeccakUpdState st, uint8_t buf[], uint64_t len);
 
 
 
@@ -78,25 +78,27 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
   }
 
   // init states
-  init_updstate_ref(s1, rate8/8, trail);
-  init_state_ref(s2);
-  init_state_ref(s3);
+  init_updstate(s1, rate8/8, trail);
+  init_state(s2);
+  init_state(s3);
   r = r || chkeq_buf("init", (uint8_t*) s1, (uint8_t*) s2, 8*25);
 
-
+  printf("start absorb_updstate\n");
   for (i=0; i < niters; i++) {
-    TEST_UPD__absorb_updstate_ref(s1,buf_in+i*size, size);
+    TEST_UPD__absorb_updstate(s1,buf_in+i*size, size);
   }
-  finish_updstate_ref(s1);
-  TEST_ONESHOT__absorb_ref(s2, buf_in);
+  finish_updstate(s1);
+  printf("start absorb oneshot\n");
+  TEST_ONESHOT__absorb(s2, buf_in);
   r = r || chkeq_buf("absorb (updstate vs. oneshot)", (uint8_t*) s1, (uint8_t*) s2, 8*25);
-  TEST_AT__absorb_ref(s3, buf_in);
+  printf("start absorb at\n");
+  TEST_AT__absorb(s3, buf_in);
   r = r || chkeq_buf("absorb (oneshot vs. increments)", (uint8_t*) s2, (uint8_t*) s3, 8*25);
 
   for (i=0; i < niters; i++) {
-    TEST_UPD__squeeze_updstate_ref(s1, buf_o1+i*size, size);
+    TEST_UPD__squeeze_updstate(s1, buf_o1+i*size, size);
   }
-  TEST_ONESHOT__squeeze_ref(s2, buf_o2);
+  TEST_ONESHOT__squeeze(s2, buf_o2);
   r = r || chkeq_buf("squeeze", (uint8_t*) buf_o1, (uint8_t*) buf_o2, bigsize);
 
   return r;

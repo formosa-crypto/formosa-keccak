@@ -1,0 +1,123 @@
+/****************************************************************************
+
+   Keccak-f1600 permutation -- "basic" scalar variant (no additional instruction sets required/used).
+
+   This is a Jasmin loose port of the s2n-bignum x86 assembly
+   (x86/sha3/sha3_keccak_f1600.S, originally written by Andy Polyakov for OpenSSL):
+
+      https://github.com/awslabs/s2n-bignum/blob/main/x86/sha3/sha3_keccak_f1600.S
+
+   It uses the Bertoni et al. "lane complementing" optimisation: the lanes
+
+        { 1, 2, 8, 12, 17, 20 }
+
+   are stored in complemented form between rounds, which lets chi be
+   expressed with a cheaper mix of and / or / not instead of and-not only.
+   The round below (_pround_basic) is a loose transcription of the
+   (single) round of the loop -- the asm's 2-rounds-per-iteration
+   unrolling is just a register-renaming (pointer-swap).
+
+   The outer loop (buffer ping-pong + iota) is identical to
+   __keccakf1600_ref; only the round computation differs.  The pi (lane
+   permutation) step is folded into the *source* indexing of chi: for output
+   row y, position X reads the rotated lane that pi maps to (X, y) -- see the
+   per-row source tables below, read directly off the asm.
+
+   DEPENDENCIES: this file is self-contained except for the round constants
+   and the rho-offset helper, both from "common/keccakf1600_generic.jinc".
+
+*****************************************************************************/
+
+from Keccak require "common/keccakf1600_generic.jinc"
+
+require "keccakf1600_pround_basic_inlined.jinc"
+
+inline fn __not_lane_basic
+( reg ptr u64[25] st
+, inline int idx
+) -> reg ptr u64[25]
+{
+  reg u64 t;
+  t = st[idx];
+  t = !t;
+  st[idx] = t;
+  return st;
+}
+
+// complement the lane set { 1, 2, 8, 12, 17, 20 }
+inline fn __complement_lanes_basic
+( reg ptr u64[25] st
+) -> reg ptr u64[25]
+{
+  st = __not_lane_basic(st, 1);
+  st = __not_lane_basic(st, 2);
+  st = __not_lane_basic(st, 8);
+  st = __not_lane_basic(st, 12);
+  st = __not_lane_basic(st, 17);
+  st = __not_lane_basic(st, 20);
+  return st;
+}
+
+#[safety =
+   { requires = is_arr_init(a,0,200)
+   , ensures = is_arr_init(a,0,200) }
+]
+inline fn __keccakf1600_basic
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  reg ptr u64[24] RC;
+  stack u64[25] s_e;
+  reg ptr u64[25] e;
+  reg ui64 c;
+  reg u64 rc;
+
+  // lane complementing (input boundary)
+  a = __complement_lanes_basic(a);
+
+  e = s_e;
+
+  c = 0;
+  while
+  {
+    () = #spill(c);
+    e = __pround_basic_inlined(e, a);
+    a, e = #swap(e, a);
+    RC = KECCAK1600_RC;
+    rc = RC[c];
+    e[0] ^= rc;
+
+    a = __pround_basic_inlined(a, e);
+    a, e = #swap(e, a);
+    RC = KECCAK1600_RC;
+    rc = RC[c+1];
+    a[0] ^= rc;
+    () = #unspill(c);
+    c += 2;
+  } (c < KECCAK_ROUNDS - 1)
+
+  // lane complementing (output boundary, same set)
+  a = __complement_lanes_basic(a);
+
+  return a;
+}
+
+
+fn _keccakf1600_basic
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  a = __keccakf1600_basic(a);
+  return a;
+}
+
+
+inline fn _keccakf1600_basic_
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  a = a;
+  a = _keccakf1600_basic(a);
+  a = a;
+  return a;
+}

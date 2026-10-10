@@ -1,0 +1,17 @@
+from Keccak require "common/keccak1600_default.jinc"
+
+/*
+// Possibly, refining some defaults (jasminc will emit a warning!)
+param int KECCAK_FEATURES
+ = KECCAK_FEATURE_BMI2;
+*/
+
+from Keccak require "ref/keccakf1600_ref.jinc"
+
+export fn keccakf1600_ref
+( reg mut ptr u64[25] st
+) -> reg ptr u64[25]
+{
+ st = _keccakf1600_ref(st);
+ return st;
+}

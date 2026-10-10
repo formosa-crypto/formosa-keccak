@@ -12,8 +12,7 @@ lemma u256_bits64E w k:
  0 <= k < 4 =>
  u256_bits64 w k = w \bits64 k.
 proof.
-move=> Hk; rewrite /u256_bits64.
-apply W64.ext_eq => i Hi.
+move=> Hk; apply W64.ext_eq => i Hi.
 by rewrite bits64E initiE 1://= initiE 1://= /#.
 qed.
 
@@ -37,6 +36,12 @@ case: (k < 192) => C3.
 + by rewrite ifF 1:/# ifF 1:/# ifT /#.
 by rewrite ifF 1:/# ifF 1:/# ifF 1:/# ifT /#.
 qed.
+
+(* byte view of a packed 256-bit word: the four 64-bit lanes' bytes in order *)
+lemma u256_pack4_to_list (a b c d: W64.t):
+ W32u8.to_list (u256_pack4 a b c d)
+ = W8u8.to_list a ++ W8u8.to_list b ++ W8u8.to_list c ++ W8u8.to_list d.
+proof. by rewrite u256_pack4E /=; do! split; circuit. qed.
 
 lemma u256_pack4_zero:
  u256_pack4 W64.zero W64.zero W64.zero W64.zero = W256.zero.

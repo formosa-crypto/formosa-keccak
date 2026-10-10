@@ -307,24 +307,4 @@ fn _keccakf1600_st25_avx2
   return st25;
 }
 
-/* for testing:
-export fn keccakf1600_st25_avx2
-( reg ptr u64[25] st
-) -> reg ptr u64[25]
-{
-  st = st;
-  st = _keccakf1600_st25_avx2(st);
-  return st;
-}
-*/
 
-/* for testing:
-export fn testF(reg ptr u256[7] state) -> reg ptr u256[7] {
- reg u256[7] st;
- inline int i;
- for i = 0 to 7 { st[i] = state[i]; }
- st = _keccakf1600_avx2(st);
- for i = 0 to 7 { state[i] = st[i]; }
- return state;
-}
-*/

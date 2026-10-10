@@ -1,0 +1,12 @@
+from Keccak require "common/keccak1600_default.jinc"
+
+
+from Keccak require "avx2/keccakf1600x4_ref.jinc"
+
+export fn keccakf1600x4_ref
+( reg mut ptr u256[25] st
+) -> reg ptr u256[25]
+{
+ st = _keccakf1600_avx2x4_ref(st);
+ return st;
+}

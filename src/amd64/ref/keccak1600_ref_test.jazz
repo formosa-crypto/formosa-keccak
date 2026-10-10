@@ -1,4 +1,4 @@
-require "select_bmi1.jinc"
+from Keccak require "common/keccak1600_default.jinc"
 from Keccak require "common/keccak1600_generic.jinc"
 require "keccak1600.jinc"
 
@@ -31,10 +31,10 @@ export fn _sha3_256A_A1184
 
  () = #spill(out);
    st = st_s;
-  st = __state_init_ref(st);
-  st, _ = A1184::__absorb_ref(st, 0, in, SHA3, R136);
+  st = __state_init(st);
+  st, _ = A1184::__absorb(st, 0, in, SHA3, R136);
   () = #unspill(out);
-  _ , out = A32::__squeeze_ref(st,out, R136);
+  _ , out = A32::__squeeze(st,out, R136);
   return out;
 }
 
@@ -47,11 +47,11 @@ fn _shake256_A128__A32_A1
   reg ptr u64[25] st;
    () = #spill(out);
    st = st_s;
-  st = __state_init_ref(st);
-  st, _ = A32::__absorb_ref(st, 0, seed, UNFINISHED, R136);
-  st, _ = A1::__absorb_ref(st, 32, nonce, SHAKE, R136);
+  st = __state_init(st);
+  st, _ = A32::__absorb(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb(st, 32, nonce, SHAKE, R136);
   () = #unspill(out);
-  _, out = A128::__squeeze_ref(st, out, R136);
+  _, out = A128::__squeeze(st, out, R136);
   return out;
 }
 /*

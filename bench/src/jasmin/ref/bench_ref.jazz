@@ -28,16 +28,16 @@ export fn jasmin_ref_shake256x4
     , reg ptr u8[128] /* out3 */
     {
      seed =  seed; out1 = out1; out2 = out2; out3 = out3; out4 = out4; nonces = nonces;
-     () = #spill(out2, out3, out4, seed);
+     () = #spill(out2, out3, out4, seed, nonces);
      out1 = _shake256_A128__A32_A1(out1, seed, nonces[0:1]);
      () = #spill(out1);
-     () = #unspill(out2,seed);
+     () = #unspill(out2,seed,nonces);
      out2 = _shake256_A128__A32_A1(out2, seed, nonces[1:1]);
     () = #spill(out2);
-    () = #unspill(out3, seed);
+    () = #unspill(out3, seed, nonces);
      out3 = _shake256_A128__A32_A1(out3, seed, nonces[2:1]);
     () = #spill(out3);
-    () = #unspill(out4,seed);
+    () = #unspill(out4,seed,nonces);
      out4 = _shake256_A128__A32_A1(out4, seed, nonces[3:1]);
      () = #unspill(out1, out2, out3);
      return out1, out2, out3, out4;

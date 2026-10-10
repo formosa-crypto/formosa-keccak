@@ -1,0 +1,8 @@
+require "keccakf1600_pround_basic.jinc"
+
+export fn pround_basic_inlined(reg ptr u64[25] a) -> reg ptr u64[25] {
+  stack u64[25] e;
+  e = __pround_basic(e, a);
+  a = #copy(e);
+  return a;
+}

@@ -1,3 +1,39 @@
+require "keccak1600_generic.jinc"
+
+/*
+ PERMUTATION CHOICES
+ ===================
+*/
+
+// Permutation implementation
+//  to be specified in "KECCAK_PERMUTATION"
+param int KECCAK_F1600_REF   = 0x0000;
+param int KECCAK_F1600_BASIC = 0x0001;
+param int KECCAK_F1600_OPT   = 0x0002;
+param int KECCAK_F1600_AVX2  = 0x0003;
+param int KECCAK_F1600x4_REF = 0x0000;
+param int KECCAK_F1600x4_ALT = 0x0100;
+param int KECCAK_F1600x4_NAT = 0x0200;
+
+// Permutation Selection
+inline fn __KECCAK_F
+( inline int PERMUTATION
+) -> inline int
+{
+  inline int perm;
+  perm = PERMUTATION & 0x00FF;
+  return perm;
+}
+
+inline fn __KECCAK_Fx4
+( inline int PERMUTATION
+) -> inline int
+{
+  inline int perm;
+  perm = PERMUTATION & 0xFF00;
+  return perm;
+}
+
 param int KECCAK_ROUNDS = 24;
 
 u64[24] KECCAK1600_RC =
