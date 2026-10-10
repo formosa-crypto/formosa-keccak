@@ -35,7 +35,7 @@ let crypto-specs =
 ; in
 
 let
-  # The EasyCrypt jasmin-nist branch needs OCaml >= 5.1 (Mutex.protect) and
+  # EasyCrypt main needs OCaml >= 5.1 (Mutex.protect) and
   # warns against the GC regression of 5.0-5.3; the default set of
   # nixos-26.05 (5.4.1) is binary-cached. bitwuzla-cxx 0.9.0 (the opam
   # version) instead of nixpkgs' 0.8.2: with 0.8.2 the circuit-based proofs
@@ -62,15 +62,17 @@ let
     ideSupport = false;
     coqPackages = { coq = null; flocq = null; };
   };
-  # EasyCrypt branch "jasmin-nist" (same EasyCrypt as formosa-crypto/jasmin-nist)
-  ecVersion = "598d8bfd8ba4585cfa8601c0962814338c8d7f8a";
+  # EasyCrypt main, following its HEAD: fetchGit resolves the branch at
+  # evaluation time (cached by nix for tarball-ttl, 1h by default), so there is
+  # no rev/hash to bump. For a reproducible build pin a commit instead:
+  #   ecSrc = builtins.fetchGit { url = ...; rev = "<commit>"; };
+  ecSrc = builtins.fetchGit {
+    url = "https://github.com/EasyCrypt/easycrypt.git";
+    ref = "main";
+  };
+  ecVersion = ecSrc.rev;
   ec = (easycrypt.overrideAttrs (o: {
-    src = fetchFromGitHub {
-      owner = "EasyCrypt";
-      repo = "easycrypt";
-      rev = ecVersion;
-      hash = "sha256-rmtIIq/9UA02AW6GJJtkRIj/3LwwaDBDHJiXL3Wilk8=";
-    };
+    src = ecSrc;
     postPatch = ''
       substituteInPlace dune-project \
         --replace-warn '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
