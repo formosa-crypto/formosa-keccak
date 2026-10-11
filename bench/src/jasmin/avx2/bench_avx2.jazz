@@ -29,3 +29,10 @@ export fn jasmin_avx2_shake256x4
       out1, out2, out3, out4 = _shake256x4_A128__A32_A1(out1, out2, out3, out4, seed, nonces);
       return out1, out2, out3, out4;
 }
+
+export fn jasmin_avx2_pnativex4
+( reg mut ptr u256[25] st
+) -> reg ptr u256[25]
+{
+      return st;
+}

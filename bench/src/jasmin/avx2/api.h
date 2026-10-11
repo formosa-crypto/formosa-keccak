@@ -24,5 +24,15 @@ int jasmin_avx2_shake256x4(
   uint8_t *nonce
 );
 
+int jasmin_avx2_pnativex4(
+  uint8_t *out,
+  uint8_t *in
+);
+
+int jasmin_avx2_porigx4(
+  uint8_t *out,
+  uint8_t *in
+);
+
 
 #endif

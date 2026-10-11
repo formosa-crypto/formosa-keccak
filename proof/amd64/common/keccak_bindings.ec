@@ -5,6 +5,9 @@ from Jasmin require import JModel_x86.
 from CryptoSpecs require export Keccak1600_arrays.
 from JazzEC require import Array7 WArray200 WArray800 Array100.
 
+(* proved [W16_sar_div]/[W32_sar_div], used by the [bvashrP] realizations *)
+from CryptoSpecs require JWord_extra.
+
 
 import BitEncoding BS2Int BitChunking.
 
@@ -209,28 +212,6 @@ qed.
 
 (* ------------- END W8 Bindings -------------------- *)
 
-lemma W16_sar_div (w1 : W16.t) k:
- 0 <= k =>
- to_sint (w1 `|>>>` k)
- = to_sint w1 %/ 2 ^ k.
-proof.
-admitted.
-
-lemma W32_sar_div (w1 : W32.t) k:
- 0 <= k =>
- to_sint (w1 `|>>>` k)
- = to_sint w1 %/ 2 ^ k.
-proof.
-admitted.
-
-lemma W64_sar_div (w1 : W64.t) k:
- 0 <= k =>
- to_sint (w1 `|>>>` k)
- = to_sint w1 %/ 2 ^ k.
-proof.
-admitted.
-
-
 (* ----------- BEGIN W16 BINDINGS ---------- *)
 
 bind bitstring W16.w2bits W16.bits2w W16.to_uint W16.to_sint W16.of_int W16.t 16.
@@ -323,7 +304,7 @@ W16.sar w1 (to_uint w2).
 
 bind op [W16.t] sra_16 "ashr".
 realize bvashrP.
-move=> bv1 bv2; rewrite W16_sar_div; smt(W16.to_uint_cmp).
+move=> bv1 bv2; rewrite JWord_extra.W16_sar_div; smt(W16.to_uint_cmp).
 qed.
 
 op srl_16 (w1 w2 : W16.t) : W16.t =
@@ -470,7 +451,7 @@ op sra_32 (w1 w2 : W32.t) : W32.t =
 
 bind op [W32.t] sra_32 "ashr".
 realize bvashrP.
-move => bv1 bv2; rewrite W32_sar_div; smt(W32.to_uint_cmp).
+move => bv1 bv2; rewrite JWord_extra.W32_sar_div; smt(W32.to_uint_cmp).
 qed.
 
 bind op [W8.t & W32.t] W4u8.zeroextu32 "zextend".
@@ -944,6 +925,7 @@ realize get_setP by smt(Array5.get_setE).
 realize eqP by smt(Array5.tP).
 realize get_out by smt(Array5.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array5.get_of_list).
 
 bind op [W64.t & Array5.t] init_5_64 "ainit".
 realize bvainitP.
@@ -960,6 +942,7 @@ realize tolistP by done.
 realize get_setP by smt(Array25.get_setE). 
 realize eqP by smt(Array25.tP).
 realize get_out by smt(Array25.get_out).
+realize oflistP by smt(Array25.get_of_list).
 
 bind op [W64.t & Array25.t] init_25_64 "ainit".
 realize bvainitP.
@@ -988,6 +971,7 @@ realize get_setP by smt(Array24.get_setE).
 realize eqP by smt(Array24.tP).
 realize get_out by smt(Array24.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array24.get_of_list).
 
 bind op [W64.t & Array24.t] init_24_64 "ainit".
 realize bvainitP.
@@ -1004,6 +988,7 @@ realize get_setP by smt(Array7.get_setE).
 realize eqP by smt(Array7.tP).
 realize get_out by smt(Array7.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array7.get_of_list).
 
 op init_7_256 = Array7.init <:W256.t>.
 bind op [W256.t & Array7.t] init_7_256 "ainit".
@@ -1022,6 +1007,7 @@ realize tolistP by done.
 realize get_setP by smt(Array100.get_setE). 
 realize eqP by smt(Array100.tP).
 realize get_out by smt(Array100.get_out).
+realize oflistP by smt(Array100.get_of_list).
     
 op init_100_64 = Array100.init <:W64.t>.
 bind op [W64.t & Array100.t] init_100_64 "ainit".

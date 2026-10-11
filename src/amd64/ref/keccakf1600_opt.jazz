@@ -1,0 +1,9 @@
+require "keccakf1600_opt.jinc"
+
+export fn keccakf1600_opt
+( reg ptr u64[25] a
+) -> reg ptr u64[25]
+{
+  a = __keccakf1600_opt(a);
+  return a;
+}

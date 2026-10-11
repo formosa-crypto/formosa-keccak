@@ -9,19 +9,19 @@ extern void get_params_ref(uint64_t*);
 // FIXEDSIZES
 typedef uint64_t KeccakState[25];
 
-extern void init_state_ref(KeccakState st);
-extern void absorb_m_ref(KeccakState st, const uint8_t buf[]);
-extern void squeeze_m_ref(KeccakState st, uint8_t buf[]);
+extern void init_state(KeccakState st);
+extern void absorb_m(KeccakState st, const uint8_t buf[]);
+extern void squeeze_m(KeccakState st, uint8_t buf[]);
 
 
 // UPDSTATE
 typedef uint64_t KeccakUpdState[26];
 
-extern void init_updstate_ref(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
-extern void ststatus_updstate_ref(uint8_t status[3], const KeccakUpdState st);
-extern void finish_updstate_ref(KeccakUpdState st);
-extern void absorb_m_updstate_ref(KeccakUpdState st, const uint8_t buf[], uint64_t len);
-extern void squeeze_m_updstate_ref(KeccakUpdState st, uint8_t buf[], uint64_t len);
+extern void init_updstate(KeccakUpdState st, const uint8_t r64, const uint8_t trailb);
+extern void ststatus_updstate(uint8_t status[3], const KeccakUpdState st);
+extern void finish_updstate(KeccakUpdState st);
+extern void absorb_m_updstate(KeccakUpdState st, const uint8_t buf[], uint64_t len);
+extern void squeeze_m_updstate(KeccakUpdState st, uint8_t buf[], uint64_t len);
 
 
 
@@ -77,22 +77,22 @@ int run_test(uint64_t rate8, uint64_t trail, uint64_t size, uint64_t bigsize) {
   }
 
   // init states
-  init_updstate_ref(s1, rate8/8, trail);
-  init_state_ref(s2);
+  init_updstate(s1, rate8/8, trail);
+  init_state(s2);
   r = r || chkeq_buf("init", (uint8_t*) s1, (uint8_t*) s2, 8*25);
 
 
   for (i=0; i < niters; i++) {
-    absorb_m_updstate_ref(s1,buf_in+i*size, size);
+    absorb_m_updstate(s1,buf_in+i*size, size);
   }
-  finish_updstate_ref(s1);
-  absorb_m_ref(s2, buf_in);
+  finish_updstate(s1);
+  absorb_m(s2, buf_in);
   r = r || chkeq_buf("absorb (updstate vs. oneshot)", (uint8_t*) s1, (uint8_t*) s2, 8*25);
 
   for (i=0; i < niters; i++) {
-    squeeze_m_updstate_ref(s1, buf_o1+i*size, size);
+    squeeze_m_updstate(s1, buf_o1+i*size, size);
   }
-  squeeze_m_ref(s2, buf_o2);
+  squeeze_m(s2, buf_o2);
   r = r || chkeq_buf("squeeze (updstate vs. oneshot)", (uint8_t*) buf_o1, (uint8_t*) buf_o2, bigsize);
 
   return r;

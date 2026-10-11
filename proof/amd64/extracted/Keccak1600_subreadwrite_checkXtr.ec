@@ -14,7 +14,7 @@ clone import ReadWriteArray as A999ref
  with op _ASIZE <- 999,
       theory A <- Array999,
       theory WA <- WArray999
-      proof _ASIZE_ge0 by done.
+      proof _ASIZE_ge0 by done, _ASIZE_u64 by done.
 
 equiv a999_a_ilen_read_upto8_at_eq:
  M.__a_ilen_read_upto8_at ~ MM.__a_ilen_read_upto8_at

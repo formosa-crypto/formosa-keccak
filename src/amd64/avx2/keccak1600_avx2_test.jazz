@@ -1,3 +1,4 @@
+from Keccak require "common/keccak1600_default.jinc"
 require "keccak1600_fixedsizes.jinc"
 require "keccak1600x4_fixedsizes.jinc"
 
