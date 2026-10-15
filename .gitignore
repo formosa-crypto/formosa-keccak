@@ -10,3 +10,6 @@
 # C extensions
 *.so
 
+
+# EasyCrypt
+*.eco

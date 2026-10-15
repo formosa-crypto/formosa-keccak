@@ -6,14 +6,19 @@ ECCONF := config/tests.config
 CHECKS ?= keccak
 
 # --------------------------------------------------------------------
-.PHONY: default check checkec checkxtr jasmin clean_eco
+.PHONY: default check checkec checkxtr jasmin jasmin-old jasmin-barray clean_eco
 
 default: check
 
 check: jasmin checkec
 
-jasmin:
+jasmin: jasmin-old jasmin-barray
+
+jasmin-old:
 	make -C proof/amd64/extracted re_extract
+
+jasmin-barray:
+	make -C proof/amd64-barray/extracted re_extract
 
 checkec:
 	easycrypt runtest $(ECCONF) $(CHECKS)

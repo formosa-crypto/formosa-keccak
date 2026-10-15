@@ -1,47 +1,50 @@
 #!/usr/bin/env python3
 """
 asize_transform.py — turn a concrete jasmin2ec extraction (with _ASIZE=999
-baked in as Array999 / WArray999 / 999-literals) into a parametric companion
-file wrapped in `abstract theory ... { module MM = { ... } }`.
+baked in as Array999 / WArray999 / BArray999 / 999-literals) into the
+parametric `module MM` companion used by the *_checkXtr.ec equivalence
+proofs (`equiv M.<proc> ~ MM.<proc> by sim.`).
 
-The output is consumed only by *_checkXtr.ec equivalence proofs (`equiv
-M.<proc> ~ MM.<proc> by sim.`). It is NEVER required by a real proof file —
-those are hand-maintained in the natural fixedsizes style. The script's role
-is to give a developer a starter MM block that's known-equivalent to the
-concrete extraction at _ASIZE=999.
+The output is NEVER required by a real proof file: those are hand-maintained
+in the natural fixedsizes style.  The script gives a developer a starter MM
+block that is known-equivalent to the concrete extraction at _ASIZE=999.
 
-Substitutions applied (textual, line-based):
+Array models (--model):
+  old     (deprecated jasmin2ec model)   Array999.t -> A.t, Array999 -> A,
+                                         WArray999 -> WA, 999 -> _ASIZE
+  barray  (default)                      BArray999.t -> A.t, BArray999 -> A,
+                                         999 -> _ASIZE
 
-  Array999.t                      ->  A.t
-  Array999                        ->  A         (e.g. Array999.init -> A.init)
-  WArray999                       ->  WA
-  bare 999                        ->  _ASIZE
-  call:  X(...)  for X in SUBRW_PROCS  ->  RW.MM.X(...)
-
-Subreadwrite proc DEFINITIONS (`__a_ilen_*` / `__a_rlen_*` inside `module M`)
-are dropped from MM — they live in `RW.MM` (cloned from ReadWriteArray) in the
-parametric layout.
+Procedure selection (--theory PRESET): only the procs of the preset are kept
+(in extraction order); everything else is dropped.  Call sites are rewritten
+to match the hand-maintained MM blocks:
+  - calls to kept procs (siblings)                 : unchanged
+  - calls to subreadwrite procs (__a_ilen_*/__a_rlen_*): RW.MM.<name>
+    (except in preset `subreadwrite`, where they are siblings)
+  - calls to any other proc of `module M`         : M.<name>
+    (size-independent procs of the memory extraction, Keccak1600_Jazz)
 
 Usage:
-    python3 scripts/asize_transform.py <concrete.ec> -o <param.ec>
+    python3 scripts/asize_transform.py [--model old|barray] --theory PRESET
+                                       [--mm-only] <concrete.ec> -o <out.ec>
+  --array-name N  name of the byte-array parameter theory (default A; the
+              updstate_avx2x4 theory uses BA, see the comment there)
+  --mm-only   emit just `module MM = { ... }.` (to splice into the hand-
+              maintained abstract theory); otherwise a standalone
+              `abstract theory KeccakAsizeParam` file is produced.
 """
 
 import argparse
 import re
 import sys
 
-# Procs that are pulled out of M and live in RW.MM in the parametric version.
-# These are the subreadwrite primitives defined in
-# src/amd64/common/subreadwrite_ASIZE.jinc.
+# Subreadwrite primitives (src/amd64/common/subreadwrite_ASIZE.jinc); they
+# live in RW.MM (cloned from ReadWriteArray) in the parametric layout.
 SUBRW_PROCS = (
     "__a_ilen_read_upto8_at",
     "__a_ilen_read_upto16_at",
     "__a_ilen_read_upto32_at",
     "__a_ilen_read_bcast_upto8_at",
-    "__a_ilen_read_upto8",
-    "__a_ilen_read_bcast_upto8",
-    "__a_ilen_read_upto16",
-    "__a_ilen_read_upto32",
     "__a_ilen_write_upto8",
     "__a_ilen_write_upto16",
     "__a_ilen_write_upto32",
@@ -49,187 +52,169 @@ SUBRW_PROCS = (
     "__a_rlen_write_upto8",
 )
 
-# A regex alternation that matches any subreadwrite proc name as a whole word.
-SUBRW_RE = re.compile(
-    r"\b(" + "|".join(re.escape(p) for p in SUBRW_PROCS) + r")\b"
-)
+PRESETS = {
+    "subreadwrite": SUBRW_PROCS,
+    "fixedsizes_ref": ("__addstate", "__absorb", "__dumpstate", "__squeeze"),
+    "updstate_ref": ("_add_updstate", "_absorb_updstate", "_dump_updstate",
+                     "_squeeze_updstate", "absorb_updstate", "squeeze_updstate"),
+    "fixedsizes_avx2": ("__addstate_avx2", "__absorb_avx2", "__dumpstate_avx2",
+                        "__squeeze_avx2"),
+    "fixedsizes_avx2x4": ("__addstate_bcast_avx2x4", "__absorb_bcast_avx2x4",
+                          "__addstate_avx2x4", "__absorb_avx2x4",
+                          "__dumpstate_avx2x4", "__squeeze_avx2x4"),
+    "updstate_avx2x4": ("_add_bcast_updstate_avx2x4",
+                        "_absorb_bcast_updstate_avx2x4",
+                        "_add_updstate_avx2x4", "_absorb_updstate_avx2x4",
+                        "_dump_updstate_avx2x4", "_squeeze_updstate_avx2x4",
+                        "absorb_bcast_updstate_avx2x4", "absorb_updstate_avx2x4",
+                        "squeeze_updstate_avx2x4"),
+}
 
-# Regex matching a top-level `module M = {` line.
 MODULE_M_OPEN = re.compile(r"^module M\s*=\s*\{\s*$")
-# Regex matching the matching `}.` that closes module M (column 0).
 MODULE_CLOSE = re.compile(r"^\}\.\s*$")
-
-# Regex matching the start of a subreadwrite proc definition inside M, at the
-# usual two-space indent jasmin2ec emits.
-PROC_DEF_OPEN = re.compile(
-    r"^(\s*)proc\s+(" + "|".join(re.escape(p) for p in SUBRW_PROCS) + r")\b"
-)
-# Matching close of a proc body is *indent-sensitive*: it's a `}` at the same
-# column as the `proc` keyword opener. Internal nested `if {...}` / `while {...}`
-# blocks use deeper indentation, so a flat regex "any `}` line" would fire too
-# early. We track the opener's indent and match `<exactly that many spaces>}`.
+# jasmin2ec emits procs of `module M` at a two-space indent; a proc body ends
+# with `}` at exactly that indent (nested blocks are deeper).
+PROC_OPEN = re.compile(r"^  proc\s+([A-Za-z_0-9]+)\b")
+PROC_CLOSE = re.compile(r"^  \}\s*$")
+CALL_SITE = re.compile(r"<@\s+([A-Za-z_0-9]+)\s*\(")
 
 
-def transform_body_line(line: str) -> str:
-    """Apply the textual substitutions used inside MM proc bodies."""
-    line = line.replace("Array999.t", "A.t")
-    # Substitute bare Array999 (as module/namespace name) — careful not to
-    # double-substitute Array999.t (already handled).
-    line = re.sub(r"\bArray999\b", "A", line)
-    line = re.sub(r"\bWArray999\b", "WA", line)
-    # Bare 999 as integer literal -> _ASIZE.
+def body_subst(line: str, model: str, aname: str = "A") -> str:
+    """Array-size substitutions used inside MM proc bodies."""
+    if model == "old":
+        line = line.replace("Array999.t", "A.t")
+        line = re.sub(r"\bArray999\b", "A", line)
+        line = re.sub(r"\bWArray999\b", "WA", line)
+    else:
+        line = line.replace("BArray999.t", aname + ".t")
+        line = re.sub(r"\bBArray999\b", aname, line)
     line = re.sub(r"\b999\b", "_ASIZE", line)
-    # Prefix subreadwrite proc *call sites* with RW.MM. (it's safe to do this
-    # everywhere in the body; the proc *definition* lines were filtered out
-    # before we get here, so the only matches here are call sites).
-    line = SUBRW_RE.sub(r"RW.MM.\1", line)
     return line
 
 
-def transform_require_import(text: str) -> str:
-    """In the file-level `require import ... Array999 ... WArray999.` block,
-    drop Array999 and WArray999 (the parametric file pulls A/WA from clones
-    instead). Other arrays (Array25, WArray800, etc.) stay — they're used for
-    state representation, not buffer parameterisation."""
-    return re.sub(
-        r"\b(Array999|WArray999)\b\s*",
-        "",
-        text,
-    )
+def call_subst(line: str, kept, subrw_sibling: bool) -> str:
+    def repl(m):
+        name = m.group(1)
+        if name in kept:
+            return m.group(0)
+        if name in SUBRW_PROCS and not subrw_sibling:
+            return m.group(0).replace(name, "RW.MM." + name, 1)
+        return m.group(0).replace(name, "M." + name, 1)
+    return CALL_SITE.sub(repl, line)
 
 
-PARAM_PREAMBLE = """
-require import Keccak_bindings.
-require import Keccak1600_subreadwrite.
-
-abstract theory KeccakAsizeParam.
-
-op _ASIZE: int.
-
-axiom _ASIZE_ge0: 0 <= _ASIZE.
-axiom _ASIZE_u64: _ASIZE < W64.modulus.
-
-clone import PolyArray as A
- with op size <- _ASIZE
-      proof ge0_size by exact _ASIZE_ge0.
-
-clone import WArray as WA
- with op size <- _ASIZE.
-
-clone import ReadWriteArray as RW
- with op _ASIZE <- _ASIZE,
-      theory A <- A,
-      theory WA <- WA
-      proof _ASIZE_ge0 by exact _ASIZE_ge0
-      proof _ASIZE_u64 by exact _ASIZE_u64.
-
-"""
-
-PARAM_POSTAMBLE = """
-end KeccakAsizeParam.
-"""
+def require_subst(text: str, model: str) -> str:
+    """Drop the size-999 theories from the file-level require block."""
+    names = r"Array999|WArray999" if model == "old" else r"Array999|BArray999"
+    text = re.sub(r"\b(" + names + r")\b\s*", "", text)
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    text = re.sub(r"  +", " ", text)
+    return text
 
 
-def transform(src: str) -> str:
-    lines = src.splitlines(keepends=True)
-    out = []
+def preamble(model: str, preset: str) -> str:
+    out = ["", "require import Keccak_bindings.",
+           "require import Keccak1600_subreadwrite.", ""]
+    if model == "barray":
+        out.insert(1, "from Jasmin require import JByte_array.")
+    out += ["abstract theory KeccakAsizeParam.", "",
+            "op _ASIZE: int.", "",
+            "axiom _ASIZE_ge0: 0 <= _ASIZE.",
+            "axiom _ASIZE_u64: _ASIZE < W64.modulus.", ""]
+    if model == "old":
+        out += ["clone import PolyArray as A",
+                " with op size <- _ASIZE",
+                "      proof ge0_size by exact _ASIZE_ge0.", "",
+                "clone import WArray as WA",
+                " with op size <- _ASIZE.", ""]
+    else:
+        out += ["clone import ByteArray as A",
+                " with op size <- _ASIZE",
+                "      proof ge0_size by exact _ASIZE_ge0.", ""]
+    if preset != "subreadwrite":
+        out += ["clone import ReadWriteArray as RW",
+                " with op _ASIZE <- _ASIZE,",
+                "      theory A <- A" + (",", "")[model != "old"]]
+        if model == "old":
+            out += ["      theory WA <- WA"]
+        out += ["      proof _ASIZE_ge0 by exact _ASIZE_ge0",
+                "      proof _ASIZE_u64 by exact _ASIZE_u64.", ""]
+    return "\n".join(out) + "\n"
 
+
+def split_module_m(lines):
+    """Return (before, procs, after) where procs = [(name, [lines])]."""
+    before, after, procs = [], [], []
     i = 0
-    in_module_m = False
-    skip_subrw_proc_indent: int | None = None
-    require_block_buf: list[str] = []
-    in_require_block = False
-
-    while i < len(lines):
+    while i < len(lines) and not MODULE_M_OPEN.match(lines[i]):
+        before.append(lines[i]); i += 1
+    if i == len(lines):
+        sys.exit("error: `module M = {` not found")
+    i += 1
+    cur = None
+    while i < len(lines) and not MODULE_CLOSE.match(lines[i]):
         line = lines[i]
-
-        # Handle the multi-line `require import\nArray3 Array5 ... WArray999.`
-        # block at the file top: collect, strip Array999/WArray999, emit.
-        if not in_module_m and (
-            line.strip() == "require import" or line.startswith("require import\n")
-        ):
-            require_block_buf = [line]
-            in_require_block = True
-            i += 1
-            while i < len(lines):
-                require_block_buf.append(lines[i])
-                if lines[i].rstrip().endswith("."):
-                    break
-                i += 1
-            joined = "".join(require_block_buf)
-            # Only filter when the block actually mentions Array999/WArray999.
-            if re.search(r"\b(Array999|WArray999)\b", joined):
-                joined = transform_require_import(joined)
-                # Collapse runs of whitespace introduced by token deletion.
-                joined = re.sub(r"[ \t]+\n", "\n", joined)
-                joined = re.sub(r"  +", " ", joined)
-            out.append(joined)
-            in_require_block = False
-            i += 1
-            continue
-
-        # Detect entering module M.
-        if not in_module_m and MODULE_M_OPEN.match(line):
-            # Inject the parametric preamble + open MM.
-            out.append(PARAM_PREAMBLE)
-            out.append("module MM = {\n")
-            in_module_m = True
-            i += 1
-            continue
-
-        # Inside module M.
-        if in_module_m:
-            # Detect the closing `}.` of module M.
-            if MODULE_CLOSE.match(line):
-                out.append("}.\n")
-                out.append(PARAM_POSTAMBLE)
-                in_module_m = False
-                i += 1
-                continue
-
-            # If we're skipping a subreadwrite proc definition, watch for its
-            # closing brace at exactly the opener's indent column.
-            if skip_subrw_proc_indent is not None:
-                close_marker = " " * skip_subrw_proc_indent + "}"
-                stripped_right = line.rstrip()
-                if stripped_right == close_marker:
-                    skip_subrw_proc_indent = None
-                i += 1
-                continue
-
-            # Detect start of a subreadwrite proc to skip.
-            m = PROC_DEF_OPEN.match(line)
-            if m:
-                skip_subrw_proc_indent = len(m.group(1))
-                i += 1
-                continue
-
-            # Otherwise transform the line.
-            out.append(transform_body_line(line))
-            i += 1
-            continue
-
-        # Outside module M (preamble, abbrevs, helper clones): pass through.
-        out.append(line)
+        m = PROC_OPEN.match(line)
+        if m and cur is None:
+            cur = (m.group(1), [line])
+        elif cur is not None:
+            cur[1].append(line)
+            if PROC_CLOSE.match(line):
+                procs.append(cur); cur = None
+        # non-proc lines inside module M (none expected in the normal model)
         i += 1
+    if cur is not None:
+        sys.exit("error: unterminated proc %s" % cur[0])
+    after = lines[i + 1:] if i < len(lines) else []
+    return before, procs, after
 
-    return "".join(out)
+
+def transform(src: str, model: str, preset: str, mm_only: bool, aname: str = "A") -> str:
+    lines = src.splitlines(keepends=True)
+    before, procs, _after = split_module_m(lines)
+    kept = set(PRESETS[preset])
+    found = {name for name, _ in procs}
+    missing = kept - found
+    if missing:
+        sys.exit("error: procs not found in extraction: %s" % sorted(missing))
+    subrw_sibling = preset == "subreadwrite"
+
+    mm = ["module MM = {\n"]
+    for name, plines in procs:
+        if name not in kept:
+            continue
+        for line in plines:
+            mm.append(call_subst(body_subst(line, model, aname), kept, subrw_sibling))
+    mm.append("}.\n")
+    if mm_only:
+        return "".join(mm)
+
+    # standalone file: header (require block filtered) + preamble + MM
+    head = "".join(before)
+    head = re.sub(r"(require import\n(?:[^\n]*\n)*?[^\n]*\.\n)",
+                  lambda m: require_subst(m.group(1), model), head, count=1)
+    return head + preamble(model, preset) + "".join(mm) + \
+        "\nend KeccakAsizeParam.\n"
 
 
 def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("input", help="concrete .ec extraction file")
-    p.add_argument("-o", "--output", required=True, help="parametric .ec output")
+    p = argparse.ArgumentParser(description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("input", help="concrete ASIZE .ec extraction")
+    p.add_argument("-o", "--output", required=True)
+    p.add_argument("--model", choices=("old", "barray"), default="barray")
+    p.add_argument("--theory", choices=sorted(PRESETS), required=True,
+                   help="which procs to keep in MM")
+    p.add_argument("--array-name", default="A",
+                   help="name of the byte-array theory parameter (barray model; default A)")
+    p.add_argument("--mm-only", action="store_true",
+                   help="emit only the `module MM = { ... }.` block")
     args = p.parse_args()
-
     with open(args.input) as f:
         src = f.read()
-
-    out = transform(src)
-
+    out = transform(src, args.model, args.theory, args.mm_only, args.array_name)
     with open(args.output, "w") as f:
         f.write(out)
-
     print(f"wrote {args.output}", file=sys.stderr)
 
 

@@ -1,0 +1,19 @@
+[general]
+timeout = 5
+
+provers = CVC5@1.3
+provers = Z3@4.13
+
+pragmas = -Warn:uninit
+pragmas = -Warn:unused_unfold
+
+spec = common/avx2.spec
+
+idirs = CryptoSpecs:../../submodules/crypto-specs/common
+rdirs = CryptoSpecs:../../submodules/crypto-specs/fips202
+idirs = JazzEC:../../submodules/crypto-specs/arrays
+idirs = JazzEC:extracted
+rdirs = Jasmin:../../submodules/jasmin/eclib
+idirs = common
+idirs = ref
+idirs = avx2
