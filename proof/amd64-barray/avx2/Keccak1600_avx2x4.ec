@@ -4,7 +4,6 @@
    Correctness proof for the 4-way AVX2 implementation
 
 
-
 ******************************************************************************)
 
 require import AllCore List Real Int IntDiv StdOrder.
@@ -30,7 +29,6 @@ import IntOrder.
 (* nth_SQUEEZE1600 lives in common/Keccak1600_statebytes.ec *)
 
 
-
 (** Packed 4x-state *)
 
 type state4x = W256.t Array25.t.
@@ -50,6 +48,11 @@ apply W64.ext_eq => b Hb.
 rewrite bits64iE // initiE //= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
 by congr; smt().
 qed.
+
+(* the lane view of the barray 4-way state *)
+lemma st4x_lane_get (a: BArray800.t) k:
+ 0 <= k < 4 => st4x_lane (st4x a) k = st4x_get a k.
+proof. by move=> Hk; rewrite tP => i Hi; rewrite st4x_getiE // st4x_getE. qed.
 
 op st4x_pack (sts: state*state*state*state): state4x =
  init_25_256 (fun i => u256_pack4 sts.`1.[i] sts.`2.[i] sts.`3.[i] sts.`4.[i]).
@@ -179,8 +182,8 @@ by circuit.
 qed.
 
 (* ------------------------------------------------------------------------ *)
-(* Lane view of the stores the 4-way code performs on its state, through the *)
-(* WArray800 byte encoding (64-bit word q is lane q%%4 of 256-bit word q%/4) *)
+(* Lane view of the 4-way state (64-bit word q is lane q%%4 of 256-bit word *)
+(* q%/4); the BArray800 stores are in Keccak1600_fixedsizes_avx2x4.ec        *)
 (* ------------------------------------------------------------------------ *)
 
 lemma st4x_ext (a b: state4x):
@@ -199,65 +202,6 @@ rewrite st4x_getiE // !get_set_if.
 by case: (0 <= j < 25 /\ i = j) => C //; rewrite st4x_getiE.
 qed.
 
-lemma get64_init256 (st: state4x) q:
- 0 <= q < 100 =>
- get64_direct (WArray800.init256 ("_.[_]" st)) (8*q) = st.[q %/ 4] \bits64 (q %% 4).
-proof.
-move=> Hq; apply W64.wordP => b Hb.
-rewrite get64E pack8wE // initiE 1:/# /= initiE 1:/# /= bits8iE 1:/# bits64iE //.
-by congr; smt().
-qed.
-
-lemma get256_init256 (st: state4x) j:
- 0 <= j < 25 =>
- get256_direct (WArray800.init256 ("_.[_]" st)) (32*j) = st.[j].
-proof.
-move=> Hj; apply W256.wordP => b Hb.
-rewrite get256E pack32wE // initiE 1:/# /= initiE 1:/# /= bits8iE 1:/#.
-by congr; smt().
-qed.
-
-lemma init256_set256 (st: state4x) j w:
- 0 <= j < 25 =>
- Array25.init (WArray800.get256 (WArray800.set256_direct (WArray800.init256 ("_.[_]" st)) (32*j) w))
- = st.[j <- w].
-proof.
-move=> Hj; rewrite tP => i Hi; rewrite initiE //= get_setE //.
-apply W256.wordP => b Hb.
-rewrite get256E pack32wE // initiE 1:/# /= set256E initiE 1:/# /=.
-case: (i = j) => C.
- by rewrite ifT 1:/# bits8iE 1:/#; congr; smt().
-by rewrite ifF 1:/# initiE 1:/# /= bits8iE 1:/#; congr; smt().
-qed.
-
-(* [init256_set256] at a byte offset (the shape of [__state_init_avx2x4]'s loop) *)
-lemma init256_set256_direct (st: state4x) o w:
- 0 <= o < 800 => o %% 32 = 0 =>
- Array25.init (WArray800.get256 (WArray800.set256_direct (WArray800.init256 ("_.[_]" st)) o w))
- = st.[o %/ 32 <- w].
-proof.
-move=> Ho Hm; have {1}->: o = 32 * (o %/ 32) by smt().
-by apply init256_set256; smt().
-qed.
-
-lemma st4x_get_set64 (st: state4x) q v k:
- 0 <= q < 100 => 0 <= k < 4 =>
- st4x_lane (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) (8*q) v))) k
- = if q %% 4 = k then (st4x_lane st k).[q %/ 4 <- v] else st4x_lane st k.
-proof.
-move=> Hq Hk; rewrite tP => i Hi.
-rewrite st4x_getiE // initiE //=.
-have ->: (if q %% 4 = k then (st4x_lane st k).[q %/ 4 <- v] else st4x_lane st k).[i]
-         = if q %% 4 = k /\ i = q %/ 4 then v else st.[i] \bits64 k.
- case: (q %% 4 = k) => C1 /=; last by rewrite st4x_getiE.
- by rewrite get_setE 1:/#; case: (i = q %/ 4) => C2 //; rewrite st4x_getiE.
-apply W64.wordP => b Hb.
-rewrite bits64iE // get256E pack32wE 1:/# initiE 1:/# /= set64E initiE 1:/# /=.
-case: (q %% 4 = k /\ i = q %/ 4) => C.
- by rewrite ifT 1:/# bits8iE 1:/#; congr; smt().
-rewrite ifF 1:/# initiE 1:/# /= bits8iE 1:/# bits64iE //.
-by congr; smt().
-qed.
 
 lemma st4x_keccak_iotaE rc st4x:
  st4x_keccak_iota rc st4x
@@ -284,8 +228,6 @@ op st4x_keccak_pround =  st4x_map keccak_pround_op.
 
 abbrev keccak_round_i i st =
  foldl (fun s i => keccak_round_op rc_spec.[i] s) st (iota_ 0 i).
-
-
 
 
 (******************************************************************************
@@ -362,9 +304,9 @@ hoare state_init_avx2x4_h':
 proof.
 proc.
 while (0 <= i <= 32*25 /\ i %% 32 = 0 /\ z256 = W256.zero /\
-       forall k, 0 <= k < i %/ 32 => st.[k] = W256.zero).
+       forall k, 0 <= k < i %/ 32 => (st4x st).[k] = W256.zero).
  auto => /> &m Hi0 _ Hm IH Hi.
- rewrite init256_set256_direct 1,2:/#; do! split; 1..3:smt().
+ rewrite st4x_set256d 1,2:/#; do! split; 1..3:smt().
  by move=> k Hk1 Hk2; rewrite get_setE 1:/#; case: (k = i{m} %/ 32) => C //; apply IH => /#.
 auto => /> &hr; split => [/# | i0 st0 Hlt Hi1 Hi2 _ H].
 by rewrite tP /st4x0 => k Hk; rewrite createiE // H /#.
@@ -412,7 +354,9 @@ hoare addratebit_avx2x4_h _r8 _st:
  : st4x st = _st /\ rATE8 = _r8 /\ 0 < _r8 <= 200
  ==> st4x res = st4x_map (addratebit _r8) _st.
 proof.
-proc; auto => /> Hr0 Hr1.
+proc; auto => /> &hr Hr0 Hr1.
+rewrite st4x_set256d 1,2:/# -st4xE 1:/# (_: 32 * ((_r8 - 1) %/ 8) %/ 32 = (_r8 - 1) %/ 8) 1:/#.
+move: (st4x st{hr}) => S.
 apply st4x_ext => k Hk.
 rewrite st4x_get_map // st4x_get_set // xorb64E VPBROADCAST_4u64_bits64 //.
 rewrite /addratebit -addratebitE 1:/#.

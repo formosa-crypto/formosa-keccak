@@ -352,7 +352,7 @@ case: (r=0).
  auto => |> &m ??Hinv H.
  have := stavx2_pos0 ((_r8 - 1) %/ 8) _; first smt().
  rewrite -H /= => {H} H.
- rewrite (stavx2_pos0' _ (stavx2_to_st25 _stavx2)); first by rewrite stavx2_to_st25K.
+ rewrite stavx2_xor0 (stavx2_pos0' _ (stavx2_to_st25 (stavx2 st{m}))); first by rewrite stavx2_to_st25K.
  rewrite /addratebit -addratebitE 1:/# H /=.
  by congr; rewrite u64_xorbitE /#.
 rcondf 1; first by auto.
@@ -363,9 +363,12 @@ have Hn: 0 < (_r8 - 1) %/ 8 < 25.
 have Hl: 0 <= l{m} < 4.
  have := stavx2_pos_bnd ((_r8 - 1) %/ 8) _; first smt().
  by rewrite -H /#.
+have Hr7: 0 <= r{m} < 7.
+ have := stavx2_pos_bnd ((_r8 - 1) %/ 8) _; first smt().
+ by rewrite -H /#.
 split; first smt().
 move=> ??.
-rewrite (stavx2_posP _stavx2 ((_r8 - 1) %/ 8) r{m} l{m} _ Hinv Hn H).
+rewrite stavx2_xor256 1:/# (stavx2_posP (stavx2 st{m}) ((_r8 - 1) %/ 8) r{m} l{m} _ Hinv Hn H).
 rewrite /addratebit -addratebitE 1:/#.
 congr.
 move: H; rewrite u64_xorbitE /#.

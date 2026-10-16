@@ -78,7 +78,7 @@ proof.
 proc; simplify.
 seq 1: #pre => //=.
  by inline*; auto => />; circuit.
-by auto => />; circuit.
+by auto => /> &hr; rewrite !BX224.set256d_get256d.
 by hoare; inline*; auto => />; circuit.
 qed.
 
@@ -350,13 +350,13 @@ seq 1 5: (#pre).
   wp; call m_ilen_read_bcast_upto8_at_eq; auto => &1 &2 /> ?.
   by move => [r1' r2' r3' r4' r5'] [r1 r2 r3 r4 r5] />.
  auto => /> &m _.
- by move: (st{m}) => _st; clear; circuit.
+ have ->: VPBROADCAST_4u64 (truncateu64 (VMOV_64 W64.zero)) = W256.zero by circuit.
+ by rewrite W256.xorw0 BX224.set256d_get256d.
 swap {2} 12 -9.
 seq 1 3: (#pre); simplify.
  sp; if => //=; first by sim.
  auto => /> &m _.
- rewrite tP => i Hi; rewrite get_setE //.
- by case: (i=1) => //.
+ by rewrite BX224.set256d_get256d.
 sp; if => //=. 
  seq 1 1: (#[/2:-2]pre /\ ={t64_2}) => //=. 
   call (: ={Glob.mem,arg} ==> ={res}); first by sim.
@@ -366,14 +366,15 @@ sp; if => //=.
   swap {1} 3 3; swap {1} [5..6] 2.
   swap {1} [7..9] 2.
   by sim.
- wp; ecall {2} (addstate_r3456_avx2_zero_ph st{2}).
- auto => /> &m *.
- by move: (st{m}) (t64_2{m}) => _st _t64_2; clear; circuit.
-wp; ecall {2} (addstate_r3456_avx2_zero_ph st{2}).
-auto => /> &m *.
-rewrite tP => i Hi; rewrite get_setE //.
-case: (i=2) => //.
-by move => /> *; move: (st{m}) => _st; clear; circuit.
+ wp; ecall {2} (addstate_r3456_avx2_zero_ph (stavx2 st{2})).
+ auto => /> &m _ r Er.
+ rewrite (stavx2_inj _ _ Er); congr; congr.
+ by move: (t64_2{m}) => t; clear; circuit.
+wp; ecall {2} (addstate_r3456_avx2_zero_ph (stavx2 st{2})).
+auto => /> &m _ r Er.
+rewrite (stavx2_inj _ _ Er).
+have ->: VINSERTI128 (zeroextu256 (VPINSR_2u64 (VMOV_64 W64.zero) W64.zero W8.one)) (VPINSR_2u64 (VMOV_64 W64.zero) W64.zero W8.one) W8.one = W256.zero by circuit.
+by rewrite W256.xorw0 BX224.set256d_get256d.
 qed.
 
 (*
@@ -400,8 +401,8 @@ move=> [Hmem] |> *.
 have ->:
  Pr[M.__addstate_m_avx2(st{m'}, aT{m'}, buf{m'}, _LEN{m'},
                           _TRAILB{m'}) @ &m' :
-   ! (res.`1 =
-      addstate_avx2 st{m'}
+   ! (stavx2 res.`1 =
+      addstate_avx2 (stavx2 st{m'})
         (bytes2state
            (u8zeros aT{m'} ++ memread _mem buf{m'} _LEN{m'} ++
             [W8.of_int _TRAILB{m'}])) /\
@@ -409,8 +410,8 @@ have ->:
       res.`3 = buf{m'} + _LEN{m'})]
  = Pr[Maux.__addstate_m_avx2_aux( st{m'}, aT{m'}, buf{m'}, _LEN{m'}
                                , _TRAILB{m'}) @ &m' :
-   ! (res.`1 =
-      addstate_avx2 st{m'}
+   ! (stavx2 res.`1 =
+      addstate_avx2 (stavx2 st{m'})
         (bytes2state
            (u8zeros aT{m'} ++ memread _mem buf{m'} _LEN{m'} ++
             [W8.of_int _TRAILB{m'}])) /\
@@ -423,13 +424,13 @@ pose _len := _LEN{m'}; pose _tb := _TRAILB{m'}; pose _at := aT{m'}.
 byphoare (_: Glob.mem=_mem /\ st=_st /\ buf=_buf /\ _LEN=_len /\ _TRAILB=_tb /\ aT=_at
  /\ 0 <= _at <= _at+_len <= 200 - b2i (_tb<>0) 
  /\ 0<= buf /\ 0 <= _tb < 256
- /\  stavx2INV _st ==> _) => //; last by smt().
+ /\  stavx2INV (stavx2 _st) ==> _) => //; last by smt().
 hoare.
 clear; proc; simplify.
 pose _statebytes := u8zeros _at ++ memread _mem _buf _len ++ [W8.of_int _tb].
 seq 13: ( st=_st /\
           bytes2state _statebytes = bytes2state (stavx2bytes_pack t64_1 r1 t64_2 r3 t64_3 r4 t64_4 r5 t64_5 r6)
-          /\ aT = _at + _len + b2i (_tb <> 0) /\ buf = _buf + _len /\ stavx2INV _st).
+          /\ aT = _at + _len + b2i (_tb <> 0) /\ buf = _buf + _len /\ stavx2INV (stavx2 _st)).
  seq 2: ( #[1:2,8:]pre
         /\ msubread_pre 0 _at _buf _len _tb
         /\ msubread _mem (u64bytes t64_1) 0 _at _buf _len _tb aT buf _LEN _TRAILB).
@@ -503,9 +504,12 @@ seq 13: ( st=_st /\
 (* handling the permutation part with 'circuit' *)
 exlim t64_1 => _t64_1; exlim r1 => _r1; exlim t64_2 => _t64_2; exlim r3 => _r3; exlim t64_3 => _t64_3; exlim r4 => _r4; exlim t64_4 => _t64_4; exlim r5 => _r5; exlim t64_5 => _t64_5; exlim r6 => _r6.
 move: _st => _st.
-conseq (: st = _st /\ stavx2INV _st /\ t64_1=_t64_1 /\ r1=_r1 /\ t64_2=_t64_2 /\ r3=_r3 /\ t64_3=_t64_3 /\ r4=_r4 /\ t64_4=_t64_4 /\ r5=_r5 /\ t64_5=_t64_5 /\ r6=_r6 ==> st = addstate_avx2 _st (stavx2_pack _t64_1 _r1 _t64_2 _r3 _t64_3 _r4 _t64_4 _r5 _t64_5 _r6)) => //=.
+conseq (: st = _st /\ stavx2INV (stavx2 _st) /\ t64_1=_t64_1 /\ r1=_r1 /\ t64_2=_t64_2 /\ r3=_r3 /\ t64_3=_t64_3 /\ r4=_r4 /\ t64_4=_t64_4 /\ r5=_r5 /\ t64_5=_t64_5 /\ r6=_r6 ==> stavx2 st = addstate_avx2 (stavx2 _st) (stavx2_pack _t64_1 _r1 _t64_2 _r3 _t64_3 _r4 _t64_4 _r5 _t64_5 _r6)) => //=.
  by rewrite /_astate stavx2_packE => /> * /#.
-inline *; clear.
+inline *; wp; skip => &hr [#] -> Hinv -> -> -> -> -> -> -> -> -> ->.
+(* lift the stores to the W256.t Array7.t view, then circuit on words *)
+rewrite /= !stavx2_xor256d //=.
+move: Hinv; move: (stavx2 _st) => S; clear.
 by circuit.
 qed.
 
@@ -560,8 +564,8 @@ seq 1: (Glob.mem = _mem /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 
        /\ 0 <= _len /\ 0 <= _buf
        /\ _buf <= buf <= _buf + _len /\ _LEN = _len - (buf - _buf)
        /\ aT = (size _l + (buf - _buf)) %% _r8 /\ aT + _LEN < _r8
-       /\ stavx2INV st
-       /\ pabsorb_spec _r8 (_l ++ take (buf - _buf) (memread _mem _buf _len)) (stavx2_to_st25 st)).
+       /\ stavx2INV (stavx2 st)
+       /\ pabsorb_spec _r8 (_l ++ take (buf - _buf) (memread _mem _buf _len)) (stavx2_to_st25 (stavx2 st))).
 + if => //; last first.
    auto => |> &m.
    rewrite pabsorb_spec_avx2E => [[Hinv H]] Htb0 Htb1 Hbuf Hlen Hg.
@@ -571,9 +575,9 @@ seq 1: (Glob.mem = _mem /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 
   wp; while (Glob.mem = _mem /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 < _r8 <= 200 /\
              0 <= _len /\ 0 <= _buf /\
              iTERS = (_len - (_r8 - size _l %% _r8)) %/ _r8 /\ 0 <= i <= iTERS /\
-             buf = _buf + (_r8 - size _l %% _r8 + i * _r8) /\ stavx2INV st /\
-             pabsorb_spec _r8 (_l ++ take (_r8 - size _l %% _r8 + i * _r8) (memread _mem _buf _len)) (stavx2_to_st25 st)).
-  + wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 st)); ecall (addstate_m_avx2_h Glob.mem st buf _RATE8 0 0).
+             buf = _buf + (_r8 - size _l %% _r8 + i * _r8) /\ stavx2INV (stavx2 st) /\
+             pabsorb_spec _r8 (_l ++ take (_r8 - size _l %% _r8 + i * _r8) (memread _mem _buf _len)) (stavx2_to_st25 (stavx2 st))).
+  + wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 (stavx2 st))); ecall (addstate_m_avx2_h Glob.mem (stavx2 st) buf _RATE8 0 0).
     auto => |> &m.
     move=> Htb0 Htb1 Hr0 Hr1 Hlen Hbuf Hi0 Hi1 Hinv IH Hb.
     have Hm: 0 <= i{m} * _r8 by apply mulr_ge0 => /#.
@@ -583,18 +587,19 @@ seq 1: (Glob.mem = _mem /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 
     split; first smt().
     move=> ??? [st' at' buf'] /= Est _ Ebuf.
     rewrite Est /addstate_avx2 stavx2_from_st25K /=.
+    move=> r ->.
     rewrite stavx2INV_from_st25 stavx2_from_st25K /=.
     split; first smt().
     split; first smt().
     have Ed: size _l = size _l %/ _r8 * _r8 + size _l %% _r8 by exact divz_eq.
     have Ha0: (size _l + (_r8 - size _l %% _r8 + i{m} * _r8)) %% _r8 = 0.
      by apply modz_fill_blocks.
-    have Hf := pabsorb_fill _r8 _l (memread _mem _buf _len) (_r8 - size _l %% _r8 + i{m} * _r8) (stavx2_to_st25 st{m}).
+    have Hf := pabsorb_fill _r8 _l (memread _mem _buf _len) (_r8 - size _l %% _r8 + i{m} * _r8) (stavx2_to_st25 (stavx2 st{m})).
     move: Hf; rewrite Ha0 /= => Hf.
     rewrite (_: _r8 - size _l %% _r8 + (i{m} + 1) * _r8 = _r8 - size _l %% _r8 + i{m} * _r8 + _r8) 1:/#.
     rewrite -(slice_memread _mem _buf _len (_r8 - size _l %% _r8 + i{m} * _r8) _r8) 1..3:/#.
     by apply Hf => //; rewrite ?size_memread //; smt().
-  wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 st)); wp; ecall (addstate_m_avx2_h Glob.mem st buf (_RATE8 - aT) 0 aT).
+  wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 (stavx2 st))); wp; ecall (addstate_m_avx2_h Glob.mem (stavx2 st) buf (_RATE8 - aT) 0 aT).
   auto => |> &m.
   rewrite pabsorb_spec_avx2E => [[Hinv H]] Htb0 Htb1 Hbuf Hlen Hg.
   have Hr8: 0 < _r8 <= 200 by move: H; rewrite /pabsorb_spec => [#].
@@ -602,11 +607,12 @@ seq 1: (Glob.mem = _mem /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 
   split; first smt().
   move=> ???? [st' at' buf'] /= Est _ Ebuf.
   rewrite Est /addstate_avx2 stavx2_from_st25K /=.
+  move=> r ->.
   rewrite stavx2INV_from_st25 stavx2_from_st25K /=.
   split.
    split; first smt().
    split; first smt(divz_ge0).
-   have Hf := pabsorb_fill _r8 _l (memread _mem _buf _len) 0 (stavx2_to_st25 st{m}).
+   have Hf := pabsorb_fill _r8 _l (memread _mem _buf _len) 0 (stavx2_to_st25 (stavx2 st{m})).
    move: Hf => /=; rewrite take0 drop0 cats0 => Hf.
    rewrite -(take_memread' _mem _buf _len (_r8 - size _l %% _r8)) 1:/#.
    by apply Hf => //; rewrite ?size_memread //; smt().
@@ -626,23 +632,23 @@ seq 1: (Glob.mem = _mem /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 
   by split; first smt().
 case: (_TRAILB <> 0).
 + rcondt 2; first by call (: true ==> true) => //.
-  ecall (addratebit_avx2_h _RATE8 st); ecall (addstate_m_avx2_h Glob.mem st buf _LEN _TRAILB aT); auto => |> &m.
+  ecall (addratebit_avx2_h _RATE8 (stavx2 st)); ecall (addstate_m_avx2_h Glob.mem (stavx2 st) buf _LEN _TRAILB aT); auto => |> &m.
   move=> Htb0 Htb1 Hr0 Hr1 Hlen Hbuf Hb0 Hb1 Hfit Hinv H Htb.
   split; first smt().
   move=> ???? [st' at' buf'] /= Est _ Ebuf.
   rewrite Est /addstate_avx2 stavx2INV_from_st25 /= stavx2_from_st25K.
   have Hk: 0 <= buf{m} - _buf <= size (memread _mem _buf _len) by rewrite size_memread //; smt().
   have Hfit': (size _l + (buf{m} - _buf)) %% _r8 + (size (memread _mem _buf _len) - (buf{m} - _buf)) < _r8 by rewrite size_memread.
-  have [Hl1 _] := pabsorb_last _r8 _l (memread _mem _buf _len) (buf{m} - _buf) (stavx2_to_st25 st{m}) _tb Hk Hfit' H.
+  have [Hl1 _] := pabsorb_last _r8 _l (memread _mem _buf _len) (buf{m} - _buf) (stavx2_to_st25 (stavx2 st{m})) _tb Hk Hfit' H.
   by rewrite /absorb_spec_avx2 -(drop_memread_cur _mem _buf _len buf{m}) 1:/# Hl1.
 rcondf 2; first by call (: true ==> true) => //.
-ecall (addstate_m_avx2_h Glob.mem st buf _LEN _TRAILB aT); auto => |> &m.
+ecall (addstate_m_avx2_h Glob.mem (stavx2 st) buf _LEN _TRAILB aT); auto => |> &m.
 move=> Hr0 Hr1 Hlen Hbuf Hb0 Hb1 Hfit Hinv H.
 split; first smt().
 move=> ???? [st' at' buf'] /= Est Eat _.
 have Hk: 0 <= buf{m} - _buf <= size (memread _mem _buf _len) by rewrite size_memread //; smt().
 have Hfit': (size _l + (buf{m} - _buf)) %% _r8 + (size (memread _mem _buf _len) - (buf{m} - _buf)) < _r8 by rewrite size_memread.
-have [_ Hl0] := pabsorb_last _r8 _l (memread _mem _buf _len) (buf{m} - _buf) (stavx2_to_st25 st{m}) 0 Hk Hfit' H.
+have [_ Hl0] := pabsorb_last _r8 _l (memread _mem _buf _len) (buf{m} - _buf) (stavx2_to_st25 (stavx2 st{m})) 0 Hk Hfit' H.
 split.
  rewrite pabsorb_spec_avx2E Est /addstate_avx2 stavx2INV_from_st25 /= stavx2_from_st25K.
  by move: (Hl0 (eq_refl 0)) => /=; rewrite -(drop_memread_cur _mem _buf _len buf{m}) 1:/#.
@@ -684,29 +690,29 @@ hoare dumpstate_m_avx2_h _mem _buf _len _st:
   /\ res = _buf + _len.
 proof.
 proc => /=.
-conseq (: Glob.mem=_mem /\ buf=_buf /\ _LEN=_len /\ st=_st /\ 0 <= _len <= 200
+conseq (: Glob.mem=_mem /\ buf=_buf /\ _LEN=_len /\ st=stavx2_of _st /\ 0 <= _len <= 200
           ==> msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 200) _buf _len buf _LEN).
- by move=> &hr />.
+ by move=> &hr />; rewrite stavx2K.
  move=> &hr [#] _ _ _ _ Hl0 Hl1 _ m1 l1 b1 H.
  by apply (msubwrite_dump_take _ _ _ _ _ _ _ _ _ H).
 (* lane 0: the first 8 bytes of st.[0] *)
 seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 8) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200).
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200).
  if.
-  wp; ecall (m_ilen_write_upto32_h Glob.mem buf 8 st.[0]).
+  wp; ecall (m_ilen_write_upto32_h Glob.mem buf 8 (BArray224.get256 st 0)).
   auto => |> Hl0 Hl1 H8 [b1 l1] m1 /= H.
   rewrite -(dump_avx2_w0 _st).
   have Hs: size (take 8 (u256bytes _st.[0])) = 8 by rewrite size_take' // /u256bytes size_to_list.
   apply (msubwrite_rebudget _ _ _ _ 8 _len b1 l1 (_len - 8)); 1..3: by rewrite Hs.
   by apply (msubwrite_take_budget _ _ _ 8 _ _ _ _ _ _ H).
- ecall (m_ilen_write_upto32_h Glob.mem buf _LEN st.[0]).
+ ecall (m_ilen_write_upto32_h Glob.mem buf _LEN (BArray224.get256 st 0)).
  auto => |> Hl0 Hl1 H8 [b1 l1] m1 /= H.
  rewrite -(dump_avx2_w0 _st).
  by apply (msubwrite_take_budget _ _ _ 8 _ _ _ _ _ _ H) => /#.
 (* lanes 1..4 *)
 seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 40) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200).
- ecall (m_ilen_write_upto32_h Glob.mem buf _LEN st.[1]).
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200).
+ ecall (m_ilen_write_upto32_h Glob.mem buf _LEN (BArray224.get256 st 1)).
  auto => |> &m H Hl0 Hl1 [b1 l1] m1 /= H1.
  exact (msubwrite_sub_step _ _ _ _ _ _ 8 32 40 _ _ _ _ _ _ _ _ H (dump_avx2_w1 _st) H1).
 if; last first.
@@ -714,7 +720,7 @@ if; last first.
  exact (msubwrite_sub_skip _ _ _ _ _ 40 200 _ _ _ C H).
 (* lane 5 *)
 seq 5: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 48) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ t128_0 = truncateu128 _st.[2]).
  wp; ecall (m_ilen_write_upto8_h Glob.mem buf _LEN t).
@@ -725,7 +731,7 @@ if; last first.
  exact (msubwrite_sub_skip _ _ _ _ _ 48 200 _ _ _ C H).
 (* lanes 6..9 *)
 seq 6: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 80) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ t128_0 = truncateu128 _st.[2]
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
@@ -737,7 +743,7 @@ seq 6: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 80) _buf _len buf _LEN
  exact (msubwrite_sub_step _ _ _ _ _ _ 48 32 80 _ _ _ _ _ _ _ _ H (dump_avx2_w3 _st) H1).
 (* lane 10 (and t128_0 moves to lane 20) *)
 seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 88) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
@@ -752,7 +758,7 @@ seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 88) _buf _len buf _LEN
  exact (msubwrite_sub_skip _ _ _ _ _ 80 88 _ _ _ C H).
 (* lanes 11..14 *)
 seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 120) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
@@ -768,7 +774,7 @@ seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 120) _buf _len buf _LEN
  exact (msubwrite_sub_skip _ _ _ _ _ 88 120 _ _ _ C H).
 (* lane 15 *)
 seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 128) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
         /\ t256_1 = VPBLEND_8u32 _st.[4] _st.[3] (W8.of_int 240)
@@ -782,7 +788,7 @@ seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 128) _buf _len buf _LEN
  exact (msubwrite_sub_skip _ _ _ _ _ 120 128 _ _ _ C H).
 (* lanes 16..19 *)
 seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 160) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_1 = VPBLEND_8u32 _st.[4] _st.[3] (W8.of_int 240)
         /\ t256_2 = VPBLEND_8u32 _st.[5] _st.[6] (W8.of_int 240)).
@@ -795,7 +801,7 @@ seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 160) _buf _len buf _LEN
  exact (msubwrite_sub_skip _ _ _ _ _ 128 160 _ _ _ C H).
 (* lane 20 *)
 seq 1: (msubwrite _mem Glob.mem (sub (avx2bytes _st) 0 168) _buf _len buf _LEN
-        /\ st = _st /\ 0 <= _len <= 200
+        /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t256_1 = VPBLEND_8u32 _st.[4] _st.[3] (W8.of_int 240)
         /\ t256_2 = VPBLEND_8u32 _st.[5] _st.[6] (W8.of_int 240)).
  if.
@@ -855,18 +861,18 @@ proof.
 proc.
 seq 4: (0 <= _len /\ 0 < _r8 <= 200 /\ _buf + _len < W64.modulus /\ _RATE8 = _r8
         /\ lO = _len %% _r8
-        /\ st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) (_len %/ _r8))
+        /\ stavx2 st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) (_len %/ _r8))
         /\ buf = _buf + _r8 * (_len %/ _r8)
         /\ msubwrite _mem Glob.mem (squeezeblocks _r8 (stavx2_to_st25 _st) (_len %/ _r8))
                      _buf _len buf (_len - _r8 * (_len %/ _r8))).
  while (0 <= i <= _len %/ _r8 /\ 0 <= _len /\ 0 < _r8 <= 200 /\ _buf + _len < W64.modulus
         /\ _RATE8 = _r8 /\ iTERS = _len %/ _r8 /\ lO = _len %% _r8
-        /\ st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) i) /\ buf = _buf + _r8 * i
+        /\ stavx2 st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) i) /\ buf = _buf + _r8 * i
         /\ msubwrite _mem Glob.mem (squeezeblocks _r8 (stavx2_to_st25 _st) i)
                      _buf _len buf (_len - _r8 * i)).
-  wp; ecall (dumpstate_m_avx2_h Glob.mem buf _RATE8 st).
+  wp; ecall (dumpstate_m_avx2_h Glob.mem buf _RATE8 (stavx2 st)).
   ecall (keccakf1600_avx2_h (st_i (stavx2_to_st25 _st) i)).
-  auto => |> &m Hi0 Hi1 Hl Hr0 Hr1 Hb Hsw Hi.
+  auto => |> &m Hi0 Hi1 Hl Hr0 Hr1 Hb Hst Hsw Hi r ->.
   have Est: keccak_f1600_op (st_i (stavx2_to_st25 _st) i{m}) = st_i (stavx2_to_st25 _st) (i{m}+1).
    by rewrite /st_i iterS 1:/#.
   rewrite Est stavx2_from_st25K; split.
@@ -879,16 +885,16 @@ seq 4: (0 <= _len /\ 0 < _r8 <= 200 /\ _buf + _len < W64.modulus /\ _RATE8 = _r8
     by have := mul_divz_le _r8 _len (i{m}+1) _ _; smt().
   + by rewrite size_sub /#.
   + by rewrite size_sub /#.
- auto => |> Hl Hr0 Hr1 Hb Hinv; split.
+ auto => |> &hr Hl Hr0 Hr1 Hb Hinv; split.
   split; first smt(divz_ge0).
   split; first by rewrite /st_i iter0 // stavx2_to_st25K.
   by rewrite /squeezeblocks iota0 //= flatten_nil /msubwrite store0 /#.
  move=> mem i Hi0 Hi1 Hi2 Hsw.
  by have <-: i = _len %/ _r8 by smt().
 if => //.
- ecall (dumpstate_m_avx2_h Glob.mem buf lO st).
+ ecall (dumpstate_m_avx2_h Glob.mem buf lO (stavx2 st)).
  ecall (keccakf1600_avx2_h (st_i (stavx2_to_st25 _st) (_len %/ _r8))).
- auto => |> &m Hl Hr0 Hr1 Hb Hsw C.
+ auto => |> &m Hl Hr0 Hr1 Hb Hst Hsw C r ->.
  have Est: keccak_f1600_op (st_i (stavx2_to_st25 _st) (_len %/ _r8))
            = st_i (stavx2_to_st25 _st) (_len %/ _r8 + 1).
   by rewrite /st_i iterS 1:divz_ge0 /#.
@@ -896,7 +902,7 @@ if => //.
  move=> _ _ _; split.
   by apply (msubwrite_squeeze_last _ _ _ _ _ _ _ _ _ _ _ Hsw).
  by rewrite divz_pred_pos 1,2:/#.
-auto => |> &m Hl Hr0 Hr1 Hb Hsw C.
+auto => |> &m Hl Hr0 Hr1 Hb -> Hsw C.
 split; first by apply (msubwrite_squeeze_fin _ _ _ _ _ _ _ _ _ _ _ Hsw).
 by rewrite divz_pred_zero 1,2:/#.
 qed.
@@ -1394,13 +1400,13 @@ seq 2 6: (#pre /\ ={dELTA}).
   wp; call a_ilen_read_bcast_upto8_at_eq; auto => /> &m ?.
   by move => [r1' r2' r3' r4' r5'] [r1 r2 r3 r4 r5] />.
  auto => /> &m _.
- by move: (st{m}) => _st; clear; circuit.
+ have ->: VPBROADCAST_4u64 (truncateu64 (VMOV_64 W64.zero)) = W256.zero by circuit.
+ by rewrite W256.xorw0 BX224.set256d_get256d.
 swap {2} 13 -10.
 seq 1 3: (#pre); simplify.
  sp; if => //=; first by sim.
  auto => /> &m _.
- rewrite tP => i Hi; rewrite get_setE //.
- by case: (i=1) => //.
+ by rewrite BX224.set256d_get256d.
 sp; if => //=. 
  seq 1 1: (#[/2:-2]pre /\ ={t64_2}) => //=. 
   call (: ={arg} ==> ={res}); first by sim.
@@ -1411,14 +1417,15 @@ sp; if => //=.
   swap {1} [7..9] 2.
   swap {1} 15 -7.
   by sim.
- wp; ecall {2} (addstate_r3456_avx2_zero_ph st{2}).
- auto => /> &m *.
- by move: (st{m}) (t64_2{m}) => _st _t64_2; clear; circuit.
-wp; ecall {2} (addstate_r3456_avx2_zero_ph st{2}).
-auto => /> &m *.
-rewrite tP => i Hi; rewrite get_setE //.
-case: (i=2) => //.
-by move => /> *; move: (st{m}) => _st; clear; circuit.
+ wp; ecall {2} (addstate_r3456_avx2_zero_ph (stavx2 st{2})).
+ auto => /> &m _ r Er.
+ rewrite (stavx2_inj _ _ Er); congr; congr.
+ by move: (t64_2{m}) => t; clear; circuit.
+wp; ecall {2} (addstate_r3456_avx2_zero_ph (stavx2 st{2})).
+auto => /> &m _ r Er.
+rewrite (stavx2_inj _ _ Er).
+have ->: VINSERTI128 (zeroextu256 (VPINSR_2u64 (VMOV_64 W64.zero) W64.zero W8.one)) (VPINSR_2u64 (VMOV_64 W64.zero) W64.zero W8.one) W8.one = W256.zero by circuit.
+by rewrite W256.xorw0 BX224.set256d_get256d.
 qed.
 
 hoare addstate_avx2_h _st _buf _off _len _tb _at:
@@ -1436,8 +1443,8 @@ bypr => &m' |> *.
 have ->:
  Pr[MM.__addstate_avx2(st{m'}, aT{m'}, buf{m'}, offset{m'}, _LEN{m'},
                           _TRAILB{m'}) @ &m' :
-   ! (res.`1 =
-      addstate_avx2 st{m'}
+   ! (stavx2 res.`1 =
+      addstate_avx2 (stavx2 st{m'})
         (bytes2state
            (nseq aT{m'} W8.zero ++ sub buf{m'} offset{m'} _LEN{m'} ++
             [W8.of_int _TRAILB{m'}])) /\
@@ -1445,8 +1452,8 @@ have ->:
       res.`3 = offset{m'} + _LEN{m'})]
  = Pr[MMaux.__addstate_avx2_aux( st{m'}, aT{m'}, buf{m'}, offset{m'}, _LEN{m'}
                                , _TRAILB{m'}) @ &m' :
-   ! (res.`1 =
-      addstate_avx2 st{m'}
+   ! (stavx2 res.`1 =
+      addstate_avx2 (stavx2 st{m'})
         (bytes2state
            (nseq aT{m'} W8.zero ++ sub buf{m'} offset{m'} _LEN{m'} ++
             [W8.of_int _TRAILB{m'}])) /\
@@ -1459,13 +1466,13 @@ pose _len := _LEN{m'}; pose _tb := _TRAILB{m'}; pose _at := aT{m'}.
 byphoare (_: st=_st /\ buf=_buf /\ offset=_off /\ _LEN=_len /\ _TRAILB=_tb /\ aT=_at
  /\ 0 <= _at <= _at+_len <= 200 - b2i (_tb<>0) 
  /\ 0<= offset /\ offset + _len <= _ASIZE /\ 0 <= _tb < 256
- /\  stavx2INV _st ==> _) => //; last by smt().
+ /\  stavx2INV (stavx2 _st) ==> _) => //; last by smt().
 hoare.
 clear; proc; simplify.
 pose _statebytes := nseq _at W8.zero ++ sub _buf _off _len ++ [W8.of_int _tb].
 seq 15: ( st=_st /\
           bytes2state _statebytes = bytes2state (stavx2bytes_pack t64_1 r1 t64_2 r3 t64_3 r4 t64_4 r5 t64_5 r6)
-          /\ aT = _at + _len + b2i (_tb <> 0) /\ offset = _off + _len /\ stavx2INV _st).
+          /\ aT = _at + _len + b2i (_tb <> 0) /\ offset = _off + _len /\ stavx2INV (stavx2 _st)).
  seq 3: ( #[1:3,8:]pre
         /\ asubread_pre 0 _at _off 0 _len _tb
         /\ asubread _buf _off (u64bytes t64_1) 0 _at 0 _len _tb aT dELTA _LEN _TRAILB).
@@ -1537,9 +1544,12 @@ seq 15: ( st=_st /\
 (* handling the permutation part with 'circuit' *)
 exlim t64_1 => _t64_1; exlim r1 => _r1; exlim t64_2 => _t64_2; exlim r3 => _r3; exlim t64_3 => _t64_3; exlim r4 => _r4; exlim t64_4 => _t64_4; exlim r5 => _r5; exlim t64_5 => _t64_5; exlim r6 => _r6.
 move: _st => _st.
-conseq (: st = _st /\ stavx2INV _st /\ t64_1=_t64_1 /\ r1=_r1 /\ t64_2=_t64_2 /\ r3=_r3 /\ t64_3=_t64_3 /\ r4=_r4 /\ t64_4=_t64_4 /\ r5=_r5 /\ t64_5=_t64_5 /\ r6=_r6 ==> st = addstate_avx2 _st (stavx2_pack _t64_1 _r1 _t64_2 _r3 _t64_3 _r4 _t64_4 _r5 _t64_5 _r6)) => //=.
+conseq (: st = _st /\ stavx2INV (stavx2 _st) /\ t64_1=_t64_1 /\ r1=_r1 /\ t64_2=_t64_2 /\ r3=_r3 /\ t64_3=_t64_3 /\ r4=_r4 /\ t64_4=_t64_4 /\ r5=_r5 /\ t64_5=_t64_5 /\ r6=_r6 ==> stavx2 st = addstate_avx2 (stavx2 _st) (stavx2_pack _t64_1 _r1 _t64_2 _r3 _t64_3 _r4 _t64_4 _r5 _t64_5 _r6)) => //=.
  by rewrite /_astate stavx2_packE => /> * /#.
-inline *; clear.
+inline *; wp; skip => &hr [#] -> Hinv -> -> -> -> -> -> -> -> -> ->.
+(* lift the stores to the W256.t Array7.t view, then circuit on words *)
+rewrite /= !stavx2_xor256d //=.
+move: Hinv; move: (stavx2 _st) => S; clear.
 by circuit.
 qed.
 
@@ -1579,8 +1589,8 @@ have HA := _ASIZE_ge0.
 seq 3: (buf = _buf /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 < _r8 <= 200
        /\ 0 <= offset <= _ASIZE /\ _LEN = _ASIZE - offset
        /\ aT = (size _l + offset) %% _r8 /\ aT + _LEN < _r8
-       /\ stavx2INV st
-       /\ pabsorb_spec _r8 (_l ++ take offset (to_list _buf)) (stavx2_to_st25 st)).
+       /\ stavx2INV (stavx2 st)
+       /\ pabsorb_spec _r8 (_l ++ take offset (to_list _buf)) (stavx2_to_st25 (stavx2 st))).
 + sp; if => //; last first.
    auto => |> &m.
    rewrite pabsorb_spec_avx2E => [[Hinv H]] Htb0 Htb1 Hg.
@@ -1589,9 +1599,9 @@ seq 3: (buf = _buf /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 < _r8
    by rewrite Hinv /= take0 cats0.
   wp; while (buf = _buf /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 < _r8 <= 200 /\
              iTERS = (_ASIZE - (_r8 - size _l %% _r8)) %/ _r8 /\ 0 <= i <= iTERS /\
-             offset = _r8 - size _l %% _r8 + i * _r8 /\ stavx2INV st /\
-             pabsorb_spec _r8 (_l ++ take offset (to_list _buf)) (stavx2_to_st25 st)).
-  + wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 st)); ecall (addstate_avx2_h st buf offset _RATE8 0 0).
+             offset = _r8 - size _l %% _r8 + i * _r8 /\ stavx2INV (stavx2 st) /\
+             pabsorb_spec _r8 (_l ++ take offset (to_list _buf)) (stavx2_to_st25 (stavx2 st))).
+  + wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 (stavx2 st))); ecall (addstate_avx2_h (stavx2 st) buf offset _RATE8 0 0).
     auto => |> &m.
     move=> Htb0 Htb1 Hr0 Hr1 Hi0 Hi1 Hinv IH Hb.
     have Hm: 0 <= i{m} * _r8 by apply mulr_ge0 => /#.
@@ -1601,17 +1611,18 @@ seq 3: (buf = _buf /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 < _r8
     split; first smt().
     move=> ???? [st' at' off'] /= Est _ Eoff.
     rewrite Est /addstate_avx2 stavx2_from_st25K /=.
+    move=> r ->.
     rewrite stavx2INV_from_st25 stavx2_from_st25K /=.
     split; first smt().
     split; first smt().
     have Ed: size _l = size _l %/ _r8 * _r8 + size _l %% _r8 by exact divz_eq.
     have Ha0: (size _l + (_r8 - size _l %% _r8 + i{m} * _r8)) %% _r8 = 0.
      by apply modz_fill_blocks.
-    have Hf := pabsorb_fill _r8 _l (to_list _buf) (_r8 - size _l %% _r8 + i{m} * _r8) (stavx2_to_st25 st{m}).
+    have Hf := pabsorb_fill _r8 _l (to_list _buf) (_r8 - size _l %% _r8 + i{m} * _r8) (stavx2_to_st25 (stavx2 st{m})).
     move: Hf; rewrite Ha0 /= => Hf.
     rewrite Eoff -(slice_to_list _buf (_r8 - size _l %% _r8 + i{m} * _r8) _r8) 1..3:/#.
     by apply Hf => //; rewrite ?size_to_list; smt().
-  wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 st)); wp; ecall (addstate_avx2_h st buf offset (_RATE8 - aT) 0 aT).
+  wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 (stavx2 st))); wp; ecall (addstate_avx2_h (stavx2 st) buf offset (_RATE8 - aT) 0 aT).
   auto => |> &m.
   rewrite pabsorb_spec_avx2E => [[Hinv H]] Htb0 Htb1 Hg.
   have Hr8: 0 < _r8 <= 200 by move: H; rewrite /pabsorb_spec => [#].
@@ -1619,11 +1630,12 @@ seq 3: (buf = _buf /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 < _r8
   split; first smt().
   move=> ???? [st' at' off'] /= Est _ Eoff.
   rewrite Est /addstate_avx2 stavx2_from_st25K /=.
+  move=> r ->.
   rewrite stavx2INV_from_st25 stavx2_from_st25K /=.
   split.
    split; first smt().
    split; first smt(divz_ge0).
-   have Hf := pabsorb_fill _r8 _l (to_list _buf) 0 (stavx2_to_st25 st{m}).
+   have Hf := pabsorb_fill _r8 _l (to_list _buf) 0 (stavx2_to_st25 (stavx2 st{m})).
    move: Hf => /=; rewrite take0 drop0 cats0 => Hf.
    rewrite Eoff -(take_to_list _buf (_r8 - size _l %% _r8)) 1:/#.
    by apply Hf => //; rewrite ?size_to_list; smt().
@@ -1640,23 +1652,23 @@ seq 3: (buf = _buf /\ _RATE8 = _r8 /\ _TRAILB = _tb /\ 0 <= _tb < 256 /\ 0 < _r8
   by rewrite (_: size _l + (_r8 - size _l %% _r8 + (_ASIZE - (_r8 - size _l %% _r8)) %/ _r8 * _r8) = (size _l %/ _r8 + 1 + (_ASIZE - (_r8 - size _l %% _r8)) %/ _r8) * _r8) 1:/# modzMl.
 case: (_TRAILB <> 0).
 + rcondt 2; first by call (: true ==> true) => //.
-  ecall (addratebit_avx2_h _RATE8 st); ecall (addstate_avx2_h st buf offset _LEN _TRAILB aT); auto => |> &m.
+  ecall (addratebit_avx2_h _RATE8 (stavx2 st)); ecall (addstate_avx2_h (stavx2 st) buf offset _LEN _TRAILB aT); auto => |> &m.
   move=> Htb0 Htb1 Hr0 Hr1 Ho0 Ho1 Hfit Hinv H Htb.
   split; first smt().
   move=> ???? [st' at' off'] /= Est _ _.
   rewrite Est /addstate_avx2 stavx2INV_from_st25 /= stavx2_from_st25K.
   have Hk: 0 <= offset{m} <= size (to_list _buf) by rewrite size_to_list.
   have Hfit': (size _l + offset{m}) %% _r8 + (size (to_list _buf) - offset{m}) < _r8 by rewrite size_to_list.
-  have [Hl1 _] := pabsorb_last _r8 _l (to_list _buf) offset{m} (stavx2_to_st25 st{m}) _tb Hk Hfit' H.
+  have [Hl1 _] := pabsorb_last _r8 _l (to_list _buf) offset{m} (stavx2_to_st25 (stavx2 st{m})) _tb Hk Hfit' H.
   by rewrite /absorb_spec_avx2 -(drop_to_list _buf offset{m}) 1:/# Hl1.
 rcondf 2; first by call (: true ==> true) => //.
-ecall (addstate_avx2_h st buf offset _LEN _TRAILB aT); auto => |> &m.
+ecall (addstate_avx2_h (stavx2 st) buf offset _LEN _TRAILB aT); auto => |> &m.
 move=> Hr0 Hr1 Ho0 Ho1 Hfit Hinv H.
 split; first smt().
 move=> ???? [st' at' off'] /= Est Eat _.
 have Hk: 0 <= offset{m} <= size (to_list _buf) by rewrite size_to_list.
 have Hfit': (size _l + offset{m}) %% _r8 + (size (to_list _buf) - offset{m}) < _r8 by rewrite size_to_list.
-have [_ Hl0] := pabsorb_last _r8 _l (to_list _buf) offset{m} (stavx2_to_st25 st{m}) 0 Hk Hfit' H.
+have [_ Hl0] := pabsorb_last _r8 _l (to_list _buf) offset{m} (stavx2_to_st25 (stavx2 st{m})) 0 Hk Hfit' H.
 split.
  rewrite pabsorb_spec_avx2E Est /addstate_avx2 stavx2INV_from_st25 /= stavx2_from_st25K.
  by move: (Hl0 (eq_refl 0)) => /=; rewrite -(drop_to_list _buf offset{m}) 1:/#.
@@ -1696,29 +1708,30 @@ hoare dumpstate_avx2_h _buf _off _len _st:
   /\ res.`2 = _off + _len.
 proof.
 proc => /=; wp.
-conseq (: buf=_buf /\ offset=_off /\ _LEN=_len /\ st=_st /\ 0 <= _len <= 200
+conseq (: buf=_buf /\ offset=_off /\ _LEN=_len /\ st=stavx2_of _st /\ 0 <= _len <= 200
           ==> asubwrite _buf buf _off (sub (avx2bytes _st) 0 200) 0 _len dELTA _LEN /\ offset = _off).
+ by move=> &hr />; rewrite stavx2K.
  move=> &hr [#] _ -> _ _ Hl0 Hl1 l1 b1 d1 [H _].
  have Hb: 0 <= _len <= 200 by done.
  by have [-> ->] := asubwrite_dump_take _ _ _ _ _ _ _ _ Hb H.
 (* lane 0: the first 8 bytes of st.[0] *)
 seq 2: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 8) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200).
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200).
  sp; if.
-  wp; ecall (a_ilen_write_upto32_h buf offset dELTA 8 st.[0]).
+  wp; ecall (a_ilen_write_upto32_h buf offset dELTA 8 (BArray224.get256 st 0)).
   auto => |> Hl0 Hl1 H8 [b1 d1 l1] /= H.
   rewrite -(dump_avx2_w0 _st).
   have Hs: size (take 8 (u256bytes _st.[0])) = 8 by rewrite size_take' // /u256bytes size_to_list.
   apply (asubwrite_rebudget _ _ _ _ _ 8 _len d1 l1 (_len - 8)); 1..3: by rewrite Hs.
   by apply (asubwrite_take_budget _ _ _ _ 8 _ _ _ _ _ _ H).
- ecall (a_ilen_write_upto32_h buf offset dELTA _LEN st.[0]).
+ ecall (a_ilen_write_upto32_h buf offset dELTA _LEN (BArray224.get256 st 0)).
  auto => |> Hl0 Hl1 H8 [b1 d1 l1] /= H.
  rewrite -(dump_avx2_w0 _st).
  by apply (asubwrite_take_budget _ _ _ _ 8 _ _ _ _ _ _ H) => /#.
 (* lanes 1..4 *)
 seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 40) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200).
- ecall (a_ilen_write_upto32_h buf offset dELTA _LEN st.[1]).
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200).
+ ecall (a_ilen_write_upto32_h buf offset dELTA _LEN (BArray224.get256 st 1)).
  auto => |> &m H Hl0 Hl1 [b1 d1 l1] /= H1.
  exact (asubwrite_sub_step _ _ _ _ _ _ 8 32 40 _ _ _ _ _ _ _ _ H (dump_avx2_w1 _st) H1).
 if; last first.
@@ -1726,7 +1739,7 @@ if; last first.
  exact (asubwrite_sub_skip _ _ _ _ _ 40 200 _ _ _ C H).
 (* lane 5 *)
 seq 5: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 48) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ t128_0 = truncateu128 _st.[2]).
  wp; ecall (a_ilen_write_upto8_h buf offset dELTA _LEN t).
@@ -1737,7 +1750,7 @@ if; last first.
  exact (asubwrite_sub_skip _ _ _ _ _ 48 200 _ _ _ C H).
 (* lanes 6..9 *)
 seq 6: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 80) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ t128_0 = truncateu128 _st.[2]
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
@@ -1749,7 +1762,7 @@ seq 6: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 80) 0 _len dELTA _LEN
  exact (asubwrite_sub_step _ _ _ _ _ _ 48 32 80 _ _ _ _ _ _ _ _ H (dump_avx2_w3 _st) H1).
 (* lane 10 (and t128_0 moves to lane 20) *)
 seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 88) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
@@ -1764,7 +1777,7 @@ seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 88) 0 _len dELTA _LEN
  exact (asubwrite_sub_skip _ _ _ _ _ 80 88 _ _ _ C H).
 (* lanes 11..14 *)
 seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 120) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t128_1 = VPUNPCKH_2u64 (VEXTRACTI128 _st.[2] (W8.of_int 1)) (VEXTRACTI128 _st.[2] (W8.of_int 1))
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
@@ -1780,7 +1793,7 @@ seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 120) 0 _len dELTA _LEN
  exact (asubwrite_sub_skip _ _ _ _ _ 88 120 _ _ _ C H).
 (* lane 15 *)
 seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 128) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_0 = VPBLEND_8u32 _st.[3] _st.[4] (W8.of_int 240)
         /\ t256_1 = VPBLEND_8u32 _st.[4] _st.[3] (W8.of_int 240)
@@ -1794,7 +1807,7 @@ seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 128) 0 _len dELTA _LEN
  exact (asubwrite_sub_skip _ _ _ _ _ 120 128 _ _ _ C H).
 (* lanes 16..19 *)
 seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 160) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ (0 < _LEN => t128_0 = VPUNPCKH_2u64 (truncateu128 _st.[2]) (truncateu128 _st.[2]))
         /\ t256_1 = VPBLEND_8u32 _st.[4] _st.[3] (W8.of_int 240)
         /\ t256_2 = VPBLEND_8u32 _st.[5] _st.[6] (W8.of_int 240)).
@@ -1807,7 +1820,7 @@ seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 160) 0 _len dELTA _LEN
  exact (asubwrite_sub_skip _ _ _ _ _ 128 160 _ _ _ C H).
 (* lane 20 *)
 seq 1: (asubwrite _buf buf _off (sub (avx2bytes _st) 0 168) 0 _len dELTA _LEN
-        /\ offset = _off /\ st = _st /\ 0 <= _len <= 200
+        /\ offset = _off /\ st = stavx2_of _st /\ 0 <= _len <= 200
         /\ t256_1 = VPBLEND_8u32 _st.[4] _st.[3] (W8.of_int 240)
         /\ t256_2 = VPBLEND_8u32 _st.[5] _st.[6] (W8.of_int 240)).
  if.
@@ -1863,17 +1876,17 @@ hoare squeeze_avx2_h _buf _st _r8:
 proof.
 proc.
 seq 6: (0 < _r8 <= 200 /\ _RATE8 = _r8 /\ lO = _ASIZE %% _r8
-        /\ st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) (_ASIZE %/ _r8))
+        /\ stavx2 st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) (_ASIZE %/ _r8))
         /\ offset = _r8 * (_ASIZE %/ _r8)
         /\ asubwrite _buf buf 0 (squeezeblocks _r8 (stavx2_to_st25 _st) (_ASIZE %/ _r8))
                      0 _ASIZE offset (_ASIZE - offset)).
  while (0 <= i <= _ASIZE %/ _r8 /\ 0 < _r8 <= 200 /\ _RATE8 = _r8
         /\ iTERS = _ASIZE %/ _r8 /\ lO = _ASIZE %% _r8
-        /\ st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) i) /\ offset = _r8 * i
+        /\ stavx2 st = stavx2_from_st25 (st_i (stavx2_to_st25 _st) i) /\ offset = _r8 * i
         /\ asubwrite _buf buf 0 (squeezeblocks _r8 (stavx2_to_st25 _st) i) 0 _ASIZE offset (_ASIZE - offset)).
-  wp; ecall (dumpstate_avx2_h buf offset _RATE8 st).
+  wp; ecall (dumpstate_avx2_h buf offset _RATE8 (stavx2 st)).
   ecall (keccakf1600_avx2_h (st_i (stavx2_to_st25 _st) i)).
-  auto => |> &m Hi0 Hi1 Hr0 Hr1 Hsw Hi.
+  auto => |> &m Hi0 Hi1 Hr0 Hr1 Hst Hsw Hi r ->.
   have Est: keccak_f1600_op (st_i (stavx2_to_st25 _st) i{m}) = st_i (stavx2_to_st25 _st) (i{m}+1).
    by rewrite /st_i iterS 1:/#.
   rewrite Est stavx2_from_st25K; split; first smt().
@@ -1883,7 +1896,7 @@ seq 6: (0 < _r8 <= 200 /\ _RATE8 = _r8 /\ lO = _ASIZE %% _r8
   apply (asubwrite_app_dump _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hsw); 2..5: smt().
   rewrite size_squeezeblocks 1,2:/#.
   by have := mul_divz_le _r8 _ASIZE (i{m}+1) _ _; smt().
- auto => |> Hr0 Hr1 Hinv; split.
+ auto => |> &hr Hr0 Hr1 Hinv; split.
   split; first smt(divz_ge0 _ASIZE_ge0).
   split; first by rewrite /st_i iter0 // stavx2_to_st25K.
   rewrite /squeezeblocks iota0 //= flatten_nil /asubwrite /=; split; last smt().
@@ -1891,9 +1904,9 @@ seq 6: (0 < _r8 <= 200 /\ _RATE8 = _r8 /\ lO = _ASIZE %% _r8
  move=> buf i Hi0 Hi1 Hi2 Hsw.
  by have <-: i = _ASIZE %/ _r8 by smt().
 if => //.
- ecall (dumpstate_avx2_h buf offset lO st).
+ ecall (dumpstate_avx2_h buf offset lO (stavx2 st)).
  ecall (keccakf1600_avx2_h (st_i (stavx2_to_st25 _st) (_ASIZE %/ _r8))).
- auto => |> &m Hr0 Hr1 Hsw C.
+ auto => |> &m Hr0 Hr1 Hst Hsw C r ->.
  have Est: keccak_f1600_op (st_i (stavx2_to_st25 _st) (_ASIZE %/ _r8))
            = st_i (stavx2_to_st25 _st) (_ASIZE %/ _r8 + 1).
   by rewrite /st_i iterS 1:divz_ge0 1:/# 1:_ASIZE_ge0.
@@ -1902,7 +1915,7 @@ if => //.
  have Hr: 0 < _r8 <= 200 by done.
  have HL := asubwrite_squeeze_last _ _ _ _ _ _ _ Hr C (eq_refl _) Hsw.
  by rewrite Hbuf2 -HL to_listK.
-auto => |> &m Hr0 Hr1 Hsw C.
+auto => |> &m Hr0 Hr1 -> Hsw C.
 split; first by rewrite divz_pred_zero 1,2:/#.
 have Hr: 0 < _r8 <= 200 by done.
 by rewrite -(asubwrite_squeeze_fin _ _ _ _ _ _ Hr C Hsw) to_listK.

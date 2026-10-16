@@ -95,7 +95,7 @@ proof.
 proc.
 do 6! unroll for ^while.
 auto => />.
-by rewrite -Array5.ext_eq_all /all_eq /keccak_C /=.
+by move=> &hr; rewrite -Array5.ext_eq_all /all_eq /keccak_C /init_5_64 /st5 /st25 /=.
 qed.
 
 hoare theta_rol_ref_h _c:
@@ -104,14 +104,14 @@ hoare theta_rol_ref_h _c:
 proof.
 proc.
 unroll for ^while.
-wp; ecall (rol_u64_h d.[4] 1). 
-wp; ecall (rol_u64_h d.[3] 1). 
-wp; ecall (rol_u64_h d.[2] 1). 
-wp; ecall (rol_u64_h d.[1] 1). 
-wp; ecall (rol_u64_h d.[0] 1). 
-auto => />.
-rewrite -ext_eq_all /all_eq /keccak_D /=.
-by rewrite /init_5_64 /=; smt(W64.xorwC).
+wp; ecall (rol_u64_h (BArray40.get64 d 4) 1). 
+wp; ecall (rol_u64_h (BArray40.get64 d 3) 1). 
+wp; ecall (rol_u64_h (BArray40.get64 d 2) 1). 
+wp; ecall (rol_u64_h (BArray40.get64 d 1) 1). 
+wp; ecall (rol_u64_h (BArray40.get64 d 0) 1). 
+auto => /> &hr.
+rewrite -Array5.ext_eq_all /all_eq /keccak_D /init_5_64 /st5 /=.
+smt(W64.xorwC).
 qed.
 
 hoare keccak_rho_offsets_h _i:
@@ -165,27 +165,31 @@ proof.
 proc; simplify.
 while (#pre /\ 0 <= x <= 5 /\
        forall i, 0 <= i < x =>
-        b.[i] =
+        BArray40.get64 b i =
         rol_64 (_a.[idx (i + 3 * _y, i)] 
                 `^` (keccak_D (keccak_C _a)).[(i+3*_y)%%5])
         (rhotates.[idx (i + 3 * _y, i)])).
- wp; ecall (rol_u64_h b.[x] r).
+ wp; ecall (rol_u64_h (BArray40.get64 b x) r).
  wp; ecall (rhotates_spec_h x_ y_).
- auto => /> &m Hy1 Hy2 Hx1 _ IH Hx2; split; first smt().
+ auto => /> &m Hd Hy1 Hy2 Hx1 _ IH Hx2; split; first smt().
  move=> Hz1 Hz2; split.
   by rewrite rhotates_idx_mod64 /#.
  move => _; split; first by smt().
  move => i Hi1 Hi2.
  case: (i = x{m}) => E.
-  rewrite E get_setE 1:/# ifT 1:/#.
-  rewrite get_setE 1:/# ifT 1:/#.
-  rewrite get_setE 1:/# ifT 1:/#.
-  by rewrite rhotates_idx_mod64 1:/# modz_mod /#.
- by rewrite get_setE 1:/# ifF 1:/# IH 1:/#.
-auto => /> Hy1 Hy2; split; first by smt().
+  rewrite E BArray40.get_set64E 1,2:/# ifT 1:/#.
+  rewrite BArray40.get_set64E 1,2:/# ifT 1:/#.
+  rewrite BArray40.get_set64E 1,2:/# ifT 1:/#.
+  rewrite -Hd st5E 1:/# st25E 1:/# rhotates_idx_mod64 1:/# modz_mod.
+  by do 3! congr; smt().
+ rewrite BArray40.get_set64E 1,2:/# ifF 1:/#.
+ rewrite BArray40.get_set64E 1,2:/# ifF 1:/#.
+ by rewrite BArray40.get_set64E 1,2:/# ifF 1:/# IH 1:/#.
+auto => /> &hr Hd Hy1 Hy2; split; first by smt().
 move => A k ???; have ->:k=5 by smt().
 move => IH x Hx1 Hx2.
-rewrite IH 1:/#.
+rewrite st5E 1:/# IH 1:/#.
+move: (st25 a{hr}) => sa.
 pose R:= rhotates.[_] (*obs: lock reduction *).
 rewrite /= Array25.initiE 1:/#; beta. 
 rewrite -/(idx_op (x,_y)) -/(invidx_op _) idxK' /=.
@@ -203,14 +207,15 @@ hoare set_row_ref_h _a _e _b _y:
 proof.
 proc; simplify.
 while (#[/2:6]pre /\ 0 <= x <= 5 /\ 
-       forall k, 0 <= k < x+5*_y => e.[k] = (keccak_pround_op _a).[k]).
- wp; ecall (andn_u64_h b.[x1] b.[x2]).
+       forall k, 0 <= k < x+5*_y => (st25 e).[k] = (keccak_pround_op _a).[k]).
+ wp; ecall (andn_u64_h (BArray40.get64 b x1) (BArray40.get64 b x2)).
  auto => /> &m Hy1 Hy2 Hb Hx1 _ IH Hx2; split; first smt().
  move=> k Hk1 Hk2.
+ rewrite st25_set64 1:/# Array25.get_setE 1:/#.
  case: (k = x{m}+_y*5) => E.
-  by rewrite !Hb 1..3:/# eq_sym initiE 1:/# /= get_setE 1:/# E /= xorwC /#.
- by rewrite get_setE 1:/# ifF 1:/# -IH /#.
-by auto => /> Hy1 Hy2 _ H e k ???; have ->: k=5; smt().
+  by rewrite -!st5E 1..3:/# !Hb 1..3:/# eq_sym initiE 1:/# /= E /= xorwC /#.
+ by rewrite -IH /#.
+by auto => /> &hr Hy1 Hy2 _ H e k ???; have ->: k=5; smt().
 qed.
 
 hoare pround_ref_h _a:
@@ -219,15 +224,15 @@ hoare pround_ref_h _a:
 proof.
 proc; simplify.
 while (0 <= y <= 5 /\ #pre /\
-       d = keccak_D (keccak_C _a) /\
-       forall k, 0 <= k < 5*y => 
-        e.[k] = (keccak_pround_op _a).[k]).
- wp; ecall (set_row_ref_h a e b y).
- simplify; ecall (rol_sum_ref_h a y); simplify.
- auto => /> &m Hy1 _ IH Hy2 b Hb e He; split; smt().
-wp; ecall (theta_rol_ref_h c).
-ecall (theta_sum_ref_h a).
-auto => /> &m; split; first smt().
+       st5 d = keccak_D (keccak_C _a) /\
+       forall k, 0 <= k < 5*y =>
+        (st25 e).[k] = (keccak_pround_op _a).[k]).
+ wp; ecall (set_row_ref_h (st25 a) (st25 e) (st5 b) y).
+ simplify; ecall (rol_sum_ref_h (st25 a) y); simplify.
+ auto => /> &m Hy1 _ Hd IH Hy2 b Hb e He; split; smt().
+wp; ecall (theta_rol_ref_h (st5 c)).
+ecall (theta_sum_ref_h (st25 a)).
+auto => /> &m c Hc d Hd; split; first smt().
 move=> e y ???; have ->: y=5 by smt().
 by move=> /= H; apply Array25.ext_eq => k Hk; apply H.
 qed.
@@ -242,6 +247,17 @@ qed.
 require import List.
 import BitEncoding.BitChunking.
 
+(* the extracted round-constant table is the spec's *)
+lemma kECCAK1600_RC_E i:
+ 0 <= i < 24 => BArray192.get64 kECCAK1600_RC i = rc_spec.[i].
+proof.
+move=> Hi; rewrite BArray192.get64_of_list64 1:/BArray192.size //.
+rewrite /rc_spec Array24.get_of_list 1://.
+have: i \in iota_ 0 24 by smt(mem_iota).
+move: {Hi} i; apply/List.allP.
+by rewrite -iotaredE /=.
+qed.
+
 abbrev keccak_double_round A i =
  keccak_round_op rc_spec.[2*i+1] (keccak_round_op rc_spec.[2*i] A).
 
@@ -251,21 +267,35 @@ hoare __keccakf1600_ref_h _a:
 proof.
 proc.
 while (2 <= c <= 24 /\ 2 %| c /\
-       keccak_f1600_op _a = foldl keccak_double_round a (range (c %/ 2) 12)).
- wp; ecall (pround_ref_h e).
- wp; ecall (pround_ref_h a).
+       keccak_f1600_op _a = foldl keccak_double_round (st25 a) (range (c %/ 2) 12)).
+ wp; ecall (pround_ref_h (st25 e)).
+ wp; ecall (pround_ref_h (st25 a)).
  auto => /> &m Hc1 _ Hc_2 IH.
- move => Hc2; split; first smt().
+ move=> Hc2 r1 E1 r2; rewrite /swap_ /= => E2.
+ have K: forall i, 0 <= i < 24 => BArray192.get64 kECCAK1600_RC i = rc_spec.[i] by exact kECCAK1600_RC_E.
+ move: K => /= K.
+ move: E2; rewrite st25_xor0 E1 K 1:/# => E2.
+ rewrite st25_xor0 E2 K 1:/#.
+ split; first smt().
  split; first smt().
  move: IH; rewrite (range_cat (c{m} %/ 2 + 1)) 1..2:/#.
- by rewrite /rc_spec rangeS foldl_cat /= => -> /#.
-wp; ecall (pround_ref_h e).
-wp; ecall (pround_ref_h a).
-auto => />; split.
- by rewrite /keccak_f1600_op /range /rc_spec -iotaredE.
+ by rewrite rangeS foldl_cat /= => -> /#.
+wp; ecall (pround_ref_h (st25 e)).
+wp; ecall (pround_ref_h (st25 a)).
+auto => /> &hr r1 E1 r2; rewrite /swap_ /= => E2.
+have K0 := kECCAK1600_RC_E 0 _; first done.
+have K1 := kECCAK1600_RC_E 1 _; first done.
+move: K0 K1 => /= K0 K1.
+move: E2; rewrite st25_xor0 E1 K0 => E2.
+rewrite st25_xor0 E2 K1; move: (st25 a{hr}) => sa; split.
+ (* fold the two explicit rounds, so that both sides unfold to the same nest *)
+ rewrite -/(keccak_iota_op rc_spec.[0] (keccak_pround_op sa)) -/(keccak_round_op rc_spec.[0] sa).
+ rewrite -/(keccak_iota_op rc_spec.[1] (keccak_pround_op (keccak_round_op rc_spec.[0] sa))).
+ rewrite -/(keccak_round_op rc_spec.[1] (keccak_round_op rc_spec.[0] sa)).
+ by rewrite /keccak_f1600_op /range -iotaredE /=.
 move => a c /= ????.
 have ->/=: c = 24 by smt().
-by rewrite range_geq /=.
+by rewrite range_geq //= => ->.
 qed.
 
 lemma __keccakf1600_ref_ll: islossless M.__keccakf1600_ref.

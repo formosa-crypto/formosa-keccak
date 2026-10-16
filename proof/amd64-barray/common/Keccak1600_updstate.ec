@@ -120,8 +120,7 @@ lemma st26_set8_bits8 (s: BArray208.t) (b: W8.t) i j:
  BArray208.get64 s.[200 <- b] i \bits8 j
  = if 8 * i + j = 200 then b else BArray208.get64 s i \bits8 j.
 proof.
-move=> Hi Hj; rewrite BArray208.get64E W8u8.pack8bE // W8u8.Pack.initiE //= BArray208.get_setE 1:/#.
-by case: (8 * i + j = 200) => C //; rewrite /init64 BArray208.initiE 1:/# /=; congr; smt().
+move=> Hi Hj; rewrite !BArray208.get64d_byte // BArray208.get_set_if /BArray208.size /#.
 qed.
 
 lemma ststatus_byte0 (w' w: W64.t) (b: W8.t):
@@ -153,9 +152,7 @@ proof. by rewrite /st26_store /=. qed.
 lemma st26_store_lanes stk st at:
  ust_state (st26_store stk st at) = st25 stk.
 proof.
-apply Array25.tP => i Hi; rewrite Array25.initiE //= /st26_store Array26.initiE 1:/# /=.
-apply W8u8.wordP => j Hj; rewrite st26_set8_bits8 1,2:/# ifF 1:/#.
-by rewrite Array26.initiE 1:/# /= ifT 1:/#.
+by rewrite /st26_store ust_state_set8_200 ust_state_set_sub64_0.
 qed.
 
 lemma st26_store_status stk st at:
@@ -165,9 +162,8 @@ lemma st26_store_status stk st at:
  /\ ststatus_trailb (ust_status (st26_store stk st at)) = ststatus_trailb (ust_status st).
 proof.
 move=> Hat.
-have [] := ststatus_byte0 (st26_store stk st at).[25] st.[25] (truncateu8 (W64.of_int at)) _.
-+ move=> j Hj; rewrite /st26_store Array26.initiE // st26_set8_bits8 //.
-  by case: (j = 0) => C; [rewrite ifT 1:/# | rewrite ifF 1:/# Array26.initiE].
+have [] := ststatus_byte0 (ust_status (st26_store stk st at)) (ust_status st) (truncateu8 (W64.of_int at)) _.
++ by move=> j Hj; rewrite /st26_store ust_status_set8_200 // ust_status_set_sub64_0.
 move=> -> ->; split => //.
 by rewrite /truncateu8 W8.of_uintK W64.of_uintK; smt(modz_small pow2_64).
 qed.
@@ -252,7 +248,7 @@ lemma absorbing_spec_r8 r8 tb l st:
  8 %| r8 /\ 8 <= r8 <= 200 /\ ststatus_at_norm (ust_status st) = size l %% r8 /\ 0 <= size l %% r8 < r8.
 proof.
 rewrite /absorbing_spec /status_spec => [#] _ <- _ <-.
-by have := ststatus_r8_bounds st.[25]; have := ststatus_at_norm_bounds st.[25].
+by have := ststatus_r8_bounds (ust_status st); have := ststatus_at_norm_bounds (ust_status st).
 qed.
 
 
@@ -277,10 +273,14 @@ lemma init_spec_absorbing r64 tb:
 proof.
 move=> Hr; rewrite /absorbing_spec /=.
 have -> : ust_state (init_updstate_spec r64 tb) = st0.
- apply Array25.tP => i Hi; rewrite Array25.initiE //= /init_updstate_spec Array26.initiE 1:/# /=.
- by rewrite ifT 1:/# /st0 Array25.initiE.
+ apply Array25.tP => i Hi.
+ rewrite ust_stateE // /init_updstate_spec BArray208.get64_of_list64.
+ + by rewrite /BArray208.size size_cat size_nseq.
+ by rewrite nth_cat size_nseq /= ifT 1:/# nth_nseq 1:/# /st0 /init_25_64 Array25.initiE.
 split; first by apply pabsorb_spec_nil => /#.
-rewrite /init_updstate_spec Array26.initiE //=.
+rewrite /init_updstate_spec (_: 200 = 8 * 25) 1:// BArray208.get64_of_list64.
++ by rewrite /BArray208.size size_cat size_nseq.
+rewrite nth_cat size_nseq (_: max 0 25 = 25) 1:/# /=.
 by apply encode_ststatusE.
 qed.
 
@@ -351,6 +351,24 @@ op finish_updstate_spec (st : BArray208.t) : BArray208.t =
  let stk2 = xor_byte_at_st25 stk1 (r8 - 1) (W8.of_int 128) in
  BArray208.of_list64 (to_list stk2 ++ [clear_at_trailb (ust_status st)]).
 
+(* the u64[26] built from a state and a status word *)
+lemma ust_state_of_list64 (s: state) w:
+ ust_state (BArray208.of_list64 (to_list s ++ [w])) = s.
+proof.
+apply Array25.tP => i Hi; rewrite ust_stateE // BArray208.get64_of_list64.
++ by rewrite /BArray208.size size_cat Array25.size_to_list.
+rewrite nth_cat Array25.size_to_list ifT 1:/#.
+by rewrite (nth_change_dfl witness) 1:Array25.size_to_list 1:/# Array25.get_to_list.
+qed.
+
+lemma ust_status_of_list64 (s: state) w:
+ BArray208.get64d (BArray208.of_list64 (to_list s ++ [w])) 200 = w.
+proof.
+rewrite (_: 200 = 8 * 25) 1:// BArray208.get64_of_list64.
++ by rewrite /BArray208.size size_cat Array25.size_to_list.
+by rewrite nth_cat Array25.size_to_list.
+qed.
+
 lemma finish_spec_absorbing r8 tb l st:
  absorbing_spec r8 tb l st =>
  squeezing_spec r8 (ABSORB1600 tb r8 l) 0 (finish_updstate_spec st).
@@ -358,13 +376,13 @@ proof.
 move=> Habs; have [_ [Hr8 [Hat Hat2]]] := absorbing_spec_r8 _ _ _ _ Habs.
 move: Habs; rewrite /absorbing_spec /status_spec => [#] [_ Est] Er8 Etb _.
 rewrite /squeezing_spec /= (: (-1) %/ r8 + 1 = 0) 1:/# /st_i iter0 //.
-rewrite /finish_updstate_spec ststatus_data_specE /= clear_at_trailb_r8 clear_at_trailb_at Er8 Etb Hat /=.
+rewrite /finish_updstate_spec ststatus_data_specE /= ust_state_of_list64 ust_status_of_list64 clear_at_trailb_r8 clear_at_trailb_at Er8 Etb Hat /=.
 split; first smt().
 pose I := stateabsorb_iblocks (BitEncoding.BitChunking.chunk r8 l) st0; pose CR := chunkremains r8 l.
 pose at := size l %% r8.
 have Hsz : size CR = at by rewrite /CR size_chunkremains.
 have E : xor_byte_at_st25 (xor_byte_at_st25 (ust_state st) at tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l; last first.
-+ by apply Array25.tP => i Hi; rewrite Array25.initiE // Array26.initiE 1:/# /= ifT 1:/# E.
++ by exact E.
 rewrite xor_byte_at_st25E 1:/# xor_byte_at_st25E 1:/# stwordsK /ABSORB1600 /stateabsorb_last /addratebit /addratebit8 /stateabsorb.
 have K : (stbytes (ust_state st)).[at <- (stbytes (ust_state st)).[at] `^` tb] = stbytes (addstate I (bytes2state (rcons CR tb))); last by rewrite K.
 rewrite Est; apply WArray200.tP => i Hi; rewrite WArray200.get_setE 1:/# !stbytes_addstate /addstbytes !WArray200.map2iE //.

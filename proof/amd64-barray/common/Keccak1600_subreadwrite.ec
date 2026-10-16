@@ -2304,12 +2304,7 @@ lemma get32_bytes (buf: A.t) off k:
  A.get32d buf off \bits8 k
  = (sub buf off 4).[k].
 proof.
-move=> Ho1 Ho2; rewrite get32E.
-have->: W4u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W4u8.Pack.of_list (sub buf off 4).
- apply W4u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack4 1:size_sub // !nth_sub.
+move=> Ho1 Ho2; rewrite A.get32dE get_pack4 1:size_sub //.
 qed.
 
 lemma getW32_bytearray (buf: A.t) off len:
@@ -2345,12 +2340,7 @@ lemma get64_bytes (buf: A.t) off k:
  A.get64d buf off \bits8 k
  = (sub buf off 8).[k].
 proof.
-move=> Ho1 Ho2; rewrite get64E.
-have->: W8u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W8u8.Pack.of_list (sub buf off 8).
- apply W8u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack8 1:size_sub // !nth_sub.
+move=> Ho1 Ho2; rewrite A.get64dE get_pack8 1:size_sub //.
 qed.
 
 lemma getW64_bytearray (buf: A.t) off len:
@@ -2384,12 +2374,7 @@ lemma get128_bytes (buf: A.t) off k:
  A.get128d buf off \bits8 k
  = (sub buf off 16).[k].
 proof.
-move=> Ho1 Ho2; rewrite get128E.
-have->: W16u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W16u8.Pack.of_list (sub buf off 16).
- apply W16u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack16 1:size_sub // !nth_sub.
+move=> Ho1 Ho2; rewrite A.get128dE get_pack16 1:size_sub //.
 qed.
 
 lemma getW128_bytearray (buf: A.t) off len:
@@ -2423,12 +2408,7 @@ lemma get256_bytes (buf: A.t) off k:
  A.get256d buf off \bits8 k
  = (sub buf off 32).[k].
 proof.
-move=> Ho1 Ho2; rewrite get256E.
-have->: W32u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W32u8.Pack.of_list (sub buf off 32).
- apply W32u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack32 1:size_sub // !nth_sub.
+move=> Ho1 Ho2; rewrite A.get256dE get_pack32 1:size_sub //.
 qed.
 
 lemma getW256_bytearray (buf: A.t) off len:
@@ -2482,12 +2462,7 @@ lemma get16_bytes (buf: A.t) off k:
  A.get16d buf off \bits8 k
  = (sub buf off 2).[k].
 proof.
-move=> Ho1 Ho2; rewrite get16E.
-have->: W2u8.Pack.init (fun j => (WA.init8 ("_.[_]" buf)).[off+j])
-        = W2u8.Pack.of_list (sub buf off 2).
- apply W2u8.Pack.ext_eq => i Hi.
- by rewrite initiE 1:/# /= initiE 1:/# get_of_list // nth_sub.
-by rewrite get_pack2 1:size_sub // !nth_sub.
+move=> Ho1 Ho2; rewrite A.get16dE get_pack2 1:size_sub //.
 qed.
 
 lemma getW16_bytearray (buf: A.t) off len:
@@ -2534,7 +2509,7 @@ lemma get8_bytes (buf: A.t) off:
  off + 1 <= _ASIZE =>
  A.get8d buf off
  = buf.[off].
-proof. by move=> Ho1 Ho2; rewrite /get8 initiE /#. qed.
+proof. by []. qed.
 
 lemma getW8_bytearray (buf: A.t) off len:
  0 <= off =>
@@ -2543,7 +2518,7 @@ lemma getW8_bytearray (buf: A.t) off len:
  u8prefAt [A.get8d buf off] 0 (sub buf off len).
 proof.
 move=> Hoff0 Hoff1 Hlen i; case: (0 <= i < 1) => C; last smt().
-rewrite ifT 1:/# /get8 initiE 1:/# ifT 1:/# ler_maxr //=.
+rewrite ifT 1:/# ler_maxr //=.
 by rewrite !nth_mkseq /#.
 qed.
 
@@ -2639,7 +2614,7 @@ lemma a_set8_fill (buf: A.t) q (x: W8.t):
  A.set8d buf q x
  = A.fill (fun i => [x].[i-q]) q 1 buf.
 proof.
-rewrite tP => i Hi; rewrite filliE // initiE //= /get8 get_set_if initiE //=.
+rewrite A.tP => i Hi; rewrite A.filliE // A.get_set_if.
 by case: (i = q) => C; smt().
 qed.
 
@@ -2647,45 +2622,35 @@ lemma a_set16_fill (buf: A.t) q (x: W16.t):
  A.set16d buf q x
  = A.fill (fun i => (u16bytes x).[i-q]) q 2 buf.
 proof.
-rewrite tP => i Hi; rewrite filliE // initiE //= /get8 set16E initiE //=.
-case: (q <= i < q + 2) => C //; last by rewrite initiE.
-by rewrite /u16bytes nth_to_list /#.
+by rewrite A.set16dE; congr; apply fun_ext => i; rewrite get_u16bytes.
 qed.
 
 lemma a_set32_fill (buf: A.t) q (x: W32.t):
  A.set32d buf q x
  = A.fill (fun i => (u32bytes x).[i-q]) q 4 buf.
 proof.
-rewrite tP => i Hi; rewrite filliE // initiE //= /get8 set32E initiE //=.
-case: (q <= i < q + 4) => C //; last by rewrite initiE.
-by rewrite /u32bytes nth_to_list /#.
+by rewrite A.set32dE; congr; apply fun_ext => i; rewrite get_u32bytes.
 qed.
 
 lemma a_set64_fill (buf: A.t) q (x: W64.t):
  A.set64d buf q x
  = A.fill (fun i => (u64bytes x).[i-q]) q 8 buf.
 proof.
-rewrite tP => i Hi; rewrite filliE // initiE //= /get8 set64E initiE //=.
-case: (q <= i < q + 8) => C //; last by rewrite initiE.
-by rewrite /u64bytes nth_to_list /#.
+by rewrite A.set64dE; congr; apply fun_ext => i; rewrite get_u64bytes.
 qed.
 
 lemma a_set128_fill (buf: A.t) q (x: W128.t):
  A.set128d buf q x
  = A.fill (fun i => (u128bytes x).[i-q]) q 16 buf.
 proof.
-rewrite tP => i Hi; rewrite filliE // initiE //= /get8 set128E initiE //=.
-case: (q <= i < q + 16) => C //; last by rewrite initiE.
-by rewrite /u128bytes nth_to_list /#.
+by rewrite A.set128dE; congr; apply fun_ext => i; rewrite get_u128bytes.
 qed.
 
 lemma a_set256_fill (buf: A.t) q (x: W256.t):
  A.set256d buf q x
  = A.fill (fun i => (u256bytes x).[i-q]) q 32 buf.
 proof.
-rewrite tP => i Hi; rewrite filliE // initiE //= /get8 set256E initiE //=.
-case: (q <= i < q + 32) => C //; last by rewrite initiE.
-by rewrite /u256bytes nth_to_list /#.
+by rewrite A.set256dE; congr; apply fun_ext => i; rewrite get_u256bytes.
 qed.
 
 (* extending a [fill] of a prefix of [B] by its next [k] bytes *)
@@ -2948,8 +2913,7 @@ proof.
 move=> Hsz; rewrite /asubwrite => [[-> _]].
 apply (eq_from_nth W8.zero); first by rewrite size_to_list Hsz.
 move=> i; rewrite size_to_list => Hi.
-rewrite (nth_change_dfl witness) 1:size_to_list 1:/# get_to_list filliE //= Hsz ifT 1:/#.
-by apply nth_change_dfl => /#.
+by rewrite get_to_list filliE //= Hsz ifT 1:/#.
 qed.
 
 lemma asubwrite_squeeze_last r8 st a0 a1 d1 l1 p:
@@ -3709,7 +3673,7 @@ seq 1: (0 < _len < 16 /\ offset = _off
          \/ (_len < 8 /\ buf = _buf /\ dELTA = _dlt /\ lEN = _len /\ w = _w))).
  if => //.
   auto => /> H0 H16 H8; split; first smt().
-  have Hm: asubwrite _buf (A.init (WA.get8 (WA.set64_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt) (MOVV_64 (truncateu64 _w)))))
+  have Hm: asubwrite _buf (A.set64d _buf (_off + _dlt) (MOVV_64 (truncateu64 _w)))
              _off (take 8 (u128bytes _w)) _dlt _len (_dlt + 8) (_len - 8).
    by rewrite take8_u128bytes /MOVV_64; apply asubwrite_set64 => /#.
   by left.
@@ -3753,7 +3717,7 @@ seq 2: (0 < _len < 32 /\ offset = _off
  seq 1: (#pre /\ t128 = truncateu128 w); first by auto.
  if => //.
   auto => /> H0 H32 H16; split; first smt().
-  have Hm: asubwrite _buf (A.init (WA.get8 (WA.set128_direct (WA.init8 ("_.[_]" _buf)) (_off + _dlt) (truncateu128 _w))))
+  have Hm: asubwrite _buf (A.set128d _buf (_off + _dlt) (truncateu128 _w))
              _off (take 16 (u256bytes _w)) _dlt _len (_dlt + 16) (_len - 16).
    by rewrite take16_u256bytes; apply asubwrite_set128 => /#.
   by left.
@@ -3797,13 +3761,13 @@ rewrite T1 (test64_zf lEN{2} 4) 1,2:/# (test64_zf lEN{2} 2) 1,2:/#.
 have : lEN{2} \in iota_ 0 8 by rewrite mem_iota /#.
 rewrite -iotaredE /=.
 case => [->|]; first by move=> /=; circuit.
-move: (WA.get32_direct (WA.init8 (A."_.[_]" buf{2})) dELTA{2})
-      (WA.get16_direct (WA.init8 (A."_.[_]" buf{2})) dELTA{2})
-      (WA.get16_direct (WA.init8 (A."_.[_]" buf{2})) (dELTA{2} + 4))
-      (WA.get8 (WA.init8 (A."_.[_]" buf{2})) dELTA{2})
-      (WA.get8 (WA.init8 (A."_.[_]" buf{2})) (dELTA{2} + 2))
-      (WA.get8 (WA.init8 (A."_.[_]" buf{2})) (dELTA{2} + 4))
-      (WA.get8 (WA.init8 (A."_.[_]" buf{2})) (dELTA{2} + 6)) => a32 b0 b4 c0 c2 c4 c6.
+move: (A.get32d buf{2} dELTA{2})
+      (A.get16d buf{2} dELTA{2})
+      (A.get16d buf{2} (dELTA{2} + 4))
+      (buf{2}.[dELTA{2}])
+      (buf{2}.[dELTA{2} + 2])
+      (buf{2}.[dELTA{2} + 4])
+      (buf{2}.[dELTA{2} + 6]) => a32 b0 b4 c0 c2 c4 c6.
 have M16 : W8.of_int 16 `&` W8.of_int 63 = W8.of_int 16 by circuit.
 have M32 : W8.of_int 32 `&` W8.of_int 63 = W8.of_int 32 by circuit.
 have M48 : W8.of_int 48 `&` W8.of_int 63 = W8.of_int 48 by circuit.

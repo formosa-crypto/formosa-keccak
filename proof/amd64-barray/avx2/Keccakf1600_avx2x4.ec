@@ -36,10 +36,10 @@ hoare keccakf1600_avx2x4_h _a:
  ==> st4x res = st4x_map keccak_f1600_op _a.
 proof.
 proc.
-seq 1: (a = _a); first by inline*; auto.
-if; first by ecall (keccakf1600_avx2x4_alt_h a).
-if; first by ecall (keccakf1600_avx2x4_nat_h a).
-by ecall (keccakf1600_avx2x4_ref_h a).
+seq 1: (st4x a = _a); first by inline*; auto.
+if; first by ecall (keccakf1600_avx2x4_alt_h (st4x a)).
+if; first by ecall (keccakf1600_avx2x4_nat_h (st4x a)).
+by ecall (keccakf1600_avx2x4_ref_h (st4x a)).
 qed.
 
 phoare keccakf1600_avx2x4_ph _a:

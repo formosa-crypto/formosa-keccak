@@ -89,21 +89,6 @@ proof. by []. qed.
    
 ******************************************************************************)
 
-(* A zero 256-bit store at byte offset [o] (a multiple of 8) of the state's
-   byte view clears the 64-bit words it covers (AVX2 branch of [__state_init]). *)
-lemma get64_set256_zero (t: WArray200.t) o k:
- 0 <= o => o + 32 <= 200 => o %% 8 = 0 => 0 <= k < 25 =>
- WArray200.get64 (WArray200.set256_direct t o W256.zero) k
- = if o <= 8*k < o + 32 then W64.zero else WArray200.get64 t k.
-proof.
-move=> Ho1 Ho2 Ho3 Hk; rewrite !get64E.
-case: (o <= 8*k < o + 32) => C.
- apply W8u8.wordP => i Hi; rewrite pack8bE // initiE //= set256E initiE 1:/# /=.
- by rewrite ifT 1:/# W32u8.get_zero W8u8.get_zero.
-congr; apply W8u8.Pack.init_ext => i Hi /=.
-by rewrite set256E initiE 1:/# /= ifF 1:/#.
-qed.
-
 lemma state_init_ll:
  islossless M.__state_init.
 proof.
@@ -120,23 +105,25 @@ hoare state_init_h _r8:
 proof.
 (* This proof script is independent of selected `KECCAK_FEATURES` *)
 proc.
-conseq (:_ ==> st=st0) => //=.
+conseq (:_ ==> st25 st=st0) => //=.
  by move=> ? st ->; apply (pabsorb_spec_ref_nil _r8).
 seq 1: #pre; first inline*; auto.
 if => //.
- (* AVX2 path *)
- wp; skip => /> &m _ _ _; rewrite tP => k Hk.
- rewrite get_setE //; case: (k = 24) => Ck; first by rewrite Ck /st0 /init_25_64 initiE.
- rewrite /st0 /init_25_64 !initiE //= !(stwordsK, get64_set256_zero) //.
- smt().
+ (* AVX2 path: six zero 256-bit stores, then lane 24 *)
+ wp; skip => /> &m _ _ _.
+ rewrite st25_set64d 1,2:// !st25_set256d //= Array25.tP => k Hk.
+ rewrite Array25.get_setE 1:// /st0 /init_25_64 !Array25.initiE //=.
+ do !(rewrite Array25.initiE 1:// /=).
+ by rewrite !W4u64.get_zero /#.
 (* scalar path *)
-while (0 <= i <= 25 /\ forall k, 0 <= k < i => st.[k] = z64).
+while (0 <= i <= 25 /\ forall k, 0 <= k < i => (st25 st).[k] = z64).
  auto => /> &m Hi1 _ IH Hi2; split; first smt().
- by move => k Hk1 Hk2; case: (k=i{m}) => C; rewrite get_setE /#.
+ move => k Hk1 Hk2; rewrite st25_set64 1:/# Array25.get_setE 1:/#.
+ by case: (k=i{m}) => C //; apply IH => /#.
 wp; auto => /> &m Hr1 Hr2 ?; split; first smt().
 move=> i st ???; have->: i=25 by smt().
-move=> H; rewrite tP /st0 => j Hj.
-by rewrite initiE 1:// H.
+move=> H; rewrite Array25.tP /st0 /init_25_64 => j Hj.
+by rewrite H 1:// Array25.initiE.
 qed.
 
 phoare state_init_ph _r8:
@@ -155,7 +142,7 @@ hoare addratebit_h _r8 _st:
  ==> st25 res = addratebit _r8 _st.
 proof.
 proc; simplify.
-by auto => />.
+by auto => /> &m; rewrite set8d_addratebit.
 qed.
 
 phoare addratebit_ph _r8 _st:

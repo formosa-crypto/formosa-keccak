@@ -30,7 +30,7 @@ from Jasmin require import JByte_array.
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import BArray3 BArray32 BArray40 BArray160 BArray192 BArray200 BArray208 BArray224 BArray800 BArray808 SBArray208_200 SBArray808_800.
 require import Keccak1600_barrays.
-from JazzEC require import WArray200 WArray800.
+from JazzEC require import WArray200.
 from JazzEC require import Array25.
 
 from CryptoSpecs require import JWordList.
@@ -83,85 +83,114 @@ move=> Hj Hk; apply Array25.ext_eq => i Hi; rewrite !st4x_getiE // !get_setE //;
 by rewrite st4x_getiE.
 qed.
 
-lemma st4x_get64_direct (st: state4x) m k:
- 0 <= m < 25 => 0 <= k < 4 =>
- WArray800.get64_direct (WArray800.init256 (fun i => st.[i])) (32*m + 8*k) = st.[m] \bits64 k.
-proof.
-move=> Hm Hk; apply W64.wordP => b Hb; rewrite /WArray800.get64_direct pack8E initiE 1:/# /= initiE 1:/# /=.
-by rewrite /WArray800.init256 WArray800.initiE 1:/# /= bits8iE 1:/# bits64iE 1:/#; congr; smt().
-qed.
-
 lemma stbytes_st4x (st: state4x) l j:
  0 <= l < 4 => 0 <= j < 200 =>
  (stbytes (st4x_lane st l)).[j] = st.[j %/ 8] \bits64 l \bits8 (j %% 8).
 proof. by move=> Hl Hj; rewrite /WArray200.init64 WArray200.initiE //= st4x_getiE // /#. qed.
 
+(* the bytes of A25u256toA101u64 and of the two views of a BArray808 *)
+lemma A25_get8 (stk: state4x) s i:
+ 0 <= i < 808 =>
+ (A25u256toA101u64 stk s).[i] = if i < 800 then stk.[i %/ 32] \bits8 (i %% 32) else s \bits8 (i - 800).
+proof. by move=> Hi; rewrite /A25u256toA101u64 BArray808.initiE. qed.
+
+lemma ust_st4x_byte (st: BArray808.t) i:
+ 0 <= i < 800 => (ust_st4x st).[i %/ 32] \bits8 (i %% 32) = st.[i].
+proof.
+move=> Hi; rewrite ust_st4xE 1:/# BArray808.get256d_byte 1:/#.
+by congr; smt().
+qed.
+
+lemma ust4x_status_byte (st: BArray808.t) j:
+ 0 <= j < 8 => ust4x_status st \bits8 j = st.[800 + j].
+proof. by move=> Hj; rewrite BArray808.get64d_byte. qed.
+
 lemma A101u64toA25u256K (stk: state4x) s:
   A101u64toA25u256 (A25u256toA101u64 stk s) = stk.
 proof.
-apply Array25.tP => i Hi; rewrite /A101u64toA25u256 Array25.initiE //= BArray808.get256E; apply W256.wordP => b Hb.
-rewrite W32u8.pack32wE 1:// W32u8.Pack.initiE 1:/# /= /BArray808.init64 BArray808.initiE 1:/# /= /A25u256toA101u64 Array101.initiE 1:/# /= ifT 1:/#.
-by rewrite W8u8.bits8iE 1:/# W4u64.bits64iE 1:/# (: (32 * i + b %/ 8) %/ 8 %/ 4 = i) 1:/#; congr; smt().
+apply Array25.tP => i Hi; rewrite /A101u64toA25u256 ust_st4xE //.
+apply W32u8.wordP => j Hj; rewrite BArray808.get256d_byte // A25_get8 1:/# ifT 1:/#.
+by rewrite (_: (32 * i + j) %/ 32 = i) 1:/# (_: (32 * i + j) %% 32 = j) 1:/#.
 qed.
 
-lemma A25u256toA101u64E (stk: BArray800.t) (st: BArray808.t):
-  SBArray808_800.set_sub256 st 0 stk = A25u256toA101u64 (st4x stk) (ust4x_status st).
+lemma A25u256toA101u64_100 (X: state4x) s: ust4x_status (A25u256toA101u64 X s) = s.
 proof.
-apply Array101.tP => i Hi; rewrite /A25u256toA101u64 !Array101.initiE //= BArray808.get64E; apply W64.wordP => b Hb.
-rewrite W8u8.pack8wE 1:// W8u8.Pack.initiE 1:/# /= BArray808.initiE 1:/# /=.
-case: (i < 100) => C; [rewrite ifT 1:/# | rewrite ifF 1:/#].
-+ rewrite /WArray800.get8 /WArray800.init256 WArray800.initiE 1:/# /=.
-  by rewrite W32u8.bits8iE 1:/# W4u64.bits64iE 1:/# (: (8 * i + b %/ 8) %/ 32 = i %/ 4) 1:/#; congr; smt().
-by rewrite /BArray808.get8 /BArray808.init64 BArray808.initiE 1:/# /= W8u8.bits8iE 1:/# (: (8 * i + b %/ 8) %/ 8 = 100) 1:/#; congr; smt().
+apply W8u8.wordP => j Hj; rewrite ust4x_status_byte // A25_get8 1:/# ifF 1:/#.
+by congr; ring.
 qed.
 
-lemma A101_xor256 (st: BArray808.t) j (v: W256.t):
-  0 <= j < 25 =>
-  BArray808.set256d st (32*j) (v `^` BArray808.get256d st (32*j))
+(* `st[0:25] = kst` (u256 sub-array store) *)
+lemma A25u256toA101u64E (stk: BArray800.t) (st: BArray808.t) o:
+  o = 0 => SBArray808_800.set_sub st o stk = A25u256toA101u64 (st4x stk) (ust4x_status st).
+proof.
+move=> ->; apply BArray808.ext_eq => i Hi; rewrite SBArray808_800.get8_set_sub A25_get8 //.
+case: (i < 800) => C.
++ rewrite ifT 1:/# st4xE 1:/# BArray800.get256d_byte 1:/#.
+  by congr; smt().
+by rewrite ifF 1:/# ust4x_status_byte 1:/#; congr; ring.
+qed.
+
+(* the status store `st.[u64 100] = w` *)
+lemma A25_set64d_800 (X: state4x) s w:
+  BArray808.set64d (A25u256toA101u64 X s) 800 w = A25u256toA101u64 X w.
+proof.
+apply BArray808.ext_eq => i Hi; rewrite BArray808.get8_set64dE !A25_get8 //.
+by case: (i < 800) => C; [rewrite ifF 1:/# | rewrite ifT 1:/#].
+qed.
+
+(* a 256-bit XOR into word j of the 4-way state *)
+lemma A101_xor256 (st: BArray808.t) o j (v: W256.t):
+  0 <= j < 25 => o = 32 * j =>
+  BArray808.set256d st o (v `^` BArray808.get256d st o)
   = A25u256toA101u64 ((A101u64toA25u256 st).[j <- v `^` (A101u64toA25u256 st).[j]]) (ust4x_status st).
 proof.
-move=> Hj; have G : forall (t: BArray808.t) k, t.[k] = BArray808.get8 t k by done.
-apply Array101.tP => i Hi; rewrite /A25u256toA101u64 !Array101.initiE //= BArray808.get64E; apply W64.wordP => b Hb.
-rewrite W8u8.pack8wE 1:// W8u8.Pack.initiE 1:/# /= G BArray808.get8_set256E 1,2:/#.
-have B8 : forall k r, 0 <= k < 808 => 0 <= r < 8 => (BArray808.get8 (BArray808.init64 (fun i => st.[i])) k).[r] = st.[k %/ 8].[k %% 8 * 8 + r].
-+ by move=> k r Hk Hr; rewrite /BArray808.get8 /BArray808.init64 BArray808.initiE //= W8u8.bits8iE.
-have B256 : forall m c, 0 <= m < 25 => 0 <= c < 256 => (BArray808.get256 (BArray808.init64 (fun i => st.[i])) m).[c] = st.[4 * m + c %/ 64].[c %% 64].
-+ by move=> m c Hm Hc; rewrite BArray808.get256E W32u8.pack32wE // W32u8.Pack.initiE 1:/# /= G B8 1,2:/#; congr; smt().
-case: (32 * j <= 8 * i + b %/ 8 < 32 * (j + 1)) => C.
-+ by rewrite ifT 1:/# Array25.get_setE 1:/# ifT 1:/# W32u8.bits8iE 1:/# W4u64.bits64iE 1:/# /A101u64toA25u256 Array25.initiE 1:/# /=; congr; smt().
-rewrite B8 1,2:/# (: (8 * i + b %/ 8) %/ 8 = i) 1:/# (: (8 * i + b %/ 8) %% 8 = b %/ 8) 1:/# -divz_eq; case: (i < 100) => Ci /=; last by rewrite (: i = 100) /#.
-by rewrite Array25.get_setE 1:/# ifF 1:/# W4u64.bits64iE 1:/# /A101u64toA25u256 Array25.initiE 1:/# /= B256 1,2:/#; congr; smt().
+move=> Hj ->; apply BArray808.ext_eq => i Hi; rewrite BArray808.get8_set256dE A25_get8 //.
+case: (i < 800) => C; last first.
++ by rewrite ifF 1:/# ust4x_status_byte 1:/#; congr; ring.
+rewrite Array25.get_setE 1:/# /A101u64toA25u256.
+case: (i %/ 32 = j) => Cj.
++ by rewrite ifT 1:/# ust_st4xE 1:/# (_: i - 32 * j = i %% 32) 1:/#.
+by rewrite ifF 1:/# ust_st4x_byte 1:/#.
+qed.
+
+(* the bytes of the status masks *)
+lemma clear_at_trailb_byte (s: W64.t) k:
+ 0 <= k < 8 => clear_at_trailb s \bits8 k = if k = 0 \/ k = 2 then W8.zero else s \bits8 k.
+proof.
+move=> Hk; rewrite /clear_at_trailb.
+have: k = 0 \/ k = 1 \/ k = 2 \/ k = 3 \/ k = 4 \/ k = 5 \/ k = 6 \/ k = 7 by smt().
+by case => [->|[->|[->|[->|[->|[->|[->|->]]]]]]] /=; circuit.
+qed.
+
+lemma mask32_byte (w: W32.t) k:
+ 0 <= k < 4 => (w `&` W32.of_int 4278255360) \bits8 k = if k = 0 \/ k = 2 then W8.zero else w \bits8 k.
+proof.
+move=> Hk; have: k = 0 \/ k = 1 \/ k = 2 \/ k = 3 by smt().
+by case => [->|[->|[->|->]]] /=; circuit.
 qed.
 
 lemma A101_clear (X: state4x) s:
   BArray808.set32d (A25u256toA101u64 X s) 800 (BArray808.get32d (A25u256toA101u64 X s) 800 `&` W32.of_int 4278255360)
   = A25u256toA101u64 X (clear_at_trailb s).
 proof.
-apply Array101.tP => i Hi; rewrite Array101.initiE //= BArray808.get64E; apply W64.wordP => b Hb.
-rewrite W8u8.pack8wE 1:// W8u8.Pack.initiE 1:/# /= /BArray808.set32_direct BArray808.initiE 1:/# /=.
-case: (800 <= 8 * i + b %/ 8 < 804) => C /=; [rewrite /BArray808.get32_direct W4u8.pack4bE 1:/# W4u8.Pack.initiE 1:/# /= | ]; rewrite /BArray808.init64 BArray808.initiE 1:/# /=.
-+ have -> /= : i = 100 by smt().
-  rewrite (: (800 + b %/ 8) %/ 8 = 100) 1:/# (: (800 + b %/ 8) %% 8 = b %/ 8) 1:/# /A25u256toA101u64 !Array101.initiE //= W8u8.bits8iE 1:/# W4u8.bits8iE 1:/# -divz_eq /clear_at_trailb W64.andwE.
-  congr; have : b \in iota_ 0 32 by rewrite mem_iota /#.
-  move: b Hb C; rewrite -iotaredE /= => b _ _; rewrite W32.of_intwE W64.of_intwE /int_bit; by do 31! (case => [-> //= |]); move=> -> //=.
-rewrite (: (8 * i + b %/ 8) %/ 8 = i) 1:/# (: (8 * i + b %/ 8) %% 8 = b %/ 8) 1:/# W8u8.bits8iE 1:/# -divz_eq /A25u256toA101u64 !Array101.initiE //=; case: (i < 100) => Ci //=.
-rewrite /clear_at_trailb W64.andwE; have : b \in iota_ 32 32 by rewrite mem_iota /#.
-move: b Hb C; rewrite -iotaredE /= => b _ _; rewrite W64.of_intwE /int_bit; by do 31! (case => [-> //= |]); move=> -> //=.
+apply BArray808.ext_eq => i Hi; rewrite BArray808.get8_set32dE !A25_get8 //.
+case: (i < 800) => C; first by rewrite ifF 1:/#.
+rewrite clear_at_trailb_byte 1:/#.
+case: (i < 804) => C2.
++ rewrite (ifT (800 <= i < 800 + 4 /\ 0 <= i < 808)) 1:/# mask32_byte 1:/# BArray808.get32d_byte 1:/#.
+  by rewrite (_: 800 + (i - 800) = i) 1:/# A25_get8 1:/# (ifF (i < 800)) 1:/#.
+by rewrite ifF 1:/# ifF 1:/#.
 qed.
 
+(* the cursor store `st.[:u8 800] = b` *)
 lemma A101_set800 (stk: state4x) s (b: W8.t):
   (A25u256toA101u64 stk s).[800 <- b]
   = A25u256toA101u64 stk (W8u8.pack8_t (W8u8.Pack.init (fun j => if j = 0 then b else s \bits8 j))).
 proof.
-apply Array101.tP => i Hi; rewrite Array101.initiE //= BArray808.get64E; apply W64.wordP => c Hc.
-rewrite W8u8.pack8wE 1:// W8u8.Pack.initiE 1:/# /= BArray808.get_setE 1:/#.
-rewrite /A25u256toA101u64 Array101.initiE //=; case: (i < 100) => Ci /=.
-+ rewrite ifF 1:/# /BArray808.init64 BArray808.initiE 1:/# /= Array101.initiE 1:/# /= (: (8 * i + c %/ 8) %/ 8 = i) 1:/# ifT 1:/# W8u8.bits8iE 1:/#.
-  by congr; smt().
-have Ei : i = 100 by smt().
-rewrite Ei /= W8u8.pack8wE 1:// W8u8.Pack.initiE 1:/# /=; case: (c %/ 8 = 0) => C; first by rewrite C.
-rewrite ifF 1:/# /BArray808.init64 BArray808.initiE 1:/# /= Array101.initiE 1:/# /= (: (800 + c %/ 8) %/ 8 = 100) 1:/# /= W8u8.bits8iE 1:/# W8u8.bits8iE 1:/#.
-by congr; smt().
+apply BArray808.ext_eq => i Hi; rewrite BArray808.get_setE // !A25_get8 //.
+case: (i = 800) => C; first by rewrite C /=.
+case: (i < 800) => C2 //.
+by rewrite W8u8.pack8bE 1:/# W8u8.Pack.initiE 1:/# /= ifF 1:/#.
 qed.
 
 lemma ststatus_data_avx2x4P (s: W64.t):
@@ -192,9 +221,9 @@ lemma init_spec_absorbing4 r64 tb:
  0 < r64 <= 25 =>
  absorbing_spec4 (8 * r64) tb [] [] [] [] (init_updstate_avx2x4_spec r64 tb).
 proof.
-move=> Hr; rewrite /absorbing_spec4 /init_updstate_avx2x4_spec A101u64toA25u256K.
+move=> Hr; rewrite /absorbing_spec4 /init_updstate_avx2x4_spec A101u64toA25u256K A25u256toA101u64_100.
 split; first by apply pabsorb_spec_avx2x4_nil => /#.
-by rewrite /A25u256toA101u64 Array101.initiE //= (: size<:W8.t> [] %% (8 * r64) = 0) 1:/#; apply encode_ststatusE.
+by rewrite (: size<:W8.t> [] %% (8 * r64) = 0) 1:/#; apply encode_ststatusE.
 qed.
 
 (* finish, lane by lane, from the single-lane finish_spec_absorbing *)
@@ -204,9 +233,9 @@ lemma finish_lane (s: state) (w: W64.t) (l: W8.t list):
   xor_byte_at_st25 (xor_byte_at_st25 s (ststatus_at_norm w) (ststatus_trailb w)) (ststatus_r8 w - 1) (W8.of_int 128)
   = ABSORB1600 (ststatus_trailb w) (ststatus_r8 w) l.
 proof.
-move=> Ha Hp; pose S := Array26.init (fun i => if i < 25 then s.[i] else w).
-have E25 : S.[25] = w by rewrite /S Array26.initiE.
-have Es : Array25.init (fun i => S.[i]) = s by apply Array25.tP => i Hi; rewrite Array25.initiE //= /S Array26.initiE 1:/# /= ifT 1:/#.
+move=> Ha Hp; pose S := BArray208.of_list64 (Array25.to_list s ++ [w]).
+have E25 : ust_status S = w by rewrite /S /= ust_status_of_list64.
+have Es : ust_state S = s by rewrite /S ust_state_of_list64.
 have := finish_spec_absorbing (ststatus_r8 w) (ststatus_trailb w) l S _.
 + by rewrite /absorbing_spec Es E25 /status_spec Ha.
 have [Hr8 _] := Hp.
@@ -214,7 +243,7 @@ have Em1 : (-1) %/ ststatus_r8 w = -1.
 + by have /= := squeeze_entry0 (ststatus_r8 w) 0 _ _; smt(div0z).
 rewrite /squeezing_spec /= Em1 /st_i iter0 // => [#] _ _ <- _ _.
 rewrite /finish_updstate_spec ststatus_data_specE /= E25 Es.
-by apply Array25.tP => i Hi; rewrite Array25.initiE // Array26.initiE 1:/# /= ifT 1:/#.
+by rewrite ust_state_of_list64.
 qed.
 
 lemma finish_spec_absorbing4 r8 tb l0 l1 l2 l3 st:
@@ -225,28 +254,28 @@ proof.
 rewrite /absorbing_spec4 /status_spec => [#] Hp Er8 Etb Hat.
 have [Hr _] := Hp.
 have := Hp; rewrite pabsorb_spec_avx2x4E => [#] S1 S2 S3 HL.
-have E100 : forall X s, (A25u256toA101u64 X s).[100] = s by move=> X s; rewrite /A25u256toA101u64 Array101.initiE.
+have E100 := A25u256toA101u64_100.
 have Em1 : (-1) %/ r8 = -1 by have /= := squeeze_entry0 r8 0 _ _; smt(div0z).
 rewrite /squeezing_spec4 /= Em1 /= /finish_updstate_avx2x4_spec ststatus_data_specE /= E100 clear_at_trailb_r8 clear_at_trailb_at Er8 Etb.
 split; first smt().
 rewrite A101u64toA25u256K iter0 //= st4x_mapE /=.
-have F0 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 0) (ststatus_at_norm st.[100]) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l0.
-+ have := finish_lane (st4x_lane (A101u64toA25u256 st) 0) st.[100] l0 _ _.
+have F0 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 0) (ststatus_at_norm (ust4x_status st)) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l0.
++ have := finish_lane (st4x_lane (A101u64toA25u256 st) 0) (ust4x_status st) l0 _ _.
   + by rewrite Hat Er8.
   + by rewrite Er8; apply (HL 0).
   by rewrite Er8 Etb.
-have F1 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 1) (ststatus_at_norm st.[100]) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l1.
-+ have := finish_lane (st4x_lane (A101u64toA25u256 st) 1) st.[100] l1 _ _.
+have F1 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 1) (ststatus_at_norm (ust4x_status st)) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l1.
++ have := finish_lane (st4x_lane (A101u64toA25u256 st) 1) (ust4x_status st) l1 _ _.
   + by rewrite Hat Er8 S1.
   + by rewrite Er8; apply (HL 1).
   by rewrite Er8 Etb.
-have F2 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 2) (ststatus_at_norm st.[100]) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l2.
-+ have := finish_lane (st4x_lane (A101u64toA25u256 st) 2) st.[100] l2 _ _.
+have F2 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 2) (ststatus_at_norm (ust4x_status st)) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l2.
++ have := finish_lane (st4x_lane (A101u64toA25u256 st) 2) (ust4x_status st) l2 _ _.
   + by rewrite Hat Er8 S2.
   + by rewrite Er8; apply (HL 2).
   by rewrite Er8 Etb.
-have F3 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 3) (ststatus_at_norm st.[100]) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l3.
-+ have := finish_lane (st4x_lane (A101u64toA25u256 st) 3) st.[100] l3 _ _.
+have F3 : xor_byte_at_st25 (xor_byte_at_st25 (st4x_lane (A101u64toA25u256 st) 3) (ststatus_at_norm (ust4x_status st)) tb) (r8 - 1) (W8.of_int 128) = ABSORB1600 tb r8 l3.
++ have := finish_lane (st4x_lane (A101u64toA25u256 st) 3) (ust4x_status st) l3 _ _.
   + by rewrite Hat Er8 S3.
   + by rewrite Er8; apply (HL 3).
   by rewrite Er8 Etb.
@@ -266,9 +295,8 @@ hoare init_updstate_avx2x4_spec_h _r64 _tb:
  : r64 = _r64 /\ trailb = _tb /\ 0 < _r64 <= 25
  ==> res = init_updstate_avx2x4_spec _r64 _tb.
 proof.
-proc; wp; ecall (state_init_avx2x4_h'); wp; skip => &hr [#] -> -> Hr0 Hr1 /= _ ->.
-rewrite A25u256toA101u64E (: (_r64 - 1) %% 256 = _r64 - 1) 1:/# init_status 1:/# /init_updstate_avx2x4_spec.
-by apply Array101.tP => i Hi; rewrite Array101.get_setE // /A25u256toA101u64 !Array101.initiE //; smt().
+proc; wp; ecall (state_init_avx2x4_h'); wp; skip => &hr [#] -> -> Hr0 Hr1 /= kst Hk.
+by rewrite A25u256toA101u64E // Hk A25_set64d_800 (: (_r64 - 1) %% 256 = _r64 - 1) 1:/# init_status 1:/#.
 qed.
 
 hoare init_updstate_avx2x4_h _r64 _tb:
@@ -299,12 +327,12 @@ proc; seq 2 : (st = _st /\ trailb = zeroextu64 (ststatus_trailb (ust4x_status _s
 + by inline *; auto => />; exact (ststatus_data_avx2x4P (ust4x_status _st)).
 wp; skip => &hr [#] -> -> -> -> /=.
 have S5 : forall x, (x `|>>` 3) `<<` 5 = 32 * (x %/ 8) by move=> x; rewrite /(`|>>`) /(`<<`) /= /#.
-have E100 : forall X s, (A25u256toA101u64 X s).[100] = s by move=> X s; rewrite /A25u256toA101u64 Array101.initiE.
+have E100 := A25u256toA101u64_100.
 have [HA0 [HA1 [HR0 [HR1 HR8]]]] : 0 <= ststatus_at_norm (ust4x_status _st) /\ ststatus_at_norm (ust4x_status _st) < ststatus_r8 (ust4x_status _st)
                                    /\ 8 <= ststatus_r8 (ust4x_status _st) /\ ststatus_r8 (ust4x_status _st) <= 200 /\ ststatus_r8 (ust4x_status _st) %% 8 = 0.
 + by rewrite /ststatus_at_norm /ststatus_r8 /ststatus_at /=; smt(W64.to_uint_cmp).
-rewrite !S5 (A101_xor256 _st (ststatus_at_norm (ust4x_status _st) %/ 8)) 1:/#.
-rewrite (A101_xor256 _ ((ststatus_r8 (ust4x_status _st) - 1) %/ 8)) 1:/# A101u64toA25u256K E100 A101_clear /finish_updstate_avx2x4_spec ststatus_data_specE /=.
+rewrite !S5 (A101_xor256 _st _ (ststatus_at_norm (ust4x_status _st) %/ 8)) 1,2:/#.
+rewrite (A101_xor256 _ _ ((ststatus_r8 (ust4x_status _st) - 1) %/ 8)) 1,2:/# A101u64toA25u256K E100 A101_clear /finish_updstate_avx2x4_spec ststatus_data_specE /=.
 have T7 : truncateu8 (W64.of_int (ststatus_at_norm (ust4x_status _st))) `&` W8.of_int 7 = truncateu8 (W64.of_int (ststatus_at_norm (ust4x_status _st) %% 8)).
 + apply W8.to_uint_eq; rewrite (W8.to_uint_and_mod 3) // !to_uint_truncateu8 !W64.of_uintK.
   by rewrite !(modz_small _ ptr_modulus) 1,2:/# !(modz_small _ W8.modulus) 1,2:/#.
@@ -347,7 +375,7 @@ have [Hr0 Hr1] : 0 <= ststatus_r8 (ust4x_status _st) <= 200 by rewrite /ststatus
 have [Ha0 Ha1] : 0 <= ststatus_at_norm (ust4x_status _st) <= 200 by rewrite /ststatus_at_norm /ststatus_r8 /ststatus_at /=; smt(W64.to_uint_cmp).
 split; first smt(pow2_8).
 split; first smt(pow2_8).
-by rewrite /BArray808.get8 /BArray808.init64 BArray808.initiE //= /ststatus_trailb W8u8.bits8_div // /truncateu8 W64.shr_div_le //=.
+by rewrite (_: 802 = 800 + 2) 1:// -BArray808.get64d_byte // /ststatus_trailb W8u8.bits8_div // /truncateu8 W64.shr_div_le //=.
 qed.
 
 phoare ststatus_updstate_avx2x4_ph _st:
@@ -431,9 +459,6 @@ have [-> [-> ->]] := ststatus_byte0 (ststatus_set_at w at) w (truncateu8 (W64.of
 by rewrite to_uint_truncateu8 W64.of_uintK; smt(modz_small pow2_64).
 qed.
 
-lemma A25u256toA101u64_100 (X: state4x) s: ust4x_status (A25u256toA101u64 X s) = s.
-proof. by rewrite /A25u256toA101u64 Array101.initiE. qed.
-
 lemma absorbing_spec4_sizes r8 tb (l0 l1 l2 l3: W8.t list) st:
  absorbing_spec4 r8 tb l0 l1 l2 l3 st =>
  forall k, 0 <= k < 4 => size (nth [] [l0; l1; l2; l3] k) = size l0.
@@ -444,22 +469,21 @@ by case => [->|[->|[->|->]]] /=.
 qed.
 
 (* the 4-lane 64-bit xor of the updstate code: byte offset 4*a + 8*k of the
-   WArray800 view is lane k of the state word a (a multiple of 8) *)
-lemma st4x_get_xor64x4_at (st: state4x) a o0 o1 o2 o3 (t0 t1 t2 t3: W64.t) k:
+   4-way state is lane k of the state word a (a multiple of 8) *)
+lemma st4x_get_xor64x4_at (st: BArray800.t) a o0 o1 o2 o3 (t0 t1 t2 t3: W64.t) k:
  0 <= a < 200 => a %% 8 = 0 => o0 = 4 * a => o1 = 4 * a + 8 => o2 = 4 * a + 16 => o3 = 4 * a + 24 => 0 <= k < 4 =>
- st4x_lane (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 (get64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 `^` t1)))))) o2 (get64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 (get64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 `^` t1)))))) o2 `^` t2)))))) o3 (get64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 (get64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 `^` t1)))))) o2 (get64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 (get64_direct (WArray800.init256 ("_.[_]" (Array25.init (WArray800.get256 (WArray800.set64_direct (WArray800.init256 ("_.[_]" st)) o0 (get64_direct (WArray800.init256 ("_.[_]" st)) o0 `^` t0)))))) o1 `^` t1)))))) o2 `^` t2)))))) o3 `^` t3)))) k
- = addstate_at (st4x_lane st k) a (u64bytes (nth W64.zero [t0; t1; t2; t3] k)).
+ st4x_lane (st4x (BArray800.set64d (BArray800.set64d (BArray800.set64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 (BArray800.get64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 `^` t1)) o2 (BArray800.get64d (BArray800.set64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 (BArray800.get64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 `^` t1)) o2 `^` t2)) o3 (BArray800.get64d (BArray800.set64d (BArray800.set64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 (BArray800.get64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 `^` t1)) o2 (BArray800.get64d (BArray800.set64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 (BArray800.get64d (BArray800.set64d st o0 (BArray800.get64d st o0 `^` t0)) o1 `^` t1)) o2 `^` t2)) o3 `^` t3))) k
+ = addstate_at (st4x_lane (st4x st) k) a (u64bytes (nth W64.zero [t0; t1; t2; t3] k)).
 proof.
 move=> Ha Hm -> -> -> -> Hk.
-rewrite (: 4 * a + 24 = 8 * (4 * (a %/ 8) + 3)) 1:/# (: 4 * a + 16 = 8 * (4 * (a %/ 8) + 2)) 1:/# (: 4 * a + 8 = 8 * (4 * (a %/ 8) + 1)) 1:/# (: 4 * a = 8 * (4 * (a %/ 8))) 1:/#.
-rewrite (st4x_get_xor64x4 st (a %/ 8) (4 * (a %/ 8)) (4 * (a %/ 8) + 1) (4 * (a %/ 8) + 2) (4 * (a %/ 8) + 3)) 1..6:/#.
+rewrite (st4x_get_xor64x4 st (a %/ 8)) 1..6:/#.
 by rewrite (: 8 * (a %/ 8) = a) 1:/#.
 qed.
 
 (* the 4-lane 64-bit load of the updstate dump *)
 lemma st4x_get64_at (st: state4x) a k o:
  0 <= a < 200 => a %% 8 = 0 => 0 <= k < 4 => o = 4 * a + 8 * k =>
- get64_direct (WArray800.init256 ("_.[_]" st)) o = get64_direct (stbytes (st4x_lane st k)) a.
+ BArray800.get64d (st4x_of st) o = get64_direct (stbytes (st4x_lane st k)) a.
 proof.
 move=> Ha Hm Hk ->; rewrite (get64_init256_at st (4 * a + 8 * k) a k) //.
 apply W64.wordP => b Hb; rewrite /WArray200.get64_direct pack8E initiE 1:/# /= W8u8.Pack.initiE 1:/# /= stbytes_st4x 1,2:/# W8u8.bits8iE 1:/#.
@@ -540,12 +564,15 @@ hoare add_m_bcast_updstate_avx2x4_h _mem _st _at _buf _upto:
  ==> Glob.mem = _mem
    /\ addstate_res4m _st _at _mem _buf _buf _buf _buf (_upto - _at) 0 (st4x res.`1) res.`2 res.`3 res.`3 res.`3 res.`3.
 proof.
-proc => /=; pose n := _upto - _at.
+proc => /=.
+conseq (: Glob.mem = _mem /\ st = st4x_of _st /\ at = _at /\ buf = _buf /\ upto = _upto /\ 0 <= _at <= _upto <= 200 ==> _).
++ by move=> &hr /> *; rewrite st4xK.
+pose n := _upto - _at.
 seq 2 : (#pre /\ W64.to_uint at8 = _at %% 8).
 + by auto => /> H0 H1 H2; rewrite and7_mod8 /#.
 seq 1 : (Glob.mem = _mem /\ upto = _upto /\ 0 <= _at <= _upto <= 200
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf; _buf; _buf; _buf] n 0 sz [buf; buf; buf; buf] st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf; _buf; _buf; _buf] n 0 sz [buf; buf; buf; buf] (st4x st) at (_upto - at) 0).
 + if; last first.
   + auto => /> H0 H1 H2 Hk; split; first smt().
     by exists _at; split => //; apply addstate_spec4m_init => /#.
@@ -572,7 +599,7 @@ split => Hc.
   apply (addstate_spec4m_msubread _mem [_buf; _buf; _buf; _buf] [t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8)] base _st _at n 0 _st _ _at [_buf; _buf; _buf; _buf] n 0 (base + 8) (base + 8) [_buf + (8 - _at %% 8); _buf + (8 - _at %% 8); _buf + (8 - _at %% 8); _buf + (8 - _at %% 8)] (_upto - (base + 8)) 0) => //.
   + smt().
   + smt().
-  + by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 _st _ (_at %/ 8)) 1..3:/#.
+  + by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 (st4x_of _st) _ (_at %/ 8)) 1..3:/#.
   + by move=> k Hk'; rewrite !nth4_const.
 have Emin : min n (base + 8 - _at) = n by smt().
 move: M0; rewrite Emin (: _at + n = _upto) 1:/# (: n - n = 0) 1:/# => M0.
@@ -581,20 +608,20 @@ exists (base + 8); split; first smt().
 apply (addstate_spec4m_msubread _mem [_buf; _buf; _buf; _buf] [t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8)] base _st _at n 0 _st _ _at [_buf; _buf; _buf; _buf] n 0 (base + 8) _upto [_buf + n; _buf + n; _buf + n; _buf + n] 0 0) => //.
 + smt().
 + smt().
-+ by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 _st _ (_at %/ 8)) 1..3:/#.
++ by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 (st4x_of _st) _ (_at %/ 8)) 1..3:/#.
 by move=> k Hk'; rewrite !nth4_const.
 seq 3 : (Glob.mem = _mem /\ upto = _upto /\ 0 <= _at <= _upto <= 200
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ _upto < at + 8
-         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf; _buf; _buf; _buf] n 0 sz [buf; buf; buf; buf] st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf; _buf; _buf; _buf] n 0 sz [buf; buf; buf; buf] (st4x st) at (_upto - at) 0).
 + while (Glob.mem = _mem /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ newat = at + 8
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf; _buf; _buf; _buf] n 0 sz [buf; buf; buf; buf] st at (_upto - at) 0); last by auto => /#.
+         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf; _buf; _buf; _buf] n 0 sz [buf; buf; buf; buf] (st4x st) at (_upto - at) 0); last by auto => /#.
   auto => &hr [#] -> -> H0 H1 H2 -> Ha0 Ha1 Ha8 [sz [Hsz IH]] Hc /=.
   have Hal : at{hr} %% 8 = 0 by smt().
   do 3!(split; first smt()).
   exists (sz + 8); split; first smt().
   rewrite (: _upto - (at{hr} + 8) = _upto - at{hr} - 8) 1:/#.
-  apply (addstate_spec4m_fullword _mem [_buf; _buf; _buf; _buf] sz _st _at n 0 st{hr} _ buf{hr} buf{hr} buf{hr} buf{hr} at{hr} (_upto - at{hr}) 0) => //.
+  apply (addstate_spec4m_fullword _mem [_buf; _buf; _buf; _buf] sz _st _at n 0 (st4x st{hr}) _ buf{hr} buf{hr} buf{hr} buf{hr} at{hr} (_upto - at{hr}) 0) => //.
   + smt().
   + smt().
   by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 st{hr} _ (at{hr} %/ 8)) 1..3:/# (: 8 * (at{hr} %/ 8) = at{hr}) 1:/#.
@@ -602,7 +629,7 @@ if; last first.
 + auto => &hr [#] -> -> H0 H1 H2 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
   have Ea : at{hr} = _upto by smt().
   move: IH; rewrite Ea /= => IH.
-  by apply (addstate_spec4m_done _mem _buf _buf _buf _buf sz _st _at n 0 st{hr} buf{hr} buf{hr} buf{hr} buf{hr} _upto 0) => //; smt().
+  by apply (addstate_spec4m_done _mem _buf _buf _buf _buf sz _st _at n 0 (st4x st{hr}) buf{hr} buf{hr} buf{hr} buf{hr} _upto 0) => //; smt().
 wp; ecall (m_rlen_read_upto8_h buf (W64.to_uint upto8)).
 wp; skip => &hr [#] -> -> H0 H1 H2 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
 have Hal : at{hr} %% 8 = 0 by smt().
@@ -612,7 +639,7 @@ split; first smt(). move=> _ [o0 t0] /= [Hs0 ->].
 rewrite truncateu64_VMOV_64.
 have M0 := msubread_rlen _mem t0 at{hr} at{hr} buf{hr} (_upto - at{hr}) _ _ Hs0; 1,2: smt().
 move: M0; rewrite (: 8 * (at{hr} - at{hr}) = 0) 1:/# u64_shl0 (: min (_upto - at{hr}) (at{hr} + 8 - at{hr}) = min 8 (max 0 (_upto - at{hr}))) 1:/# (: at{hr} + min 8 (max 0 (_upto - at{hr})) = _upto) 1:/# (: _upto - at{hr} - min 8 (max 0 (_upto - at{hr})) = 0) 1:/# => M0.
-apply (addstate_spec4m_finish _mem _buf _buf _buf _buf [t0; t0; t0; t0] sz _st _at n 0 st{hr} _ buf{hr} buf{hr} buf{hr} buf{hr} at{hr} (_upto - at{hr}) 0 _upto (buf{hr} + min 8 (max 0 (_upto - at{hr}))) (buf{hr} + min 8 (max 0 (_upto - at{hr}))) (buf{hr} + min 8 (max 0 (_upto - at{hr}))) (buf{hr} + min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
+apply (addstate_spec4m_finish _mem _buf _buf _buf _buf [t0; t0; t0; t0] sz _st _at n 0 (st4x st{hr}) _ buf{hr} buf{hr} buf{hr} buf{hr} at{hr} (_upto - at{hr}) 0 _upto (buf{hr} + min 8 (max 0 (_upto - at{hr}))) (buf{hr} + min 8 (max 0 (_upto - at{hr}))) (buf{hr} + min 8 (max 0 (_upto - at{hr}))) (buf{hr} + min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
 + smt().
 + smt().
 + smt().
@@ -643,12 +670,15 @@ hoare add_m_updstate_avx2x4_h _mem _st _at _buf0 _buf1 _buf2 _buf3 _upto:
  ==> Glob.mem = _mem
    /\ addstate_res4m _st _at _mem _buf0 _buf1 _buf2 _buf3 (_upto - _at) 0 (st4x res.`1) res.`2 res.`3 res.`4 res.`5 res.`6.
 proof.
-proc => /=; pose n := _upto - _at.
+proc => /=.
+conseq (: Glob.mem = _mem /\ st = st4x_of _st /\ at = _at /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ upto = _upto /\ 0 <= _at <= _upto <= 200 ==> _).
++ by move=> &hr /> *; rewrite st4xK.
+pose n := _upto - _at.
 seq 2 : (#pre /\ W64.to_uint at8 = _at %% 8).
 + by auto => /> H0 H1 H2; rewrite and7_mod8 /#.
 seq 1 : (Glob.mem = _mem /\ upto = _upto /\ 0 <= _at <= _upto <= 200
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf0; _buf1; _buf2; _buf3] n 0 sz [buf0; buf1; buf2; buf3] st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf0; _buf1; _buf2; _buf3] n 0 sz [buf0; buf1; buf2; buf3] (st4x st) at (_upto - at) 0).
 + if; last first.
   + auto => /> H0 H1 H2 Hk; split; first smt().
     by exists _at; split => //; apply addstate_spec4m_init => /#.
@@ -678,7 +708,7 @@ split => Hc.
   apply (addstate_spec4m_msubread _mem [_buf0; _buf1; _buf2; _buf3] [t0 `<<<` 8 * (_at %% 8); t1 `<<<` 8 * (_at %% 8); t2 `<<<` 8 * (_at %% 8); t3 `<<<` 8 * (_at %% 8)] base _st _at n 0 _st _ _at [_buf0; _buf1; _buf2; _buf3] n 0 (base + 8) (base + 8) [_buf0 + (8 - _at %% 8); _buf1 + (8 - _at %% 8); _buf2 + (8 - _at %% 8); _buf3 + (8 - _at %% 8)] (_upto - (base + 8)) 0) => //.
   + smt().
   + smt().
-  + move=> k Hk'; rewrite (st4x_get_xor64x4_at _st base) //; smt().
+  + move=> k Hk'; rewrite (st4x_get_xor64x4_at (st4x_of _st) base) //; smt().
   + by rewrite forall4 /=.
 have Emin : min n (base + 8 - _at) = n by smt().
 move: M0 M1 M2 M3; rewrite Emin (: _at + n = _upto) 1:/# (: n - n = 0) 1:/# => M0 M1 M2 M3.
@@ -687,20 +717,20 @@ exists (base + 8); split; first smt().
 apply (addstate_spec4m_msubread _mem [_buf0; _buf1; _buf2; _buf3] [t0 `<<<` 8 * (_at %% 8); t1 `<<<` 8 * (_at %% 8); t2 `<<<` 8 * (_at %% 8); t3 `<<<` 8 * (_at %% 8)] base _st _at n 0 _st _ _at [_buf0; _buf1; _buf2; _buf3] n 0 (base + 8) _upto [_buf0 + n; _buf1 + n; _buf2 + n; _buf3 + n] 0 0) => //.
 + smt().
 + smt().
-+ move=> k Hk'; rewrite (st4x_get_xor64x4_at _st base) //; smt().
++ move=> k Hk'; rewrite (st4x_get_xor64x4_at (st4x_of _st) base) //; smt().
 by rewrite forall4 /=.
 seq 3 : (Glob.mem = _mem /\ upto = _upto /\ 0 <= _at <= _upto <= 200
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ _upto < at + 8
-         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf0; _buf1; _buf2; _buf3] n 0 sz [buf0; buf1; buf2; buf3] st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf0; _buf1; _buf2; _buf3] n 0 sz [buf0; buf1; buf2; buf3] (st4x st) at (_upto - at) 0).
 + while (Glob.mem = _mem /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ newat = at + 8
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf0; _buf1; _buf2; _buf3] n 0 sz [buf0; buf1; buf2; buf3] st at (_upto - at) 0); last by auto => /#.
+         /\ exists sz, _at <= sz /\ addstate_spec4m _st _at _mem [_buf0; _buf1; _buf2; _buf3] n 0 sz [buf0; buf1; buf2; buf3] (st4x st) at (_upto - at) 0); last by auto => /#.
   auto => &hr [#] -> -> H0 H1 H2 -> Ha0 Ha1 Ha8 [sz [Hsz IH]] Hc /=.
   have Hal : at{hr} %% 8 = 0 by smt().
   do 3!(split; first smt()).
   exists (sz + 8); split; first smt().
   rewrite (: _upto - (at{hr} + 8) = _upto - at{hr} - 8) 1:/#.
-  apply (addstate_spec4m_fullword _mem [_buf0; _buf1; _buf2; _buf3] sz _st _at n 0 st{hr} _ buf0{hr} buf1{hr} buf2{hr} buf3{hr} at{hr} (_upto - at{hr}) 0) => //.
+  apply (addstate_spec4m_fullword _mem [_buf0; _buf1; _buf2; _buf3] sz _st _at n 0 (st4x st{hr}) _ buf0{hr} buf1{hr} buf2{hr} buf3{hr} at{hr} (_upto - at{hr}) 0) => //.
   + smt().
   + smt().
   move=> k Hk'; rewrite (st4x_get_xor64x4_at st{hr} at{hr}) //; smt().
@@ -708,7 +738,7 @@ if; last first.
 + auto => &hr [#] -> -> H0 H1 H2 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
   have Ea : at{hr} = _upto by smt().
   move: IH; rewrite Ea /= => IH.
-  by apply (addstate_spec4m_done _mem _buf0 _buf1 _buf2 _buf3 sz _st _at n 0 st{hr} buf0{hr} buf1{hr} buf2{hr} buf3{hr} _upto 0) => //; smt().
+  by apply (addstate_spec4m_done _mem _buf0 _buf1 _buf2 _buf3 sz _st _at n 0 (st4x st{hr}) buf0{hr} buf1{hr} buf2{hr} buf3{hr} _upto 0) => //; smt().
 wp; ecall (m_rlen_read_upto8_h buf3 (W64.to_uint upto8)); wp; ecall (m_rlen_read_upto8_h buf2 (W64.to_uint upto8)).
 wp; ecall (m_rlen_read_upto8_h buf1 (W64.to_uint upto8)); wp; ecall (m_rlen_read_upto8_h buf0 (W64.to_uint upto8)).
 wp; skip => &hr [#] -> -> H0 H1 H2 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
@@ -724,7 +754,7 @@ have M1 := msubread_rlen _mem t1 at{hr} at{hr} buf1{hr} (_upto - at{hr}) _ _ Hs1
 have M2 := msubread_rlen _mem t2 at{hr} at{hr} buf2{hr} (_upto - at{hr}) _ _ Hs2; 1,2: smt().
 have M3 := msubread_rlen _mem t3 at{hr} at{hr} buf3{hr} (_upto - at{hr}) _ _ Hs3; 1,2: smt().
 move: M0 M1 M2 M3; rewrite (: 8 * (at{hr} - at{hr}) = 0) 1:/# !u64_shl0 (: min (_upto - at{hr}) (at{hr} + 8 - at{hr}) = min 8 (max 0 (_upto - at{hr}))) 1:/# (: at{hr} + min 8 (max 0 (_upto - at{hr})) = _upto) 1:/# (: _upto - at{hr} - min 8 (max 0 (_upto - at{hr})) = 0) 1:/# => M0 M1 M2 M3.
-apply (addstate_spec4m_finish _mem _buf0 _buf1 _buf2 _buf3 [t0; t1; t2; t3] sz _st _at n 0 st{hr} _ buf0{hr} buf1{hr} buf2{hr} buf3{hr} at{hr} (_upto - at{hr}) 0 _upto (buf0{hr} + min 8 (max 0 (_upto - at{hr}))) (buf1{hr} + min 8 (max 0 (_upto - at{hr}))) (buf2{hr} + min 8 (max 0 (_upto - at{hr}))) (buf3{hr} + min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
+apply (addstate_spec4m_finish _mem _buf0 _buf1 _buf2 _buf3 [t0; t1; t2; t3] sz _st _at n 0 (st4x st{hr}) _ buf0{hr} buf1{hr} buf2{hr} buf3{hr} at{hr} (_upto - at{hr}) 0 _upto (buf0{hr} + min 8 (max 0 (_upto - at{hr}))) (buf1{hr} + min 8 (max 0 (_upto - at{hr}))) (buf2{hr} + min 8 (max 0 (_upto - at{hr}))) (buf3{hr} + min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
 + smt().
 + smt().
 + smt().
@@ -768,21 +798,21 @@ proof.
 proc => /=; exlim st => _st.
 seq 5 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len
          /\ r8 = _r8 /\ buf = _buf
-         /\ stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
-+ wp; ecall (ststatus_data_avx2x4_h st.[100]); auto => &hr [#] <- -> -> -> Habs H0 r [-> ->] /=.
-  have := Habs; rewrite /absorbing_spec4 /status_spec => [#] Hp Er8 Etb Hat.
-  by rewrite Hp Er8 Etb Hat /= /A101u64toA25u256.
+         /\ st4x stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
++ wp; ecall (ststatus_data_avx2x4_h (ust4x_status st)); auto => &hr [#] <- -> -> -> Habs H0 r [-> ->] /=.
+  have := Habs; rewrite /absorbing_spec4 /status_spec /= => [#] Hp Er8 Etb Hat.
+  by rewrite /= Hp Er8 Etb Hat /= st4x_get_sub256_0.
 seq 1 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len /\ r8 = _r8
          /\ _buf <= buf <= _buf + _len
          /\ at = (size _l0 + (buf - _buf)) %% _r8
          /\ len = _len - (buf - _buf) + at /\ len < r8
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len] (buf - _buf) stk).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len] (buf - _buf) (st4x stk)).
 + while (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len /\ r8 = _r8
          /\ _buf <= buf <= _buf + _len
          /\ at = (size _l0 + (buf - _buf)) %% _r8
          /\ len = _len - (buf - _buf) + at
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len] (buf - _buf) stk).
-  + wp; ecall (keccakf1600_avx2x4_h stk); ecall (add_m_bcast_updstate_avx2x4_h Glob.mem stk at buf r8).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len; memread _mem _buf _len] (buf - _buf) (st4x stk)).
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); ecall (add_m_bcast_updstate_avx2x4_h Glob.mem (st4x stk) at buf r8).
     auto => &hr [#] -> -> Habs H0 -> Hb0 Hb1 -> -> Hp Hc.
     have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
     pose k := buf{hr} - _buf.
@@ -791,8 +821,8 @@ seq 1 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 
     split; first smt().
     move=> _ [stc at1 c0] /= Hres r ->.
     have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
-    have Hl := addstate_res4m_lanes stk{hr} a _mem _buf _buf _buf _buf _len buf{hr} buf{hr} buf{hr} buf{hr} k (_r8 - a) 0 stc at1 c0 c0 c0 c0 _ _ _ _ _ _ _ Hres; 1..7: smt().
-    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) k (_r8 - a) a stk{hr} stc _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(size_memread).
+    have Hl := addstate_res4m_lanes (st4x stk{hr}) a _mem _buf _buf _buf _buf _len buf{hr} buf{hr} buf{hr} buf{hr} k (_r8 - a) 0 (st4x stc) at1 c0 c0 c0 c0 _ _ _ _ _ _ _ Hres; 1..7: smt().
+    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) k (_r8 - a) a (st4x stk{hr}) (st4x stc) _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(size_memread).
     have [_ [_ [Ec0 _]]] := Hres.
     rewrite Ec0 /=.
     rewrite (: buf{hr} + (_r8 - a) - _buf = k + (_r8 - a)) 1:/#.
@@ -805,10 +835,10 @@ seq 1 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 
   split; last by smt().
   do 3!(split; first smt()).
   by apply pabsorb4_init.
-wp; ecall (add_m_bcast_updstate_avx2x4_h Glob.mem stk at buf len); wp; skip => &hr [#] -> -> Habs H0 -> Hb0 Hb1 -> -> Hc Hp /=.
+wp; ecall (add_m_bcast_updstate_avx2x4_h Glob.mem (st4x stk) at buf len); wp; skip => &hr [#] -> -> Habs H0 -> Hb0 Hb1 -> -> Hc Hp /=.
 split; first smt().
 move=> _ [stc at1 c0] /= Hres.
-rewrite A25u256toA101u64E A101_set800.
+rewrite A25u256toA101u64E // A101_set800.
 have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
 pose k := buf{hr} - _buf.
 pose a := (size _l0 + k) %% _r8.
@@ -816,8 +846,8 @@ have Ha : 0 <= a < _r8 by smt(modz_ge0 ltz_pmod).
 have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
 have Hsz : forall b, size (memread _mem b _len) = _len by move=> b; rewrite size_memread /#.
 move: Hres; rewrite (: _len - k + a - a = _len - k) 1:/# => Hres.
-have Hl := addstate_res4m_lanes stk{hr} a _mem _buf _buf _buf _buf _len buf{hr} buf{hr} buf{hr} buf{hr} k (_len - k) 0 stc at1 c0 c0 c0 c0 _ _ _ _ _ _ _ Hres; 1..7: smt().
-have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) k (_len - k) a stk{hr} stc 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
+have Hl := addstate_res4m_lanes (st4x stk{hr}) a _mem _buf _buf _buf _buf _len buf{hr} buf{hr} buf{hr} buf{hr} k (_len - k) 0 (st4x stc) at1 c0 c0 c0 c0 _ _ _ _ _ _ _ Hres; 1..7: smt().
+have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) (memread _mem _buf _len) k (_len - k) a (st4x stk{hr}) (st4x stc) 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
 have HL0 := HL _; first done.
 have [_ [Eat1 _]] := Hres.
 have [Hat2 [Hr2 Htb2]] := ststatus_set_atP (ust4x_status _st) at1 _; first smt().
@@ -868,23 +898,23 @@ proof.
 proc => /=; exlim st => _st.
 seq 5 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len
          /\ r8 = _r8 /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3
-         /\ stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
-+ wp; ecall (ststatus_data_avx2x4_h st.[100]); auto => &hr [#] <- -> -> -> -> -> -> Habs H0 r [-> ->] /=.
-  have := Habs; rewrite /absorbing_spec4 /status_spec => [#] Hp Er8 Etb Hat.
-  by rewrite Hp Er8 Etb Hat /= /A101u64toA25u256.
+         /\ st4x stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
++ wp; ecall (ststatus_data_avx2x4_h (ust4x_status st)); auto => &hr [#] <- -> -> -> -> -> -> Habs H0 r [-> ->] /=.
+  have := Habs; rewrite /absorbing_spec4 /status_spec /= => [#] Hp Er8 Etb Hat.
+  by rewrite /= Hp Er8 Etb Hat /= st4x_get_sub256_0.
 seq 1 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len /\ r8 = _r8
          /\ _buf0 <= buf0 <= _buf0 + _len
          /\ buf1 = _buf1 + (buf0 - _buf0) /\ buf2 = _buf2 + (buf0 - _buf0) /\ buf3 = _buf3 + (buf0 - _buf0)
          /\ at = (size _l0 + (buf0 - _buf0)) %% _r8
          /\ len = _len - (buf0 - _buf0) + at /\ len < r8
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf0 _len; memread _mem _buf1 _len; memread _mem _buf2 _len; memread _mem _buf3 _len] (buf0 - _buf0) stk).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf0 _len; memread _mem _buf1 _len; memread _mem _buf2 _len; memread _mem _buf3 _len] (buf0 - _buf0) (st4x stk)).
 + while (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len /\ r8 = _r8
          /\ _buf0 <= buf0 <= _buf0 + _len
          /\ buf1 = _buf1 + (buf0 - _buf0) /\ buf2 = _buf2 + (buf0 - _buf0) /\ buf3 = _buf3 + (buf0 - _buf0)
          /\ at = (size _l0 + (buf0 - _buf0)) %% _r8
          /\ len = _len - (buf0 - _buf0) + at
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf0 _len; memread _mem _buf1 _len; memread _mem _buf2 _len; memread _mem _buf3 _len] (buf0 - _buf0) stk).
-  + wp; ecall (keccakf1600_avx2x4_h stk); ecall (add_m_updstate_avx2x4_h Glob.mem stk at buf0 buf1 buf2 buf3 r8).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [memread _mem _buf0 _len; memread _mem _buf1 _len; memread _mem _buf2 _len; memread _mem _buf3 _len] (buf0 - _buf0) (st4x stk)).
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); ecall (add_m_updstate_avx2x4_h Glob.mem (st4x stk) at buf0 buf1 buf2 buf3 r8).
     auto => &hr [#] -> -> Habs H0 -> Hb0 Hb1 -> -> -> -> -> Hp Hc.
     have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
     pose k := buf0{hr} - _buf0.
@@ -893,8 +923,8 @@ seq 1 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 
     split; first smt().
     move=> _ [stc at1 c0 c1 c2 c3] /= Hres r ->.
     have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
-    have Hl := addstate_res4m_lanes stk{hr} a _mem _buf0 _buf1 _buf2 _buf3 _len buf0{hr} (_buf1 + k) (_buf2 + k) (_buf3 + k) k (_r8 - a) 0 stc at1 c0 c1 c2 c3 _ _ _ _ _ _ _ Hres; 1..7: smt().
-    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf0 _len) (memread _mem _buf1 _len) (memread _mem _buf2 _len) (memread _mem _buf3 _len) k (_r8 - a) a stk{hr} stc _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(size_memread).
+    have Hl := addstate_res4m_lanes (st4x stk{hr}) a _mem _buf0 _buf1 _buf2 _buf3 _len buf0{hr} (_buf1 + k) (_buf2 + k) (_buf3 + k) k (_r8 - a) 0 (st4x stc) at1 c0 c1 c2 c3 _ _ _ _ _ _ _ Hres; 1..7: smt().
+    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf0 _len) (memread _mem _buf1 _len) (memread _mem _buf2 _len) (memread _mem _buf3 _len) k (_r8 - a) a (st4x stk{hr}) (st4x stc) _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(size_memread).
     have [_ [_ [Ec0 [Ec1 [Ec2 Ec3]]]]] := Hres.
     rewrite Ec0 Ec1 Ec2 Ec3 /=.
     rewrite (: buf0{hr} + (_r8 - a) - _buf0 = k + (_r8 - a)) 1:/#.
@@ -907,10 +937,10 @@ seq 1 : (Glob.mem = _mem /\ st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 
   split; last by smt().
   do 3!(split; first smt()).
   by apply pabsorb4_init.
-wp; ecall (add_m_updstate_avx2x4_h Glob.mem stk at buf0 buf1 buf2 buf3 len); wp; skip => &hr [#] -> -> Habs H0 -> Hb0 Hb1 -> -> -> -> -> Hc Hp /=.
+wp; ecall (add_m_updstate_avx2x4_h Glob.mem (st4x stk) at buf0 buf1 buf2 buf3 len); wp; skip => &hr [#] -> -> Habs H0 -> Hb0 Hb1 -> -> -> -> -> Hc Hp /=.
 split; first smt().
 move=> _ [stc at1 c0 c1 c2 c3] /= Hres.
-rewrite A25u256toA101u64E A101_set800.
+rewrite A25u256toA101u64E // A101_set800.
 have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
 pose k := buf0{hr} - _buf0.
 pose a := (size _l0 + k) %% _r8.
@@ -918,8 +948,8 @@ have Ha : 0 <= a < _r8 by smt(modz_ge0 ltz_pmod).
 have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
 have Hsz : forall b, size (memread _mem b _len) = _len by move=> b; rewrite size_memread /#.
 move: Hres; rewrite (: _len - k + a - a = _len - k) 1:/# => Hres.
-have Hl := addstate_res4m_lanes stk{hr} a _mem _buf0 _buf1 _buf2 _buf3 _len buf0{hr} (_buf1 + k) (_buf2 + k) (_buf3 + k) k (_len - k) 0 stc at1 c0 c1 c2 c3 _ _ _ _ _ _ _ Hres; 1..7: smt().
-have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf0 _len) (memread _mem _buf1 _len) (memread _mem _buf2 _len) (memread _mem _buf3 _len) k (_len - k) a stk{hr} stc 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
+have Hl := addstate_res4m_lanes (st4x stk{hr}) a _mem _buf0 _buf1 _buf2 _buf3 _len buf0{hr} (_buf1 + k) (_buf2 + k) (_buf3 + k) k (_len - k) 0 (st4x stc) at1 c0 c1 c2 c3 _ _ _ _ _ _ _ Hres; 1..7: smt().
+have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (memread _mem _buf0 _len) (memread _mem _buf1 _len) (memread _mem _buf2 _len) (memread _mem _buf3 _len) k (_len - k) a (st4x stk{hr}) (st4x stc) 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
 have HL0 := HL _; first done.
 have [_ [Eat1 _]] := Hres.
 have [Hat2 [Hr2 Htb2]] := ststatus_set_atP (ust4x_status _st) at1 _; first smt().
@@ -967,9 +997,11 @@ hoare dump_m_updstate_avx2x4_h _mem _buf0 _buf1 _buf2 _buf3 _st _at _upto:
    /\ res = (_buf0 + (_upto - _at), _buf1 + (_upto - _at), _buf2 + (_upto - _at), _buf3 + (_upto - _at), _upto).
 proof.
 proc => /=.
+conseq (: Glob.mem = _mem /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ st = st4x_of _st /\ at = _at /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _buf1 _buf2 _buf3 (_upto - _at) ==> _).
++ by move=> &hr /> *; rewrite st4xK.
 seq 2 : (#pre /\ W64.to_uint at8 = _at %% 8).
 + by auto => /> H0 H1 H2 D; rewrite and7_mod8 /#.
-seq 1 : (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _buf1 _buf2 _buf3 (_upto - _at)
+seq 1 : (st = st4x_of _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _buf1 _buf2 _buf3 (_upto - _at)
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
          /\ buf0 = _buf0 + (at - _at) /\ buf1 = _buf1 + (at - _at) /\ buf2 = _buf2 + (at - _at) /\ buf3 = _buf3 + (at - _at)
          /\ exists z, 0 <= z <= 7 /\ z <= _upto - at
@@ -1009,14 +1041,14 @@ seq 1 : (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _bu
   rewrite /stores4 (: min (_upto - _at) (8 - _at %% 8) = _upto - _at) 1:/# (: min (_upto - _at - (_upto - _at)) (_at %% 8) = 0) 1:/#.
   smt().
 have UB : forall (t: WArray200.t) o, W8u8.to_list (get64_direct t o) = sub t o 8 by move=> t o; rewrite -u64bytes_get64 /u64bytes.
-seq 3 : (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _buf1 _buf2 _buf3 (_upto - _at)
+seq 3 : (st = st4x_of _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _buf1 _buf2 _buf3 (_upto - _at)
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ _upto < at + 8
          /\ buf0 = _buf0 + (at - _at) /\ buf1 = _buf1 + (at - _at) /\ buf2 = _buf2 + (at - _at) /\ buf3 = _buf3 + (at - _at)
          /\ exists z, 0 <= z <= 7 /\ z <= _upto - at
             /\ Glob.mem = stores4 _mem _buf0 _buf1 _buf2 _buf3
                  (sub (stbytes (st4x_lane _st 0)) _at (at - _at) ++ u8zeros z) (sub (stbytes (st4x_lane _st 1)) _at (at - _at) ++ u8zeros z)
                  (sub (stbytes (st4x_lane _st 2)) _at (at - _at) ++ u8zeros z) (sub (stbytes (st4x_lane _st 3)) _at (at - _at) ++ u8zeros z)).
-+ while (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _buf1 _buf2 _buf3 (_upto - _at) /\ newat = at + 8
++ while (st = st4x_of _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ disj4 _buf0 _buf1 _buf2 _buf3 (_upto - _at) /\ newat = at + 8
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
          /\ buf0 = _buf0 + (at - _at) /\ buf1 = _buf1 + (at - _at) /\ buf2 = _buf2 + (at - _at) /\ buf3 = _buf3 + (at - _at)
          /\ exists z, 0 <= z <= 7 /\ z <= _upto - at
@@ -1122,7 +1154,7 @@ proc; seq 4: (8 <= r8).
     + while (8 <= r8) len => [z|]; last by auto => /#.
       by wp; call keccakf1600_avx2x4_ll; call dump_m_updstate_avx2x4_ll; auto => /#.
     by wp; call dump_m_updstate_avx2x4_ll; auto.
-  by hoare; wp; if; [wp; ecall (keccakf1600_avx2x4_h stk); auto | auto].
+  by hoare; wp; if; [wp; ecall (keccakf1600_avx2x4_h (st4x stk)); auto | auto].
 + by hoare; wp; ecall (ststatus_data_avx2x4_bnd_h); auto.
 by [].
 qed.
@@ -1139,16 +1171,15 @@ proof.
 proc => /=; exlim st => _st.
 seq 4 : (Glob.mem = _mem /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ len = _len
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len /\ disj4 _buf0 _buf1 _buf2 _buf3 _len
-         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ stk = iter ((_k - 1) %/ _r8 + 1) keccak_f1600_x4 _s0).
-+ wp; ecall (ststatus_data_avx2x4_h st.[100]); auto => &hr [#] <- -> -> -> -> -> -> Hsq H0 D r [-> ->] /=.
-  have := Hsq; rewrite /squeezing_spec4 => [#] Hr0 Hr1 Hk Est Er8 Eat.
-  rewrite Er8 Eat /= -Est.
-  by rewrite /A101u64toA25u256 /=; smt().
+         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ (st4x stk) = iter ((_k - 1) %/ _r8 + 1) keccak_f1600_x4 _s0).
++ wp; ecall (ststatus_data_avx2x4_h (ust4x_status st)); auto => &hr [#] <- -> -> -> -> -> -> Hsq H0 D r [-> ->] /=.
+  have := Hsq; rewrite /squeezing_spec4 /= => [#] Hr0 Hr1 Hk Est Er8 Eat.
+  rewrite /= Er8 Eat /= -Est st4x_get_sub256_0 //=; smt().
 seq 2 : (Glob.mem = _mem /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len /\ disj4 _buf0 _buf1 _buf2 _buf3 _len
-         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ len = _len + at /\ stk = iter (_k %/ _r8 + 1) keccak_f1600_x4 _s0).
+         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ len = _len + at /\ (st4x stk) = iter (_k %/ _r8 + 1) keccak_f1600_x4 _s0).
 + wp; if.
-  + wp; ecall (keccakf1600_avx2x4_h stk); auto => &hr [#] -> -> -> -> -> -> Hsq H0 D -> -> Hat -> Hz.
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); auto => &hr [#] -> -> -> -> -> -> Hsq H0 D -> -> Hat -> Hz.
     have [Hr [Hk _]] := Hsq.
     move=> r ->; do !(split; first smt()).
     rewrite -(squeeze_entry0 _r8 _k) 1,2:/# (iterS ((_k - 1) %/ _r8 + 1)); first by apply (squeeze_entry_ge0 _r8 _k) => /#.
@@ -1161,16 +1192,16 @@ seq 1 : (Glob.mem = stores4 _mem _buf0 _buf1 _buf2 _buf3
             (sqstream _r8 (st4x_lane _s0 2) _k (buf0 - _buf0)) (sqstream _r8 (st4x_lane _s0 3) _k (buf0 - _buf0))
          /\ buf1 = _buf1 + (buf0 - _buf0) /\ buf2 = _buf2 + (buf0 - _buf0) /\ buf3 = _buf3 + (buf0 - _buf0)
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len /\ disj4 _buf0 _buf1 _buf2 _buf3 _len /\ st = _st /\ r8 = _r8
-         /\ stk = iter ((_k + (buf0 - _buf0)) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + (buf0 - _buf0)) %% _r8
+         /\ (st4x stk) = iter ((_k + (buf0 - _buf0)) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + (buf0 - _buf0)) %% _r8
          /\ len = at + (_len - (buf0 - _buf0)) /\ 0 <= buf0 - _buf0 < _len /\ len <= r8).
 + while (Glob.mem = stores4 _mem _buf0 _buf1 _buf2 _buf3
             (sqstream _r8 (st4x_lane _s0 0) _k (buf0 - _buf0)) (sqstream _r8 (st4x_lane _s0 1) _k (buf0 - _buf0))
             (sqstream _r8 (st4x_lane _s0 2) _k (buf0 - _buf0)) (sqstream _r8 (st4x_lane _s0 3) _k (buf0 - _buf0))
          /\ buf1 = _buf1 + (buf0 - _buf0) /\ buf2 = _buf2 + (buf0 - _buf0) /\ buf3 = _buf3 + (buf0 - _buf0)
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len /\ disj4 _buf0 _buf1 _buf2 _buf3 _len /\ st = _st /\ r8 = _r8
-         /\ stk = iter ((_k + (buf0 - _buf0)) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + (buf0 - _buf0)) %% _r8
+         /\ (st4x stk) = iter ((_k + (buf0 - _buf0)) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + (buf0 - _buf0)) %% _r8
          /\ len = at + (_len - (buf0 - _buf0)) /\ 0 <= buf0 - _buf0 < _len).
-  + wp; ecall (keccakf1600_avx2x4_h stk); ecall (dump_m_updstate_avx2x4_h Glob.mem buf0 buf1 buf2 buf3 stk at r8).
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); ecall (dump_m_updstate_avx2x4_h Glob.mem buf0 buf1 buf2 buf3 (st4x stk) at r8).
     auto => &hr [#] -> -> -> -> Hsq H0 D -> -> -> -> -> Hw0 Hw1 Hc.
     have [Hr [Hk _]] := Hsq.
     pose w := buf0{hr} - _buf0.
@@ -1201,7 +1232,7 @@ seq 1 : (Glob.mem = stores4 _mem _buf0 _buf1 _buf2 _buf3
   split; last by smt().
   have E0 : forall j, sqstream _r8 (st4x_lane _s0 j) _k 0 = [] by move=> j; rewrite -size_eq0 size_sqstream.
   by rewrite !E0 /stores4 !store0 /#.
-wp; ecall (dump_m_updstate_avx2x4_h Glob.mem buf0 buf1 buf2 buf3 stk at len); wp; skip => &hr [#] -> -> -> -> Hsq H0 D -> -> -> -> -> Hw0 Hw1 Hle /=.
+wp; ecall (dump_m_updstate_avx2x4_h Glob.mem buf0 buf1 buf2 buf3 (st4x stk) at len); wp; skip => &hr [#] -> -> -> -> Hsq H0 D -> -> Hstk -> -> Hw0 Hw1 Hle /=.
 have [Hr [Hk _]] := Hsq.
 pose w := buf0{hr} - _buf0.
 have Eb0 : buf0{hr} = _buf0 + w by smt().
@@ -1211,7 +1242,7 @@ split.
 + split; first smt().
   by apply (disj4_shift _ _ _ _ _len) => /#.
 move=> _ rr mem [-> ->] /=.
-rewrite A25u256toA101u64E A101_set800.
+rewrite A25u256toA101u64E // A101_set800 Hstk.
 rewrite (: (_k + w) %% _r8 + (_len - w) - (_k + w) %% _r8 = _len - w) 1:/#.
 have G : forall j, 0 <= j < 4 => st4x_lane (iter ((_k + w) %/ _r8 + 1) keccak_f1600_x4 _s0) j = st_i (st4x_lane _s0 j) ((_k + w) %/ _r8 + 1).
 + by move=> j Hj; apply st4x_get_iter => //; smt(divz_ge0).
@@ -1798,13 +1829,16 @@ hoare add_updstate_avx2x4_h _st _at _buf0 _buf1 _buf2 _buf3 _off _upto:
    /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
  ==> addstate_res4 _st _at [_buf0; _buf1; _buf2; _buf3] _off (_upto - _at) 0 (st4x res.`1) res.`2 res.`3.
 proof.
-proc => /=; pose n := _upto - _at.
+proc => /=.
+conseq (: st = st4x_of _st /\ at = _at /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ off = _off /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE ==> _).
++ by move=> &hr /> *; rewrite st4xK.
+pose n := _upto - _at.
 seq 2 : (#pre /\ W64.to_uint at8 = _at %% 8).
 + by auto => /> H0 H1 H2 H3 H4; rewrite and7_mod8 /#.
 seq 1 : (buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ upto = _upto
          /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf0 _off n; sub _buf1 _off n; sub _buf2 _off n; sub _buf3 _off n] 0 sz _off off st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf0 _off n; sub _buf1 _off n; sub _buf2 _off n; sub _buf3 _off n] 0 sz _off off (st4x st) at (_upto - at) 0).
 + if; last first.
   + auto => /> H0 H1 H2 H3 H4 Hk; split; first smt().
     exists _at; split => //; apply addstate_spec4_init => //.
@@ -1837,7 +1871,7 @@ split => Hc.
   apply (addstate_spec4_asubread _buf0 _buf1 _buf2 _buf3 [t0 `<<<` 8 * (_at %% 8); t1 `<<<` 8 * (_at %% 8); t2 `<<<` 8 * (_at %% 8); t3 `<<<` 8 * (_at %% 8)] base _st _at _off n 0 _st _ _at 0 n 0 (base + 8) (base + 8) (8 - _at %% 8) (_upto - (base + 8)) 0) => //.
   + smt().
   + smt().
-  + move=> k Hk'; rewrite (st4x_get_xor64x4_at _st base) //; smt().
+  + move=> k Hk'; rewrite (st4x_get_xor64x4_at (st4x_of _st) base) //; smt().
   + by rewrite forall4 /=.
 have Emin : min n (base + 8 - _at) = n by smt().
 move: M0 M1 M2 M3; rewrite Emin (: _at + n = _upto) 1:/# (: 0 + n = min 8 (max 0 (_upto - _at))) 1:/# (: n - n = 0) 1:/# => M0 M1 M2 M3.
@@ -1845,22 +1879,22 @@ exists (base + 8); split; first smt().
 apply (addstate_spec4_asubread _buf0 _buf1 _buf2 _buf3 [t0 `<<<` 8 * (_at %% 8); t1 `<<<` 8 * (_at %% 8); t2 `<<<` 8 * (_at %% 8); t3 `<<<` 8 * (_at %% 8)] base _st _at _off n 0 _st _ _at 0 n 0 (base + 8) _upto (min 8 (max 0 (_upto - _at))) 0 0) => //.
 + smt().
 + smt().
-+ move=> k Hk'; rewrite (st4x_get_xor64x4_at _st base) //; smt().
++ move=> k Hk'; rewrite (st4x_get_xor64x4_at (st4x_of _st) base) //; smt().
 by rewrite forall4 /=.
 seq 3 : (buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ upto = _upto
          /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ _upto < at + 8
-         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf0 _off n; sub _buf1 _off n; sub _buf2 _off n; sub _buf3 _off n] 0 sz _off off st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf0 _off n; sub _buf1 _off n; sub _buf2 _off n; sub _buf3 _off n] 0 sz _off off (st4x st) at (_upto - at) 0).
 + while (buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ upto = _upto
          /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ newat = at + 8
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf0 _off n; sub _buf1 _off n; sub _buf2 _off n; sub _buf3 _off n] 0 sz _off off st at (_upto - at) 0); last by auto => /#.
+         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf0 _off n; sub _buf1 _off n; sub _buf2 _off n; sub _buf3 _off n] 0 sz _off off (st4x st) at (_upto - at) 0); last by auto => /#.
   auto => &hr [#] -> -> -> -> -> H0 H1 H2 H3 H4 -> Ha0 Ha1 Ha8 [sz [Hsz IH]] Hc /=.
   have Hal : at{hr} %% 8 = 0 by smt().
   do 5!(split; first smt()).
   exists (sz + 8); split; first smt().
   rewrite (: _upto - (at{hr} + 8) = _upto - at{hr} - 8) 1:/#.
-  apply (addstate_spec4_fullword _buf0 _buf1 _buf2 _buf3 [get64_direct (WA.init8 ("_.[_]" _buf0)) off{hr}; get64_direct (WA.init8 ("_.[_]" _buf1)) off{hr}; get64_direct (WA.init8 ("_.[_]" _buf2)) off{hr}; get64_direct (WA.init8 ("_.[_]" _buf3)) off{hr}] sz _st _at _off n 0 st{hr} _ off{hr} at{hr} (_upto - at{hr}) 0) => //.
+  apply (addstate_spec4_fullword _buf0 _buf1 _buf2 _buf3 [BA.get64d _buf0 off{hr}; BA.get64d _buf1 off{hr}; BA.get64d _buf2 off{hr}; BA.get64d _buf3 off{hr}] sz _st _at _off n 0 (st4x st{hr}) _ off{hr} at{hr} (_upto - at{hr}) 0) => //.
   + smt().
   + smt().
   + move=> k Hk'; rewrite (st4x_get_xor64x4_at st{hr} at{hr}) //; smt().
@@ -1869,7 +1903,7 @@ if; last first.
 + auto => &hr [#] _ _ _ _ -> H0 H1 H2 H3 H4 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
   have Ea : at{hr} = _upto by smt().
   move: IH; rewrite Ea /= => IH.
-  by apply (addstate_spec4_done _buf0 _buf1 _buf2 _buf3 sz _st _at _off n 0 st{hr} off{hr} _upto 0) => //; smt().
+  by apply (addstate_spec4_done _buf0 _buf1 _buf2 _buf3 sz _st _at _off n 0 (st4x st{hr}) off{hr} _upto 0) => //; smt().
 wp; ecall (a_rlen_read_upto8_h buf3 off (W64.to_uint upto8)); wp; ecall (a_rlen_read_upto8_h buf2 off (W64.to_uint upto8)).
 wp; ecall (a_rlen_read_upto8_h buf1 off (W64.to_uint upto8)); wp; ecall (a_rlen_read_upto8_h buf0 off (W64.to_uint upto8)).
 wp; skip => &hr [#] -> -> -> -> -> H0 H1 H2 H3 H4 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
@@ -1877,7 +1911,7 @@ have Hal : at{hr} %% 8 = 0 by smt().
 have Eu : W64.to_uint (W64.of_int _upto `&` W64.of_int 7) = _upto - at{hr} by rewrite and7_mod8; smt().
 rewrite Eu.
 move: (IH 0 _) => //= IH0.
-have [_ [Ec1 Ec2]] := addstate_spec_sub_rem (st4x_lane _st 0) _at _buf0 _off n 0 sz off{hr} (st4x_lane st{hr} 0) at{hr} (_upto - at{hr}) 0 H3 _ _ IH0; 1,2: smt().
+have [_ [Ec1 Ec2]] := addstate_spec_sub_rem (st4x_lane _st 0) _at _buf0 _off n 0 sz off{hr} (st4x_lane (st4x st{hr}) 0) at{hr} (_upto - at{hr}) 0 H3 _ _ IH0; 1,2: smt().
 split; first smt(). move=> _ [o0 t0] /= [Hs0 Ho0].
 split; first smt(). move=> _ [o1 t1] /= [Hs1 Ho1].
 split; first smt(). move=> _ [o2 t2] /= [Hs2 Ho2].
@@ -1887,7 +1921,7 @@ have M1 := asubread_rlen _buf1 t1 at{hr} at{hr} off{hr} 0 (_upto - at{hr}) _ _ _
 have M2 := asubread_rlen _buf2 t2 at{hr} at{hr} off{hr} 0 (_upto - at{hr}) _ _ _; 1,2: smt(). by move=> _; rewrite addz0.
 have M3 := asubread_rlen _buf3 t3 at{hr} at{hr} off{hr} 0 (_upto - at{hr}) _ _ _; 1,2: smt(). by move=> _; rewrite addz0.
 move: M0 M1 M2 M3; rewrite (: 8 * (at{hr} - at{hr}) = 0) 1:/# !u64_shl0 (: min (_upto - at{hr}) (at{hr} + 8 - at{hr}) = _upto - at{hr}) 1:/# (: at{hr} + (_upto - at{hr}) = _upto) 1:/# (: 0 + (_upto - at{hr}) = min 8 (max 0 (_upto - at{hr}))) 1:/# (: _upto - at{hr} - (_upto - at{hr}) = 0) 1:/# => M0 M1 M2 M3.
-apply (addstate_spec4_finish _buf0 _buf1 _buf2 _buf3 [t0; t1; t2; t3] sz _st _at _off n 0 st{hr} _ off{hr} at{hr} (_upto - at{hr}) 0 _upto (min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
+apply (addstate_spec4_finish _buf0 _buf1 _buf2 _buf3 [t0; t1; t2; t3] sz _st _at _off n 0 (st4x st{hr}) _ off{hr} at{hr} (_upto - at{hr}) 0 _upto (min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
 + smt().
 + smt().
 + smt().
@@ -1917,13 +1951,16 @@ hoare add_bcast_updstate_avx2x4_h _st _at _buf _off _upto:
    /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
  ==> addstate_res4 _st _at [_buf; _buf; _buf; _buf] _off (_upto - _at) 0 (st4x res.`1) res.`2 res.`3.
 proof.
-proc => /=; pose n := _upto - _at.
+proc => /=.
+conseq (: st = st4x_of _st /\ at = _at /\ buf = _buf /\ off = _off /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE ==> _).
++ by move=> &hr /> *; rewrite st4xK.
+pose n := _upto - _at.
 seq 2 : (#pre /\ W64.to_uint at8 = _at %% 8).
 + by auto => /> H0 H1 H2 H3 H4; rewrite and7_mod8 /#.
 seq 1 : (buf = _buf /\ upto = _upto
          /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf _off n; sub _buf _off n; sub _buf _off n; sub _buf _off n] 0 sz _off off st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf _off n; sub _buf _off n; sub _buf _off n; sub _buf _off n] 0 sz _off off (st4x st) at (_upto - at) 0).
 + if; last first.
   + auto => /> H0 H1 H2 H3 H4 Hk; split; first smt().
     exists _at; split => //; apply addstate_spec4_init => //.
@@ -1952,7 +1989,7 @@ split => Hc.
   apply (addstate_spec4_asubread _buf _buf _buf _buf [t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8)] base _st _at _off n 0 _st _ _at 0 n 0 (base + 8) (base + 8) (8 - _at %% 8) (_upto - (base + 8)) 0) => //.
   + smt().
   + smt().
-  + by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 _st _ (_at %/ 8)) 1..3:/#.
+  + by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 (st4x_of _st) _ (_at %/ 8)) 1..3:/#.
   + by move=> k Hk'; rewrite !nth4_const.
 have Emin : min n (base + 8 - _at) = n by smt().
 move: M0; rewrite Emin (: _at + n = _upto) 1:/# (: 0 + n = min 8 (max 0 (_upto - _at))) 1:/# (: n - n = 0) 1:/# => M0.
@@ -1960,22 +1997,22 @@ exists (base + 8); split; first smt().
 apply (addstate_spec4_asubread _buf _buf _buf _buf [t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8)] base _st _at _off n 0 _st _ _at 0 n 0 (base + 8) _upto (min 8 (max 0 (_upto - _at))) 0 0) => //.
 + smt().
 + smt().
-+ by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 _st _ (_at %/ 8)) 1..3:/#.
++ by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 (st4x_of _st) _ (_at %/ 8)) 1..3:/#.
 by move=> k Hk'; rewrite !nth4_const.
 seq 3 : (buf = _buf /\ upto = _upto
          /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ _upto < at + 8
-         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf _off n; sub _buf _off n; sub _buf _off n; sub _buf _off n] 0 sz _off off st at (_upto - at) 0).
+         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf _off n; sub _buf _off n; sub _buf _off n; sub _buf _off n] 0 sz _off off (st4x st) at (_upto - at) 0).
 + while (buf = _buf /\ upto = _upto
          /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ newat = at + 8
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto)
-         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf _off n; sub _buf _off n; sub _buf _off n; sub _buf _off n] 0 sz _off off st at (_upto - at) 0); last by auto => /#.
+         /\ exists sz, _at <= sz /\ addstate_spec4 _st _at [sub _buf _off n; sub _buf _off n; sub _buf _off n; sub _buf _off n] 0 sz _off off (st4x st) at (_upto - at) 0); last by auto => /#.
   auto => &hr [#] -> -> H0 H1 H2 H3 H4 -> Ha0 Ha1 Ha8 [sz [Hsz IH]] Hc /=.
   have Hal : at{hr} %% 8 = 0 by smt().
   do 5!(split; first smt()).
   exists (sz + 8); split; first smt().
   rewrite (: _upto - (at{hr} + 8) = _upto - at{hr} - 8) 1:/#.
-  apply (addstate_spec4_fullword _buf _buf _buf _buf [get64_direct (WA.init8 ("_.[_]" _buf)) off{hr}; get64_direct (WA.init8 ("_.[_]" _buf)) off{hr}; get64_direct (WA.init8 ("_.[_]" _buf)) off{hr}; get64_direct (WA.init8 ("_.[_]" _buf)) off{hr}] sz _st _at _off n 0 st{hr} _ off{hr} at{hr} (_upto - at{hr}) 0) => //.
+  apply (addstate_spec4_fullword _buf _buf _buf _buf [BA.get64d _buf off{hr}; BA.get64d _buf off{hr}; BA.get64d _buf off{hr}; BA.get64d _buf off{hr}] sz _st _at _off n 0 (st4x st{hr}) _ off{hr} at{hr} (_upto - at{hr}) 0) => //.
   + smt().
   + smt().
   + by move=> k Hk'; rewrite nth4_const // (st4x_get_xorbcast256 st{hr} _ (at{hr} %/ 8)) 1..3:/# (: 8 * (at{hr} %/ 8) = at{hr}) 1:/#.
@@ -1984,19 +2021,19 @@ if; last first.
 + auto => &hr [#] _ -> H0 H1 H2 H3 H4 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
   have Ea : at{hr} = _upto by smt().
   move: IH; rewrite Ea /= => IH.
-  by apply (addstate_spec4_done _buf _buf _buf _buf sz _st _at _off n 0 st{hr} off{hr} _upto 0) => //; smt().
+  by apply (addstate_spec4_done _buf _buf _buf _buf sz _st _at _off n 0 (st4x st{hr}) off{hr} _upto 0) => //; smt().
 wp; ecall (a_rlen_read_upto8_h buf off (W64.to_uint upto8)).
 wp; skip => &hr [#] -> -> H0 H1 H2 H3 H4 Ha0 Ha1 Ha8 Hlt [sz [Hsz IH]] Hc /=.
 have Hal : at{hr} %% 8 = 0 by smt().
 have Eu : W64.to_uint (W64.of_int _upto `&` W64.of_int 7) = _upto - at{hr} by rewrite and7_mod8; smt().
 rewrite Eu.
 move: (IH 0 _) => //= IH0.
-have [_ [Ec1 Ec2]] := addstate_spec_sub_rem (st4x_lane _st 0) _at _buf _off n 0 sz off{hr} (st4x_lane st{hr} 0) at{hr} (_upto - at{hr}) 0 H3 _ _ IH0; 1,2: smt().
+have [_ [Ec1 Ec2]] := addstate_spec_sub_rem (st4x_lane _st 0) _at _buf _off n 0 sz off{hr} (st4x_lane (st4x st{hr}) 0) at{hr} (_upto - at{hr}) 0 H3 _ _ IH0; 1,2: smt().
 split; first smt(). move=> _ [o0 t0] /= [Hs0 ->].
 rewrite truncateu64_VMOV_64.
 have M0 := asubread_rlen _buf t0 at{hr} at{hr} off{hr} 0 (_upto - at{hr}) _ _ _; 1,2: smt(). by move=> _; rewrite addz0.
 move: M0; rewrite (: 8 * (at{hr} - at{hr}) = 0) 1:/# u64_shl0 (: min (_upto - at{hr}) (at{hr} + 8 - at{hr}) = _upto - at{hr}) 1:/# (: at{hr} + (_upto - at{hr}) = _upto) 1:/# (: 0 + (_upto - at{hr}) = min 8 (max 0 (_upto - at{hr}))) 1:/# (: _upto - at{hr} - (_upto - at{hr}) = 0) 1:/# => M0.
-apply (addstate_spec4_finish _buf _buf _buf _buf [t0; t0; t0; t0] sz _st _at _off n 0 st{hr} _ off{hr} at{hr} (_upto - at{hr}) 0 _upto (min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
+apply (addstate_spec4_finish _buf _buf _buf _buf [t0; t0; t0; t0] sz _st _at _off n 0 (st4x st{hr}) _ off{hr} at{hr} (_upto - at{hr}) 0 _upto (min 8 (max 0 (_upto - at{hr}))) 0 0) => //.
 + smt().
 + smt().
 + smt().
@@ -2038,21 +2075,21 @@ proof.
 proc => /=; exlim st => _st.
 seq 6 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <= _ASIZE
          /\ r8 = _r8 /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3
-         /\ off = 0 /\ stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
-+ wp; ecall (ststatus_data_avx2x4_h st.[100]); auto => &hr [#] <- -> -> -> -> -> Habs H0 H1 r [-> ->] /=.
-  have := Habs; rewrite /absorbing_spec4 /status_spec => [#] Hp Er8 Etb Hat.
-  rewrite Hp Er8 Etb Hat /=; split; [smt() | by rewrite /A101u64toA25u256].
+         /\ off = 0 /\ st4x stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
++ wp; ecall (ststatus_data_avx2x4_h (ust4x_status st)); auto => &hr [#] <- -> -> -> -> -> Habs H0 H1 r [-> ->] /=.
+  have := Habs; rewrite /absorbing_spec4 /status_spec /= => [#] Hp Er8 Etb Hat.
+  rewrite /= Hp Er8 Etb Hat /=; split; [smt() | by rewrite st4x_get_sub256_0].
 seq 1 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <= _ASIZE /\ r8 = _r8
          /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3
          /\ 0 <= off <= _len /\ at = (size _l0 + off) %% _r8
          /\ len = _len - off + at /\ len < r8
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf0 0 _len; sub _buf1 0 _len; sub _buf2 0 _len; sub _buf3 0 _len] off stk).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf0 0 _len; sub _buf1 0 _len; sub _buf2 0 _len; sub _buf3 0 _len] off (st4x stk)).
 + while (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <= _ASIZE /\ r8 = _r8
          /\ buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3
          /\ 0 <= off <= _len /\ at = (size _l0 + off) %% _r8
          /\ len = _len - off + at
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf0 0 _len; sub _buf1 0 _len; sub _buf2 0 _len; sub _buf3 0 _len] off stk).
-  + wp; ecall (keccakf1600_avx2x4_h stk); ecall (add_updstate_avx2x4_h stk at buf0 buf1 buf2 buf3 off r8).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf0 0 _len; sub _buf1 0 _len; sub _buf2 0 _len; sub _buf3 0 _len] off (st4x stk)).
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); ecall (add_updstate_avx2x4_h (st4x stk) at buf0 buf1 buf2 buf3 off r8).
     auto => &hr [#] -> Habs H0 H1 -> -> -> -> -> Hb0 Hb1 -> -> Hp Hc.
     have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
     pose k := off{hr}.
@@ -2061,8 +2098,8 @@ seq 1 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <=
     split; first smt().
     move=> _ [stc at1 c1] /= Hres r -> /=.
     have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
-    have Hl := addstate_res4_sub stk{hr} stc a _buf0 _buf1 _buf2 _buf3 _len k (_r8 - a) at1 c1 _ _ _ _ Hres; 1..4: smt().
-    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf0 0 _len) (sub _buf1 0 _len) (sub _buf2 0 _len) (sub _buf3 0 _len) k (_r8 - a) a stk{hr} stc _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(BA.size_sub).
+    have Hl := addstate_res4_sub (st4x stk{hr}) (st4x stc) a _buf0 _buf1 _buf2 _buf3 _len k (_r8 - a) at1 c1 _ _ _ _ Hres; 1..4: smt().
+    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf0 0 _len) (sub _buf1 0 _len) (sub _buf2 0 _len) (sub _buf3 0 _len) k (_r8 - a) a (st4x stk{hr}) (st4x stc) _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(BA.size_sub).
     have [_ [_ Ec1]] := Hres.
     rewrite Ec1 /=.
     do 3!(split; first smt()).
@@ -2074,10 +2111,10 @@ seq 1 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <=
   split; last by smt().
   do 3!(split; first smt()).
   by apply pabsorb4_init.
-wp; ecall (add_updstate_avx2x4_h stk at buf0 buf1 buf2 buf3 off len); wp; skip => &hr [#] -> Habs H0 H1 -> -> -> -> -> Hb0 Hb1 -> -> Hc Hp /=.
+wp; ecall (add_updstate_avx2x4_h (st4x stk) at buf0 buf1 buf2 buf3 off len); wp; skip => &hr [#] -> Habs H0 H1 -> -> -> -> -> Hb0 Hb1 -> -> Hc Hp /=.
 split; first smt().
 move=> _ [stc at1 c1] /= Hres.
-rewrite A25u256toA101u64E A101_set800.
+rewrite A25u256toA101u64E // A101_set800.
 have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
 pose k := off{hr}.
 pose a := (size _l0 + k) %% _r8.
@@ -2085,8 +2122,8 @@ have Ha : 0 <= a < _r8 by smt(modz_ge0 ltz_pmod).
 have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
 have Hsz : forall (b: BA.t), size (sub b 0 _len) = _len by move=> b; rewrite BA.size_sub /#.
 move: Hres; rewrite (: _len - k + a - a = _len - k) 1:/# => Hres.
-have Hl := addstate_res4_sub stk{hr} stc a _buf0 _buf1 _buf2 _buf3 _len k (_len - k) at1 c1 _ _ _ _ Hres; 1..4: smt().
-have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf0 0 _len) (sub _buf1 0 _len) (sub _buf2 0 _len) (sub _buf3 0 _len) k (_len - k) a stk{hr} stc 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
+have Hl := addstate_res4_sub (st4x stk{hr}) (st4x stc) a _buf0 _buf1 _buf2 _buf3 _len k (_len - k) at1 c1 _ _ _ _ Hres; 1..4: smt().
+have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf0 0 _len) (sub _buf1 0 _len) (sub _buf2 0 _len) (sub _buf3 0 _len) k (_len - k) a (st4x stk{hr}) (st4x stc) 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
 have HL0 := HL _; first done.
 have [_ [Eat1 _]] := Hres.
 have [Hat2 [Hr2 Htb2]] := ststatus_set_atP (ust4x_status _st) at1 _; first smt().
@@ -2135,21 +2172,21 @@ proof.
 proc => /=; exlim st => _st.
 seq 6 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <= _ASIZE
          /\ r8 = _r8 /\ buf = _buf
-         /\ off = 0 /\ stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
-+ wp; ecall (ststatus_data_avx2x4_h st.[100]); auto => &hr [#] <- -> -> Habs H0 H1 r [-> ->] /=.
-  have := Habs; rewrite /absorbing_spec4 /status_spec => [#] Hp Er8 Etb Hat.
-  rewrite Hp Er8 Etb Hat /=; split; [smt() | by rewrite /A101u64toA25u256].
+         /\ off = 0 /\ st4x stk = A101u64toA25u256 _st /\ at = size _l0 %% _r8 /\ len = _len + at).
++ wp; ecall (ststatus_data_avx2x4_h (ust4x_status st)); auto => &hr [#] <- -> -> Habs H0 H1 r [-> ->] /=.
+  have := Habs; rewrite /absorbing_spec4 /status_spec /= => [#] Hp Er8 Etb Hat.
+  rewrite /= Hp Er8 Etb Hat /=; split; [smt() | by rewrite st4x_get_sub256_0].
 seq 1 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <= _ASIZE /\ r8 = _r8
          /\ buf = _buf
          /\ 0 <= off <= _len /\ at = (size _l0 + off) %% _r8
          /\ len = _len - off + at /\ len < r8
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len] off stk).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len] off (st4x stk)).
 + while (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <= _ASIZE /\ r8 = _r8
          /\ buf = _buf
          /\ 0 <= off <= _len /\ at = (size _l0 + off) %% _r8
          /\ len = _len - off + at
-         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len] off stk).
-  + wp; ecall (keccakf1600_avx2x4_h stk); ecall (add_bcast_updstate_avx2x4_h stk at buf off r8).
+         /\ pabsorb4 _r8 [_l0; _l1; _l2; _l3] [sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len; sub _buf 0 _len] off (st4x stk)).
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); ecall (add_bcast_updstate_avx2x4_h (st4x stk) at buf off r8).
     auto => &hr [#] -> Habs H0 H1 -> -> Hb0 Hb1 -> -> Hp Hc.
     have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
     pose k := off{hr}.
@@ -2158,8 +2195,8 @@ seq 1 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <=
     split; first smt().
     move=> _ [stc at1 c1] /= Hres r -> /=.
     have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
-    have Hl := addstate_res4_sub stk{hr} stc a _buf _buf _buf _buf _len k (_r8 - a) at1 c1 _ _ _ _ Hres; 1..4: smt().
-    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) k (_r8 - a) a stk{hr} stc _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(BA.size_sub).
+    have Hl := addstate_res4_sub (st4x stk{hr}) (st4x stc) a _buf _buf _buf _buf _len k (_r8 - a) at1 c1 _ _ _ _ Hres; 1..4: smt().
+    have Hf := pabsorb4_fill _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) k (_r8 - a) a (st4x stk{hr}) (st4x stc) _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt(BA.size_sub).
     have [_ [_ Ec1]] := Hres.
     rewrite Ec1 /=.
     do 3!(split; first smt()).
@@ -2171,10 +2208,10 @@ seq 1 : (st = _st /\ absorbing_spec4 _r8 _tb _l0 _l1 _l2 _l3 _st /\ 0 <= _len <=
   split; last by smt().
   do 3!(split; first smt()).
   by apply pabsorb4_init.
-wp; ecall (add_bcast_updstate_avx2x4_h stk at buf off len); wp; skip => &hr [#] -> Habs H0 H1 -> -> Hb0 Hb1 -> -> Hc Hp /=.
+wp; ecall (add_bcast_updstate_avx2x4_h (st4x stk) at buf off len); wp; skip => &hr [#] -> Habs H0 H1 -> -> Hb0 Hb1 -> -> Hc Hp /=.
 split; first smt().
 move=> _ [stc at1 c1] /= Hres.
-rewrite A25u256toA101u64E A101_set800.
+rewrite A25u256toA101u64E // A101_set800.
 have Hr8 := pabsorb4_r8 _ _ _ _ _ Hp.
 pose k := off{hr}.
 pose a := (size _l0 + k) %% _r8.
@@ -2182,8 +2219,8 @@ have Ha : 0 <= a < _r8 by smt(modz_ge0 ltz_pmod).
 have Hs := absorbing_spec4_sizes _ _ _ _ _ _ _ Habs.
 have Hsz : forall (b: BA.t), size (sub b 0 _len) = _len by move=> b; rewrite BA.size_sub /#.
 move: Hres; rewrite (: _len - k + a - a = _len - k) 1:/# => Hres.
-have Hl := addstate_res4_sub stk{hr} stc a _buf _buf _buf _buf _len k (_len - k) at1 c1 _ _ _ _ Hres; 1..4: smt().
-have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) k (_len - k) a stk{hr} stc 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
+have Hl := addstate_res4_sub (st4x stk{hr}) (st4x stc) a _buf _buf _buf _buf _len k (_len - k) at1 c1 _ _ _ _ Hres; 1..4: smt().
+have [_ HL] := pabsorb4_last _r8 (size _l0) [_l0; _l1; _l2; _l3] (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) (sub _buf 0 _len) k (_len - k) a (st4x stk{hr}) (st4x stc) 0 _ _ _ _ _ _ _ Hs Hp Hl; 1..7: smt().
 have HL0 := HL _; first done.
 have [_ [Eat1 _]] := Hres.
 have [Hat2 [Hr2 Htb2]] := ststatus_set_atP (ust4x_status _st) at1 _; first smt().
@@ -2231,9 +2268,11 @@ hoare dump_updstate_avx2x4_h _buf0 _buf1 _buf2 _buf3 _off _st _at _upto:
    /\ res.`5 = _off + (_upto - _at) /\ res.`6 = _upto.
 proof.
 proc => /=.
+conseq (: buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ off = _off /\ st = st4x_of _st /\ at = _at /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE ==> _).
++ by move=> &hr /> *; rewrite st4xK.
 seq 2 : (#pre /\ W64.to_uint at8 = _at %% 8).
 + by auto => /> H0 H1 H2 H3 H4; rewrite and7_mod8 /#.
-seq 1 : (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
+seq 1 : (st = st4x_of _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ off = _off + (at - _at)
          /\ exists z, 0 <= z <= 7 /\ z <= _upto - at
             /\ buf0 = afill _buf0 _off (sub (stbytes (st4x_lane _st 0)) _at (at - _at) ++ u8zeros z)
@@ -2267,14 +2306,14 @@ seq 1 : (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _o
   split; first smt().
   exists 0; rewrite (: min (_upto - _at) (8 - _at %% 8) = _upto - _at) 1:/# (: min (_upto - _at - (_upto - _at)) (_at %% 8) = 0) 1:/#.
   done.
-seq 3 : (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
+seq 3 : (st = st4x_of _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ off = _off + (at - _at) /\ _upto < at + 8
          /\ exists z, 0 <= z <= 7 /\ z <= _upto - at
             /\ buf0 = afill _buf0 _off (sub (stbytes (st4x_lane _st 0)) _at (at - _at) ++ u8zeros z)
             /\ buf1 = afill _buf1 _off (sub (stbytes (st4x_lane _st 1)) _at (at - _at) ++ u8zeros z)
             /\ buf2 = afill _buf2 _off (sub (stbytes (st4x_lane _st 2)) _at (at - _at) ++ u8zeros z)
             /\ buf3 = afill _buf3 _off (sub (stbytes (st4x_lane _st 3)) _at (at - _at) ++ u8zeros z)).
-+ while (st = _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
++ while (st = st4x_of _st /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE
          /\ _at <= at <= _upto /\ (at %% 8 = 0 \/ at = _upto) /\ off = _off + (at - _at) /\ newat = at + 8
          /\ exists z, 0 <= z <= 7 /\ z <= _upto - at
             /\ buf0 = afill _buf0 _off (sub (stbytes (st4x_lane _st 0)) _at (at - _at) ++ u8zeros z)
@@ -2347,7 +2386,7 @@ proc; seq 4: (8 <= r8).
     + while (8 <= r8) len => [z|]; last by auto => /#.
       by wp; call keccakf1600_avx2x4_ll; call dump_updstate_avx2x4_ll; auto => /#.
     by wp; call dump_updstate_avx2x4_ll; auto.
-  by hoare; wp; if; [wp; ecall (keccakf1600_avx2x4_h stk); auto | auto].
+  by hoare; wp; if; [wp; ecall (keccakf1600_avx2x4_h (st4x stk)); auto | auto].
 + by hoare; wp; ecall (ststatus_data_avx2x4_bnd_h); auto.
 by [].
 qed.
@@ -2365,16 +2404,15 @@ proof.
 proc => /=; exlim st => _st.
 seq 4 : (buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3 /\ len = _len
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len <= _ASIZE
-         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ stk = iter ((_k - 1) %/ _r8 + 1) keccak_f1600_x4 _s0).
-+ wp; ecall (ststatus_data_avx2x4_h st.[100]); auto => &hr [#] <- -> -> -> -> -> Hsq H0 H1 r [-> ->] /=.
-  have := Hsq; rewrite /squeezing_spec4 => [#] Hr0 Hr1 Hk Est Er8 Eat.
-  rewrite Er8 Eat /= -Est.
-  by rewrite /A101u64toA25u256 /=; smt().
+         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ (st4x stk) = iter ((_k - 1) %/ _r8 + 1) keccak_f1600_x4 _s0).
++ wp; ecall (ststatus_data_avx2x4_h (ust4x_status st)); auto => &hr [#] <- -> -> -> -> -> Hsq H0 H1 r [-> ->] /=.
+  have := Hsq; rewrite /squeezing_spec4 /= => [#] Hr0 Hr1 Hk Est Er8 Eat.
+  rewrite /= Er8 Eat /= -Est st4x_get_sub256_0 //=; smt().
 seq 3 : (buf0 = _buf0 /\ buf1 = _buf1 /\ buf2 = _buf2 /\ buf3 = _buf3
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len <= _ASIZE
-         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ off = 0 /\ len = _len + at /\ stk = iter (_k %/ _r8 + 1) keccak_f1600_x4 _s0).
+         /\ st = _st /\ r8 = _r8 /\ at = _k %% _r8 /\ off = 0 /\ len = _len + at /\ (st4x stk) = iter (_k %/ _r8 + 1) keccak_f1600_x4 _s0).
 + wp; if.
-  + wp; ecall (keccakf1600_avx2x4_h stk); auto => &hr [#] -> -> -> -> -> Hsq H0 H1 -> -> Hat -> Hz.
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); auto => &hr [#] -> -> -> -> -> Hsq H0 H1 -> -> Hat -> Hz.
     have [Hr [Hk _]] := Hsq.
     move=> r ->; do !(split; first smt()).
     rewrite -(squeeze_entry0 _r8 _k) 1,2:/# (iterS ((_k - 1) %/ _r8 + 1)); first by apply (squeeze_entry_ge0 _r8 _k) => /#.
@@ -2387,16 +2425,16 @@ seq 1 : (buf0 = afill _buf0 0 (sqstream _r8 (st4x_lane _s0 0) _k off)
          /\ buf2 = afill _buf2 0 (sqstream _r8 (st4x_lane _s0 2) _k off)
          /\ buf3 = afill _buf3 0 (sqstream _r8 (st4x_lane _s0 3) _k off)
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len <= _ASIZE /\ st = _st /\ r8 = _r8
-         /\ stk = iter ((_k + off) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + off) %% _r8
+         /\ (st4x stk) = iter ((_k + off) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + off) %% _r8
          /\ len = at + (_len - off) /\ 0 <= off < _len /\ len <= r8).
 + while (buf0 = afill _buf0 0 (sqstream _r8 (st4x_lane _s0 0) _k off)
          /\ buf1 = afill _buf1 0 (sqstream _r8 (st4x_lane _s0 1) _k off)
          /\ buf2 = afill _buf2 0 (sqstream _r8 (st4x_lane _s0 2) _k off)
          /\ buf3 = afill _buf3 0 (sqstream _r8 (st4x_lane _s0 3) _k off)
          /\ squeezing_spec4 _r8 _s0 _k _st /\ 0 < _len <= _ASIZE /\ st = _st /\ r8 = _r8
-         /\ stk = iter ((_k + off) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + off) %% _r8
+         /\ (st4x stk) = iter ((_k + off) %/ _r8 + 1) keccak_f1600_x4 _s0 /\ at = (_k + off) %% _r8
          /\ len = at + (_len - off) /\ 0 <= off < _len).
-  + wp; ecall (keccakf1600_avx2x4_h stk); ecall (dump_updstate_avx2x4_h buf0 buf1 buf2 buf3 off stk at r8).
+  + wp; ecall (keccakf1600_avx2x4_h (st4x stk)); ecall (dump_updstate_avx2x4_h buf0 buf1 buf2 buf3 off (st4x stk) at r8).
     auto => &hr [#] -> -> -> -> Hsq H0 H1 -> -> -> -> -> Hw0 Hw1 Hc.
     have [Hr [Hk _]] := Hsq.
     have Ha : 0 <= (_k + off{hr}) %% _r8 < _r8 by smt(modz_ge0 ltz_pmod).
@@ -2421,12 +2459,12 @@ seq 1 : (buf0 = afill _buf0 0 (sqstream _r8 (st4x_lane _s0 0) _k off)
   split; last by smt().
   have E0 : forall j, sqstream _r8 (st4x_lane _s0 j) _k 0 = [] by move=> j; rewrite -size_eq0 size_sqstream.
   by rewrite !E0 !afill_nil /#.
-wp; ecall (dump_updstate_avx2x4_h buf0 buf1 buf2 buf3 off stk at len); wp; skip => &hr [#] -> -> -> -> Hsq H0 H1 -> -> -> -> -> Hw0 Hw1 Hle /=.
+wp; ecall (dump_updstate_avx2x4_h buf0 buf1 buf2 buf3 off (st4x stk) at len); wp; skip => &hr [#] -> -> -> -> Hsq H0 H1 -> -> Hstk -> -> Hw0 Hw1 Hle /=.
 have [Hr [Hk _]] := Hsq.
 have Ha : 0 <= (_k + off{hr}) %% _r8 < _r8 by smt(modz_ge0 ltz_pmod).
 split; first smt().
 move=> _ [b0 b1 b2 b3 off1 at1] /= [-> [-> [-> [-> [_ ->]]]]].
-rewrite A25u256toA101u64E A101_set800.
+rewrite A25u256toA101u64E // A101_set800 Hstk.
 rewrite (: (_k + off{hr}) %% _r8 + (_len - off{hr}) - (_k + off{hr}) %% _r8 = _len - off{hr}) 1:/#.
 have G : forall j, 0 <= j < 4 => st4x_lane (iter ((_k + off{hr}) %/ _r8 + 1) keccak_f1600_x4 _s0) j = st_i (st4x_lane _s0 j) ((_k + off{hr}) %/ _r8 + 1).
 + by move=> j Hj; apply st4x_get_iter => //; smt(divz_ge0).
