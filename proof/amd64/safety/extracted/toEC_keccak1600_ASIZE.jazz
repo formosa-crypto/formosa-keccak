@@ -1,0 +1,17 @@
+// Array variants, extracted under the dummy array size _ASIZE = 999 and then
+// abstracted over the size (see ../gen/build.py and ../README.md). As in the
+// barray tree, reuse the memory harness so that both extractions share
+// KECCAK_FEATURES/KECCAK_PERMUTATION.
+require "toEC_keccak1600.jazz"
+
+param int _ASIZE=999;
+
+from Keccak require "common/subreadwrite_ASIZE.jinc"
+
+from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
+from Keccak require "ref/keccak1600_updstate_ASIZE.jinc"
+
+from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+
+from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
+from Keccak require "avx2/keccak1600x4_updstate_ASIZE.jinc"
