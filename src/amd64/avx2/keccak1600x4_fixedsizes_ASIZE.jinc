@@ -13,9 +13,9 @@ from Keccak require "common/subreadwrite_ASIZE.jinc"
 
 #[safety =
    { requires = 0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && is_arr_init(buf,offset,_LEN) && is_arr_init(st,0,25*32)
-   , requires = 0<= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200 && 0 <= _TRAILB && _TRAILB < 256
+   , requires = 0 <= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) <= 200 && 0 <= _TRAILB && _TRAILB < 256
    , res = { final_st, final_AT, final_offset }
-   , ensures = is_arr_init(final_st,0,32*25) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_offset == offset + _LEN }
+   , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_offset == offset + _LEN }
  ]
 inline fn __addstate_bcast_avx2x4
 ( reg mut ptr keccakx4_state st
@@ -119,7 +119,7 @@ inline fn __absorb_bcast_avx2x4
 #[safety =
    { requires = 0<= offset && 0<= _LEN && offset + _LEN <= _ASIZE && is_arr_init(st,0,25*32) && 
    is_arr_init(buf0,offset,_LEN) && is_arr_init(buf1,offset,_LEN) && is_arr_init(buf2,offset,_LEN) && is_arr_init(buf3,offset,_LEN)
-   , requires = 0 <= _TRAILB && _TRAILB < 256 && 0<= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) < 200
+   , requires = 0 <= _TRAILB && _TRAILB < 256 && 0 <= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) <= 200
    , res = { final_st, final_AT, final_offset }
    , ensures = is_arr_init(final_st,0,25*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_offset == offset + _LEN }
  ]
@@ -303,10 +303,11 @@ inline fn __dumpstate_avx2x4
 }
 
 #[safety =
-   { requires =  0< _RATE8 && _RATE8 < 200 && is_arr_init(st,0,25*32)
-   , ensures = is_arr_init(st,0,32*25) 
-   , ensures = is_arr_init(buf0,0,_ASIZE) && is_arr_init(buf1,0,_ASIZE) && 
-               is_arr_init(buf2,0,_ASIZE) && is_arr_init(buf3,0,_ASIZE)
+   { requires = 0 < _RATE8 && _RATE8 < 200 && is_arr_init(st,0,25*32)
+   , res = { final_st, final_buf0, final_buf1, final_buf2, final_buf3 }
+   , ensures = is_arr_init(final_st,0,25*32)
+   , ensures = is_arr_init(final_buf0,0,_ASIZE) && is_arr_init(final_buf1,0,_ASIZE) &&
+               is_arr_init(final_buf2,0,_ASIZE) && is_arr_init(final_buf3,0,_ASIZE)
    }
  ]
 inline fn __squeeze_avx2x4

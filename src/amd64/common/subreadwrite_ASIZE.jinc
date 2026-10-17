@@ -21,13 +21,14 @@
 #[safety =
    { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
      && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
+     && 0 <= LEN && 0 <= TRAIL && TRAIL < 256
    , res = { final_DELTA, final_LEN, final_TRAIL, final_AT, final_w }
-   , ensures =  (CUR <= AT && AT < CUR + 8) ?
-       ( final_DELTA == DELTA + max(0,min(LEN,8 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,8- (AT-CUR)))
-     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+   , ensures = (CUR <= AT && AT < CUR + 8) ?
+       ( (AT - CUR + LEN >= 8) ?
+           ( final_DELTA == DELTA + (CUR + 8 - AT) && final_LEN == LEN - (CUR + 8 - AT)
+          && final_TRAIL == TRAIL && final_AT == CUR + 8 )
+         : ( final_DELTA == DELTA + LEN && final_LEN == 0
+          && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
      : (final_DELTA == DELTA
       && final_LEN == LEN
       && final_TRAIL == TRAIL
@@ -101,13 +102,14 @@ inline fn __a_ilen_read_upto8_at
 #[safety =
    { requires = is_arr_init(buf,offset+DELTA,min(LEN,16)) && 0 <= DELTA
      && 0 <= offset && offset + DELTA + min(LEN,16) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
+     && 0 <= LEN && 0 <= TRAIL && TRAIL < 256
    , res = { final_DELTA, final_LEN, final_TRAIL, final_AT, final_w }
-   , ensures =  (CUR <= AT && AT < CUR + 16) ?
-       ( final_DELTA == DELTA + max(0,min(LEN,16 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,16- (AT-CUR)))
-     && final_TRAIL == (16 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,16) + (16 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+   , ensures = (CUR <= AT && AT < CUR + 16) ?
+       ( (AT - CUR + LEN >= 16) ?
+           ( final_DELTA == DELTA + (CUR + 16 - AT) && final_LEN == LEN - (CUR + 16 - AT)
+          && final_TRAIL == TRAIL && final_AT == CUR + 16 )
+         : ( final_DELTA == DELTA + LEN && final_LEN == 0
+          && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
      : (final_DELTA == DELTA
       && final_LEN == LEN
       && final_TRAIL == TRAIL
@@ -158,13 +160,14 @@ inline fn __a_ilen_read_upto16_at
 #[safety =
    { requires = is_arr_init(buf,offset+DELTA,min(LEN,32)) && 0 <= DELTA
      && 0 <= offset && offset + DELTA + min(LEN,32) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
+     && 0 <= LEN && 0 <= TRAIL && TRAIL < 256
    , res = { final_DELTA, final_LEN, final_TRAIL, final_AT, final_w }
-   , ensures =  (CUR <= AT && AT < CUR + 32) ?
-       ( final_DELTA == DELTA + max(0,min(LEN,32 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,32- (AT-CUR)))
-     && final_TRAIL == (32 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,32) + (32 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+   , ensures = (CUR <= AT && AT < CUR + 32) ?
+       ( (AT - CUR + LEN >= 32) ?
+           ( final_DELTA == DELTA + (CUR + 32 - AT) && final_LEN == LEN - (CUR + 32 - AT)
+          && final_TRAIL == TRAIL && final_AT == CUR + 32 )
+         : ( final_DELTA == DELTA + LEN && final_LEN == 0
+          && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
      : (final_DELTA == DELTA
       && final_LEN == LEN
       && final_TRAIL == TRAIL
@@ -213,13 +216,14 @@ inline fn __a_ilen_read_upto32_at
 #[safety =
    { requires = is_arr_init(buf,offset+DELTA,min(LEN,8)) && 0 <= DELTA
      && 0 <= offset && offset + DELTA + min(LEN,8) <= _ASIZE
-     && 0 <= TRAIL && TRAIL < 256
+     && 0 <= LEN && 0 <= TRAIL && TRAIL < 256
    , res = { final_DELTA, final_LEN, final_TRAIL, final_AT, final_w }
-   , ensures =  (CUR <= AT && AT < CUR + 8) ?
-       ( final_DELTA == DELTA + max(0,min(LEN,8 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,8 - (AT-CUR)))
-     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
+   , ensures = (CUR <= AT && AT < CUR + 8) ?
+       ( (AT - CUR + LEN >= 8) ?
+           ( final_DELTA == DELTA + (CUR + 8 - AT) && final_LEN == LEN - (CUR + 8 - AT)
+          && final_TRAIL == TRAIL && final_AT == CUR + 8 )
+         : ( final_DELTA == DELTA + LEN && final_LEN == 0
+          && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
      : (final_DELTA == DELTA
       && final_LEN == LEN
       && final_TRAIL == TRAIL

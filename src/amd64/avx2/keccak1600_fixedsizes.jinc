@@ -8,7 +8,8 @@ require "keccak1600.jinc"
 */
 
 #[safety =
-   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && _LEN <= 200 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,7*32) && 0<= AT && AT < 200
+   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0 <= _LEN && is_mem_init((64u) buf,_LEN)
+     && is_arr_init(st,0,7*32) && 0 <= AT && AT + _LEN + (_TRAILB != 0 ? 1 : 0) <= 200
    , res = { final_st, final_AT, final_buf }
    , ensures = is_arr_init(final_st,0,7*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0) && final_buf == buf + _LEN
    }
@@ -62,10 +63,10 @@ inline fn __addstate_m_avx2
 }
 
 #[safety =
-   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0<=_LEN && 0<_RATE8 && _RATE8< 200 && 
-                is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,7*32) && 0<= AT && AT < 200
+   { requires = 0 <= _TRAILB && _TRAILB < 256 && 0 <= _LEN && 0 < _RATE8 && _RATE8 < 200
+     && 0 <= AT && AT < _RATE8 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,7*32)
    , res = { final_st, final_AT }
-   , ensures = is_arr_init(final_st,0,7*32) && final_AT == AT + _LEN + (_TRAILB != 0 ? 1 : 0)
+   , ensures = is_arr_init(final_st,0,7*32) && final_AT == (AT + _LEN) % _RATE8 + (_TRAILB != 0 ? 1 : 0)
    }
  ]
 inline fn __absorb_m_avx2
@@ -107,7 +108,7 @@ inline fn __absorb_m_avx2
 */
 
 #[safety =
-   { requires = 0<= _LEN && _LEN <= 200 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,7*32)
+   { requires = 0 <= _LEN && _LEN <= 200 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,7*32)
    , res = { final_buf }
    , ensures = final_buf == buf + _LEN
    }
@@ -195,8 +196,9 @@ inline fn __dumpstate_m_avx2
 }
 
 #[safety =
-   { requires = 0<= _LEN && 0< _RATE8 && _RATE8 < 200 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,32*7)
-   , ensures = is_arr_init(st,0,32*7)
+   { requires = 0 <= _LEN && 0 < _RATE8 && _RATE8 < 200 && is_mem_init((64u) buf,_LEN) && is_arr_init(st,0,7*32)
+   , res = { final_st }
+   , ensures = is_arr_init(final_st,0,7*32)
    }
  ]
 inline fn __squeeze_m_avx2

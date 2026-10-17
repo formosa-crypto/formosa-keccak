@@ -7,6 +7,10 @@ jasminc -I Keccak=.. -pmakeref keccakf1600_pround_basic.jazz > keccakf1600_proun
 */
 
 
+#[safety =
+   { requires = is_arr_init(a,0,200)
+   , ensures = is_arr_init(e,0,200) }
+ ]
 inline fn __pround_basic_inlined
 ( reg mut ptr u64[25] e
 , reg const ptr u64[25] a

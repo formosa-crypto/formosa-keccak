@@ -9,18 +9,20 @@
 
 with pkgs;
 
-# Jasmin snapshot of branch safety-assert2 (85234091), not a release: its
-# eclib has JSafety (needed by proof/amd64/safety; no release up to 2026.09.0
+# Jasmin snapshot of branch safety-assert2 (1e7479a2), not a release: its
+# jasmin2ec has the safety extraction (-m safety, with the
+# safety = { args, res, requires, ensures } contracts) used by
+# proof/amd64/safety, and its eclib has JSafety (no release up to 2026.09.0
 # ships it) and the VPSLL/VPSRL semantics the proofs are checked against. Its
-# jasmin2ec output matches the committed models (extracted with 2026.03.1)
-# up to whitespace.
+# jasmin2ec output matches the committed correctness models (extracted with
+# 2026.03.1) up to whitespace.
 let jasmin =
   jasmin-compiler.overrideAttrs (o: {
     src = fetchFromGitLab {
       owner = "jasmin-lang";
       repo = "jasmin-compiler";
-      rev = "fe575eaf526e8f66bdae1854280b015c7fea1ed1";
-      hash = "sha256-8xqanW1ay+BfXRWW1HFsdl5Grii0nTNugy2NxMseu1o=";
+      rev = "c1cae60e0d053c9e478d1e662b609242796202c4";
+      hash = "sha256-GuCTSQQ3CI+15ZzCqdQ0PmRt0913BxKtZSyZAfgoDTk=";
     };
   })
 ; in

@@ -12,18 +12,16 @@ require "keccak1600_generic.jinc"
     READ A FIXED NUMBER OF BYTES FROM MEMORY INTO A WORD
 **/
 #[safety =
-   { requires = is_mem_init((64u) buf,max(LEN,8 - (AT-CUR))) && 0<=LEN
+   { requires = is_mem_init((64u) buf,LEN) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
    , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
-   , ensures =  (CUR <= AT && AT < CUR + 8) ?
-       ( final_buf == buf + max(0,min(LEN,8 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,8- (AT-CUR)))
-     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (final_buf == buf
-      && final_LEN == LEN
-      && final_TRAIL == TRAIL
-      && final_AT == AT)
+   , ensures = final_buf - buf ==
+       ((CUR <= AT && AT < CUR + 8) ? ((AT - CUR + LEN >= 8) ? CUR + 8 - AT : LEN) : 0)
+   , ensures = (CUR <= AT && AT < CUR + 8) ?
+       ( (AT - CUR + LEN >= 8) ?
+           ( final_LEN == LEN - (CUR + 8 - AT) && final_TRAIL == TRAIL && final_AT == CUR + 8 )
+         : ( final_LEN == 0 && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
+     : (final_LEN == LEN && final_TRAIL == TRAIL && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_upto8_at
@@ -88,18 +86,16 @@ inline fn __m_ilen_read_upto8_at
 }
 
 #[safety =
-   { requires = is_mem_init((64u) buf,max(LEN,16 - (AT-CUR))) && 0<=LEN
+   { requires = is_mem_init((64u) buf,LEN) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
     , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
-    , ensures =  (CUR <= AT && AT < CUR + 16) ?
-       ( final_buf == buf + max(0,min(LEN,16 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,16- (AT-CUR)))
-     && final_TRAIL == (16 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,16) + (16 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (final_buf == buf
-      && final_LEN == LEN
-      && final_TRAIL == TRAIL
-      && final_AT == AT)
+    , ensures = final_buf - buf ==
+       ((CUR <= AT && AT < CUR + 16) ? ((AT - CUR + LEN >= 16) ? CUR + 16 - AT : LEN) : 0)
+   , ensures = (CUR <= AT && AT < CUR + 16) ?
+       ( (AT - CUR + LEN >= 16) ?
+           ( final_LEN == LEN - (CUR + 16 - AT) && final_TRAIL == TRAIL && final_AT == CUR + 16 )
+         : ( final_LEN == 0 && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
+     : (final_LEN == LEN && final_TRAIL == TRAIL && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_upto16_at
@@ -142,18 +138,16 @@ inline fn __m_ilen_read_upto16_at
 }
 
 #[safety =
-   { requires = is_mem_init((64u) buf,max(LEN,32 - (AT-CUR))) && 0<=LEN
+   { requires = is_mem_init((64u) buf,LEN) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
    , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
-   , ensures =  (CUR <= AT && AT < CUR + 32) ?
-       ( final_buf == buf + max(0,min(LEN,32 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,32- (AT-CUR)))
-     && final_TRAIL == (32 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,32) + (32 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (final_buf == buf
-      && final_LEN == LEN
-      && final_TRAIL == TRAIL
-      && final_AT == AT)
+   , ensures = final_buf - buf ==
+       ((CUR <= AT && AT < CUR + 32) ? ((AT - CUR + LEN >= 32) ? CUR + 32 - AT : LEN) : 0)
+   , ensures = (CUR <= AT && AT < CUR + 32) ?
+       ( (AT - CUR + LEN >= 32) ?
+           ( final_LEN == LEN - (CUR + 32 - AT) && final_TRAIL == TRAIL && final_AT == CUR + 32 )
+         : ( final_LEN == 0 && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
+     : (final_LEN == LEN && final_TRAIL == TRAIL && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_upto32_at
@@ -194,18 +188,16 @@ inline fn __m_ilen_read_upto32_at
 }
 
 #[safety =
-   { requires = is_mem_init((64u) buf,max(LEN,8 - (AT-CUR))) && 0<=LEN
+   { requires = is_mem_init((64u) buf,LEN) && 0<=LEN
      && 0 <= TRAIL && TRAIL < 256
    , res = { final_buf, final_LEN, final_TRAIL, final_AT, final_w }
-   , ensures =  (CUR <= AT && AT < CUR + 8) ?
-       ( final_buf == buf + max(0,min(LEN,8 - (AT-CUR)))
-     && final_LEN == LEN - max(0,min(LEN,8- (AT-CUR)))
-     && final_TRAIL == (8 <=s AT-CUR + LEN ? TRAIL : 0)
-     && final_AT == CUR + max(0,min(AT-CUR + LEN,8) + (8 <=s AT-CUR + LEN || TRAIL==0 ? 0 : 1)))
-     : (final_buf == buf
-      && final_LEN == LEN
-      && final_TRAIL == TRAIL
-      && final_AT == AT)
+   , ensures = final_buf - buf ==
+       ((CUR <= AT && AT < CUR + 8) ? ((AT - CUR + LEN >= 8) ? CUR + 8 - AT : LEN) : 0)
+   , ensures = (CUR <= AT && AT < CUR + 8) ?
+       ( (AT - CUR + LEN >= 8) ?
+           ( final_LEN == LEN - (CUR + 8 - AT) && final_TRAIL == TRAIL && final_AT == CUR + 8 )
+         : ( final_LEN == 0 && final_TRAIL == 0 && final_AT == AT + LEN + (TRAIL != 0 ? 1 : 0) ) )
+     : (final_LEN == LEN && final_TRAIL == TRAIL && final_AT == AT)
    }
  ]
 inline fn __m_ilen_read_bcast_upto8_at

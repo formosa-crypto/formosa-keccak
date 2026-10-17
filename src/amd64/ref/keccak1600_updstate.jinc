@@ -26,6 +26,9 @@ from Keccak require "common/keccak1600_updstate_generic.jinc"
 
 
 
+#[safety =
+   { ensures = is_arr_init(st,0,208) }
+ ]
 fn _init_updstate
 ( reg mut ptr keccak_updstate st
 , reg ui8 r64 // 9 <= r64 < 25 
@@ -69,6 +72,10 @@ fn _finish_updstate
 }
 
 
+#[safety =
+   { requires = is_arr_init(st,0,208)
+   , ensures = is_arr_init(status,0,3) }
+ ]
 export fn ststatus_updstate
 ( reg mut ptr u8[3] status
 , reg const ptr keccak_updstate st
@@ -84,6 +91,9 @@ export fn ststatus_updstate
   return status;
 }
 
+#[safety =
+   { ensures = is_arr_init(st,0,208) }
+ ]
 export fn init_updstate
 ( reg mut ptr keccak_updstate st
 , reg ui8 r64
@@ -107,6 +117,12 @@ export fn finish_updstate
 }
 
 
+#[safety =
+   { requires = is_arr_init(st,0,200) && 0 <= at && at <= upto && upto <= 200
+     && is_mem_init((64u) buf, upto - at)
+   , res = { final_st, final_at, final_buf }
+   , ensures = is_arr_init(final_st,0,200) && final_at == upto && final_buf == buf + (upto - at) }
+ ]
 fn _add_m_updstate
 ( reg mut ptr keccak_state st
 , reg ui64 at      // 0 <= at < 200
@@ -201,6 +217,10 @@ fn _add_m_updstate
   return st, at, buf;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,208) && is_mem_init((64u) buf, len) && len <= 0xFFFFFFFFFFFFFF00
+   , ensures = is_arr_init(st,0,208) }
+ ]
 fn _absorb_m_updstate
 ( reg mut ptr keccak_updstate st
 , reg ui64 buf
@@ -234,6 +254,12 @@ fn _absorb_m_updstate
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,200) && 0 <= at && at <= upto && upto <= 200
+     && is_mem_init((64u) buf, upto - at)
+   , res = { final_buf, final_at }
+   , ensures = final_buf == buf + (upto - at) && final_at == upto }
+ ]
 fn _dump_m_updstate
 ( reg ui64 buf
 , reg const ptr keccak_state st
@@ -325,6 +351,10 @@ fn _dump_m_updstate
   return buf, at;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,208) && is_mem_init((64u) buf, len) && len <= 0xFFFFFFFFFFFFFF00
+   , ensures = is_arr_init(st,0,208) }
+ ]
 fn _squeeze_m_updstate
 ( reg mut ptr keccak_updstate st
 , reg ui64 buf
@@ -369,6 +399,10 @@ fn _squeeze_m_updstate
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,208) && is_mem_init((64u) buf, len) && len <= 0xFFFFFFFFFFFFFF00
+   , ensures = is_arr_init(st,0,208) }
+ ]
 export fn absorb_m_updstate
 ( reg mut ptr keccak_updstate st
 , reg ui64 buf
@@ -381,6 +415,10 @@ export fn absorb_m_updstate
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,208) && is_mem_init((64u) buf, len) && len <= 0xFFFFFFFFFFFFFF00
+   , ensures = is_arr_init(st,0,208) }
+ ]
 export fn squeeze_m_updstate
 ( reg mut ptr keccak_updstate st
 , reg ui64 buf

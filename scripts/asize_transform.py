@@ -5,9 +5,12 @@ baked in as Array999 / WArray999 / BArray999 / 999-literals) into the
 parametric `module MM` companion used by the *_checkXtr.ec equivalence
 proofs (`equiv M.<proc> ~ MM.<proc> by sim.`).
 
-The output is NEVER required by a real proof file: those are hand-maintained
-in the natural fixedsizes style.  The script gives a developer a starter MM
-block that is known-equivalent to the concrete extraction at _ASIZE=999.
+For the correctness proofs the output is NEVER required by a real proof file:
+those are hand-maintained in the natural fixedsizes style, and the script gives
+a developer a starter MM block that is known-equivalent to the concrete
+extraction at _ASIZE=999.  For the safety proofs (--safety, `safety_parts`),
+proof/amd64/safety/gen splices the generated MM block and specifications
+into the abstract theories of the (generated) proof files.
 
 Array models (--model):
   old     (deprecated jasmin2ec model)   Array999.t -> A.t, Array999 -> A,
@@ -32,6 +35,11 @@ Usage:
   --mm-only   emit just `module MM = { ... }.` (to splice into the hand-
               maintained abstract theory); otherwise a standalone
               `abstract theory KeccakAsizeParam` file is produced.
+  --safety    input is a `jasmin2ec -m safety` extraction: keep the module
+              variables of `module M` (the call-trace temporary `tmp__trace`)
+              in MM, and emit after MM the safety specifications
+              `op <proc>_spec ... = hoare [MM.<proc> : ...]` of the kept procs.
+              Used by proof/amd64/safety/gen (see `safety_parts`).
 """
 
 import argparse
@@ -142,8 +150,9 @@ def preamble(model: str, preset: str) -> str:
     return "\n".join(out) + "\n"
 
 
-def split_module_m(lines):
-    """Return (before, procs, after) where procs = [(name, [lines])]."""
+def split_module_m(lines, mvars=None):
+    """Return (before, procs, after) where procs = [(name, [lines])].
+    Non-proc lines of `module M` (module variables) are appended to `mvars`."""
     before, after, procs = [], [], []
     i = 0
     while i < len(lines) and not MODULE_M_OPEN.match(lines[i]):
@@ -161,7 +170,9 @@ def split_module_m(lines):
             cur[1].append(line)
             if PROC_CLOSE.match(line):
                 procs.append(cur); cur = None
-        # non-proc lines inside module M (none expected in the normal model)
+        elif mvars is not None and line.strip():
+            # non-proc lines inside module M: module variables (safety model)
+            mvars.append(line)
         i += 1
     if cur is not None:
         sys.exit("error: unterminated proc %s" % cur[0])
@@ -197,6 +208,45 @@ def transform(src: str, model: str, preset: str, mm_only: bool, aname: str = "A"
         "\nend KeccakAsizeParam.\n"
 
 
+SPEC_OP = re.compile(r"(?ms)^op ([A-Za-z_0-9]+)_spec\b.*?\]\.[ \t]*$")
+
+
+def safety_parts(src: str, presets, aname: str = "A"):
+    """Abstraction of a `jasmin2ec -m safety` extraction at _ASIZE = 999.
+
+    presets: preset names whose procs are kept (in extraction order).
+    Returns (mm, specs, names): the text of `module MM = { ... }.` (module
+    variables kept, sizes abstracted, call sites rewritten as in `transform`,
+    also across line breaks) and of the `op <proc>_spec` safety
+    specifications of the kept procs, restated over MM."""
+    lines = src.splitlines(keepends=True)
+    mvars = []
+    _before, procs, after = split_module_m(lines, mvars)
+    kept = set()
+    for p in presets:
+        kept |= set(PRESETS[p])
+    found = {name for name, _ in procs}
+    missing = kept - found
+    if missing:
+        sys.exit("error: procs not found in extraction: %s" % sorted(missing))
+    subrw_sibling = list(presets) == ["subreadwrite"]
+    names = [name for name, _ in procs if name in kept]
+    mm = ["module MM = {\n"] + mvars
+    for name, plines in procs:
+        if name in kept:
+            text = "".join(body_subst(l, "barray", aname) for l in plines)
+            mm.append(call_subst(text, kept, subrw_sibling))
+    mm.append("}.\n")
+    specs = {m.group(1): m.group(0) for m in SPEC_OP.finditer("".join(after))}
+    out = []
+    for name in names:
+        if name not in specs:
+            sys.exit("error: no safety specification for %s" % name)
+        t = re.sub(r"\bM\.(" + "|".join(map(re.escape, kept)) + r")\b", r"MM.\1", specs[name])
+        out.append("".join(body_subst(l, "barray", aname) for l in t.splitlines(keepends=True)) + "\n")
+    return "".join(mm), "\n".join(out), names
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -209,10 +259,17 @@ def main():
                    help="name of the byte-array theory parameter (barray model; default A)")
     p.add_argument("--mm-only", action="store_true",
                    help="emit only the `module MM = { ... }.` block")
+    p.add_argument("--safety", action="store_true",
+                   help="safety extraction: emit MM (with its module variables) "
+                        "and the safety specifications of the kept procs")
     args = p.parse_args()
     with open(args.input) as f:
         src = f.read()
-    out = transform(src, args.model, args.theory, args.mm_only, args.array_name)
+    if args.safety:
+        mm, specs, _ = safety_parts(src, [args.theory], args.array_name)
+        out = mm + "\n" + specs
+    else:
+        out = transform(src, args.model, args.theory, args.mm_only, args.array_name)
     with open(args.output, "w") as f:
         f.write(out)
     print(f"wrote {args.output}", file=sys.stderr)

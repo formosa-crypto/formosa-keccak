@@ -15,6 +15,12 @@ OBS: the generated code is independent of the parameter _ASIZE, but the
 
 from Keccak require "common/subreadwrite_ASIZE.jinc"
 
+#[safety =
+   { requires = is_arr_init(st,0,800) && 0 <= at && at <= upto && upto <= 200
+     && 0 <= off && off + (upto - at) <= _ASIZE && is_arr_init(buf, off, upto - at)
+   , res = { final_st, final_at, final_off }
+   , ensures = is_arr_init(final_st,0,800) && final_at == upto && final_off == off + (upto - at) }
+ ]
 fn _add_bcast_updstate_avx2x4
 ( reg mut ptr keccakx4_state st
 , reg ui64 at               // 0 <= at < 200
@@ -85,6 +91,10 @@ fn _add_bcast_updstate_avx2x4
   return st, at, off;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && is_arr_init(buf,0,len)
+   , ensures = is_arr_init(st,0,808) }
+ ]
 fn _absorb_bcast_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 , reg const ptr u8[_ASIZE] buf
@@ -115,6 +125,14 @@ fn _absorb_bcast_updstate_avx2x4
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,800) && 0 <= at && at <= upto && upto <= 200
+     && 0 <= off && off + (upto - at) <= _ASIZE
+     && is_arr_init(buf0, off, upto - at) && is_arr_init(buf1, off, upto - at)
+     && is_arr_init(buf2, off, upto - at) && is_arr_init(buf3, off, upto - at)
+   , res = { final_st, final_at, final_off }
+   , ensures = is_arr_init(final_st,0,800) && final_at == upto && final_off == off + (upto - at) }
+ ]
 fn _add_updstate_avx2x4
 ( reg mut ptr keccakx4_state st
 , reg ui64 at               // 0 <= at < 200
@@ -201,6 +219,11 @@ fn _add_updstate_avx2x4
   return st, at, off;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+     && is_arr_init(buf0,0,len) && is_arr_init(buf1,0,len) && is_arr_init(buf2,0,len) && is_arr_init(buf3,0,len)
+   , ensures = is_arr_init(st,0,808) }
+ ]
 fn _absorb_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 , reg const ptr u8[_ASIZE] buf0 buf1 buf2 buf3
@@ -235,6 +258,15 @@ fn _absorb_updstate_avx2x4
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,800) && 0 <= at && at <= upto && upto <= 200
+     && 0 <= off && off + (upto - at) <= _ASIZE
+     && is_arr_init(buf0,0,off) && is_arr_init(buf1,0,off) && is_arr_init(buf2,0,off) && is_arr_init(buf3,0,off)
+   , res = { final_buf0, final_buf1, final_buf2, final_buf3, final_off, final_at }
+   , ensures = final_off == off + (upto - at) && final_at == upto
+     && is_arr_init(final_buf0,0,off + (upto - at)) && is_arr_init(final_buf1,0,off + (upto - at))
+     && is_arr_init(final_buf2,0,off + (upto - at)) && is_arr_init(final_buf3,0,off + (upto - at)) }
+ ]
 fn _dump_updstate_avx2x4
 ( reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3
 , reg ui64 off    // off + upto - at <= _ASIZE
@@ -320,6 +352,13 @@ fn _dump_updstate_avx2x4
   return buf0, buf1, buf2, buf3, off, at;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+   , res = { final_st, final_buf0, final_buf1, final_buf2, final_buf3 }
+   , ensures = is_arr_init(final_st,0,808)
+     && is_arr_init(final_buf0,0,len) && is_arr_init(final_buf1,0,len)
+     && is_arr_init(final_buf2,0,len) && is_arr_init(final_buf3,0,len) }
+ ]
 fn _squeeze_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 , reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3
@@ -362,6 +401,10 @@ fn _squeeze_updstate_avx2x4
   return st, buf0, buf1, buf2, buf3;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && is_arr_init(buf,0,len)
+   , ensures = is_arr_init(st,0,808) }
+ ]
 export fn absorb_bcast_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 , reg const ptr u8[_ASIZE] buf
@@ -375,6 +418,11 @@ export fn absorb_bcast_updstate_avx2x4
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+     && is_arr_init(buf0,0,len) && is_arr_init(buf1,0,len) && is_arr_init(buf2,0,len) && is_arr_init(buf3,0,len)
+   , ensures = is_arr_init(st,0,808) }
+ ]
 export fn absorb_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 , reg const ptr u8[_ASIZE] buf0 buf1 buf2 buf3
@@ -391,6 +439,13 @@ export fn absorb_updstate_avx2x4
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+   , res = { final_st, final_buf0, final_buf1, final_buf2, final_buf3 }
+   , ensures = is_arr_init(final_st,0,808)
+     && is_arr_init(final_buf0,0,len) && is_arr_init(final_buf1,0,len)
+     && is_arr_init(final_buf2,0,len) && is_arr_init(final_buf3,0,len) }
+ ]
 export fn squeeze_updstate_avx2x4
 ( reg mut ptr keccakx4_updstate st
 , reg mut ptr u8[_ASIZE] buf0 buf1 buf2 buf3

@@ -29,6 +29,14 @@
 
 from Keccak require "common/keccakf1600_generic.jinc"
 
+/* The stack array e is scratch space: every lane of e that is read by the
+ * loop body has been written earlier in the same call, so e need not be
+ * initialised on entry (it is not, on the first round). */
+#[safety =
+   { requires = is_arr_init(a,0,200) && rax <=u (64u) 22
+   , res = { f_rax, f_rbp, f_rdi, f_r13, f_r10, f_r11, f_r8, f_rsi, f_r15, f_rbx, f_a, f_e }
+   , ensures = is_arr_init(f_a,0,200) && f_rax == rax + (64u) 2 }
+ ]
 inline fn keccakf1600_opt_loop_body
 ( reg u64 rax                                   // round counter c
 , reg u64 rbp                                   // a[0]

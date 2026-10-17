@@ -11,6 +11,11 @@
 */
 from Keccak require "common/keccakf1600x4_generic.jinc"
 
+#[safety =
+   { requires = is_arr_init(st,0,800) && is_arr_init(rol8,0,32) && is_arr_init(rol56,0,32)
+             && is_arr_init(RC,0,192) && 0 <= i && i < 24
+   , ensures = is_arr_init(st,0,800) }
+ ]
 inline fn __f1600_loopbody_native
 ( reg mut ptr u256[25] st
 , reg const ptr u256[1] rol8 rol56

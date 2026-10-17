@@ -155,6 +155,10 @@ inline fn __first(reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 C
 }
 
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,160) }
+ ]
 inline fn __second_even(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, reg u256 rc_index,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -228,6 +232,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,160)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,320) }
+ ]
 inline fn __third_even(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -300,6 +308,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,320)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,480) }
+ ]
 inline fn __fourth_even(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -372,6 +384,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,480)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,640) }
+ ]
 inline fn __fifth_even(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -444,6 +460,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,640)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,800) }
+ ]
 inline fn __sixth_even(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -516,6 +536,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,160) }
+ ]
 inline fn __second_odd(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, reg u256 rc_index,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -589,6 +613,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,160)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,320) }
+ ]
 inline fn __third_odd(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -661,6 +689,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,320)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,480) }
+ ]
 inline fn __fourth_odd(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -733,6 +765,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,480)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,640) }
+ ]
 inline fn __fifth_odd(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -805,6 +841,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,640)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,800) }
+ ]
 inline fn __sixth_odd(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
@@ -877,6 +917,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,160) }
+ ]
 inline fn __second_last(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, reg u256 rc_index,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
@@ -939,6 +983,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,160)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,320) }
+ ]
 inline fn __third_last(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
@@ -1000,6 +1048,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,320)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,480) }
+ ]
 inline fn __fourth_last(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
@@ -1061,6 +1113,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,480)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,640) }
+ ]
 inline fn __fifth_last(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
@@ -1122,6 +1178,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,640)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,800) }
+ ]
 inline fn __sixth_last(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
@@ -1183,6 +1243,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     return A_4x, E_4x;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,800) }
+ ]
 fn _theta_rho_pi_chi_iota_prepare_theta_even(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, reg u256 rc_index,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu) 
@@ -1205,6 +1269,10 @@ reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,800) }
+ ]
 fn _theta_rho_pi_chi_iota_prepare_theta_odd(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, reg u256 rc_index,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu) 
@@ -1227,6 +1295,10 @@ reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu)
     return A_4x, E_4x, Ca, Ce, Ci, Co, Cu;
 }
 
+#[safety =
+   { requires = is_arr_init(A_4x,0,800)
+   , ensures = is_arr_init(A_4x,0,800) && is_arr_init(E_4x,0,800) }
+ ]
 inline fn __theta_rho_pi_chi_iota(
 reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, reg u256 rc_index,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu) 
