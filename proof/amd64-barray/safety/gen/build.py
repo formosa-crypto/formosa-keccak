@@ -18,7 +18,7 @@ import re, sys, json, os
 import gen
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)          # proof/amd64/safety
+ROOT = os.path.dirname(HERE)          # proof/amd64-barray/safety
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(ROOT)))
 sys.path.insert(0, os.path.join(REPO, "scripts"))
 import asize_transform

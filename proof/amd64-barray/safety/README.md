@@ -12,7 +12,7 @@ opt, avx2; 4-way ref, alt, nat).
 ## Status
 
 The extraction, the array theories and the sanity checks are complete and
-checked in CI (scenario `keccak_safety_amd64_extracted`). The proofs are work
+checked in CI (scenario `keccak_amd64barray_safety_extracted`). The proofs are work
 in progress: the proof files are generated but do not all check yet (a known
 open point is the loop body of the `opt` permutation), so CI does not run the
 `common`, `ref`, `avx2` and `avx2x4` scenarios yet.
@@ -25,7 +25,8 @@ provides `JSafety.ec`.
 
 ## Extraction: same strategy as the correctness proofs
 
-The extraction follows the pattern of `proof/amd64-barray`:
+The extraction follows the pattern of the correctness proofs of the enclosing
+tree (`proof/amd64-barray`), whose `barray` array model it shares:
 
 * **Memory variants** (and everything that does not depend on the array
   size: permutations, helpers, memory absorb/squeeze, streaming API) are
@@ -76,7 +77,7 @@ The extraction follows the pattern of `proof/amd64-barray`:
 | `avx2x4/Keccak1600x4_safety.ec` | 4-way memory absorb/squeeze and streaming API; the two 4-way array theories. |
 | `gen/` | The generator of the proof files and of the `*_checkXtr.ec` files. |
 
-Check with `easycrypt runtest config/tests.config keccak_safety_amd64_<x>`,
+Check with `easycrypt runtest config/tests.config keccak_amd64barray_safety_<x>`,
 for `<x>` in `extracted`, `common`, `ref`, `avx2`, `avx2x4`.
 
 ## How the models and the specifications look

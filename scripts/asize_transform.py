@@ -9,7 +9,7 @@ For the correctness proofs the output is NEVER required by a real proof file:
 those are hand-maintained in the natural fixedsizes style, and the script gives
 a developer a starter MM block that is known-equivalent to the concrete
 extraction at _ASIZE=999.  For the safety proofs (--safety, `safety_parts`),
-proof/amd64/safety/gen splices the generated MM block and specifications
+proof/amd64-barray/safety/gen splices the generated MM block and specifications
 into the abstract theories of the (generated) proof files.
 
 Array models (--model):
@@ -39,7 +39,7 @@ Usage:
               variables of `module M` (the call-trace temporary `tmp__trace`)
               in MM, and emit after MM the safety specifications
               `op <proc>_spec ... = hoare [MM.<proc> : ...]` of the kept procs.
-              Used by proof/amd64/safety/gen (see `safety_parts`).
+              Used by proof/amd64-barray/safety/gen (see `safety_parts`).
 """
 
 import argparse

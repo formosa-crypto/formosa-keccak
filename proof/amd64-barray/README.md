@@ -1,8 +1,11 @@
 # proof/amd64-barray — WIP port to the `barray` array model
 
-Replica of `proof/amd64` (without `safety/`) for code extracted with
+Replica of `proof/amd64` for code extracted with
 `jasmin2ec --array-model=barray` (monomorphic byte arrays `BArrayN`,
 `SBArrayB_S` sub-array theories) instead of the deprecated `old` model.
+
+`safety/` holds the safety proofs, extracted with `jasmin2ec -m safety` in the
+same array model (see `safety/README.md`).
 
 ## Status
 

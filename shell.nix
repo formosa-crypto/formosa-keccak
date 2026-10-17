@@ -12,7 +12,7 @@ with pkgs;
 # Jasmin snapshot of branch safety-assert2 (1e7479a2), not a release: its
 # jasmin2ec has the safety extraction (-m safety, with the
 # safety = { args, res, requires, ensures } contracts) used by
-# proof/amd64/safety, and its eclib has JSafety (no release up to 2026.09.0
+# proof/amd64-barray/safety, and its eclib has JSafety (no release up to 2026.09.0
 # ships it) and the VPSLL/VPSRL semantics the proofs are checked against. Its
 # jasmin2ec output matches the committed correctness models (extracted with
 # 2026.03.1) up to whitespace.

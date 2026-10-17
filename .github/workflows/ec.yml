@@ -19,8 +19,8 @@ jobs:
           fail-fast: false
           matrix:
             arch: [ 'amd64' ]
-            # amd64/safety: jasmin2ec -m safety models (memory, and array at the dummy size)
-            tree: [ 'amd64', 'amd64-barray', 'amd64/safety' ]
+            # amd64-barray/safety: jasmin2ec -m safety models (memory, and array at the dummy size)
+            tree: [ 'amd64', 'amd64-barray', 'amd64-barray/safety' ]
             subarch: [ 'mem', 'array' ]
         env:
           JASMINPATH: Keccak=${{github.workspace}}/src/${{matrix.arch}}
@@ -50,7 +50,7 @@ jobs:
             - keccak_amd64_common
             - keccak_amd64_ref
             - keccak_amd64_avx2
-            - keccak_safety_amd64_extracted
+            - keccak_amd64barray_safety_extracted
         steps:
         - uses: actions/checkout@v5
           with:

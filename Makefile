@@ -22,7 +22,7 @@ jasmin-barray:
 
 # safety model (jasmin2ec -m safety): needs the safety-assert2 branch of Jasmin
 jasmin-safety:
-	make -C proof/amd64/safety/extracted re_extract
+	make -C proof/amd64-barray/safety/extracted re_extract
 
 checkec:
 	easycrypt runtest $(ECCONF) $(CHECKS)
