@@ -20,8 +20,8 @@ Replica of `proof/amd64` (without `safety/`) for code extracted with
 | proofs of `common/Keccak1600_updstate{,_finish}.ec`, `ref/Keccak1600_updstate_ref.ec` | **ported**, fully checked, no admits |
 | proofs of `avx2/Keccak1600_avx2.ec`, `avx2/Keccak1600_fixedsizes_avx2.ec` | **ported**, fully checked, no admits |
 | proofs of `avx2/Keccak1600_avx2x4.ec`, `avx2/Keccakf1600_avx2x4.ec` (dispatcher), `avx2/Keccak1600_{fixedsizes,updstate}_avx2x4.ec` | **ported**, fully checked, no admits |
-| permutation proofs (`ref/Keccakf1600_{basic,opt}.ec`, `avx2/Keccakf1600_avx2.ec`, `avx2/Keccakf1600_avx2x4_{ref,nat,alt}.ec`) | **not yet ported** (need `circuit` over BArray) — compiling these files directly fails |
-| `circuit` over BArray | not investigated (permutation proofs) |
+| permutation proofs (`ref/Keccakf1600_{basic,opt}.ec`, `avx2/Keccakf1600_avx2.ec`, `avx2/Keccakf1600_avx2x4_{ref,nat,alt}.ec`) | **ported**, fully checked, no admits |
+| `circuit` over BArray | **done**: `common/barray_abs_bindings.ec`, `common/keccak_barray_bindings.ec` (needs an EasyCrypt with the `uextract`/`uinsert`/`oflist` operator kinds) |
 
 EasyCrypt loads `require`d files with proof checking off, so the checkXtr
 files only need the statements of their dependencies.
@@ -89,11 +89,20 @@ corollaries.
 - AVX2 dumps: the same trick with `st = stavx2_of _st` (`stavx2K`); the hint
   `get256d_stavx2_of` turns `get256 (stavx2_of _st) k` back into `_st.[k]`, so
   the old `dump_avx2_w*` applications are unchanged.
-- `circuit` cannot handle BArray terms. Lift the stores to the `W256.t Array7.t`
-  view first (`stavx2_xor256d`), generalise the view (`move: (stavx2 _st) => S`),
-  and keep the invariant as a goal premise (introduce it with `[#]`, not `/>`,
-  which splits it). Word-only side facts can still be closed by `circuit`, and
-  the array part by `set256d_get256d` / `stavx2_inj`.
+- `circuit` handles BArray terms once `Keccak_barray_bindings` is required
+  (see *Circuit bindings* below), so `proc; circuit` proofs carry over
+  unchanged. Outside `circuit`, lift the stores to the views first
+  (`st25_xor0`, `stavx2_xor256d`, `st4x_xor0`), generalise the view
+  (`move: (stavx2 _st) => S`), and keep the invariant as a goal premise
+  (introduce it with `[#]`, not `/>`, which splits it).
+- Round constants: the program reads `BArray192.get64 kECCAK1600_RC i`;
+  `kECCAK1600_RC_E` (in `ref/Keccakf1600_ref.ec`) turns it into `rc_spec.[i]`
+  for `0 <= i < 24`. When `/>` has already normalised the offset (`8*0` to `0`),
+  instantiate it first (`have K0 := kECCAK1600_RC_E 0 _`), or use the
+  offset form `kECCAK1600_RC_Ed` (in `avx2/Keccakf1600_avx2x4_alt.ec`).
+  Invariants `rC = rc_spec` become `rC = kECCAK1600_RC`. Unlike `Array24`,
+  the out-of-range read is not `witness`, so a contract that may read entry
+  24 needs the bound (e.g. `0 <= to_uint c < 23` in `Keccakf1600_opt.ec`).
 - 4-way contracts (`st4x st = _st`): a `conseq` right after `proc` switches the
   precondition to `st = st4x_of _st`, so `|>` substitutes the program state and
   every explicit `_st` of the old scripts stays valid. Invariants `st = _st`
@@ -120,8 +129,27 @@ python3 scripts/asize_transform.py --theory <preset> [--array-name BA] --mm-only
 Presets: `subreadwrite fixedsizes_ref updstate_ref fixedsizes_avx2
 fixedsizes_avx2x4 updstate_avx2x4` (the last one with `--array-name BA`).
 
+## Circuit bindings
+
+`circuit` sees a byte array `BArrayN.t` as a bitstring of `8*N` bits (byte
+`i` at bits `8*i .. 8*i+7`).
+
+- `common/barray_abs_bindings.ec`: abstract theories, proved once.
+  - `BArrayBS` binds a `ByteArray` (`bind bitstring`, `get8` as `aextract`,
+    `set8`/`set8d` as `uinsert`). Its nested `GetSet16` .. `GetSet256` bind the
+    word accessors `getKd`/`setKd` (`uextract`/`uinsert`, unit `W8`, so the
+    offsets are in bytes as in the extraction) and the constant tables
+    `of_listK` (`oflist`).
+  - `SubBArrayBS` binds `get_sub`/`set_sub` of a `SubByteArray`.
+- `common/keccak_barray_bindings.ec`: the instances for every size used here,
+  `ArrayN.init` as `painit`, and the views `st25`, `st5`, `stavx2`, `st4x`
+  (and `st200`, `stavx2_of`, `st4x_of`) as `b2a`/`a2b`, so `circuit` does not
+  unfold them. Add a clone line when the extraction starts using a new
+  (array size, word size) pair.
+
+The word bitstring bindings come from `common/keccak_bindings.ec`.
+
 ## Next steps
 
-1. `circuit` bindings for BArray, then the permutation proofs
-   (`ref/Keccakf1600_{basic,opt}.ec`, `avx2/Keccakf1600_avx2.ec`,
-   `avx2/Keccakf1600_avx2x4_{ref,nat,alt}.ec`).
+1. Upstream the EasyCrypt operator kinds `uextract`, `uinsert` and `oflist`
+   (`shell.nix` follows EasyCrypt `main`, which does not have them yet).

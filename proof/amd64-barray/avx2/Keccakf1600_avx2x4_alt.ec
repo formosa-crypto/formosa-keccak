@@ -29,6 +29,7 @@ require import Keccak_bindings.
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import BArray3 BArray32 BArray40 BArray160 BArray192 BArray200 BArray208 BArray224 BArray800 BArray808 SBArray208_200 SBArray808_800.
 require import Keccak1600_barrays.
+require import Keccak_barray_bindings.
 from JazzEC require import Array1 Array100 WArray200 WArray800.
 
 require import Avx2_extra.
@@ -52,7 +53,7 @@ op st4x_C (st: state4x) : W256.t * W256.t * W256.t * W256.t * W256.t =
 
 
 (* -------------------------------------------------------------------------- *)
-(*  Kernel contracts (each closed by [proc; inline*; circuit] -- admitted)     *)
+(*  Kernel contracts (each closed by [circuit])                                *)
 (* -------------------------------------------------------------------------- *)
 
 (* [__prepare_theta] computes the packed column sums of its argument. *)
@@ -164,39 +165,44 @@ qed.
 (*  Top-level correctness of the unrolled permutation                          *)
 (* -------------------------------------------------------------------------- *)
 
+(* the round-constant table, read at a (normalised) byte offset *)
+lemma kECCAK1600_RC_Ed o:
+ 0 <= o < 192 => o %% 8 = 0 => BArray192.get64d kECCAK1600_RC o = rc_spec.[o %/ 8].
+proof. by move=> *; rewrite -kECCAK1600_RC_E 1:/#; congr; smt(). qed.
+
 hoare __keccakf1600_avx2x4_alt_h _a:
  M.__keccakf1600_avx2x4_alt :
  st4x a_4x = _a
  ==> st4x res = st4x_map keccak_f1600_op _a.
 proof.
 proc.
-ecall (kernel_last_alt_h rC.[23] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[22] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[21] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[20] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[19] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[18] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[17] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[16] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[15] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[14] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[13] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[12] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[11] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[10] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[9] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[8] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[7] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[6] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[5] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[4] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[3] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[2] a_4x); simplify.
-wp; ecall (kernel_odd_alt_h rC.[1] e_4x); simplify.
-wp; ecall (kernel_even_alt_h rC.[0] a_4x); simplify.
-wp; ecall (prepare_theta_alt_h a_4x); simplify.
+ecall (kernel_last_alt_h (BArray192.get64 rC 23) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 22) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 21) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 20) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 19) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 18) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 17) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 16) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 15) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 14) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 13) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 12) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 11) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 10) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 9) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 8) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 7) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 6) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 5) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 4) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 3) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 2) (st4x a_4x)); simplify.
+wp; ecall (kernel_odd_alt_h (BArray192.get64 rC 1) (st4x e_4x)); simplify.
+wp; ecall (kernel_even_alt_h (BArray192.get64 rC 0) (st4x a_4x)); simplify.
+wp; ecall (prepare_theta_alt_h (st4x a_4x)); simplify.
 auto => |> /=.
-move => _ [a1 e1 c1a c1e c1i c1o c1u] /= -> ?; split; first smt().
+move => &hr _ [a1 e1 c1a c1e c1i c1o c1u] /= -> ?; split; first smt().
 move=> C1 [e2 a2 c2a c2e c2i c2o c2u] /= -> ?; split; first smt().
 move=> C2; rewrite st4x_map_comp.
 move=> [a3 e3 c3a c3e c3i c3o c3u] /= -> ?; split; first smt().
@@ -245,7 +251,7 @@ move=> [e24 a24] /= ->; clear.
 rewrite st4x_map_comp /=; congr.
 rewrite fun_ext => st.
 rewrite /keccak_f1600_op -iotaredE /=.
-congr; by rewrite initiE.
+by rewrite !kECCAK1600_RC_Ed.
 qed.
 
 lemma __keccakf1600_avx2x4_alt_ll: islossless M.__keccakf1600_avx2x4_alt.
@@ -262,7 +268,7 @@ hoare keccakf1600_avx2x4_alt_h _a:
  M._keccakf1600_avx2x4_alt :
  st4x a = _a
  ==> st4x res = st4x_map keccak_f1600_op _a.
-proof. by proc; ecall (__keccakf1600_avx2x4_alt_h a). qed.
+proof. by proc; ecall (__keccakf1600_avx2x4_alt_h (st4x a)). qed.
 
 lemma keccakf1600_avx2x4_alt_ll: islossless M._keccakf1600_avx2x4_alt.
 proof. by proc; call __keccakf1600_avx2x4_alt_ll. qed.

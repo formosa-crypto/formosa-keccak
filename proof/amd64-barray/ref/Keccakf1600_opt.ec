@@ -12,6 +12,8 @@ from CryptoSpecs require import FIPS202_Keccakf1600 Keccakf1600_Spec.
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import BArray3 BArray32 BArray40 BArray160 BArray192 BArray200 BArray208 BArray224 BArray800 BArray808 SBArray208_200 SBArray808_800.
 require import Keccak1600_barrays.
+require import Keccak_barray_bindings.
+require import Keccakf1600_ref.
 from JazzEC require import Array5 Array24 Array25.
 
 require import Keccak_bindings.
@@ -85,7 +87,7 @@ lemma keccakf1600_dround_opt_h rc1 rc2 (xx:_*(_*_*_*_*_*_*_*_*_)) c:
  rc1 = rc_spec.[to_uint c] => rc2 = rc_spec.[to_uint c + 1] =>
  hoare [ 
  M.keccakf1600_opt_loop_body
- : rax=c /\ 0 <= to_uint c < 24 /\
+ : rax=c /\ 0 <= to_uint c < 23 /\
    rbp=xx.`2.`1 /\
    rdi=xx.`2.`2 /\
    r13=xx.`2.`3 /\
@@ -109,9 +111,9 @@ cfold 69.
 alias 252 with rC2.
 swap 252 -249.
 cfold 252; cfold 252.
-seq 4: (#pre /\ rC=rc_spec /\ rC2=rc_spec /\ cnt=c); first by auto => />.
-proc change 66: { r12 <- r12 `^` rc1; }; first by auto => /> /#.
-proc change 248: { rbp <- rbp `^` rc2; }; first by auto => |> &2 *; rewrite to_uintD_small /#.
+seq 4: (#pre /\ rC=kECCAK1600_RC /\ rC2=kECCAK1600_RC /\ cnt=c); first by auto => />.
+proc change 66: { r12 <- r12 `^` rc1; }; first by auto => /> &2 *; rewrite kECCAK1600_RC_E /#.
+proc change 248: { rbp <- rbp `^` rc2; }; first by auto => |> &2 *; rewrite to_uintD_small /= 1:/# kECCAK1600_RC_E /#.
 by circuit.
 qed.
 
@@ -119,7 +121,7 @@ lemma keccakf1600_dround_opt_ph rc1 rc2 (xx:_*(_*_*_*_*_*_*_*_*_)) c:
  rc1 = rc_spec.[to_uint c] => rc2 = rc_spec.[to_uint c + 1] =>
  phoare [ 
  M.keccakf1600_opt_loop_body
- : rax=c /\ 0 <= to_uint c < 24 /\
+ : rax=c /\ 0 <= to_uint c < 23 /\
    rbp=xx.`2.`1 /\
    rdi=xx.`2.`2 /\
    r13=xx.`2.`3 /\
@@ -162,20 +164,20 @@ hoare __keccakf1600_opt_h _a:
   st25 a = _a ==> st25 res = keccak_f1600_op _a.
 proof.
 proc.
-ecall (store_regs_opt_h a (rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) => /=.
+ecall (store_regs_opt_h (st25 a) (rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) => /=.
 while (2 <= to_uint rax <= 24 /\ 2 %| to_uint rax /\
        keccak_f1600_op _a =
-       foldl (fun s i => keccak_round_op rc_spec.[i] s) (store_regs a (rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) (range (to_uint rax) 24)).
- wp; ecall (keccakf1600_dround_opt_h rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] (a,(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
+       foldl (fun s i => keccak_round_op rc_spec.[i] s) (store_regs (st25 a) (rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) (range (to_uint rax) 24)).
+ wp; ecall (keccakf1600_dround_opt_h rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] ((st25 a),(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
  auto => /> &m Hc1 _ Hc_2 IH; rewrite ultE of_uintK /= => Hc2; split; first smt().
  move => _ _ [rax rbp rdi r13 r10 r11 r8 rsi r15 rbx a e] /=.
  rewrite to_uint_eq to_uintD_small of_uintK 1:/# /= => Erax H.
  split; first smt().
  split; first smt().
  by rewrite H IH Erax keccak_dround_optP /#.
-ecall (keccakf1600_dround_opt_h rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] (a,(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
-wp; ecall (read_regs_opt_h a); auto => />.
-move=> [rax rbp rdi r13 r10 r11 r8 rsi r15 rbx a e] /= -> H; split.
+ecall (keccakf1600_dround_opt_h rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] ((st25 a),(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
+wp; ecall (read_regs_opt_h (st25 a)); auto => />.
+move=> &hr [rax rbp rdi r13 r10 r11 r8 rsi r15 rbx a e] /= -> H; split.
  rewrite of_uintK; split; first smt().
  split; first smt().
  rewrite H /keccak_dround_opt /= /keccak_f1600_op /range -iotaredE /=.
@@ -190,16 +192,18 @@ lemma __keccakf1600_opt_ll: islossless M.__keccakf1600_opt.
 proof.
 proc.
 inline store_regs_opt read_regs_opt.
-wp; while true (24 - to_uint rax).
+wp; while (2 %| to_uint rax) (24 - to_uint rax).
  move=> z.
- wp; ecall (keccakf1600_dround_opt_ph rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] (a,(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
- auto => /> &m; rewrite ultE of_uintK /= => /> *. 
- split; first smt(W64.to_uint_cmp).
- move => _ [rax rbp rdi r13 r10 r11 r8 rsi r15 rbx a e] /=.
+ wp; ecall (keccakf1600_dround_opt_ph rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] ((st25 a),(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
+ auto => /> &m H2 Hlt.
+ have {Hlt} Hlt : to_uint rax{m} < 24 by move: Hlt; rewrite ultE of_uintK.
+ split; first smt(dvdzE W64.to_uint_cmp).
+ move => _ _ [rax rbp rdi r13 r10 r11 r8 rsi r15 rbx a e] /=.
  by rewrite to_uint_eq to_uintD_small of_uintK /= 1:/# => -> _ /#.
-ecall (keccakf1600_dround_opt_ph rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] (a,(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
+ecall (keccakf1600_dround_opt_ph rc_spec.[to_uint rax] rc_spec.[to_uint rax+1] ((st25 a),(rbp,rdi,r13,r10,r11,r8,rsi,r15,rbx)) rax); last 2 smt().
 auto => /> &m [rax rbp rdi r13 r10 r11 r8 rsi r15 rbx a e] /=.
-by rewrite to_uint_eq of_uintK /= => ? _ c; rewrite ultE of_uintK /= /#.
+rewrite to_uint_eq of_uintK /= => Hr _; split; first smt(dvdzE).
+by move=> c; rewrite ultE of_uintK /= /#.
 qed.
 
 phoare __keccakf1600_opt_ph _a:

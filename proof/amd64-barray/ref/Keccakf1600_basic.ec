@@ -12,6 +12,7 @@ from CryptoSpecs require import FIPS202_Keccakf1600 Keccakf1600_Spec.
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import BArray3 BArray32 BArray40 BArray160 BArray192 BArray200 BArray208 BArray224 BArray800 BArray808 SBArray208_200 SBArray808_800.
 require import Keccak1600_barrays.
+require import Keccak_barray_bindings.
 from JazzEC require import Array5 Array24 Array25.
 
 require import Keccak_bindings.
@@ -100,24 +101,32 @@ hoare __keccakf1600_basic_h _a:
   st25 a = _a ==> st25 res = keccak_f1600_op _a.
 proof.
 proc.
-ecall (complement_lanes_basic_h a).
+ecall (complement_lanes_basic_h (st25 a)).
 while (2 <= c <= 24 /\ 2 %| c /\
-       complement_lanes (keccak_f1600_op _a) = foldl keccak_double_round_complement_lanes a (range (c %/ 2) 12)).
- wp; ecall (keccakf1600_pround_basic_h e).
- wp; ecall (keccakf1600_pround_basic_h a).
+       complement_lanes (keccak_f1600_op _a) = foldl keccak_double_round_complement_lanes (st25 a) (range (c %/ 2) 12)).
+ wp; ecall (keccakf1600_pround_basic_h (st25 e)).
+ wp; ecall (keccakf1600_pround_basic_h (st25 a)).
  auto => /> &m Hc1 _ Hc_2 IH.
- move => Hc2; split; first smt().
+ move=> Hc2 r1 E1 r2; rewrite /swap_ /= => E2.
+ have K: forall i, 0 <= i < 24 => BArray192.get64 kECCAK1600_RC i = rc_spec.[i] by exact kECCAK1600_RC_E.
+ move: K => /= K.
+ move: E2; rewrite st25_xor0 E1 K 1:/# => E2.
+ rewrite st25_xor0 E2 K 1:/#.
+ split; first smt().
  split; first smt().
  move: IH; rewrite (range_cat (c{m} %/ 2 + 1)) 1..2:/#.
- rewrite /swap_ /=.
- rewrite /rc_spec rangeS foldl_cat /= => -> /= /#.
-wp; ecall (keccakf1600_pround_basic_h e).
-wp; ecall (keccakf1600_pround_basic_h a).
-wp; ecall (complement_lanes_basic_h a).
-auto => />; split.
- rewrite /swap_ /=.
+ by rewrite rangeS foldl_cat /= => -> /#.
+wp; ecall (keccakf1600_pround_basic_h (st25 e)).
+wp; ecall (keccakf1600_pround_basic_h (st25 a)).
+wp; ecall (complement_lanes_basic_h (st25 a)).
+auto => /> &hr r0 E0 r1 E1 r2; rewrite /swap_ /= => E2.
+have K0 := kECCAK1600_RC_E 0 _; first done.
+have K1 := kECCAK1600_RC_E 1 _; first done.
+move: K0 K1 => /= K0 K1.
+move: E2; rewrite st25_xor0 E1 E0 K0 => E2.
+rewrite st25_xor0 E2 K1; move: (st25 a{hr}) => sa; split.
  pose F := foldl _ _ _.
- have ->: F = foldl keccak_double_round_complement_lanes (complement_lanes _a) (range 0 12).
+ have ->: F = foldl keccak_double_round_complement_lanes (complement_lanes sa) (range 0 12).
   rewrite eq_sym /F range_ltn 1:// /=; congr.
   by rewrite /keccak_round_complement_lanes_op /rc_spec /= /#.
  rewrite /range /rc_spec -iotaredE /=.
@@ -126,7 +135,7 @@ auto => />; split.
  by rewrite /keccak_f1600_op /rc_spec -iotaredE /= /#.
 move => a c /= ????.
 have ->/=: c = 24 by smt().
-rewrite range_geq 1:/# /= => <-.
+rewrite range_geq 1:/# /= => <- r ->.
 by rewrite complement_lanesI.
 qed.
 

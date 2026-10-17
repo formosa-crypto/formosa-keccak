@@ -14,6 +14,7 @@ require import Keccak_bindings.
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import BArray3 BArray32 BArray40 BArray160 BArray192 BArray200 BArray208 BArray224 BArray800 BArray808 SBArray208_200 SBArray808_800.
 require import Keccak1600_barrays.
+require import Keccak_barray_bindings.
 from JazzEC require import Array1 Array100 WArray200 WArray800.
 
 require import Avx2_extra.
@@ -59,7 +60,7 @@ do 24! cfold 1.
 wp 220.
 proc change 72: {y15 <- VPBROADCAST_4u64 (_rc); }.
  by auto => /> &m; rewrite of_uintK /= /#.
-conseq (: st = _st /\ (y10,y14,y8,y15,y9,y13,y3,y7,y2)=_regs /\  rol8 = rOL8 /\  rol56 = rOL56 
+conseq (: st4x st = _st /\ (y10,y14,y8,y15,y9,y13,y3,y7,y2)=_regs /\  rol8 = rOL8 /\  rol56 = rOL56 
   /\ (y10,y14,y8,y15,y9,y13,y3,y7,y2)=_regs
   ==> _); first done.
 by circuit.
@@ -74,25 +75,29 @@ hoare __keccakf1600_avx2x4_nat_h _a:
  ==> st4x res = st4x_map keccak_f1600_op _a.
 proof.
 proc.
-ecall (regs_unfetch_h st (y10, y14, y8, y15, y9, y13, y3, y7, y2)).
+ecall (regs_unfetch_h (st4x st) (y10, y14, y8, y15, y9, y13, y3, y7, y2)).
 while (0 <= i <= 24 /\
-       rc = rc_spec /\
+       rc = kECCAK1600_RC /\
        rol8 = rOL8 /\
        rol56 = rOL56 /\
-       regs_unfetch st (y10, y14, y8, y15, y9, y13, y3, y7, y2) = st4x_map (keccak_round_i i) _a).
- wp; ecall (loopbody_nat_h st (y10, y14, y8, y15, y9, y13, y3, y7, y2) i rc_spec.[i]).
- auto => &m /> Hi1 _ H Hi2 [st y10 y14 y8 y15 y9 y13 y3 y7 y2] /= ->; split; first smt().
+       regs_unfetch (st4x st) (y10, y14, y8, y15, y9, y13, y3, y7, y2) = st4x_map (keccak_round_i i) _a).
+ wp; ecall (loopbody_nat_h (st4x st) (y10, y14, y8, y15, y9, y13, y3, y7, y2) i rc_spec.[i]).
+ auto => &m /> Hi1 _ H Hi2; rewrite kECCAK1600_RC_E 1:/# /=.
+ move=> [st y10 y14 y8 y15 y9 y13 y3 y7 y2] /= ->; split; first smt().
  rewrite /keccak_round_op iotaSr 1:/# /= H st4x_map_comp; congr.
  rewrite fun_ext => a /=.
  rewrite foldl_rcons /= /#.
-wp; ecall (loopbody_nat_h st (y10, y14, y8, y15, y9, y13, y3, y7, y2) i rc_spec.[i]).
-wp; ecall (regs_fetch_h st).
-auto => |> ? [st0 r00 r01 r02 r03 r04 r05 r06 r07 r08] /= ->; split.
- rewrite /keccak_round_op iota1 /=; congr. 
- by rewrite eq_sym -{1}(regs_fetchK _a); congr; smt().
+wp; ecall (loopbody_nat_h (st4x st) (y10, y14, y8, y15, y9, y13, y3, y7, y2) i rc_spec.[i]).
+wp; ecall (regs_fetch_h (st4x st)).
+auto => |> &hr.
+have K0 := kECCAK1600_RC_E 0 _; first done.
+move: K0 => /= K0; rewrite K0 /=.
+move=> [st0 r00 r01 r02 r03 r04 r05 r06 r07 r08] /= ->; split.
+ rewrite /keccak_round_op iota1 /=; congr.
+ by rewrite eq_sym -{1}(regs_fetchK (st4x st{hr})); congr; smt().
 move=> i st1 r10 r11 r12 r13 r14 r15 r16 r17 r18 /= ???.
 have ->: i=24 by smt().
-by move=> _ ->; smt().
+by move=> -> r ->; smt().
 qed.
 
 lemma __keccakf1600_avx2x4_nat_ll: islossless M.__keccakf1600_avx2x4_nat.
@@ -120,7 +125,7 @@ hoare keccakf1600_avx2x4_nat_h _a:
  M._keccakf1600_avx2x4_nat :
  st4x st = _a
  ==> st4x res = st4x_map keccak_f1600_op _a.
-proof. by proc; ecall (__keccakf1600_avx2x4_nat_h st). qed.
+proof. by proc; ecall (__keccakf1600_avx2x4_nat_h (st4x st)). qed.
 
 lemma keccakf1600_avx2x4_nat_ll: islossless M._keccakf1600_avx2x4_nat.
 proof. by proc; call __keccakf1600_avx2x4_nat_ll. qed.

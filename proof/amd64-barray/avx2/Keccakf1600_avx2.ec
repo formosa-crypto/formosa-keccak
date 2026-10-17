@@ -12,6 +12,8 @@ time require import  Keccak1600_avx2.
 from JazzEC require import Keccak1600_Jazz.
 from JazzEC require import BArray3 BArray32 BArray40 BArray160 BArray192 BArray200 BArray208 BArray224 BArray800 BArray808 SBArray208_200 SBArray808_800.
 require import Keccak1600_barrays.
+require import Keccak_barray_bindings.
+require import Keccakf1600_ref.
 from JazzEC require import Array4 Array5 Array7 Array24 Array25.
 
 require import Avx2_extra.
@@ -94,11 +96,12 @@ hoare keccakf1600_avx2_h' _a:
 proof.
 proc.
 wp; while (0 < r <= 24 /\
-           round_constants = rc_spec /\
-           stavx2INV state /\
-           state = stavx2_from_st25 (keccak_round_i r (stavx2_to_st25 _a))).
- wp; ecall (keccak_pround_avx2_h state); auto => |> &m ? _.
- rewrite !stavx2INV_from_st25 /= => Hr; split; first smt().
+           round_constants = kECCAK1600_RC /\
+           stavx2INV (stavx2 state) /\
+           stavx2 state = stavx2_from_st25 (keccak_round_i r (stavx2_to_st25 _a))).
+ wp; ecall (keccak_pround_avx2_h (stavx2 state)); auto => |> &m Hr0 _ _ Hst Hr s1 Hs1.
+ rewrite kECCAK1600_RC_E 1:/# stavx2_xor256d //= Hs1 Hst.
+ split; first smt().
  rewrite -andaE; split.
   rewrite stavx2INV_iota.
    by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
@@ -108,14 +111,18 @@ wp; while (0 < r <= 24 /\
  pose st:= foldl _ _ _.
  rewrite !stavx2_from_st25K stavx2_from_st25_iota; congr.
  by rewrite/keccak_round_op /keccak_iota_op.
-wp; ecall (keccak_pround_avx2_h state); auto => |> stINV.
-split.
+wp; ecall (keccak_pround_avx2_h (stavx2 state)); auto => |> &hr stINV s1 Hs1.
+have K0 := kECCAK1600_RC_E 0 _; first done.
+move: K0 => /= K0.
+rewrite K0 stavx2_xor256d //= Hs1.
+move: (stavx2 state{hr}) stINV => sa stINV.
+split; first split.
  rewrite stavx2INV_iota /=.
    by rewrite /stavx2_keccak_pround stavx2INV_from_st25.
   by rewrite u256_broadcastP_VPBROADCAST.
  rewrite /= /stavx2_keccak_pround /keccak_round_op /keccak_iota_op iota1 /=.
- by rewrite stavx2_from_st25_iota get_of_list //.
-move => r ???; have ->: r = 24 by smt().
+ by rewrite stavx2_from_st25_iota.
+move => r st ????; have ->: r = 24 by smt().
 smt().
 qed.
 
@@ -134,9 +141,9 @@ hoare keccakf1600_avx2_h _a:
  stavx2 state = stavx2_from_st25 _a ==> stavx2 res = stavx2_from_st25 (keccak_f1600_op _a).
 proof.
 proc.
-ecall (keccakf1600_avx2_h' state); auto => |>; split.
- by rewrite stavx2INV_from_st25.
-by move=> ?; rewrite stavx2_from_st25K.
+ecall (keccakf1600_avx2_h' (stavx2 state)); auto => |> &hr Hst; split.
+ by rewrite Hst stavx2INV_from_st25.
+by move=> ? r ->; rewrite Hst stavx2_from_st25K.
 qed.
 
 (* FINAL CORRECTNESS THEOREM *)
@@ -174,25 +181,7 @@ qed.
 hoare stavx2_pack_h _st:
  M.__stavx2_pack
  : st25 st=_st ==> stavx2 res = stavx2_from_st25 _st.
-proof.
-proc.
-proc change 2: { state <- state.[0 <- VPBROADCAST_4u64 st.[0]]; }.
- auto => /> &m; congr; congr.
- rewrite get64E pack8E.
- apply W64.ext_eq => i Hi /=.
- by rewrite initiE //= initiE 1:/# initiE 1:/# /= bits8E initiE 1:/# /= /#.
-proc change 3: { state <- state.[1 <- sliceget25_64_256 st (1*8*8)]; };
- 1: by auto => /#.
-proc change 5: { state <- state.[3 <- sliceget25_64_256 st (6*8*8)]; };
- 1: by auto => /#.
-proc change 7: { state <- state.[4 <- sliceget25_64_256 st (11*8*8)]; };
- 1: by auto => /#.
-proc change 10: { state <- state.[5 <- sliceget25_64_256 st (16*8*8)]; };
- 1: by auto => /#.
-proc change 16: { state <- state.[6 <- sliceget25_64_256 st (21*8*8)]; };
- 1: by auto => /#.
-by circuit.
-qed.
+proof. by proc; circuit. qed.
 
 phoare stavx2_pack_ph _st:
  [ M.__stavx2_pack
@@ -255,20 +244,7 @@ qed.
 hoare stavx2_unpack_h _st:
  M.__stavx2_unpack
  : stavx2 state=_st ==> st25 res = stavx2_to_st25 _st.
-proof.
-proc.
-proc change 3: { st <- sliceset25_64_256 st (1*8*8) state.[1]; };
- 1: by auto => /#.
-proc change 11: { st <- sliceset25_64_256 st (6*8*8) t256_4; };
- 1: by auto => /#.
-proc change 15: { st <- sliceset25_64_256 st (11*8*8) t256_4; };
- 1: by auto => /#.
-proc change 18: { st <- sliceset25_64_256 st (16*8*8) t256_4; };
- 1: by auto => /#.
-proc change 21: { st <- sliceset25_64_256 st (21*8*8) t256_4; };
- 1: by auto => /#.
-by circuit.
-qed.
+proof. by proc; circuit. qed.
 
 phoare stavx2_unpack_ph _st:
  [ M.__stavx2_unpack
@@ -289,10 +265,10 @@ hoare keccakf1600_st25_avx2_h _a:
  st25 st25=_a ==> st25 res = keccak_f1600_op _a.
 proof.
 proc.
-ecall (stavx2_unpack_h state).
-ecall (keccakf1600_avx2_h' state).
-ecall (stavx2_pack_h st25).
-auto => |>; split => *.
+ecall (stavx2_unpack_h (stavx2 state)).
+ecall (keccakf1600_avx2_h' (stavx2 state)).
+ecall (stavx2_pack_h (st25 st25)).
+auto => |> &hr s1 -> ; split => [|_ s2 -> s3 ->].
  by rewrite stavx2INV_from_st25.
 by rewrite !stavx2_from_st25K.
 qed.
