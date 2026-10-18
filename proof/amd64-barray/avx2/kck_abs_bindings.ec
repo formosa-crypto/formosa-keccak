@@ -667,7 +667,8 @@ clone import JCircuits2 as JC2 with
   op sizeS <- 17,
   op sizeB <- 17,
   theory WS <- W17,
-  theory WB <- W17.  
+  theory WB <- W17
+proof le_size by done.
 
 abstract theory JCArray.
   op size : int.

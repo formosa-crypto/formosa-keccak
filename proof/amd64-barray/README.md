@@ -1,33 +1,117 @@
-# proof/amd64-barray — WIP port to the `barray` array model
+# proof/amd64-barray — functional correctness and safety (`barray` model)
 
-Replica of `proof/amd64` for code extracted with
-`jasmin2ec --array-model=barray` (monomorphic byte arrays `BArrayN`,
-`SBArrayB_S` sub-array theories) instead of the deprecated `old` model.
+This tree proves, for the Keccak implementations in `src/amd64` extracted
+with `jasmin2ec --array-model=barray` (Jasmin's default model: monomorphic
+byte arrays `BArrayN`, sub-arrays through `SBArrayB_S` theories):
 
-`safety/` holds the safety proofs, extracted with `jasmin2ec -m safety` in the
-same array model (see `safety/README.md`).
+- **functional correctness** against the FIPS 202 specification of
+  `submodules/crypto-specs/fips202`: the same results as `proof/amd64`, with
+  the same file, theory and lemma names (this tree started as its replica);
+- **safety**, in `safety/` (see `safety/README.md`): every array and memory
+  access in bounds, no read of an uninitialised array cell, no `ui64`
+  overflow, and every `#[safety]` contract of the sources met.
 
-## Status
+There are no admits. `Notes.md` records the design of the port and the
+issues met on the way.
 
-| Layer | State |
-|---|---|
-| `extracted/` (models, generated array theories) | done; reproducible with the CI Jasmin (`git diff -w`) |
-| parametric `MM` modules of the six abstract theories | regenerated from the barray ASIZE model |
-| statements (ops, types, contracts) of every file | ported; every file elaborates |
-| `extracted/*_checkXtr.ec` | **green** (`make -C extracted checkXtr`) |
-| bridge lemmas, `common/Keccak1600_barrays.ec` | **done**, fully checked |
-| proofs of `ref/Keccak1600_ref.ec` | **ported**, fully checked |
-| proofs of `common/Keccak1600_subreadwrite.ec` | **ported**, fully checked, no admits |
-| proofs of `ref/Keccak1600_fixedsizes_ref.ec` | **ported**, fully checked, no admits |
-| proofs of `ref/Keccakf1600_ref.ec` | **ported**, fully checked, no admits |
-| proofs of `common/Keccak1600_updstate{,_finish}.ec`, `ref/Keccak1600_updstate_ref.ec` | **ported**, fully checked, no admits |
-| proofs of `avx2/Keccak1600_avx2.ec`, `avx2/Keccak1600_fixedsizes_avx2.ec` | **ported**, fully checked, no admits |
-| proofs of `avx2/Keccak1600_avx2x4.ec`, `avx2/Keccakf1600_avx2x4.ec` (dispatcher), `avx2/Keccak1600_{fixedsizes,updstate}_avx2x4.ec` | **ported**, fully checked, no admits |
-| permutation proofs (`ref/Keccakf1600_{basic,opt}.ec`, `avx2/Keccakf1600_avx2.ec`, `avx2/Keccakf1600_avx2x4_{ref,nat,alt}.ec`) | **ported**, fully checked, no admits |
-| `circuit` over BArray | **done**: `common/barray_abs_bindings.ec`, `common/keccak_barray_bindings.ec` (needs an EasyCrypt with the `uextract`/`uinsert`/`oflist` operator kinds) |
+## What is proved
 
-EasyCrypt loads `require`d files with proof checking off, so the checkXtr
-files only need the statements of their dependencies.
+C: functional correctness (this directory). S: safety (`safety/`).
+
+| Implementation | Fixed-size, memory | Fixed-size, array | Streaming, memory | Streaming, array |
+| --- | --- | --- | --- | --- |
+| `ref` (1-way, `u64[25]` state) | C S | C S | C S | C S |
+| `avx2` (1-way, `u256[7]` state) | C S | C S | as `ref` ¹ | as `ref` ¹ |
+| `avx2x4` (4-way, `u256[25]` state) | C S ² | C S ² | C S ² | C S ² |
+
+1. The 1-way streaming API has a single implementation,
+   `src/amd64/ref/keccak1600_updstate{,_ASIZE}.jinc`, whose whole-lane loops
+   branch on `KECCAK_FEATURES` (AVX2 or scalar). Both branches are proved.
+2. Absorb with four buffers, and with one buffer broadcast to the four lanes
+   (`bcast`).
+
+| Cell | Correctness: file (theory) | Safety: file (theory) |
+| --- | --- | --- |
+| ref fixed-size, memory | `ref/Keccak1600_fixedsizes_ref.ec` | `safety/ref/Keccak1600_safety.ec` |
+| ref fixed-size, array | same (`KeccakArrayRef`) | same (`KeccakArrayRefSafety`) |
+| ref streaming, memory | `ref/Keccak1600_updstate_ref.ec` | `safety/ref/Keccak1600_safety.ec` |
+| ref streaming, array | same (`KeccakUpdstateRef`) | same (`KeccakUpdstateRefSafety`) |
+| avx2 fixed-size, memory | `avx2/Keccak1600_fixedsizes_avx2.ec` | `safety/avx2/Keccak1600_avx2_safety.ec` |
+| avx2 fixed-size, array | same (`KeccakArrayAvx2`) | same (`KeccakArrayAvx2Safety`) |
+| avx2x4 fixed-size, memory | `avx2/Keccak1600_fixedsizes_avx2x4.ec` | `safety/avx2x4/Keccak1600x4_safety.ec` |
+| avx2x4 fixed-size, array | same (`KeccakArrayAvx2x4`) | same (`KeccakArrayAvx2x4Safety`) |
+| avx2x4 streaming, memory | `avx2/Keccak1600_updstate_avx2x4.ec` | `safety/avx2x4/Keccak1600x4_safety.ec` |
+| avx2x4 streaming, array | same (`KeccakUpdstateAvx2x4`) | same (`KeccakUpdstateAvx2x4Safety`) |
+| sub-reads and sub-writes | `common/Keccak1600_subreadwrite.ec` (`ReadWriteArray`) | `safety/common/Keccak1600_common_safety.ec` (`ReadWriteArraySafety`) |
+
+The main correctness lemmas of each cell are listed in
+`proof/amd64/README.md`; every procedure behind them has its own contract,
+with a Hoare contract (`_h`), a losslessness lemma (`_ll`) and mostly a
+`phoare` (`_ph`). Here the contracts are stated through views of the byte
+arrays (`st25`, `stavx2`, `st4x`; see *Conventions*). On the safety side,
+every procedure `f` of the two safety models has a lemma `f_proof` proving
+the specification `f_spec` that the extraction derives from its contract.
+
+### Permutations
+
+| Permutation | Correctness | Safety |
+| --- | --- | --- |
+| ref, basic, opt, 1-way dispatcher `_keccakf1600` | `ref/Keccakf1600_{ref,basic,opt}.ec`, `ref/Keccakf1600.ec` | `safety/ref/Keccakf1600_safety.ec` |
+| avx2 | `avx2/Keccakf1600_avx2.ec` | `safety/ref/Keccakf1600_safety.ec` |
+| 4-way ref, nat, alt, 4-way dispatcher `_keccakf1600_avx2x4` | `avx2/Keccakf1600_avx2x4_{ref,nat,alt}.ec`, `avx2/Keccakf1600_avx2x4.ec` | `safety/avx2x4/Keccakf1600x4_safety.ec` |
+
+The correctness lemmas state that the procedure computes `keccak_f1600_op`
+(4-way: on each lane) and hold for every choice of `KECCAK_PERMUTATION`.
+They use EasyCrypt's `circuit` tactic, which here needs the bindings of
+byte arrays described in *Circuit bindings*.
+
+## Layout
+
+| Path | Content |
+| --- | --- |
+| `extracted/` | The models `Keccak1600_Jazz.ec` (module `M`: memory variants and everything independent of the array size) and `Keccak1600_Jazz_ASIZE.ec` (array variants at the dummy size `_ASIZE = 999`; `toEC_keccak1600_ASIZE.jazz` reuses `toEC_keccak1600.jazz`); the `*_checkXtr.ec` sanity checks. |
+| `common/Keccak1600_barrays.ec` | The views between the byte arrays and the specification states, and the bridge lemmas (see below). |
+| `common/barray_abs_bindings.ec`, `keccak_barray_bindings.ec` | `circuit` bindings of the byte arrays (see below). |
+| `common/Keccak1600_statebytes.ec`, `Keccak1600_subreadwrite.ec`, `Keccak1600_updstate{,_finish}.ec`, `keccak_bindings.ec`, `avx2.spec` | As in `proof/amd64`: state bytes, sub-reads and sub-writes, streaming state, word bindings, AVX2 instruction semantics. |
+| `ref/`, `avx2/` | The same files as in `proof/amd64` (see its README). |
+| `safety/` | The safety proofs: models, generated proof files, generator. |
+| `Notes.md` | Design rationale of the port, the EasyCrypt patch, issues, limitations. |
+
+## Array variants
+
+As in `proof/amd64`, each array layer is an abstract theory parametrised by
+the size, whose module `MM` is the extracted code with `BArray999` replaced
+by the parameter, and whose sanity check in `extracted/` instantiates it at
+999 and proves `M.f ~ MM.f` by `sim`. Here the parameter is a single
+`clone ByteArray as A` (no word view), named `BA` in `KeccakUpdstateAvx2x4`
+(see *Conventions*). The safety theories follow the same pattern, with their
+own sanity checks in `safety/extracted/`.
+
+## Checking
+
+From the repository root:
+
+```
+make -C proof/amd64-barray/extracted re_extract      # regenerate the models
+make -C proof/amd64-barray/extracted checkXtr        # the sanity checks
+easycrypt runtest config/tests.config keccak_amd64barray_<x>   # <x>: extracted, common, ref, avx2
+```
+
+and, for the safety proofs, the scenarios `keccak_amd64barray_safety_<x>`
+(see `safety/README.md`).
+
+The permutation proofs, and every file that requires
+`common/keccak_barray_bindings.ec` (five of the six sanity checks do,
+through their dependencies), need an EasyCrypt whose `bind op` has the
+operator kinds `uextract`, `uinsert` and `oflist` (see `Notes.md`, §3.3).
+These are not in EasyCrypt's `main` branch yet, which `shell.nix` follows,
+so with the pinned toolchain those files fail to load. CI therefore runs the
+extraction check of the models, the scenario `keccak_amd64barray_extracted`
+(which fails until the EasyCrypt patch is available), and the safety
+scenarios (which do not need it). The safety proofs need no `circuit`.
+
+EasyCrypt loads `require`d files with proof checking off, so a sanity check
+only needs the statements of its dependencies to elaborate.
 
 ## Conventions
 
@@ -152,7 +236,9 @@ fixedsizes_avx2x4 updstate_avx2x4` (the last one with `--array-name BA`).
 
 The word bitstring bindings come from `common/keccak_bindings.ec`.
 
-## Next steps
+## Open issue
 
-1. Upstream the EasyCrypt operator kinds `uextract`, `uinsert` and `oflist`
-   (`shell.nix` follows EasyCrypt `main`, which does not have them yet).
+Upstream the EasyCrypt operator kinds `uextract`, `uinsert` and `oflist`
+(or pin a branch that has them in `shell.nix`), so that CI can check the
+permutation proofs and the sanity checks of this tree, and add the scenarios
+`keccak_amd64barray_{common,ref,avx2}` to the workflow.

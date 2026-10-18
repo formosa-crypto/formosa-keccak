@@ -183,6 +183,81 @@ is essentially the closers' `smt` calls, so the number of closers (the
 merges above) and the number of calls per closer (the split depth) are the
 two levers.
 
+## Checking time: findings and workarounds
+
+Measured with `gen/profile.py` on the generated proofs (EasyCrypt r2026.09,
+Z3 4.13 and CVC5 1.3 in parallel, 5 s timeout). The status table above has
+the resulting times; this section records what was found, since it shapes
+the generator.
+
+1. **All the time is in the closers, and a closer is a number of `smt`
+   calls.** Every other command (`sp`, `if`, `seq`, `ecall`, `while`,
+   declarations) is negligible. After the intros a closer's goal has 40–60
+   atoms (mostly the `ui64` range facts of the trace, then bitmap cells and
+   the cut formula); one `smt` call costs 0.2–0.6 s whatever the size of
+   its goal (0.5–0.9 s with four buffers in context), and only two atoms
+   out of 59 were closable without a prover. So the time is (number of
+   closers) × (calls per closer) × (cost per call).
+
+2. **Branch duplication.** The generator proved a conditional by duplicating
+   the rest of the procedure into both branches, so a sequence of sibling
+   conditionals was proved once per path: the avx2 dump cascade, nine
+   conditionals, had 200 closers. *Workaround:* the join cuts (`MERGE<k>`,
+   or the next `CUT`/`INV`; see above), 19 closers.
+
+3. **Shallow splitting.** One `smt` call on a conjunction of ~15 atoms
+   succeeds as often as not and costs the same as one call on an atom, so
+   splitting two levels and calling `smt` on each part is 8–15× faster
+   than one call per atom. Two caveats. The goal is right-nested, so `do
+   2!(split ...)` peels two atoms and leaves everything else as one
+   conjunct; that conjunct fails when it holds a hard atom (a pair of
+   modular equalities, or, with four buffers, anything once the word-bound
+   lemmas `W8/W64.to_uint_cmp` are among the hints), and a failing call
+   costs the whole 5 s timeout. *Workaround:* shallow attempt, then the
+   full split on what is left (`SPLIT` option, default `(2, 'all')`;
+   `('all',)` for the procedures where the attempt always fails, the 1-way
+   permutation drivers).
+
+4. **A failing `smt` is not caught by `try` or `||`.** In strict proof mode
+   (the default when checking) `smt` fails with an *uncatchable* error
+   (`EcLowGoal.t_smt`: `tc_error ~catchable:false "cannot prove goal
+   (strict)"`), and `FApi.t_try` rethrows uncatchable errors. The earlier
+   `(smt(H) || smt(H2))` fallback therefore never fell back. The tactical
+   `try! t` runs `t` in sloppy mode (catchable) and restores the goal on
+   failure; it is only legal in strict mode, so it cannot be nested.
+   `smt(timeout=...)` does not parse. *Workaround:* the shallow attempt is
+   `(try! smt(...))`, the final one a plain strict `smt`.
+
+5. **Goals that are hypotheses.** The alt driver's closers only had to
+   match the validity of a trace variable with the hypothesis saying so;
+   `smt` took 11 s per closer on these (24 closers), `done` nothing.
+   *Workaround:* `try done` before every `smt`.
+
+6. **Long straight-line bodies.** For the `nat` 4-way round (308
+   instructions) the symbolic execution before the prover took 54 s and the
+   prover 0.3 s: one `wp` followed by `/=` substitutes the whole chain of
+   lets. *Workaround:* `STEPWP` (projections first, then `wp` ten
+   instructions at a time), as for the `opt` round.
+
+7. **Hint lists.** A short list (no word-bound lemmas) proves in 0.4 s the
+   four-buffer conjunct that times out with the full list, but used as the
+   default first attempt it tripled the ref file and doubled the 4-way one:
+   it fails on most conjuncts, each failure costing the timeout. So `SMT2`
+   stays an explicit, per-procedure option (the 4-buffer absorb loop), and
+   the atoms always get the full list.
+
+8. **Load.** The same file varies by up to 2× between a quiet and a busy
+   machine (each `smt` call starts two provers; the CI runner has four
+   vCPUs for `ECRJOBS: 4` jobs). Compare times from single runs with care;
+   the table above was measured two files at a time.
+
+What remains: the fourteen closers of the four-buffer 4-way add-state and
+streaming steps (20–60 s each, 440 s of that file's 560 s). Their cost is
+the per-call price of a context holding four buffers' validity and bitmap
+facts, times 25–60 atoms; fewer or cheaper calls there need either a
+smaller context for the range atoms or bitmap lemmas proved once in the
+array theories, neither of which is done.
+
 ## Changes to the sources made for the proofs
 
 The proofs required one change to the executable code and several changes to
