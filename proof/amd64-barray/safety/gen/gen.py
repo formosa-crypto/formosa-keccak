@@ -11,7 +11,26 @@ Strategy per procedure (after inlining pure helpers):
 import re, sys, copy
 import model
 
-CL = "rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt()."
+# The closer. After the intros, the goal is a conjunction of (typically) dozens of
+# atoms: the ui64 range facts of the trace, bitmap cells, the cut formula. Each
+# `smt` call costs 0.2-0.6 s whatever its size, so splitting all the way down
+# (one call per atom) is 8-15x slower than a shallow split (one call per
+# conjunction of ~15 atoms). A conjunction can be too big for one call (a pair of
+# modular equalities already is), so the shallow attempt must be allowed to fail:
+# a failing `smt` is an uncatchable error in strict proof mode (`try` and `||` do
+# not catch it); `try! t` runs t in sloppy mode and restores the goal on failure.
+# So: shallow split, `try! smt` on each part, then the full split and a strict
+# `smt` on whatever is left. SMTCALL (sloppy) and SMTLAST (strict) are filled in
+# by `subst`.
+SPLIT = "split; try (move=> *; rewrite ?List.all_cat /=)"
+INTROS = ("rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); "
+          "rewrite ?List.all_cat /=")
+def closer(depths=(2, 'all')):
+    # `try done` first: a goal that is a hypothesis (e.g. the validity of a trace
+    # variable, or of a callee's trace) costs nothing here and seconds in smt
+    shallow = "".join(f"try (do {d}!({SPLIT})); try done; (try! SMTCALL); " for d in depths if d != 'all')
+    return INTROS + "; " + shallow + f"do ?({SPLIT}); try done; SMTLAST."
+CL = closer()
 INLINE = ['__HAS_FEATURE', '__KECCAK_F', '__KECCAK_Fx4', '__SHLQ', '__SHLDQ', '__SHLQ_256',
           'keccakf1600_index', '__stavx2_pos_avx2']
 
@@ -34,6 +53,14 @@ def nparams(P_sig, f):
 def instrs(ss):
     return [s for s in ss if s.kind != 'comment' and not (s.kind == 'asgn' and s.text.startswith('return'))]
 
+def mark_inl(ss):
+    # statements inlined from a callee keep the callee's ordinals: never key an
+    # annotation on them
+    for s in ss:
+        s.inl = True
+        if s.kind == 'if': mark_inl(s.then); mark_inl(s.els)
+        if s.kind == 'while': mark_inl(s.body)
+
 def expand(ss, P, sig, used):
     """simulate EasyCrypt `inline` of INLINE procs: params + body + result."""
     out = []
@@ -41,7 +68,8 @@ def expand(ss, P, sig, used):
         if s.kind == 'call' and s.f in INLINE:
             used.add(s.f)
             out += [model.Stmt('asgn', text='(inline param)') for _ in range(sig[s.f])]
-            out += expand(copy.deepcopy(P[s.f]), P, sig, used)
+            body = expand(copy.deepcopy(P[s.f]), P, sig, used); mark_inl(body)
+            out += body
             out.append(model.Stmt('asgn', text='(inline result)'))
         elif s.kind == 'if':
             t = copy.copy(s); t.then = expand(s.then, P, sig, used); t.els = expand(s.els, P, sig, used); out.append(t)
@@ -64,6 +92,30 @@ def ecall(s):
     return f"ecall ({QUAL.get(s.f, '')}{s.f}_proof{(' ' + args) if args else ''})."
 
 BEFORE = set()   # names BEFORE<k> available for the current procedure (set by Gen.script)
+KEYS = set()     # all formula annotations of the current procedure (set by Gen.script)
+MERGE_MODE = 'auto'
+
+def cut_name(s):
+    return f"INV{s.ord}" if s.kind == 'while' else f"CUT{s.ord}"
+
+def next_hard(ss, i):
+    return next((j for j in range(i, len(ss)) if hard(ss[j])), None)
+
+def join_for(ss, k, ctx):
+    """Formula at the join of the conditional ss[k], and the index where the
+    continuation resumes, or None (then the continuation is duplicated into
+    both branches). Merging needs the state at the join: an explicit
+    MERGE<ord>, or, when the next hard statement follows through assignments
+    only, its CUT<ord>/INV<ord>, which is the same point."""
+    head, rest = ss[k], ss[k+1:]
+    if MERGE_MODE == 'off': return None
+    if not getattr(head, 'inl', False) and f"MERGE{head.ord}" in KEYS: return f"MERGE{head.ord}", k + 1
+    if not has_hard(rest): return None      # merging a tail without hard statements costs a closer
+    j = next_hard(ss, k + 1)
+    straight = all(s.kind == 'asgn' for s in ss[k+1:j]) and not getattr(ss[j], 'inl', False)
+    want = (cut_name(ss[j]), j) if straight else (f"MERGE{head.ord}", k + 1)
+    if want[0] in KEYS or MERGE_MODE == 'all': return want
+    ctx['hint'].add(want[0]); return None
 
 def cutpos(ss, i):
     # move the cut before the parameter set-up of the call at index i
@@ -108,6 +160,19 @@ def fwd(ss, ind, ctx):
     head = ss[k]
     if head.kind == 'if':
         if k: out.append(ind + f"sp {k}.")
+        jn = join_for(ss, k, ctx)
+        if jn:
+            # prove the conditional once, up to the join, then continue once
+            name, h2 = jn; ctx['need'].add(name)
+            out.append(ind + f"seq {h2 - k} : ({name}).")
+            out.append(ind + "+ (* join *)")
+            out.append(ind + "  if.")
+            out.append(ind + "  + (* then *)")
+            out += fwd(head.then + ss[k+1:h2], ind + "    ", ctx)
+            out.append(ind + "  + (* else *)")
+            out += fwd(head.els + ss[k+1:h2], ind + "    ", ctx)
+            out += fwd(ss[h2:], ind, ctx)
+            return out
         out.append(ind + "if.")
         out.append(ind + "+ (* then *)")
         out += fwd(head.then + ss[k+1:], ind + "  ", ctx)
@@ -115,11 +180,8 @@ def fwd(ss, ind, ctx):
         out += fwd(head.els + ss[k+1:], ind + "  ", ctx)
         return out
     if head.kind == 'call':
-        h = next(i for i in range(k, len(ss)) if hard(ss[i]))
-        if ss[h].kind == 'while':
-            name = f"INV{ss[h].ord}"
-        else:
-            name = f"CUT{ss[h].ord}"
+        h = next_hard(ss, k)
+        name = cut_name(ss[h])
         ctx['need'].add(name)
         out.append(ind + f"seq {h} : ({name}).")
         out.append(ind + "+ (* cut *)")
@@ -157,12 +219,20 @@ class Gen:
             number(ss, [0, 0, 0, 0])
 
     def script(self, name, ann=None, qual=None):
-        global BEFORE, QUAL
-        BEFORE = set(k for k in (ann or {}) if k.startswith('BEFORE'))
+        """-> (proof script, formula names it needs, names that would enable more merges)"""
+        global BEFORE, QUAL, CL, KEYS, MERGE_MODE
+        a = ann or {}
+        BEFORE = set(k for k in a if k.startswith('BEFORE'))
+        KEYS = set(k for k in a if k not in OPTIONS)
+        # MERGE: 'auto' (merge the branches of a conditional when the join formula
+        # exists), 'all' (merge everywhere, missing formulas are reported), 'off'
+        MERGE_MODE = a.get('MERGE', 'auto')
         QUAL = dict(qual or {})
+        # SPLIT: split depths tried by the closer, e.g. (1, 'all'); default (2, 'all')
+        CL = closer(a.get('SPLIT', (2, 'all')))
         used = set()
         ss = expand(self.P[name], self.P, self.sig, used)
-        step = (ann or {}).get('STEPWP')
+        step = a.get('STEPWP')
         if step and not used and all(s.kind == 'asgn' for s in instrs(ss)):
             # long straight-line body (a permutation round): reduce the projections of
             # the result tuple first, then wp a few instructions at a time, simplifying
@@ -173,28 +243,32 @@ class Gen:
             lines = ["simplify."]
             lines += [" ".join(f"wp {k}. simplify." for k in ks[i:i + 8]) for i in range(0, len(ks), 8)]
             lines.append("skip; " + CL)
-            return "\n".join(lines), set()
-        ctx = {'need': set()}
+            return "\n".join(lines), set(), set()
+        ctx = {'need': set(), 'hint': set()}
         lines = fwd(ss, "", ctx)
         if used:
             lines = ["inline " + " ".join("M." + f for f in INLINE if f in used) + "."] + lines
-        return "\n".join(lines), ctx['need']
+        return "\n".join(lines), ctx['need'], ctx['hint']
+
+OPTIONS = ('SMT', 'SMT2', 'STEPWP', 'SPLIT', 'MERGE')   # annotation keys that are not formulas
 
 def subst(script, ann):
-    if 'SMT' in ann:
-        script = script.replace("; smt().", "; smt(" + ann['SMT'] + ").")
-    if 'SMT2' in ann:
-        # fallback hint list: with many buffers in context, smt can time out on the
-        # full hint list where a shorter one succeeds
-        h = ann.get('SMT', '')
-        script = script.replace("; smt(" + h + ").", "; (smt(" + h + ") || smt(" + ann['SMT2'] + ")).")
+    smt = "smt(" + ann.get('SMT', '') + ")"
+    sloppy, strict = smt, smt
+    if ann.get('SMT2'):
+        # SMT2: a short hint list for the shallow attempt, tried before the full one;
+        # only for the few procedures where it is known to work (the 4-buffer absorb
+        # loop): a failing call costs the whole timeout, and used as a default for a
+        # layer it tripled its time. The atoms keep the full list.
+        sloppy = "(smt(" + ann['SMT2'] + ") || " + smt + ")"
+    script = script.replace("SMTCALL", sloppy).replace("SMTLAST", strict)
     for k in sorted(ann, key=len, reverse=True):
-        if k in ('SMT', 'SMT2', 'STEPWP'): continue
+        if k in OPTIONS: continue
         script = re.sub(r'\b' + k + r'\b', '(' + ann[k] + ')', script)
     return script
 
 if __name__ == '__main__':
     G = Gen(sys.argv[1])
     for n in sys.argv[2:]:
-        s, need = G.script(n)
-        print(f"== {n} need={sorted(need)}"); print(s)
+        s, need, hint = G.script(n)
+        print(f"== {n} need={sorted(need)} merge-hints={sorted(hint)}"); print(s)

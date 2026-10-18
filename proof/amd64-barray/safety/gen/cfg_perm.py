@@ -31,13 +31,15 @@ ANN = {
  "__rol_sum_ref": {"INV1": "valid trace___rol_sum_ref /\\ 0 <= x <= 5 /\\ BArray40.is_init b_b 0 (8 * x)"},
  "__set_row_ref": {"INV1": "valid trace___set_row_ref /\\ 0 <= x <= 5 /\\ 0 <= y < 5 /\\ BArray40.is_init b_b 0 40 /\\ BArray200.is_init b_e 0 (y * 5 * 8 + 8 * x)"},
  "_pround_ref": {"INV1": "valid trace__pround_ref /\\ 0 <= y <= 5 /\\ BArray200.is_init b_e 0 (y * 5 * 8)"},
- "__keccakf1600_ref": {"INV1": "valid trace___keccakf1600_ref /\\ 0 <= c /\\ BArray200.is_init b_a 0 200"},
- "__keccakf1600_basic": {"INV1": "valid trace___keccakf1600_basic /\\ 0 <= c /\\ BArray200.is_init b_a 0 200"},
+ # drivers: their closers are cheap atom by atom, and the shallow attempt only adds a timeout
+ "__keccakf1600_ref": {"SPLIT": ('all',), "INV1": "valid trace___keccakf1600_ref /\\ 0 <= c /\\ BArray200.is_init b_a 0 200"},
+ "__keccakf1600_basic": {"SPLIT": ('all',), "INV1": "valid trace___keccakf1600_basic /\\ 0 <= c /\\ BArray200.is_init b_a 0 200"},
+ "__pround_basic_inlined": {"SPLIT": ('all',)},
  # two rounds in registers: stepwise wp (see gen.STEPWP); the round-constant reads need
  # to_uint of the counter and of its successor
  "keccakf1600_opt_loop_body": {"STEPWP": 10,
    "SMT": "W64.uleE W64.to_uintD_small W64.to_uint_cmp W64.of_uintK W64.to_uint1 pow2_64"},
- "__keccakf1600_opt": {"SMT": "W64.uleE W64.ultE W64.to_uintD_small W64.to_uint_cmp W64.of_uintK pow2_64",
+ "__keccakf1600_opt": {"SPLIT": ('all',), "SMT": "W64.uleE W64.ultE W64.to_uintD_small W64.to_uint_cmp W64.of_uintK pow2_64",
    "INV1": "valid trace___keccakf1600_opt /\\ W64.to_uint rax %% 2 = 0 /\\ W64.to_uint rax <= 24"},
  "__keccakf1600_pround_avx2": {"STEPWP": 10},
  "__keccakf1600_avx2": {"INV1": "valid trace___keccakf1600_avx2 /\\ 1 <= r <= 24"},

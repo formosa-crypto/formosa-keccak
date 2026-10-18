@@ -46,6 +46,8 @@ ANN = {
  "__state_init": {"INV1": "valid trace___state_init /\\ 0 <= i <= 25 /\\ BArray200.is_init b_st 0 (8 * i)"},
  "__addstate_m": {"SMT": "chunks8",
    "CUT2": AS_BASE + " /\\ buf = _buf + (__LEN - _LEN)",
+   # join of the whole-word phase (after aT += 8*(_LEN/8); _LEN %= 8), before the last word
+   "CUT5": AS_BASE + " /\\ buf = _buf + (__LEN - _LEN) /\\ _LEN < 8",
    "INV1": AS_BASE + " /\\ inc = _LEN %/ 32 /\\ 0 <= i <= inc /\\ buf = _buf + (__LEN - _LEN) + 32 * i",
    "INV2": AS_BASE + " /\\ aT <= at <= aT + (_LEN %/ 8) * 8 /\\ (at - aT) %% 8 = 0 /\\ buf = _buf + (__LEN - _LEN) + (at - aT)"},
  "__absorb_m": {
@@ -54,15 +56,17 @@ ANN = {
    "CUT2": AB_COMMON + f" /\\ aT = (_aT + __LEN) %% __RATE8 + {B('__TRAILB')} /\\ buf = _buf + __LEN"},
  "__dumpstate_m": {"SMT": "chunks8",
    "INV1": DS_COMMON + " /\\ inc = _LEN %/ 32 /\\ 0 <= j <= inc /\\ buf = _buf + 32 * j",
-   "INV2": DS_COMMON + " /\\ 0 <= i <= _LEN %/ 8 /\\ buf = _buf + 8 * i"},
+   "INV2": DS_COMMON + " /\\ 0 <= i <= _LEN %/ 8 /\\ buf = _buf + 8 * i",
+   "CUT4": DS_COMMON + " /\\ buf = _buf + 8 * (_LEN %/ 8)"},
  "__squeeze_m": {
    "INV1": ("valid trace___squeeze_m /\\ _LEN = __LEN /\\ _RATE8 = __RATE8 /\\ 0 <= __LEN /\\ 0 < __RATE8 < 200"
             " /\\ 0 <= _buf /\\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\\ 0 <= i <= _LEN %/ _RATE8 /\\ buf = _buf + _RATE8 * i")},
  "_init_updstate": {"SMT": SUB},
  "_finish_updstate": {},
- "_add_m_updstate": {"SMT": WORDH, "CUT3": ADD_S + " /\\ newat = at",
+ # CUT6: join of the two whole-lane loops (every full lane consumed), before the leftovers
+ "_add_m_updstate": {"SMT": WORDH, "CUT3": ADD_S + " /\\ newat = at", "CUT6": ADD_S + " /\\ upto < at + 8",
                      "INV1": ADD_S + " /\\ newat = at + 32", "INV2": ADD_S + " /\\ newat = at + 8"},
- "_dump_m_updstate": {"SMT": WORDH, "CUT3": DUMP_S + " /\\ newat = at",
+ "_dump_m_updstate": {"SMT": WORDH, "CUT3": DUMP_S + " /\\ newat = at", "CUT6": DUMP_S + " /\\ upto < at + 8",
                       "INV1": DUMP_S + " /\\ newat = at + 32", "INV2": DUMP_S + " /\\ newat = at + 8"},
  "_absorb_m_updstate": {"SMT": SUB, "INV1": ABS_L},
  "_squeeze_m_updstate": {"SMT": SUB, "CUT1": SQ_C, "INV1": SQ_L},
@@ -93,6 +97,8 @@ SQA_L = ("valid trace__squeeze_updstate /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ a
 ANN.update({
  "__addstate": {"SMT": "chunks8",
    "CUT2": ASA_BASE + " /\\ offset = _offset /\\ dELTA = __LEN - _LEN",
+   # join of the whole-word phase: the AVX2 branch advances dELTA, the scalar one offset
+   "CUT5": ASA_BASE + " /\\ _offset <= offset /\\ 0 <= dELTA /\\ offset + dELTA = _offset + (__LEN - _LEN) /\\ _LEN < 8",
    "INV1": ASA_BASE + " /\\ offset = _offset /\\ inc = _LEN %/ 32 /\\ 0 <= i <= inc /\\ dELTA = __LEN - _LEN + 32 * i",
    "INV2": ASA_BASE + " /\\ dELTA = 0 /\\ aT %/ 8 <= at <= aT %/ 8 + _LEN %/ 8 /\\ offset = _offset + (__LEN - _LEN) + 8 * (at - aT %/ 8)"},
  "__absorb": {
@@ -101,13 +107,14 @@ ANN.update({
    "CUT2": ABA_COMMON + f" /\\ aT = (_aT + 999) %% __RATE8 + {B('__TRAILB')}"},
  "__dumpstate": {"SMT": "chunks8",
    "INV1": DSA_COMMON + " /\\ offset = _offset /\\ inc = _LEN %/ 32 /\\ 0 <= j <= inc /\\ dELTA = 32 * j /\\ BArray999.is_init b_buf 0 (_offset + dELTA)",
-   "INV2": DSA_COMMON + " /\\ dELTA = 0 /\\ 0 <= i <= _LEN %/ 8 /\\ offset = _offset + 8 * i /\\ BArray999.is_init b_buf 0 offset"},
+   "INV2": DSA_COMMON + " /\\ dELTA = 0 /\\ 0 <= i <= _LEN %/ 8 /\\ offset = _offset + 8 * i /\\ BArray999.is_init b_buf 0 offset",
+   "CUT4": DSA_COMMON + " /\\ _offset <= offset /\\ 0 <= dELTA /\\ offset + dELTA = _offset + 8 * (_LEN %/ 8) /\\ BArray999.is_init b_buf 0 (offset + dELTA)"},
  "__squeeze": {
    "INV1": ("valid trace___squeeze /\\ _RATE8 = __RATE8 /\\ 0 < __RATE8 < 200 /\\ 0 <= i <= 999 %/ _RATE8"
             " /\\ offset = _RATE8 * i /\\ BArray999.is_init b_buf 0 offset")},
- "_add_updstate": {"SMT": WORDH, "CUT3": ADDA_S + " /\\ newat = at",
+ "_add_updstate": {"SMT": WORDH, "CUT3": ADDA_S + " /\\ newat = at", "CUT6": ADDA_S + " /\\ upto < at + 8",
                    "INV1": ADDA_S + " /\\ newat = at + 32", "INV2": ADDA_S + " /\\ newat = at + 8"},
- "_dump_updstate": {"SMT": WORDH, "CUT3": DUMPA_S + " /\\ newat = at",
+ "_dump_updstate": {"SMT": WORDH, "CUT3": DUMPA_S + " /\\ newat = at", "CUT6": DUMPA_S + " /\\ upto < at + 8",
                     "INV1": DUMPA_S + " /\\ newat = at + 32", "INV2": DUMPA_S + " /\\ newat = at + 8"},
  "_absorb_updstate": {"SMT": SUB, "INV1": ABSA_L},
  "_squeeze_updstate": {"SMT": SUB, "CUT1": SQA_C, "INV1": SQA_L},

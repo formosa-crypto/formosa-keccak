@@ -39,8 +39,10 @@ ANN = {
  # the last sub-read (at 168) does not assign the remaining length and trail byte (dead)
  "__addstate_m_avx2": dict([(k, AM(c, k == "BEFORE11")) for k, c in list(RD_CUT.items()) + list(RD_BEFORE.items())]),
  "__addstate_avx2": dict([(k, AA(c, k == "BEFORE11")) for k, c in list(RD_CUT.items()) + list(RD_BEFORE.items())]),
- "__dumpstate_m_avx2": dict([(k, DM(c)) for k, c in WR_CUT.items()]),
- "__dumpstate_avx2": dict([(k, DA(c)) for k, c in WR_CUT.items()]),
+ # MERGE1: the join of the first conditional (both branches write 8 bytes) is before the
+ # reg1 write, so it is not one of the cuts: W(8)
+ "__dumpstate_m_avx2": dict([(k, DM(c)) for k, c in WR_CUT.items()] + [("MERGE1", DM(8))]),
+ "__dumpstate_avx2": dict([(k, DA(c)) for k, c in WR_CUT.items()] + [("MERGE1", DA(8))]),
  "__absorb_m_avx2": {
    "INV1": AB_M + " /\\ 0 <= _aT < __RATE8 /\\ __RATE8 <= _aT + __LEN /\\ aT = 0 /\\ _LEN = __LEN - (__RATE8 - _aT)"
            " /\\ iTERS = _LEN %/ _RATE8 /\\ 0 <= i <= iTERS /\\ buf = _buf + (__RATE8 - _aT) + _RATE8 * i",

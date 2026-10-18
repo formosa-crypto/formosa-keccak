@@ -52,17 +52,20 @@ def models():
         _G['src_arr'] = open(MODEL_A).read()
     return _G
 
-def lemma(G, H, x, ann, manual, default_smt, qual=None, sub=None):
+def lemma(G, H, x, ann, manual, default_smt, qual=None, sub=None, default_smt2=None):
     if x in manual:
         body = manual[x].strip()
     else:
         a = dict(ann.get(x, {}))
         if default_smt:
             a['SMT'] = (a.get('SMT', '') + ' ' + default_smt).strip()
-        s, need = G.script(x, a, qual)
+        if default_smt2 and 'SMT2' not in a:
+            a['SMT2'] = default_smt2
+        s, need, hint = G.script(x, a, qual)
         miss = [k for k in need if k not in a]
         body = gen.subst(s, a)
         if miss: body = "(* MISSING: " + " ".join(sorted(miss)) + " *)\n" + body
+        if hint: print(f"note: {x}: a join formula {' '.join(sorted(hint))} would merge more branches", file=sys.stderr)
     text = H[x] + "\nproof.\nrewrite /" + x + "_spec; proc.\n" + body + "\nqed.\n"
     return sub(text) if sub else text
 
@@ -114,7 +117,7 @@ hint simplify A_init_cell_ones, A_init_cell_zeros.
 
 THEORIES = []   # (theory, presets, proof module, checkXtr file) built in this run
 
-def build(items, ann, manual, out_path, default_smt=""):
+def build(items, ann, manual, out_path, default_smt="", default_smt2=None):
     """items: ('raw', text) | ('gen', proc)    -- memory/size-independent proc (module M)
             | ('theory', dict(name=, presets=[..], check=<file>, rw=bool))
                                                -- abstract theory of array procs (module MM)"""
@@ -125,7 +128,7 @@ def build(items, ann, manual, out_path, default_smt=""):
         if kind == 'raw':
             parts.append(x.strip() + "\n")
         elif kind == 'gen':
-            parts.append(lemma(G['mem'], G['hmem'], x, ann, manual, default_smt))
+            parts.append(lemma(G['mem'], G['hmem'], x, ann, manual, default_smt, default_smt2=default_smt2))
         else:
             rw = x.get('rw', True)
             mm, specs, names = asize_transform.safety_parts(G['src_arr'], x['presets'])
@@ -135,7 +138,7 @@ def build(items, ann, manual, out_path, default_smt=""):
             qual = {n: "RW." for n in asize_transform.SUBRW_PROCS} if rw else {}
             smt = (default_smt + " " + ASIZE_SMT).strip()
             for n in names:
-                parts.append(lemma(G['arr'], G['harr'], n, ann, manual, smt, qual, asize_subst))
+                parts.append(lemma(G['arr'], G['harr'], n, ann, manual, smt, qual, asize_subst, default_smt2=default_smt2))
             parts.append(f"end {x['name']}.\n")
             mod = os.path.splitext(os.path.basename(out_path))[0]
             THEORIES.append((x['name'], names, mod, x['check']))

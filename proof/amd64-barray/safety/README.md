@@ -14,16 +14,23 @@ opt, avx2; 4-way ref, alt, nat).
 Every proof checks: all procedures of all layers, memory and array variants,
 fixed-size and streaming. CI runs the extraction check and the scenarios
 `keccak_amd64barray_safety_<x>` for `<x>` in `extracted`, `common`, `ref`,
-`avx2`, `avx2x4`. Fresh compile times on a 10-core laptop (OCaml 5.4.1):
+`avx2`, `avx2x4`. Fresh compile times on a 10-core laptop (OCaml 5.4.1, two
+files compiling at a time; `gen/profile.py` gives the breakdown):
 
-| File | Time |
-| --- | --- |
-| `common/Keccak1600_common_safety.ec` | about 5 min |
-| `ref/Keccakf1600_safety.ec` | 22 s |
-| `ref/Keccak1600_safety.ec` | 12 min |
-| `avx2/Keccak1600_avx2_safety.ec` | 80 min |
-| `avx2x4/Keccakf1600x4_safety.ec` | 22 min (OCaml 5.2.1) |
-| `avx2x4/Keccak1600x4_safety.ec` | 29 min |
+| File | Time | Before the merge/closer work |
+| --- | --- | --- |
+| `common/Keccak1600_common_safety.ec` | 2.5 min | 9 min |
+| `ref/Keccakf1600_safety.ec` | 14 s | 22 s |
+| `ref/Keccak1600_safety.ec` | 3 min | 12 min |
+| `avx2/Keccak1600_avx2_safety.ec` | 4 min | 80 min |
+| `avx2x4/Keccakf1600x4_safety.ec` | 16 s | 22 min |
+| `avx2x4/Keccak1600x4_safety.ec` | 10 min | 29 min |
+
+What is left is in the 4-way absorb/squeeze file: fourteen closers of the
+four-buffer add-state and streaming steps take 20–60 s each (440 s of its
+560 s), because with four buffers in context every `smt` call costs about
+0.5 s and their goals have 25–60 atoms. Shrinking the context those calls see
+(step 4 of the plan behind this work) is the remaining lever.
 
 ## Toolchain
 
@@ -119,18 +126,35 @@ procedure:
 * conditionals are split forward (`sp n; if`): this version of EasyCrypt's
   `sp` executes through conditionals, and `wp` over a sequence of
   conditionals blows up the goal;
+* a conditional followed by a loop or by another conditional with calls is
+  proved once, as a step `seq : (JOIN)` whose two branches are closed
+  inside it, and the rest of the procedure continues once from `JOIN`
+  (otherwise the rest would be proved once per branch, and a sequence of
+  such conditionals once per path: the avx2 dump cascade had 200 closers
+  for 9 conditionals). `JOIN` is the annotation `MERGE<k>` of the k-th
+  conditional, or, when the next loop or conditional follows through
+  assignments only, its own `INV<k>`/`CUT<k>`, which describes the same
+  point. The generator prints on stderr the formula that would allow a
+  further merge (`note: <proc>: a join formula ...`); the per-procedure
+  option `MERGE` is `auto` (default), `all` (merge everywhere, missing
+  formulas appear as `(* MISSING *)`) or `off`;
 * straight-line code is closed backward, calls through the callee lemma
   (`wp; ecall (g_proof args)`, `RW.g_proof` for a subreadwrite callee of an
-  array theory), and the remaining goal by a fixed closer
-  (`rewrite /is_init /valid /=; ...; smt(...)`);
+  array theory), and the remaining goal by a fixed closer: unfold `is_init`
+  and `valid`, introduce, then split the conjunction two levels deep and
+  call `smt` on each part (the full split, one `smt` call per atom, is the
+  fallback: an `smt` call costs 0.2–0.6 s whatever its size, and a goal has
+  typically 40–60 atoms, so this is 8–15× faster). The per-procedure option
+  `SPLIT` gives the depths to try, default `(2, 'all')`;
 * the only manual input is given in `gen/cfg_*.py`, as formulas over the
   program and lemma variables: loop invariants `INV<k>` (k-th `while` of the
   procedure), cuts `CUT<k>` (state before the k-th conditional, when calls
-  precede it) and `BEFORE<k>` (state before the k-th call, to split long
-  call chains), and extra `smt` hints (`SMT`). For the array procedures they
-  are written for the 999 extraction and abstracted like the code. A few
-  procedures with word-level reasoning have hand-written proofs
-  (`gen/common_manual.json`). Two more options:
+  precede it), joins `MERGE<k>` (state after the k-th conditional) and
+  `BEFORE<k>` (state before the k-th call, to split long call chains), and
+  extra `smt` hints (`SMT`). For the array procedures they are written for
+  the 999 extraction and abstracted like the code. A few procedures with
+  word-level reasoning have hand-written proofs (`gen/common_manual.json`).
+  Two more options:
   * `STEPWP`, for long straight-line bodies (the permutation rounds): the
     proof reduces the projections of the result tuple right after `proc`, so
     that the word computations become irrelevant to the postcondition, then
@@ -151,6 +175,88 @@ After changing a contract or an implementation: re-extract (`make -C
 extracted`), regenerate every layer, and rerun the checks. The annotations are
 keyed by loop/conditional/call ordinals, so they survive changes to the
 assertions, but not to the control structure of a procedure.
+
+`python3 gen/profile.py <file.ec>` compiles a proof file with EasyCrypt's
+`-tstats` and reports where the time goes: per command kind, per lemma (with
+its number of closers and conditionals), and the slowest commands. The time
+is essentially the closers' `smt` calls, so the number of closers (the
+merges above) and the number of calls per closer (the split depth) are the
+two levers.
+
+## Changes to the sources made for the proofs
+
+The proofs required one change to the executable code and several changes to
+the contracts. None of them changes what the code computes: the correctness
+proofs of `proof/amd64` and `proof/amd64-barray` check against the changed
+code, and the Jasmin tests pass.
+
+### Pointer advance in the streaming absorb/dump (commit `16d8a25`)
+
+When a streaming absorb or dump starts in the middle of a state word
+(`at8 = at % 8 != 0`) and more words follow, the buffer pointer (memory
+variants) or the offset (array variants) must advance by `8 - at8`. The code
+did it in two steps; it now adds `8 - at8` in one:
+
+```
+// before                // after
+buf += 8;                len = 8;
+buf -= (64ui) at8;       len -= (64ui) at8;
+                         buf += len;
+```
+
+In the safety model every `ui64` operation is range-checked. The contracts
+only guarantee that the input ends below 2^64 (`is_mem_init(buf, upto - at)`),
+so the intermediate `buf + 8` can exceed 2^64-1 by up to 7 although the final
+pointer is in range; the same holds for the offset in the abstract array
+theories, where `_ASIZE` is any size below 2^64. These range checks cannot be
+proved. The one-step sum never exceeds the end of the input. `len` is dead at
+that point, the instruction count is the same, and the 4-way memory code
+(`_add_m_updstate_avx2x4`, `_dump_m_updstate_avx2x4`) already did this.
+
+| File | Functions |
+| --- | --- |
+| `src/amd64/ref/keccak1600_updstate.jinc` | `_add_m_updstate`, `_dump_m_updstate` |
+| `src/amd64/ref/keccak1600_updstate_ASIZE.jinc` | `_add_updstate`, `_dump_updstate` |
+| `src/amd64/avx2/keccak1600x4_updstate.jinc` | `_add_m_bcast_updstate_avx2x4` |
+| `src/amd64/avx2/keccak1600x4_updstate_ASIZE.jinc` | `_add_bcast_updstate_avx2x4`, `_add_updstate_avx2x4`, `_dump_updstate_avx2x4` |
+
+On the correctness side, the hand-maintained `MM` blocks of the updstate
+theories follow the new code, and a few pointer rewrites changed in
+`ref/Keccak1600_updstate_ref.ec` and `avx2/Keccak1600_updstate_avx2x4.ec`
+(both trees).
+
+### Length bound on the array streaming contracts (commit `16d8a25`)
+
+The streaming absorb and squeeze loops start with `len += at`, where
+`at < r8 <= 200`. The memory contracts require `len <= 0xFFFFFFFFFFFFFF00`
+for this; the array contracts only had `len <= _ASIZE`, which does not suffice
+in the abstract theories. They now carry the same bound, which any real array
+size implies: `_absorb_updstate`, `_squeeze_updstate`, `absorb_updstate`,
+`squeeze_updstate` (`ref/keccak1600_updstate_ASIZE.jinc`), their 4-way
+counterparts and the two 4-way broadcast absorbs
+(`avx2/keccak1600x4_updstate_ASIZE.jinc`).
+
+### Contract fixes and additions (commit `cac4567`)
+
+Contracts only; the correctness models did not change.
+
+* Fixed-size absorb (ref, avx2, avx2x4, memory and array): the contracts
+  required `AT + LEN + (TRAILB != 0) < 200` (or only `AT < 200`) and gave the
+  final position as `AT + LEN + (TRAILB != 0)`. Both hold only when no
+  permutation runs, so they excluded or misdescribed multi-block absorbs. They
+  now require `AT < RATE8` and give `(AT + LEN) % RATE8 + (TRAILB != 0)`.
+  The add-state helpers bound the position by
+  `AT + LEN + (TRAILB != 0) <= 200` (was `< 200`, or only `AT < 200`).
+* ref fixed-size absorb/squeeze: the contracts had been copied from avx2 and
+  described a 224-byte state (`7*32`); they now describe the 200-byte state.
+* Memory sub-reads (`common/subreadwrite_imem.jinc`): they require the whole
+  remaining input and state the pointer advance in case form (see the notes
+  below). Array sub-reads/sub-writes (`common/subreadwrite_ASIZE.jinc`):
+  `0 <= LEN` and case-form ensures.
+* New contracts: the streaming functions, the status-word decoders, the 4-way
+  `alt` kernels, the `opt` loop body (`rax <=u 22`, final `rax == rax + 2`),
+  `__not_lane_basic` (`idx < 25`), `__f1600_loopbody_native` (`i < 24`) and
+  `__pround_basic_inlined`.
 
 ## Notes on the contracts
 

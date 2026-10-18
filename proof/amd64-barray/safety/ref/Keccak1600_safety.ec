@@ -19,20 +19,20 @@ inline M.__HAS_FEATURE.
 sp 10.
 if.
 + (* then *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 + (* else *)
   wp; while ((valid trace___state_init /\ 0 <= i <= 25 /\ BArray200.is_init b_st 0 (8 * i))).
   + (* loop body *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   (* before the loop *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma __addratebit_proof _st _b_st __RATE8 :
       (__addratebit_spec _st _b_st __RATE8).
 proof.
 rewrite /__addratebit_spec; proc.
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma __addstate_m_proof _st _b_st _aT _buf __LEN __TRAILB :
@@ -41,137 +41,35 @@ proof.
 rewrite /__addstate_m_spec; proc.
 inline M.__HAS_FEATURE.
 sp 12.
+seq 1 : ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ buf = _buf + (__LEN - _LEN))).
++ (* join *)
+  if.
+  + (* then *)
+    wp; ecall (__m_ilen_read_upto8_at_proof param_5 param_4 param_3 param_2 param_1).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+seq 3 : ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ buf = _buf + (__LEN - _LEN) /\ _LEN < 8)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; while ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ buf = _buf + (__LEN - _LEN) + 32 * i)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  + (* else *)
+    wp; while ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ aT <= at <= aT + (_LEN %/ 8) * 8 /\ (at - aT) %% 8 = 0 /\ buf = _buf + (__LEN - _LEN) + (at - aT))).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 if.
 + (* then *)
-  seq 19 : ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ buf = _buf + (__LEN - _LEN))).
-  + (* cut *)
-    wp; ecall (__m_ilen_read_upto8_at_proof param_5 param_4 param_3 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  if.
-  + (* then *)
-    seq 3 : ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ buf = _buf + (__LEN - _LEN) + 32 * i) /\ !((i < inc))).
-    + (* loop *)
-      wp; while ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ buf = _buf + (__LEN - _LEN) + 32 * i)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    if.
-    + (* then *)
-      sp 9.
-      if.
-      + (* then *)
-        sp 10.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      if.
-      + (* then *)
-        sp 10.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  + (* else *)
-    seq 4 : ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ aT <= at <= aT + (_LEN %/ 8) * 8 /\ (at - aT) %% 8 = 0 /\ buf = _buf + (__LEN - _LEN) + (at - aT)) /\ !((at < (aT + ((_LEN %/ 8) * 8))))).
-    + (* loop *)
-      wp; while ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ aT <= at <= aT + (_LEN %/ 8) * 8 /\ (at - aT) %% 8 = 0 /\ buf = _buf + (__LEN - _LEN) + (at - aT))).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    sp 2.
-    if.
-    + (* then *)
-      wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 + (* else *)
-  if.
-  + (* then *)
-    seq 3 : ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ buf = _buf + (__LEN - _LEN) + 32 * i) /\ !((i < inc))).
-    + (* loop *)
-      wp; while ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ buf = _buf + (__LEN - _LEN) + 32 * i)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    if.
-    + (* then *)
-      sp 9.
-      if.
-      + (* then *)
-        sp 10.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      if.
-      + (* then *)
-        sp 10.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  + (* else *)
-    seq 4 : ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ aT <= at <= aT + (_LEN %/ 8) * 8 /\ (at - aT) %% 8 = 0 /\ buf = _buf + (__LEN - _LEN) + (at - aT)) /\ !((at < (aT + ((_LEN %/ 8) * 8))))).
-    + (* loop *)
-      wp; while ((valid trace___addstate_m /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v (_buf + (__LEN - _LEN)) _LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ aT <= at <= aT + (_LEN %/ 8) * 8 /\ (at - aT) %% 8 = 0 /\ buf = _buf + (__LEN - _LEN) + (at - aT))).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    sp 2.
-    if.
-    + (* then *)
-      wp; ecall (__m_ilen_read_upto8_at_proof param_10 param_9 param_8 param_7 param_6).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma __absorb_m_proof _st _b_st _aT _buf __LEN __TRAILB __RATE8 :
@@ -185,37 +83,37 @@ if.
   + (* cut *)
     wp; ecall (_keccakf1600_proof param_4 ((BArray200.init_arr (W8.of_int 255)))).
     wp; ecall (__addstate_m_proof param_3 ((BArray200.init_arr (W8.of_int 255))) param_2 param_1 param_0 param).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   seq 1 : ((valid trace___absorb_m /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ 0 <= __LEN /\ 0 <= _aT < __RATE8 /\ __RATE8 <= _aT + __LEN /\ aT = 0 /\ _LEN = __LEN - (__RATE8 - _aT) /\ iTERS = _LEN %/ _RATE8 /\ 0 <= i <= iTERS /\ buf = _buf + (__RATE8 - _aT) + _RATE8 * i) /\ !((i < iTERS))).
   + (* loop *)
     wp; while ((valid trace___absorb_m /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ 0 <= __LEN /\ 0 <= _aT < __RATE8 /\ __RATE8 <= _aT + __LEN /\ aT = 0 /\ _LEN = __LEN - (__RATE8 - _aT) /\ iTERS = _LEN %/ _RATE8 /\ 0 <= i <= iTERS /\ buf = _buf + (__RATE8 - _aT) + _RATE8 * i)).
     + (* loop body *)
       wp; ecall (_keccakf1600_proof param_10 ((BArray200.init_arr (W8.of_int 255)))).
       wp; ecall (__addstate_m_proof param_9 ((BArray200.init_arr (W8.of_int 255))) param_8 param_7 param_6 param_5).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
     (* before the loop *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   seq 17 : ((valid trace___absorb_m /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ 0 <= __LEN /\ aT = (_aT + __LEN) %% __RATE8 + (if __TRAILB <> 0 then 1 else 0) /\ buf = _buf + __LEN)).
   + (* cut *)
     wp; ecall (__addstate_m_proof param_15 ((BArray200.init_arr (W8.of_int 255))) param_14 param_13 param_12 param_11).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   if.
   + (* then *)
     wp; ecall (__addratebit_proof param_17 ((BArray200.init_arr (W8.of_int 255))) param_16).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   + (* else *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 + (* else *)
   seq 16 : ((valid trace___absorb_m /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ 0 <= __LEN /\ aT = (_aT + __LEN) %% __RATE8 + (if __TRAILB <> 0 then 1 else 0) /\ buf = _buf + __LEN)).
   + (* cut *)
     wp; ecall (__addstate_m_proof param_15 ((BArray200.init_arr (W8.of_int 255))) param_14 param_13 param_12 param_11).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   if.
   + (* then *)
     wp; ecall (__addratebit_proof param_17 ((BArray200.init_arr (W8.of_int 255))) param_16).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   + (* else *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma __dumpstate_m_proof _buf __LEN _st _b_st :
@@ -224,65 +122,27 @@ proof.
 rewrite /__dumpstate_m_spec; proc.
 inline M.__HAS_FEATURE.
 sp 12.
-if.
-+ (* then *)
-  seq 3 : ((valid trace___dumpstate_m /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ inc = _LEN %/ 32 /\ 0 <= j <= inc /\ buf = _buf + 32 * j) /\ !((j < inc))).
-  + (* loop *)
+seq 1 : ((valid trace___dumpstate_m /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ buf = _buf + 8 * (_LEN %/ 8))).
++ (* join *)
+  if.
+  + (* then *)
     wp; while ((valid trace___dumpstate_m /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ inc = _LEN %/ 32 /\ 0 <= j <= inc /\ buf = _buf + 32 * j)).
     + (* loop body *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
     (* before the loop *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  if.
-  + (* then *)
-    sp 7.
-    if.
-    + (* then *)
-      sp 7.
-      if.
-      + (* then *)
-        wp; ecall (__m_ilen_write_upto8_proof param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      if.
-      + (* then *)
-        wp; ecall (__m_ilen_write_upto8_proof param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   + (* else *)
-    if.
-    + (* then *)
-      sp 7.
-      if.
-      + (* then *)
-        wp; ecall (__m_ilen_write_upto8_proof param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      if.
-      + (* then *)
-        wp; ecall (__m_ilen_write_upto8_proof param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-+ (* else *)
-  seq 3 : ((valid trace___dumpstate_m /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ 0 <= i <= _LEN %/ 8 /\ buf = _buf + 8 * i) /\ !((i < (_LEN %/ 8)))).
-  + (* loop *)
     wp; while ((valid trace___dumpstate_m /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf __LEN /\ 0 <= i <= _LEN %/ 8 /\ buf = _buf + 8 * i)).
     + (* loop body *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
     (* before the loop *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  if.
-  + (* then *)
-    wp; ecall (__m_ilen_write_upto8_proof param_3 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  + (* else *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+if.
++ (* then *)
+  wp; ecall (__m_ilen_write_upto8_proof param_3 param_2 param_1).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
++ (* else *)
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma __squeeze_m_proof _st _b_st _buf __LEN __RATE8 :
@@ -295,16 +155,16 @@ seq 14 : ((valid trace___squeeze_m /\ _LEN = __LEN /\ _RATE8 = __RATE8 /\ 0 <= _
   + (* loop body *)
     wp; ecall (__dumpstate_m_proof param_2 param_1 param_0 ((BArray200.init_arr (W8.of_int 255)))).
     wp; ecall (_keccakf1600_proof param ((BArray200.init_arr (W8.of_int 255)))).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
   (* before the loop *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 if.
 + (* then *)
   wp; ecall (__dumpstate_m_proof param_6 param_5 param_4 ((BArray200.init_arr (W8.of_int 255)))).
   wp; ecall (_keccakf1600_proof param_3 ((BArray200.init_arr (W8.of_int 255)))).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 + (* else *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 (* memory streaming API *)
@@ -314,14 +174,14 @@ lemma _init_updstate_proof _st _b_st _r64 _trailb :
 proof.
 rewrite /_init_updstate_spec; proc.
 wp; ecall (__state_init_proof param b_param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma _finish_updstate_proof _st _b_st : (_finish_updstate_spec _st _b_st).
 proof.
 rewrite /_finish_updstate_spec; proc.
 wp; ecall (_ststatus_data_proof param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma ststatus_updstate_proof _status _b_status _st _b_st :
@@ -329,7 +189,7 @@ lemma ststatus_updstate_proof _status _b_status _st _b_st :
 proof.
 rewrite /ststatus_updstate_spec; proc.
 wp; ecall (_ststatus_data_proof param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma init_updstate_proof _st _b_st _r64 _trailb :
@@ -337,14 +197,14 @@ lemma init_updstate_proof _st _b_st _r64 _trailb :
 proof.
 rewrite /init_updstate_spec; proc.
 wp; ecall (_init_updstate_proof param_1 b_param param_0 param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma finish_updstate_proof _st _b_st : (finish_updstate_spec _st _b_st).
 proof.
 rewrite /finish_updstate_spec; proc.
 wp; ecall (_finish_updstate_proof param ((BArray208.init_arr (W8.of_int 255)))).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma _add_m_updstate_proof _st _b_st _at _buf _upto :
@@ -353,136 +213,35 @@ proof.
 rewrite /_add_m_updstate_spec; proc.
 inline M.__HAS_FEATURE.
 sp 17.
+seq 2 : ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; ecall (__m_rlen_read_upto8_proof param_2 param_1).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+seq 1 : ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ upto < at + 8)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; while ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  + (* else *)
+    wp; while ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 if.
 + (* then *)
-  seq 24 : ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at)).
-  + (* cut *)
-    wp; ecall (__m_rlen_read_upto8_proof param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    sp 2.
-    if.
-    + (* then *)
-      sp 13.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  + (* else *)
-    seq 3 : ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    if.
-    + (* then *)
-      wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 + (* else *)
-  sp 1.
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    sp 2.
-    if.
-    + (* then *)
-      sp 13.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  + (* else *)
-    seq 3 : ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    if.
-    + (* then *)
-      wp; ecall (__m_rlen_read_upto8_proof param_4 param_3).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma _absorb_m_updstate_proof _st _b_st _buf _len :
@@ -492,15 +251,15 @@ rewrite /_absorb_m_updstate_spec; proc.
 seq 30 : ((valid trace__absorb_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= _buf <= buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ buf + (len - at) = _buf + _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
 + (* cut *)
   wp; ecall (_ststatus_data_proof param).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 wp; ecall (_add_m_updstate_proof param_8 b_param param_7 param_6 param_5).
 wp; while ((valid trace__absorb_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= _buf <= buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ buf + (len - at) = _buf + _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
 + (* loop body *)
   wp; ecall (_keccakf1600_proof param_4 ((BArray200.init_arr (W8.of_int 255)))).
   wp; ecall (_add_m_updstate_proof param_3 b_param_0 param_2 param_1 param_0).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 (* before the loop *)
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma _dump_m_updstate_proof _buf _st _b_st _at _upto :
@@ -509,136 +268,35 @@ proof.
 rewrite /_dump_m_updstate_spec; proc.
 inline M.__HAS_FEATURE.
 sp 17.
+seq 2 : ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; ecall (__m_rlen_write_upto8_proof param_3 param_2 param_1).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+seq 1 : ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ upto < at + 8)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; while ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  + (* else *)
+    wp; while ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 if.
 + (* then *)
-  seq 23 : ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at)).
-  + (* cut *)
-    wp; ecall (__m_rlen_write_upto8_proof param_3 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    sp 2.
-    if.
-    + (* then *)
-      sp 11.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  + (* else *)
-    seq 3 : ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    if.
-    + (* then *)
-      wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 + (* else *)
-  sp 1.
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    sp 2.
-    if.
-    + (* then *)
-      sp 11.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  + (* else *)
-    seq 3 : ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_m_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf (_upto - _at) /\ _at <= at <= upto /\ buf = _buf + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    if.
-    + (* then *)
-      wp; ecall (__m_rlen_write_upto8_proof param_6 param_5 param_4).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma _squeeze_m_updstate_proof _st _b_st _buf _len :
@@ -648,30 +306,23 @@ rewrite /_squeeze_m_updstate_spec; proc.
 seq 29 : ((valid trace__squeeze_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ buf = _buf /\ len = _len /\ 0 <= _len <= 18446744073709551360 /\ 0 <= _buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
 + (* cut *)
   wp; ecall (_ststatus_data_proof param).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-if.
-+ (* then *)
-  seq 12 : ((valid trace__squeeze_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= _buf <= buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ buf + (len - at) = _buf + _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
-  + (* cut *)
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+seq 3 : ((valid trace__squeeze_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= _buf <= buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ buf + (len - at) = _buf + _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
++ (* join *)
+  if.
+  + (* then *)
     wp; ecall (_keccakf1600_proof param_0 b_param_2).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  wp; ecall (_dump_m_updstate_proof param_9 param_8 b_param param_7 param_6).
-  wp; while ((valid trace__squeeze_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= _buf <= buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ buf + (len - at) = _buf + _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
-  + (* loop body *)
-    wp; ecall (_keccakf1600_proof param_5 b_param_0).
-    wp; ecall (_dump_m_updstate_proof param_4 param_3 b_param_1 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  (* before the loop *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-+ (* else *)
-  wp; ecall (_dump_m_updstate_proof param_9 param_8 b_param param_7 param_6).
-  wp; while ((valid trace__squeeze_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= _buf <= buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ buf + (len - at) = _buf + _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
-  + (* loop body *)
-    wp; ecall (_keccakf1600_proof param_5 b_param_0).
-    wp; ecall (_dump_m_updstate_proof param_4 param_3 b_param_1 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
-  (* before the loop *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+wp; ecall (_dump_m_updstate_proof param_9 param_8 b_param param_7 param_6).
+wp; while ((valid trace__squeeze_m_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= _buf <= buf /\ is_valid ptr_modulus Glob.mem_v _buf _len /\ buf + (len - at) = _buf + _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
++ (* loop body *)
+  wp; ecall (_keccakf1600_proof param_5 b_param_0).
+  wp; ecall (_dump_m_updstate_proof param_4 param_3 b_param_1 param_2 param_1).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+(* before the loop *)
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma absorb_m_updstate_proof _st _b_st _buf _len :
@@ -679,7 +330,7 @@ lemma absorb_m_updstate_proof _st _b_st _buf _len :
 proof.
 rewrite /absorb_m_updstate_spec; proc.
 wp; ecall (_absorb_m_updstate_proof param_1 ((BArray208.init_arr (W8.of_int 255))) param_0 param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 lemma squeeze_m_updstate_proof _st _b_st _buf _len :
@@ -687,7 +338,7 @@ lemma squeeze_m_updstate_proof _st _b_st _buf _len :
 proof.
 rewrite /squeeze_m_updstate_spec; proc.
 wp; ecall (_squeeze_m_updstate_proof param_1 ((BArray208.init_arr (W8.of_int 255))) param_0 param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp).
 qed.
 
 (* -------------------------------------------------------------------- *)
@@ -1845,137 +1496,35 @@ proof.
 rewrite /__addstate_spec; proc.
 inline M.__HAS_FEATURE.
 sp 18.
+seq 1 : ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ offset = _offset /\ dELTA = __LEN - _LEN)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; ecall (RW.__a_ilen_read_upto8_at_proof param_7 b_param_0 param_6 param_5 param_4 param_3 param_2 param_1).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+seq 3 : ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ _offset <= offset /\ 0 <= dELTA /\ offset + dELTA = _offset + (__LEN - _LEN) /\ _LEN < 8)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; while ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ offset = _offset /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ dELTA = __LEN - _LEN + 32 * i)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  + (* else *)
+    wp; while ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ dELTA = 0 /\ aT %/ 8 <= at <= aT %/ 8 + _LEN %/ 8 /\ offset = _offset + (__LEN - _LEN) + 8 * (at - aT %/ 8))).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 if.
 + (* then *)
-  seq 20 : ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ offset = _offset /\ dELTA = __LEN - _LEN)).
-  + (* cut *)
-    wp; ecall (RW.__a_ilen_read_upto8_at_proof param_7 b_param_0 param_6 param_5 param_4 param_3 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  if.
-  + (* then *)
-    seq 3 : ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ offset = _offset /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ dELTA = __LEN - _LEN + 32 * i) /\ !((i < inc))).
-    + (* loop *)
-      wp; while ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ offset = _offset /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ dELTA = __LEN - _LEN + 32 * i)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    if.
-    + (* then *)
-      sp 10.
-      if.
-      + (* then *)
-        sp 11.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      if.
-      + (* then *)
-        sp 11.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  + (* else *)
-    seq 8 : ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ dELTA = 0 /\ aT %/ 8 <= at <= aT %/ 8 + _LEN %/ 8 /\ offset = _offset + (__LEN - _LEN) + 8 * (at - aT %/ 8)) /\ !((at < ((aT %/ 8) + (_LEN %/ 8))))).
-    + (* loop *)
-      wp; while ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ dELTA = 0 /\ aT %/ 8 <= at <= aT %/ 8 + _LEN %/ 8 /\ offset = _offset + (__LEN - _LEN) + 8 * (at - aT %/ 8))).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    sp 2.
-    if.
-    + (* then *)
-      wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 + (* else *)
-  if.
-  + (* then *)
-    seq 3 : ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ offset = _offset /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ dELTA = __LEN - _LEN + 32 * i) /\ !((i < inc))).
-    + (* loop *)
-      wp; while ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ offset = _offset /\ inc = _LEN %/ 32 /\ 0 <= i <= inc /\ dELTA = __LEN - _LEN + 32 * i)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    if.
-    + (* then *)
-      sp 10.
-      if.
-      + (* then *)
-        sp 11.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      if.
-      + (* then *)
-        sp 11.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        sp 2.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  + (* else *)
-    seq 8 : ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ dELTA = 0 /\ aT %/ 8 <= at <= aT %/ 8 + _LEN %/ 8 /\ offset = _offset + (__LEN - _LEN) + 8 * (at - aT %/ 8)) /\ !((at < ((aT %/ 8) + (_LEN %/ 8))))).
-    + (* loop *)
-      wp; while ((valid trace___addstate /\ 0 <= _LEN <= __LEN /\ 0 <= _TRAILB < 256 /\ 0 <= aT /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ A.is_init b_buf _offset __LEN /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) = _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) /\ aT + _LEN + (if _TRAILB <> 0 then 1 else 0) <= 200 /\ (aT %% 8 = 0 \/ (_LEN = 0 /\ _TRAILB = 0)) /\ dELTA = 0 /\ aT %/ 8 <= at <= aT %/ 8 + _LEN %/ 8 /\ offset = _offset + (__LEN - _LEN) + 8 * (at - aT %/ 8))).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    sp 2.
-    if.
-    + (* then *)
-      wp; ecall (RW.__a_ilen_read_upto8_at_proof param_14 b_param param_13 param_12 param_11 param_10 param_9 param_8).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __absorb_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :
@@ -1989,37 +1538,37 @@ if.
   + (* cut *)
     wp; ecall (_keccakf1600_proof param_5 ((BArray200.init_arr (W8.of_int 255)))).
     wp; ecall (__addstate_proof param_4 ((BArray200.init_arr (W8.of_int 255))) param_3 param_2 ((A.init_arr (W8.of_int 255))) param_1 param_0 param).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   seq 1 : ((valid trace___absorb /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ 0 <= _aT < __RATE8 /\ __RATE8 <= _aT + _ASIZE /\ aT = 0 /\ _LEN = _ASIZE - (__RATE8 - _aT) /\ iTERS = _LEN %/ _RATE8 /\ 0 <= i <= iTERS /\ offset = (__RATE8 - _aT) + _RATE8 * i) /\ !((i < iTERS))).
   + (* loop *)
     wp; while ((valid trace___absorb /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ 0 <= _aT < __RATE8 /\ __RATE8 <= _aT + _ASIZE /\ aT = 0 /\ _LEN = _ASIZE - (__RATE8 - _aT) /\ iTERS = _LEN %/ _RATE8 /\ 0 <= i <= iTERS /\ offset = (__RATE8 - _aT) + _RATE8 * i)).
     + (* loop body *)
       wp; ecall (_keccakf1600_proof param_12 ((BArray200.init_arr (W8.of_int 255)))).
       wp; ecall (__addstate_proof param_11 ((BArray200.init_arr (W8.of_int 255))) param_10 param_9 ((A.init_arr (W8.of_int 255))) param_8 param_7 param_6).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
     (* before the loop *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   seq 17 : ((valid trace___absorb /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ aT = (_aT + _ASIZE) %% __RATE8 + (if __TRAILB <> 0 then 1 else 0))).
   + (* cut *)
     wp; ecall (__addstate_proof param_18 ((BArray200.init_arr (W8.of_int 255))) param_17 param_16 ((A.init_arr (W8.of_int 255))) param_15 param_14 param_13).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   if.
   + (* then *)
     wp; ecall (__addratebit_proof param_20 ((BArray200.init_arr (W8.of_int 255))) param_19).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   + (* else *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 + (* else *)
   seq 16 : ((valid trace___absorb /\ _RATE8 = __RATE8 /\ _TRAILB = __TRAILB /\ 0 < __RATE8 < 200 /\ 0 <= __TRAILB < 256 /\ aT = (_aT + _ASIZE) %% __RATE8 + (if __TRAILB <> 0 then 1 else 0))).
   + (* cut *)
     wp; ecall (__addstate_proof param_18 ((BArray200.init_arr (W8.of_int 255))) param_17 param_16 ((A.init_arr (W8.of_int 255))) param_15 param_14 param_13).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   if.
   + (* then *)
     wp; ecall (__addratebit_proof param_20 ((BArray200.init_arr (W8.of_int 255))) param_19).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   + (* else *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __dumpstate_proof _buf _b_buf _offset __LEN _st _b_st :
@@ -2028,65 +1577,27 @@ proof.
 rewrite /__dumpstate_spec; proc.
 inline M.__HAS_FEATURE.
 sp 17.
-if.
-+ (* then *)
-  seq 3 : ((valid trace___dumpstate /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ offset = _offset /\ inc = _LEN %/ 32 /\ 0 <= j <= inc /\ dELTA = 32 * j /\ A.is_init b_buf 0 (_offset + dELTA)) /\ !((j < inc))).
-  + (* loop *)
+seq 1 : ((valid trace___dumpstate /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ _offset <= offset /\ 0 <= dELTA /\ offset + dELTA = _offset + 8 * (_LEN %/ 8) /\ A.is_init b_buf 0 (offset + dELTA))).
++ (* join *)
+  if.
+  + (* then *)
     wp; while ((valid trace___dumpstate /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ offset = _offset /\ inc = _LEN %/ 32 /\ 0 <= j <= inc /\ dELTA = 32 * j /\ A.is_init b_buf 0 (_offset + dELTA))).
     + (* loop body *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
     (* before the loop *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  if.
-  + (* then *)
-    sp 8.
-    if.
-    + (* then *)
-      sp 8.
-      if.
-      + (* then *)
-        wp; ecall (RW.__a_ilen_write_upto8_proof param_5 b_param param_4 param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      if.
-      + (* then *)
-        wp; ecall (RW.__a_ilen_write_upto8_proof param_5 b_param param_4 param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   + (* else *)
-    if.
-    + (* then *)
-      sp 8.
-      if.
-      + (* then *)
-        wp; ecall (RW.__a_ilen_write_upto8_proof param_5 b_param param_4 param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      if.
-      + (* then *)
-        wp; ecall (RW.__a_ilen_write_upto8_proof param_5 b_param param_4 param_3 param_2 param_1).
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-+ (* else *)
-  seq 3 : ((valid trace___dumpstate /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ dELTA = 0 /\ 0 <= i <= _LEN %/ 8 /\ offset = _offset + 8 * i /\ A.is_init b_buf 0 offset) /\ !((i < (_LEN %/ 8)))).
-  + (* loop *)
     wp; while ((valid trace___dumpstate /\ _LEN = __LEN /\ 0 <= __LEN <= 200 /\ 0 <= _offset /\ _offset + __LEN <= _ASIZE /\ dELTA = 0 /\ 0 <= i <= _LEN %/ 8 /\ offset = _offset + 8 * i /\ A.is_init b_buf 0 offset)).
     + (* loop body *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
     (* before the loop *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  if.
-  + (* then *)
-    wp; ecall (RW.__a_ilen_write_upto8_proof param_5 b_param param_4 param_3 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  + (* else *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+if.
++ (* then *)
+  wp; ecall (RW.__a_ilen_write_upto8_proof param_5 b_param param_4 param_3 param_2 param_1).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
++ (* else *)
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(chunks8 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __squeeze_proof _st _b_st _buf _b_buf __RATE8 :
@@ -2099,16 +1610,16 @@ seq 22 : ((valid trace___squeeze /\ _RATE8 = __RATE8 /\ 0 < __RATE8 < 200 /\ 0 <
   + (* loop body *)
     wp; ecall (__dumpstate_proof param_3 b_param_0 param_2 param_1 param_0 ((BArray200.init_arr (W8.of_int 255)))).
     wp; ecall (_keccakf1600_proof param ((BArray200.init_arr (W8.of_int 255)))).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
   (* before the loop *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 if.
 + (* then *)
   wp; ecall (__dumpstate_proof param_8 b_param param_7 param_6 param_5 ((BArray200.init_arr (W8.of_int 255)))).
   wp; ecall (_keccakf1600_proof param_4 ((BArray200.init_arr (W8.of_int 255)))).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 + (* else *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 end KeccakArrayRefSafety.
@@ -3569,136 +3080,35 @@ proof.
 rewrite /_add_updstate_spec; proc.
 inline M.__HAS_FEATURE.
 sp 21.
+seq 2 : ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; ecall (RW.__a_rlen_read_upto8_proof param_3 b_param_0 param_2 param_1).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+seq 1 : ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ upto < at + 8)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; while ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  + (* else *)
+    wp; while ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 if.
 + (* then *)
-  seq 26 : ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at)).
-  + (* cut *)
-    wp; ecall (RW.__a_rlen_read_upto8_proof param_3 b_param_0 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    sp 2.
-    if.
-    + (* then *)
-      sp 13.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  + (* else *)
-    seq 3 : ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    if.
-    + (* then *)
-      wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 + (* else *)
-  sp 1.
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    sp 2.
-    if.
-    + (* then *)
-      sp 13.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 9.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  + (* else *)
-    seq 3 : ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__add_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ A.is_init b_buf _off (_upto - _at) /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    if.
-    + (* then *)
-      wp; ecall (RW.__a_rlen_read_upto8_proof param_6 b_param param_5 param_4).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma _absorb_updstate_proof _st _b_st _buf _b_buf _len :
@@ -3708,15 +3118,15 @@ rewrite /_absorb_updstate_spec; proc.
 seq 34 : ((valid trace__absorb_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= off /\ off + (len - at) = _len /\ 0 <= _len <= _ASIZE /\ A.is_init b_buf 0 _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
 + (* cut *)
   wp; ecall (_ststatus_data_proof param).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 wp; ecall (_add_updstate_proof param_10 b_param_0 param_9 param_8 b_param param_7 param_6).
 wp; while ((valid trace__absorb_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= off /\ off + (len - at) = _len /\ 0 <= _len <= _ASIZE /\ A.is_init b_buf 0 _len /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
 + (* loop body *)
   wp; ecall (_keccakf1600_proof param_5 ((BArray200.init_arr (W8.of_int 255)))).
   wp; ecall (_add_updstate_proof param_4 b_param_2 param_3 param_2 b_param_1 param_1 param_0).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 (* before the loop *)
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma _dump_updstate_proof _buf _b_buf _off _st _b_st _at _upto :
@@ -3725,136 +3135,35 @@ proof.
 rewrite /_dump_updstate_spec; proc.
 inline M.__HAS_FEATURE.
 sp 25.
+seq 2 : ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; ecall (RW.__a_rlen_write_upto8_proof param_4 b_param_0 param_3 param_2 param_1).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+seq 1 : ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ upto < at + 8)).
++ (* join *)
+  if.
+  + (* then *)
+    wp; while ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 32)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  + (* else *)
+    wp; while ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 8)).
+    + (* loop body *)
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    (* before the loop *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 if.
 + (* then *)
-  seq 27 : ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at)).
-  + (* cut *)
-    wp; ecall (RW.__a_rlen_write_upto8_proof param_4 b_param_0 param_3 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    sp 2.
-    if.
-    + (* then *)
-      sp 11.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  + (* else *)
-    seq 3 : ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    if.
-    + (* then *)
-      wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 + (* else *)
-  sp 1.
-  if.
-  + (* then *)
-    seq 3 : ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 32) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 32)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    sp 2.
-    if.
-    + (* then *)
-      sp 11.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      sp 3.
-      if.
-      + (* then *)
-        sp 8.
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      + (* else *)
-        if.
-        + (* then *)
-          wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-        + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  + (* else *)
-    seq 3 : ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 8) /\ !((newat <= upto))).
-    + (* loop *)
-      wp; while ((valid trace__dump_updstate /\ upto = _upto /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ _off + (_upto - _at) <= _ASIZE /\ _at <= at <= upto /\ off = _off + (at - _at) /\ (at %% 8 = 0 \/ at = upto) /\ A.is_init b_buf 0 off /\ newat = at + 8)).
-      + (* loop body *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-      (* before the loop *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    if.
-    + (* then *)
-      wp; ecall (RW.__a_rlen_write_upto8_proof param_8 b_param param_7 param_6 param_5).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-    + (* else *)
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(and7_to_uint and7_nz int_shr3 int_shl3 divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma _squeeze_updstate_proof _st _b_st _buf _b_buf _len :
@@ -3864,30 +3173,23 @@ rewrite /_squeeze_updstate_spec; proc.
 seq 36 : ((valid trace__squeeze_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ len = _len /\ 0 <= _len <= _ASIZE /\ _len <= 18446744073709551360 /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
 + (* cut *)
   wp; ecall (_ststatus_data_proof param).
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-if.
-+ (* then *)
-  seq 13 : ((valid trace__squeeze_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= off /\ off + (len - at) = _len /\ 0 <= _len <= _ASIZE /\ A.is_init b_buf 0 off /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
-  + (* cut *)
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+seq 4 : ((valid trace__squeeze_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= off /\ off + (len - at) = _len /\ 0 <= _len <= _ASIZE /\ A.is_init b_buf 0 off /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
++ (* join *)
+  if.
+  + (* then *)
     wp; ecall (_keccakf1600_proof param_0 b_param_4).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  wp; ecall (_dump_updstate_proof param_11 b_param_0 param_10 param_9 b_param param_8 param_7).
-  wp; while ((valid trace__squeeze_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= off /\ off + (len - at) = _len /\ 0 <= _len <= _ASIZE /\ A.is_init b_buf 0 off /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
-  + (* loop body *)
-    wp; ecall (_keccakf1600_proof param_6 b_param_1).
-    wp; ecall (_dump_updstate_proof param_5 b_param_3 param_4 param_3 b_param_2 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  (* before the loop *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-+ (* else *)
-  wp; ecall (_dump_updstate_proof param_11 b_param_0 param_10 param_9 b_param param_8 param_7).
-  wp; while ((valid trace__squeeze_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= off /\ off + (len - at) = _len /\ 0 <= _len <= _ASIZE /\ A.is_init b_buf 0 off /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
-  + (* loop body *)
-    wp; ecall (_keccakf1600_proof param_6 b_param_1).
-    wp; ecall (_dump_updstate_proof param_5 b_param_3 param_4 param_3 b_param_2 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
-  (* before the loop *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+  + (* else *)
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+wp; ecall (_dump_updstate_proof param_11 b_param_0 param_10 param_9 b_param param_8 param_7).
+wp; while ((valid trace__squeeze_updstate /\ 0 < r8 <= 200 /\ 0 <= at < r8 /\ at <= len /\ 0 <= off /\ off + (len - at) = _len /\ 0 <= _len <= _ASIZE /\ A.is_init b_buf 0 off /\ BArray208.is_init b_st 0 208 /\ BArray200.is_init b_stk 0 200)).
++ (* loop body *)
+  wp; ecall (_keccakf1600_proof param_6 b_param_1).
+  wp; ecall (_dump_updstate_proof param_5 b_param_3 param_4 param_3 b_param_2 param_2 param_1).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+(* before the loop *)
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set BArray200.get_of_list nth_map nth_iota size_map size_iota divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma absorb_updstate_proof _st _b_st _buf _b_buf _len :
@@ -3895,7 +3197,7 @@ lemma absorb_updstate_proof _st _b_st _buf _b_buf _len :
 proof.
 rewrite /absorb_updstate_spec; proc.
 wp; ecall (_absorb_updstate_proof param_1 ((BArray208.init_arr (W8.of_int 255))) param_0 b_param param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma squeeze_updstate_proof _st _b_st _buf _b_buf _len :
@@ -3903,7 +3205,7 @@ lemma squeeze_updstate_proof _st _b_st _buf _b_buf _len :
 proof.
 rewrite /squeeze_updstate_spec; proc.
 wp; ecall (_squeeze_updstate_proof param_1 ((BArray208.init_arr (W8.of_int 255))) param_0 b_param param).
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; try (do 2!(split; try (move=> *; rewrite ?List.all_cat /=))); try done; (try! smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max)); do ?(split; try (move=> *; rewrite ?List.all_cat /=)); try done; smt(divz_eq modzDr modz_ge0 ltz_pmod W8.to_uint_cmp W64.to_uint_cmp _ASIZE_ge0 _ASIZE_max).
 qed.
 
 end KeccakUpdstateRefSafety.
