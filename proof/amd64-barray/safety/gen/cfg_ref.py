@@ -13,7 +13,9 @@ import JWord JUtils.
 """
 def B(t): return f"(if {t} <> 0 then 1 else 0)"
 MAXL = "18446744073709551616"
-SUB = "SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set"
+# the closer's /= unfolds get_sub into of_list/map/iota: hints for both forms
+SUB = ("SBArray208_200.is_init_cell_get SBArray208_200.is_init_cell_set"
+       " BArray200.get_of_list nth_map nth_iota size_map size_iota")
 WORDH = "and7_to_uint and7_nz int_shr3 int_shl3"
 
 # ---------------- memory fixed-size -----------------
@@ -37,7 +39,7 @@ SQ_L = ("valid trace__squeeze_m_updstate /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ 
         " /\\ 0 <= _buf <= buf /\\ is_valid ptr_modulus Glob.mem_v _buf _len /\\ buf + (len - at) = _buf + _len"
         " /\\ BArray208.is_init b_st 0 208 /\\ BArray200.is_init b_stk 0 200")
 SQ_C = ("valid trace__squeeze_m_updstate /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ buf = _buf /\\ len = _len"
-        f" /\\ _len <= 18446744073709551360 /\\ 0 <= _buf /\\ is_valid ptr_modulus Glob.mem_v _buf _len"
+        f" /\\ 0 <= _len <= 18446744073709551360 /\\ 0 <= _buf /\\ is_valid ptr_modulus Glob.mem_v _buf _len"
         " /\\ BArray208.is_init b_st 0 208 /\\ BArray200.is_init b_stk 0 200")
 
 ANN = {
@@ -83,7 +85,7 @@ DUMPA_S = ("valid trace__dump_updstate /\\ upto = _upto /\\ 0 <= _at <= _upto <=
 ABSA_L = ("valid trace__absorb_updstate /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ at <= len /\\ 0 <= off"
           " /\\ off + (len - at) = _len /\\ 0 <= _len <= 999 /\\ BArray999.is_init b_buf 0 _len"
           " /\\ BArray208.is_init b_st 0 208 /\\ BArray200.is_init b_stk 0 200")
-SQA_C = ("valid trace__squeeze_updstate /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ len = _len /\\ 0 <= _len <= 999"
+SQA_C = ("valid trace__squeeze_updstate /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ len = _len /\\ 0 <= _len <= 999 /\\ _len <= 18446744073709551360"
          " /\\ BArray208.is_init b_st 0 208 /\\ BArray200.is_init b_stk 0 200")
 SQA_L = ("valid trace__squeeze_updstate /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ at <= len /\\ 0 <= off"
          " /\\ off + (len - at) = _len /\\ 0 <= _len <= 999 /\\ BArray999.is_init b_buf 0 off"

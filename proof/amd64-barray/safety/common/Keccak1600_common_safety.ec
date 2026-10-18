@@ -580,6 +580,10 @@ op _ASIZE: int.
 axiom _ASIZE_ge0: 0 <= _ASIZE.
 axiom _ASIZE_u64: _ASIZE < W64.modulus.
 
+(* the ui64 range conditions of the model are stated with the literal 2^64-1 *)
+lemma _ASIZE_max: _ASIZE <= 18446744073709551615.
+proof. smt(_ASIZE_u64 pow2_64). qed.
+
 clone import ByteArray as A
  with op size <- _ASIZE
       proof ge0_size by exact _ASIZE_ge0.
@@ -3122,11 +3126,11 @@ inline M.__SHLQ.
 sp 3.
 if.
 + (* then *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 + (* else *)
   if.
   + (* then *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
   + (* else *)
     if.
     + (* then *)
@@ -3145,11 +3149,11 @@ if.
               sp 12.
               if.
               + (* then *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
               + (* else *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
           + (* else *)
             sp 5.
             if.
@@ -3157,22 +3161,22 @@ if.
               sp 12.
               if.
               + (* then *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
               + (* else *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
         + (* else *)
           if.
           + (* then *)
             sp 12.
             if.
             + (* then *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
           + (* else *)
-            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
       + (* else *)
         sp 6.
         if.
@@ -3186,11 +3190,11 @@ if.
               sp 12.
               if.
               + (* then *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
               + (* else *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
           + (* else *)
             sp 5.
             if.
@@ -3198,22 +3202,22 @@ if.
               sp 12.
               if.
               + (* then *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
               + (* else *)
-                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+                auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
         + (* else *)
           if.
           + (* then *)
             sp 12.
             if.
             + (* then *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
           + (* else *)
-            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
     + (* else *)
       sp 1.
       if.
@@ -3227,11 +3231,11 @@ if.
             sp 12.
             if.
             + (* then *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
           + (* else *)
-            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
         + (* else *)
           sp 5.
           if.
@@ -3239,22 +3243,22 @@ if.
             sp 12.
             if.
             + (* then *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
             + (* else *)
-              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+              auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
           + (* else *)
-            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
       + (* else *)
         if.
         + (* then *)
           sp 12.
           if.
           + (* then *)
-            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
           + (* else *)
-            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+            auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
         + (* else *)
-          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+          auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __a_ilen_read_upto16_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :
@@ -3266,20 +3270,20 @@ inline M.__SHLDQ.
 sp 9.
 if.
 + (* then *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 + (* else *)
   if.
   + (* then *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
   + (* else *)
     if.
     + (* then *)
       wp; ecall (__a_ilen_read_upto8_at_proof param_7 b_param param_6 param_5 param_4 param_3 param_2 param_1).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
     + (* else *)
       wp; ecall (__a_ilen_read_upto8_at_proof param_21 b_param_0 param_20 param_19 param_18 param_17 param_16 param_15).
       wp; ecall (__a_ilen_read_upto8_at_proof param_14 b_param_1 param_13 param_12 param_11 param_10 param_9 param_8).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __a_ilen_read_upto32_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :
@@ -3290,20 +3294,20 @@ rewrite /__a_ilen_read_upto32_at_spec; proc.
 sp 9.
 if.
 + (* then *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 + (* else *)
   if.
   + (* then *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
   + (* else *)
     if.
     + (* then *)
       wp; ecall (__a_ilen_read_upto16_at_proof param_5 b_param param_4 param_3 param_2 param_1 param_0 param).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
     + (* else *)
       wp; ecall (__a_ilen_read_upto16_at_proof param_19 b_param_0 param_18 param_17 param_16 param_15 param_14 param_13).
       wp; ecall (__a_ilen_read_upto16_at_proof param_12 b_param_1 param_11 param_10 param_9 param_8 param_7 param_6).
-      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+      auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __a_ilen_read_bcast_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :
@@ -3315,14 +3319,14 @@ inline M.__SHLQ_256.
 sp 5.
 if.
 + (* then *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 + (* else *)
   if.
   + (* then *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
   + (* else *)
     wp; ecall (__a_ilen_read_upto8_at_proof param_7 b_param param_6 param_5 param_4 param_3 param_2 param_1).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __a_ilen_write_upto8_proof _buf _b_buf _offset _dELTA _lEN _w :
@@ -3334,24 +3338,24 @@ if.
 + (* then *)
   if.
   + (* then *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
   + (* else *)
     if.
     + (* then *)
       sp 8.
       if.
       + (* then *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
       + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
     + (* else *)
       if.
       + (* then *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
       + (* else *)
-        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+        auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 + (* else *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __a_ilen_write_upto16_proof _buf _b_buf _offset _dELTA _lEN _w :
@@ -3363,12 +3367,12 @@ if.
 + (* then *)
   if.
   + (* then *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
   + (* else *)
     wp; ecall (__a_ilen_write_upto8_proof param_3 b_param param_2 param_1 param_0 param).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 + (* else *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __a_ilen_write_upto32_proof _buf _b_buf _offset _dELTA _lEN _w :
@@ -3380,12 +3384,12 @@ if.
 + (* then *)
   if.
   + (* then *)
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
   + (* else *)
     wp; ecall (__a_ilen_write_upto16_proof param_3 b_param param_2 param_1 param_0 param).
-    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+    auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 + (* else *)
-  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_u64).
+  auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(_ASIZE_ge0 _ASIZE_max).
 qed.
 
 lemma __a_rlen_read_upto8_proof _a _b_a _off _len :

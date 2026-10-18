@@ -162,6 +162,18 @@ class Gen:
         QUAL = dict(qual or {})
         used = set()
         ss = expand(self.P[name], self.P, self.sig, used)
+        step = (ann or {}).get('STEPWP')
+        if step and not used and all(s.kind == 'asgn' for s in instrs(ss)):
+            # long straight-line body (a permutation round): reduce the projections of
+            # the result tuple first, then wp a few instructions at a time, simplifying
+            # in between, so that the dead word computations are dropped one by one
+            # (a single wp + simplify substitutes the whole let chain and blows up)
+            n = len(instrs(ss))
+            ks = list(range((n - 1) // step * step, -1, -step))
+            lines = ["simplify."]
+            lines += [" ".join(f"wp {k}. simplify." for k in ks[i:i + 8]) for i in range(0, len(ks), 8)]
+            lines.append("skip; " + CL)
+            return "\n".join(lines), set()
         ctx = {'need': set()}
         lines = fwd(ss, "", ctx)
         if used:
@@ -171,8 +183,13 @@ class Gen:
 def subst(script, ann):
     if 'SMT' in ann:
         script = script.replace("; smt().", "; smt(" + ann['SMT'] + ").")
+    if 'SMT2' in ann:
+        # fallback hint list: with many buffers in context, smt can time out on the
+        # full hint list where a shorter one succeeds
+        h = ann.get('SMT', '')
+        script = script.replace("; smt(" + h + ").", "; (smt(" + h + ") || smt(" + ann['SMT2'] + ")).")
     for k in sorted(ann, key=len, reverse=True):
-        if k == 'SMT': continue
+        if k in ('SMT', 'SMT2', 'STEPWP'): continue
         script = re.sub(r'\b' + k + r'\b', '(' + ann[k] + ')', script)
     return script
 

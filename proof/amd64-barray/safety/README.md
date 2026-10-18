@@ -11,11 +11,19 @@ opt, avx2; 4-way ref, alt, nat).
 
 ## Status
 
-The extraction, the array theories and the sanity checks are complete and
-checked in CI (scenario `keccak_amd64barray_safety_extracted`). The proofs are work
-in progress: the proof files are generated but do not all check yet (a known
-open point is the loop body of the `opt` permutation), so CI does not run the
-`common`, `ref`, `avx2` and `avx2x4` scenarios yet.
+Every proof checks: all procedures of all layers, memory and array variants,
+fixed-size and streaming. CI runs the extraction check and the scenarios
+`keccak_amd64barray_safety_<x>` for `<x>` in `extracted`, `common`, `ref`,
+`avx2`, `avx2x4`. Fresh compile times on a 10-core laptop (OCaml 5.4.1):
+
+| File | Time |
+| --- | --- |
+| `common/Keccak1600_common_safety.ec` | about 5 min |
+| `ref/Keccakf1600_safety.ec` | 22 s |
+| `ref/Keccak1600_safety.ec` | 12 min |
+| `avx2/Keccak1600_avx2_safety.ec` | 80 min |
+| `avx2x4/Keccakf1600x4_safety.ec` | 22 min (OCaml 5.2.1) |
+| `avx2x4/Keccak1600x4_safety.ec` | 29 min |
 
 ## Toolchain
 
@@ -122,7 +130,16 @@ procedure:
   call chains), and extra `smt` hints (`SMT`). For the array procedures they
   are written for the 999 extraction and abstracted like the code. A few
   procedures with word-level reasoning have hand-written proofs
-  (`gen/common_manual.json`).
+  (`gen/common_manual.json`). Two more options:
+  * `STEPWP`, for long straight-line bodies (the permutation rounds): the
+    proof reduces the projections of the result tuple right after `proc`, so
+    that the word computations become irrelevant to the postcondition, then
+    runs `wp` a few instructions at a time with `simplify` in between, so that
+    they are dropped as they appear. A single `wp` followed by `/=` would
+    substitute the whole chain of `let`s and blow up.
+  * `SMT2`, a fallback hint list: the closer ends with `(smt(SMT) || smt(SMT2))`.
+    With four buffers in context, `smt` can time out on the full hint list
+    where a short one succeeds.
 
 The absorb and squeeze code of the avx2 implementation reads and writes the
 state through a cascade of fixed-length sub-reads (resp. sub-writes) at fixed

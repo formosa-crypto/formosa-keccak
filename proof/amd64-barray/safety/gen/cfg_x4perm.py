@@ -14,6 +14,8 @@ ALT = "valid trace___keccakf1600_avx2x4_alt /\\ BArray800.is_init b_A_4x 0 800"
 def ROUND(tr, k): return f"valid {tr} /\\ BArray800.is_init b_A_4x 0 800 /\\ BArray800.is_init b_E_4x 0 {160 * (k - 2)}"
 ANN = {
  "__keccakf1600_avx2x4_ref": {"INV1": "valid trace___keccakf1600_avx2x4_ref /\\ 0 <= c /\\ c %% 2 = 0"},
+ # round-constant read at 8 * to_uint (of_int i)
+ "__f1600_loopbody_native": {"SMT": "W64.of_uintK pow2_64"},
  "__keccakf1600_avx2x4_nat": {"INV1": "valid trace___keccakf1600_avx2x4_nat /\\ 1 <= i <= 24"},
  "__state_init_avx2x4": {"INV1": "valid trace___state_init_avx2x4 /\\ 0 <= i <= 800 /\\ i %% 32 = 0 /\\ BArray800.is_init b_st 0 i"},
  "__keccakf1600_avx2x4_alt": dict((f"BEFORE{k}", ALT) for k in range(3, 26)),

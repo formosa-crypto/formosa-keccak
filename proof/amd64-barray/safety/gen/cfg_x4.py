@@ -12,9 +12,15 @@ require import Keccak1600_Jazz_safety Keccak1600_common_safety Keccakf1600x4_saf
 require import SBArray808_800.
 from Jasmin require import JModel_x86 Jcheck JSafety JByte_array.
 import JWord JUtils.
+
+(* 4-way lane offsets: the u256[25] state is addressed in 32-byte steps *)
+lemma int_shl5 (a : int) : a `<<` 5 = a * 32.
+proof. by rewrite /(`<<`) /=. qed.
 """
-SUB = "SBArray808_800.is_init_cell_get SBArray808_800.is_init_cell_set"
-WORDH = "and7_to_uint and7_nz int_shr3 int_shl3"
+# the closer's /= unfolds get_sub into of_list/map/iota: hints for both forms
+SUB = ("SBArray808_800.is_init_cell_get SBArray808_800.is_init_cell_set"
+       " BArray800.get_of_list nth_map nth_iota size_map size_iota")
+WORDH = "and7_to_uint and7_nz int_shr3 int_shl3 int_shl5"
 K4 = [0, 1, 2, 3]
 def each(fmt): return " /\\ ".join(fmt.format(k=k) for k in K4)
 
@@ -73,14 +79,14 @@ def ABS_L(tr, bufs):
             " /\\ BArray808.is_init b_st 0 808 /\\ BArray800.is_init b_stk 0 800")
 def SQ_C(tr, bufs):
     vb = " /\\ ".join(f"{b} = _{b} /\\ 0 <= _{b} /\\ is_valid ptr_modulus Glob.mem_v _{b} _len" for b in bufs)
-    return (f"valid {tr} /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ len = _len /\\ _len <= 18446744073709551360 /\\ {vb}"
+    return (f"valid {tr} /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ len = _len /\\ 0 <= _len <= 18446744073709551360 /\\ {vb}"
             " /\\ BArray808.is_init b_st 0 808 /\\ BArray800.is_init b_stk 0 800")
 def ABSA_L(tr, bbufs):
     ib = " /\\ ".join(f"BArray999.is_init {b} 0 _len" for b in bbufs)
     return (f"valid {tr} /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ at <= len /\\ 0 <= off /\\ off + (len - at) = _len"
             f" /\\ 0 <= _len <= 999 /\\ {ib} /\\ BArray808.is_init b_st 0 808 /\\ BArray800.is_init b_stk 0 800")
 def SQA_C(tr):
-    return (f"valid {tr} /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ len = _len /\\ 0 <= _len <= 999"
+    return (f"valid {tr} /\\ 0 < r8 <= 200 /\\ 0 <= at < r8 /\\ len = _len /\\ 0 <= _len <= 999 /\\ _len <= 18446744073709551360"
             " /\\ BArray808.is_init b_st 0 808 /\\ BArray800.is_init b_stk 0 800")
 def SQA_L(tr, bbufs):
     ib = " /\\ ".join(f"BArray999.is_init {b} 0 off" for b in bbufs)
@@ -96,7 +102,7 @@ ANN = {
                            + each("buf{k} = _buf{k} + (__LEN - _LEN) + 2 * (at - 4 * (aT %/ 8))")},
  "__absorb_m_bcast_avx2x4": {"INV1": ABMB + LOOPPOS + " /\\ buf = _buf + (__RATE8 - _aT) + _RATE8 * i",
                              "CUT2": ABMB + f" /\\ aT = (_aT + __LEN) %% __RATE8 + {B('__TRAILB')}"},
- "__absorb_m_avx2x4": {"INV1": ABM4 + LOOPPOS + " /\\ " + each("buf{k} = _buf{k} + (__RATE8 - _aT) + _RATE8 * i"),
+ "__absorb_m_avx2x4": {"SMT2": "divz_eq modz_ge0", "INV1": ABM4 + LOOPPOS + " /\\ " + each("buf{k} = _buf{k} + (__RATE8 - _aT) + _RATE8 * i"),
                        "CUT2": ABM4 + f" /\\ aT = (_aT + __LEN) %% __RATE8 + {B('__TRAILB')}"},
  "__dumpstate_m_avx2x4": {
    "INV1": DSM4 + " /\\ 0 <= i <= 32 * (_LEN %/ 32) /\\ i %% 32 = 0 /\\ " + each("buf{k} = _buf{k} + i"),
@@ -117,6 +123,7 @@ ANN = {
  "__squeeze_avx2x4": {"INV1": SQA4},
  # streaming, memory
  "_init_updstate_avx2x4": {"SMT": SUB},
+ "_finish_updstate_avx2x4": {"SMT": WORDH},
  "_add_m_bcast_updstate_avx2x4": {"SMT": WORDH, "INV1": ADD_S("trace__add_m_bcast_updstate_avx2x4", ["buf"])},
  "_add_m_updstate_avx2x4": {"SMT": WORDH, "INV1": ADD_S("trace__add_m_updstate_avx2x4", B4)},
  "_dump_m_updstate_avx2x4": {"SMT": WORDH, "INV1": ADD_S("trace__dump_m_updstate_avx2x4", B4)},

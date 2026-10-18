@@ -458,7 +458,7 @@ lemma __f1600_loopbody_native_proof _st _b_st _rol8 _b_rol8 _rol56 _b_rol56 _rC 
       _rC _b_RC _i _y10 _y14 _y8 _y15 _y9 _y13 _y3 _y7 _y2).
 proof.
 rewrite /__f1600_loopbody_native_spec; proc.
-auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt().
+auto; rewrite /is_init /valid /=; (move=> &hr /> * || move=> &hr /> || move=> /> * || move=> />); rewrite ?List.all_cat /=; do ?(split; try (move=> *; rewrite ?List.all_cat /=)); smt(W64.of_uintK pow2_64).
 qed.
 
 lemma __regs_fetch_proof _st _b_st : (__regs_fetch_spec _st _b_st).

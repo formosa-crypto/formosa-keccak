@@ -29,7 +29,7 @@ MODEL_A = ROOT + "/extracted/Keccak1600_Jazz_ASIZE_safety.ec"
 SKEL_A = ROOT + "/extracted/Keccak1600_Jazz_ASIZE_safety.skel"
 
 RW_THEORY = "ReadWriteArraySafety"
-ASIZE_SMT = "_ASIZE_ge0 _ASIZE_u64"
+ASIZE_SMT = "_ASIZE_ge0 _ASIZE_max"
 
 def lemma_headers(path):
     s = open(path).read()
@@ -76,6 +76,10 @@ op _ASIZE: int.
 
 axiom _ASIZE_ge0: 0 <= _ASIZE.
 axiom _ASIZE_u64: _ASIZE < W64.modulus.
+
+(* the ui64 range conditions of the model are stated with the literal 2^64-1 *)
+lemma _ASIZE_max: _ASIZE <= 18446744073709551615.
+proof. smt(_ASIZE_u64 pow2_64). qed.
 
 clone import ByteArray as A
  with op size <- _ASIZE

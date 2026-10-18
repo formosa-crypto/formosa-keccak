@@ -51,6 +51,10 @@ jobs:
             - keccak_amd64_ref
             - keccak_amd64_avx2
             - keccak_amd64barray_safety_extracted
+            - keccak_amd64barray_safety_common
+            - keccak_amd64barray_safety_ref
+            - keccak_amd64barray_safety_avx2
+            - keccak_amd64barray_safety_avx2x4
         steps:
         - uses: actions/checkout@v5
           with:
