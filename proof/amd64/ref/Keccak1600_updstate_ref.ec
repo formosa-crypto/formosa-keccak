@@ -125,7 +125,7 @@ seq 1 : (Glob.mem = _mem /\ upto = _upto /\ 0 <= _at <= _upto <= 200
     move: S1; rewrite Emin (: _at + (base + 8 - _at) = base + 8) 1:/# (: _upto - _at - (base + 8 - _at) = _upto - (base + 8)) 1:/# => S1.
     do split; 1..3: smt().
     exists (base + 8); split; first smt().
-    by rewrite (: _buf + 8 - _at %% 8 = _buf + (base + 8 - _at)) 1:/#.
+    by rewrite (: _buf + (8 - _at %% 8) = _buf + (base + 8 - _at)) 1:/#.
   have Emin : min (_upto - _at) (base + 8 - _at) = _upto - _at by smt().
   move: S1; rewrite Emin (: _at + (_upto - _at) = _upto) 1:/# (: _upto - _at - (_upto - _at) = 0) 1:/# => S1.
   exists (base + 8); split; first smt().
@@ -610,8 +610,9 @@ module MM = {
       (WArray200.set64_direct (WArray200.init64 (fun i => st.[i])) at
       ((get64_direct (WArray200.init64 (fun i => st.[i])) at) `^` t64))));
       if ((8 <= len)) {
-        off <- (off + 8);
-        off <- (off - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        off <- (off + len);
         at <- (at + 8);
       } else {
         off <- off2;
@@ -762,8 +763,9 @@ module MM = {
       (buf, off2) <@ RW.MM.__a_rlen_write_upto8 (buf, off, t64, len);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        off <- (off + 8);
-        off <- (off - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        off <- (off + len);
         at <- (at + 8);
       } else {
         off <- off2;
@@ -952,7 +954,7 @@ seq 1 : (upto = _upto /\ buf = _buf /\ 0 <= _at <= _upto <= 200 /\ 0 <= _off /\ 
     move: S1; rewrite Emin (: _at + (base + 8 - _at) = base + 8) 1:/# (: _upto - _at - (base + 8 - _at) = _upto - (base + 8)) 1:/# => S1.
     do split; 1..3: smt().
     exists (base + 8); split; first smt().
-    by rewrite (: _off + 8 - _at %% 8 = _off + (0 + (base + 8 - _at))) 1:/#.
+    by rewrite (: _off + (8 - _at %% 8) = _off + (0 + (base + 8 - _at))) 1:/#.
   have Emin : min (_upto - _at) (base + 8 - _at) = _upto - _at by smt().
   move: S1; rewrite Emin (: _at + (_upto - _at) = _upto) 1:/# (: _upto - _at - (_upto - _at) = 0) 1:/# => S1.
   exists (base + 8); split; first smt().

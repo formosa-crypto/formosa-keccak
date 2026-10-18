@@ -3079,8 +3079,9 @@ module M = {
       t64 <- (t64 `<<` (sh `&` (W8.of_int 63)));
       st <- (BArray200.set64d st at ((BArray200.get64d st at) `^` t64));
       if ((8 <= len)) {
-        buf <- (buf + 8);
-        buf <- (buf - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        buf <- (buf + len);
         at <- (at + 8);
       } else {
         buf <- buf2;
@@ -3196,8 +3197,9 @@ module M = {
       buf2 <@ __m_rlen_write_upto8 (buf, t64, len);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        buf <- (buf + 8);
-        buf <- (buf - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        buf <- (buf + len);
         at <- (at + 8);
       } else {
         buf <- buf2;
@@ -6561,8 +6563,9 @@ module M = {
       t256 <- (t256 `^` (BArray800.get256d st ((4 * at) + 0)));
       st <- (BArray800.set256d st ((4 * at) + 0) t256);
       if ((8 <= len)) {
-        buf <- (buf + 8);
-        buf <- (buf - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        buf <- (buf + len);
         at <- (at + 8);
       } else {
         buf <- buf2;

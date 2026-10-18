@@ -155,8 +155,9 @@ fn _add_m_updstate
     t64 <<= (sh & 63);
     st.[at] ^= t64;
     if (len >= 8) { // need to proccess more stwords...
-      buf += 8;
-      buf -= (64ui) at8; // off += (8-at8)
+      len = 8;
+      len -= (64ui) at8; // bytes consumed from buf (8-at8): adding them in one
+      buf += len;        // step keeps every intermediate ui64 value in range
       at += 8;    // start of next stword
     } else { // this is the only affected stword
       buf = buf2; // 
@@ -291,8 +292,9 @@ fn _dump_m_updstate
     buf2 = __m_rlen_write_upto8(buf, t64, len);
     len += (64ui) at8; // bytes from the start of word
     if (len >= 8) {  // need to proccess more stwords...
-      buf += 8;
-      buf -= (64ui) at8;
+      len = 8;
+      len -= (64ui) at8; // bytes written to buf (8-at8): adding them in one
+      buf += len;        // step keeps every intermediate ui64 value in range
       at += 8;       // start of next stword
     } else {         // this is the only affected stword
       buf = buf2;

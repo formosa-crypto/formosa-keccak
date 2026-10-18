@@ -6133,16 +6133,18 @@ module M = {
       (trace__add_m_updstate ++ [(Assert, ((0 <= at) /\ ((at + 8) <= 200)))]);
       st <- (BArray200.set64d st at ((BArray200.get64d st at) `^` t64));
       if ((8 <= len)) {
-        trace__add_m_updstate <-
-        (trace__add_m_updstate ++
-        [(Assert, ((0 <= (buf + 8)) /\ ((buf + 8) <= 18446744073709551615)))]);
-        buf <- (buf + 8);
+        len <- 8;
         trace__add_m_updstate <-
         (trace__add_m_updstate ++
         [(Assert,
-         ((0 <= (buf - (W64.to_uint at8))) /\
-         ((buf - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        buf <- (buf - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__add_m_updstate <-
+        (trace__add_m_updstate ++
+        [(Assert,
+         ((0 <= (buf + len)) /\ ((buf + len) <= 18446744073709551615)))]);
+        buf <- (buf + len);
         trace__add_m_updstate <-
         (trace__add_m_updstate ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -6605,16 +6607,18 @@ module M = {
        ((len + (W64.to_uint at8)) <= 18446744073709551615)))]);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        trace__dump_m_updstate <-
-        (trace__dump_m_updstate ++
-        [(Assert, ((0 <= (buf + 8)) /\ ((buf + 8) <= 18446744073709551615)))]);
-        buf <- (buf + 8);
+        len <- 8;
         trace__dump_m_updstate <-
         (trace__dump_m_updstate ++
         [(Assert,
-         ((0 <= (buf - (W64.to_uint at8))) /\
-         ((buf - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        buf <- (buf - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__dump_m_updstate <-
+        (trace__dump_m_updstate ++
+        [(Assert,
+         ((0 <= (buf + len)) /\ ((buf + len) <= 18446744073709551615)))]);
+        buf <- (buf + len);
         trace__dump_m_updstate <-
         (trace__dump_m_updstate ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -20034,16 +20038,18 @@ module M = {
       [(Assert, ((0 <= (4 * at)) /\ (((4 * at) + 32) <= 800)))]);
       st <- (BArray800.set256d st (4 * at) t256);
       if ((8 <= len)) {
-        trace__add_m_bcast_updstate_avx2x4 <-
-        (trace__add_m_bcast_updstate_avx2x4 ++
-        [(Assert, ((0 <= (buf + 8)) /\ ((buf + 8) <= 18446744073709551615)))]);
-        buf <- (buf + 8);
+        len <- 8;
         trace__add_m_bcast_updstate_avx2x4 <-
         (trace__add_m_bcast_updstate_avx2x4 ++
         [(Assert,
-         ((0 <= (buf - (W64.to_uint at8))) /\
-         ((buf - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        buf <- (buf - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__add_m_bcast_updstate_avx2x4 <-
+        (trace__add_m_bcast_updstate_avx2x4 ++
+        [(Assert,
+         ((0 <= (buf + len)) /\ ((buf + len) <= 18446744073709551615)))]);
+        buf <- (buf + len);
         trace__add_m_bcast_updstate_avx2x4 <-
         (trace__add_m_bcast_updstate_avx2x4 ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -24882,16 +24888,18 @@ module M = {
       (trace__add_updstate ++ [(Assert, ((0 <= at) /\ ((at + 8) <= 200)))]);
       st <- (BArray200.set64d st at ((BArray200.get64d st at) `^` t64));
       if ((8 <= len)) {
-        trace__add_updstate <-
-        (trace__add_updstate ++
-        [(Assert, ((0 <= (off + 8)) /\ ((off + 8) <= 18446744073709551615)))]);
-        off <- (off + 8);
+        len <- 8;
         trace__add_updstate <-
         (trace__add_updstate ++
         [(Assert,
-         ((0 <= (off - (W64.to_uint at8))) /\
-         ((off - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        off <- (off - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__add_updstate <-
+        (trace__add_updstate ++
+        [(Assert,
+         ((0 <= (off + len)) /\ ((off + len) <= 18446744073709551615)))]);
+        off <- (off + len);
         trace__add_updstate <-
         (trace__add_updstate ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -25136,7 +25144,8 @@ module M = {
     trace__absorb_updstate <-
     (trace__absorb_updstate ++
     [(Assert,
-     ((((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)) /\
+     (((((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)) /\
+      (len <= 18446744073709551360)) /\
      (BArray999.is_init b_buf 0 len)))]);
     trace__absorb_updstate <-
     (trace__absorb_updstate ++
@@ -25411,16 +25420,18 @@ module M = {
        ((len + (W64.to_uint at8)) <= 18446744073709551615)))]);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        trace__dump_updstate <-
-        (trace__dump_updstate ++
-        [(Assert, ((0 <= (off + 8)) /\ ((off + 8) <= 18446744073709551615)))]);
-        off <- (off + 8);
+        len <- 8;
         trace__dump_updstate <-
         (trace__dump_updstate ++
         [(Assert,
-         ((0 <= (off - (W64.to_uint at8))) /\
-         ((off - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        off <- (off - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__dump_updstate <-
+        (trace__dump_updstate ++
+        [(Assert,
+         ((0 <= (off + len)) /\ ((off + len) <= 18446744073709551615)))]);
+        off <- (off + len);
         trace__dump_updstate <-
         (trace__dump_updstate ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -25686,7 +25697,8 @@ module M = {
     trace__squeeze_updstate <-
     (trace__squeeze_updstate ++
     [(Assert,
-     (((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)))]);
+     ((((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)) /\
+     (len <= 18446744073709551360)))]);
     trace__squeeze_updstate <-
     (trace__squeeze_updstate ++
     [(Assert, ((0 <= len) /\ (len <= 18446744073709551615)))]);
@@ -25853,7 +25865,8 @@ module M = {
     trace_absorb_updstate <-
     (trace_absorb_updstate ++
     [(Assert,
-     ((((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)) /\
+     (((((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)) /\
+      (len <= 18446744073709551360)) /\
      (BArray999.is_init b_buf 0 len)))]);
     trace_absorb_updstate <-
     (trace_absorb_updstate ++
@@ -25906,7 +25919,8 @@ module M = {
     trace_squeeze_updstate <-
     (trace_squeeze_updstate ++
     [(Assert,
-     (((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)))]);
+     ((((BArray208.is_init b_st 0 208) /\ (0 <= len)) /\ (len <= 999)) /\
+     (len <= 18446744073709551360)))]);
     trace_squeeze_updstate <-
     (trace_squeeze_updstate ++
     [(Assert, ((0 <= len) /\ (len <= 18446744073709551615)))]);
@@ -30471,16 +30485,18 @@ module M = {
       [(Assert, ((0 <= (4 * at)) /\ (((4 * at) + 32) <= 800)))]);
       st <- (BArray800.set256d st (4 * at) t256);
       if ((8 <= len)) {
-        trace__add_bcast_updstate_avx2x4 <-
-        (trace__add_bcast_updstate_avx2x4 ++
-        [(Assert, ((0 <= (off + 8)) /\ ((off + 8) <= 18446744073709551615)))]);
-        off <- (off + 8);
+        len <- 8;
         trace__add_bcast_updstate_avx2x4 <-
         (trace__add_bcast_updstate_avx2x4 ++
         [(Assert,
-         ((0 <= (off - (W64.to_uint at8))) /\
-         ((off - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        off <- (off - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__add_bcast_updstate_avx2x4 <-
+        (trace__add_bcast_updstate_avx2x4 ++
+        [(Assert,
+         ((0 <= (off + len)) /\ ((off + len) <= 18446744073709551615)))]);
+        off <- (off + len);
         trace__add_bcast_updstate_avx2x4 <-
         (trace__add_bcast_updstate_avx2x4 ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -30657,7 +30673,8 @@ module M = {
     trace__absorb_bcast_updstate_avx2x4 <-
     (trace__absorb_bcast_updstate_avx2x4 ++
     [(Assert,
-     ((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+     (((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+      (len <= 18446744073709551360)) /\
      (BArray999.is_init b_buf 0 len)))]);
     trace__absorb_bcast_updstate_avx2x4 <-
     (trace__absorb_bcast_updstate_avx2x4 ++
@@ -31139,16 +31156,18 @@ module M = {
        ((len + (W64.to_uint at8)) <= 18446744073709551615)))]);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        trace__add_updstate_avx2x4 <-
-        (trace__add_updstate_avx2x4 ++
-        [(Assert, ((0 <= (off + 8)) /\ ((off + 8) <= 18446744073709551615)))]);
-        off <- (off + 8);
+        len <- 8;
         trace__add_updstate_avx2x4 <-
         (trace__add_updstate_avx2x4 ++
         [(Assert,
-         ((0 <= (off - (W64.to_uint at8))) /\
-         ((off - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        off <- (off - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__add_updstate_avx2x4 <-
+        (trace__add_updstate_avx2x4 ++
+        [(Assert,
+         ((0 <= (off + len)) /\ ((off + len) <= 18446744073709551615)))]);
+        off <- (off + len);
         trace__add_updstate_avx2x4 <-
         (trace__add_updstate_avx2x4 ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -31620,7 +31639,8 @@ module M = {
     trace__absorb_updstate_avx2x4 <-
     (trace__absorb_updstate_avx2x4 ++
     [(Assert,
-     (((((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+     ((((((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+         (len <= 18446744073709551360)) /\
         (BArray999.is_init b_buf0 0 len)) /\
        (BArray999.is_init b_buf1 0 len)) /\
       (BArray999.is_init b_buf2 0 len)) /\
@@ -32180,16 +32200,18 @@ module M = {
        ((len + (W64.to_uint at8)) <= 18446744073709551615)))]);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        trace__dump_updstate_avx2x4 <-
-        (trace__dump_updstate_avx2x4 ++
-        [(Assert, ((0 <= (off + 8)) /\ ((off + 8) <= 18446744073709551615)))]);
-        off <- (off + 8);
+        len <- 8;
         trace__dump_updstate_avx2x4 <-
         (trace__dump_updstate_avx2x4 ++
         [(Assert,
-         ((0 <= (off - (W64.to_uint at8))) /\
-         ((off - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        off <- (off - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__dump_updstate_avx2x4 <-
+        (trace__dump_updstate_avx2x4 ++
+        [(Assert,
+         ((0 <= (off + len)) /\ ((off + len) <= 18446744073709551615)))]);
+        off <- (off + len);
         trace__dump_updstate_avx2x4 <-
         (trace__dump_updstate_avx2x4 ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -32685,7 +32707,8 @@ module M = {
     trace__squeeze_updstate_avx2x4 <-
     (trace__squeeze_updstate_avx2x4 ++
     [(Assert,
-     (((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)))]);
+     ((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+     (len <= 18446744073709551360)))]);
     trace__squeeze_updstate_avx2x4 <-
     (trace__squeeze_updstate_avx2x4 ++
     [(Assert, ((0 <= len) /\ (len <= 18446744073709551615)))]);
@@ -32910,7 +32933,8 @@ module M = {
     trace_absorb_bcast_updstate_avx2x4 <-
     (trace_absorb_bcast_updstate_avx2x4 ++
     [(Assert,
-     ((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+     (((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+      (len <= 18446744073709551360)) /\
      (BArray999.is_init b_buf 0 len)))]);
     trace_absorb_bcast_updstate_avx2x4 <-
     (trace_absorb_bcast_updstate_avx2x4 ++
@@ -32972,7 +32996,8 @@ module M = {
     trace_absorb_updstate_avx2x4 <-
     (trace_absorb_updstate_avx2x4 ++
     [(Assert,
-     (((((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+     ((((((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+         (len <= 18446744073709551360)) /\
         (BArray999.is_init b_buf0 0 len)) /\
        (BArray999.is_init b_buf1 0 len)) /\
       (BArray999.is_init b_buf2 0 len)) /\
@@ -33075,7 +33100,8 @@ module M = {
     trace_squeeze_updstate_avx2x4 <-
     (trace_squeeze_updstate_avx2x4 ++
     [(Assert,
-     (((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)))]);
+     ((((BArray808.is_init b_st 0 808) /\ (0 <= len)) /\ (len <= 999)) /\
+     (len <= 18446744073709551360)))]);
     trace_squeeze_updstate_avx2x4 <-
     (trace_squeeze_updstate_avx2x4 ++
     [(Assert, ((0 <= len) /\ (len <= 18446744073709551615)))]);
@@ -37131,10 +37157,14 @@ op _absorb_updstate_spec _st _b_st _buf _b_buf _len =
    (true /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   ((((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)) /\
-   (BArray999.is_init _b_buf 0 _len))))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   (((((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)) /\
+    (_len <= 18446744073709551360)) /\
+   (BArray999.is_init _b_buf 0 _len))))))))))) ==>
    ((BArray208.is_init res.`2 0 208) /\ (valid res.`3))].
 
 op _dump_updstate_spec _buf _b_buf _off _st _b_st _at _upto =
@@ -37226,9 +37256,13 @@ op _squeeze_updstate_spec _st _b_st _buf _b_buf _len =
    ((true /\ (true /\ ((0 <= _len) /\ (_len <= 18446744073709551615)))) /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   (((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   ((((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)) /\
+   (_len <= 18446744073709551360)))))))))) ==>
    ((true /\
     ((BArray208.is_init res.`2 0 208) /\ (BArray999.is_init res.`4 0 _len))) /\
    (valid res.`5))].
@@ -37241,10 +37275,14 @@ op absorb_updstate_spec _st _b_st _buf _b_buf _len =
    (true /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   ((((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)) /\
-   (BArray999.is_init _b_buf 0 _len))))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   (((((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)) /\
+    (_len <= 18446744073709551360)) /\
+   (BArray999.is_init _b_buf 0 _len))))))))))) ==>
    ((BArray208.is_init res.`2 0 208) /\ (valid res.`3))].
 
 op squeeze_updstate_spec _st _b_st _buf _b_buf _len =
@@ -37254,9 +37292,13 @@ op squeeze_updstate_spec _st _b_st _buf _b_buf _len =
    ((true /\ (true /\ ((0 <= _len) /\ (_len <= 18446744073709551615)))) /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   (((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   ((((BArray208.is_init _b_st 0 208) /\ (0 <= _len)) /\ (_len <= 999)) /\
+   (_len <= 18446744073709551360)))))))))) ==>
    ((true /\
     ((BArray208.is_init res.`2 0 208) /\ (BArray999.is_init res.`4 0 _len))) /\
    (valid res.`5))].
@@ -37809,10 +37851,14 @@ op _absorb_bcast_updstate_avx2x4_spec _st _b_st _buf _b_buf _len =
    (true /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   ((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
-   (BArray999.is_init _b_buf 0 _len))))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   (((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+    (_len <= 18446744073709551360)) /\
+   (BArray999.is_init _b_buf 0 _len))))))))))) ==>
    ((BArray808.is_init res.`2 0 808) /\ (valid res.`3))].
 
 op _add_updstate_avx2x4_spec _st _b_st _at _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _off _upto =
@@ -37938,13 +37984,17 @@ op _absorb_updstate_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_b
    (true /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   (((((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   ((((((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+       (_len <= 18446744073709551360)) /\
       (BArray999.is_init _b_buf0 0 _len)) /\
      (BArray999.is_init _b_buf1 0 _len)) /\
     (BArray999.is_init _b_buf2 0 _len)) /\
-   (BArray999.is_init _b_buf3 0 _len)))))))))))) ==>
+   (BArray999.is_init _b_buf3 0 _len)))))))))))))) ==>
    ((BArray808.is_init res.`2 0 808) /\ (valid res.`3))].
 
 op _dump_updstate_avx2x4_spec _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _off _st _b_st _at _upto =
@@ -38107,9 +38157,13 @@ op _squeeze_updstate_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_
    ((true /\ (true /\ ((0 <= _len) /\ (_len <= 18446744073709551615)))) /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   (((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   ((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+   (_len <= 18446744073709551360)))))))))) ==>
    ((true /\
     (true /\
     (true /\
@@ -38129,10 +38183,14 @@ op absorb_bcast_updstate_avx2x4_spec _st _b_st _buf _b_buf _len =
    (true /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   ((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
-   (BArray999.is_init _b_buf 0 _len))))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   (((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+    (_len <= 18446744073709551360)) /\
+   (BArray999.is_init _b_buf 0 _len))))))))))) ==>
    ((BArray808.is_init res.`2 0 808) /\ (valid res.`3))].
 
 op absorb_updstate_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _len =
@@ -38153,13 +38211,17 @@ op absorb_updstate_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_bu
    (true /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   (((((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   ((((((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+       (_len <= 18446744073709551360)) /\
       (BArray999.is_init _b_buf0 0 _len)) /\
      (BArray999.is_init _b_buf1 0 _len)) /\
     (BArray999.is_init _b_buf2 0 _len)) /\
-   (BArray999.is_init _b_buf3 0 _len)))))))))))) ==>
+   (BArray999.is_init _b_buf3 0 _len)))))))))))))) ==>
    ((BArray808.is_init res.`2 0 808) /\ (valid res.`3))].
 
 op squeeze_updstate_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _len =
@@ -38176,9 +38238,13 @@ op squeeze_updstate_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_b
    ((true /\ (true /\ ((0 <= _len) /\ (_len <= 18446744073709551615)))) /\
    (true /\
    (true /\
+   (true /\
    (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
    (((0 <= 999) /\ (999 <= 18446744073709551615)) /\
-   (((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)))))))) ==>
+   (((0 <= 18446744073709551360) /\
+    (18446744073709551360 <= 18446744073709551615)) /\
+   ((((BArray808.is_init _b_st 0 808) /\ (0 <= _len)) /\ (_len <= 999)) /\
+   (_len <= 18446744073709551360)))))))))) ==>
    ((true /\
     (true /\
     (true /\

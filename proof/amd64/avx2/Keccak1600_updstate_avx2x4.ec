@@ -567,7 +567,6 @@ split => Hc.
   move: M0; rewrite Emin (: _at + (base + 8 - _at) = base + 8) 1:/# (: n - (base + 8 - _at) = _upto - (base + 8)) 1:/# (: base + 8 - _at = 8 - _at %% 8) 1:/# => M0.
   do 2!(split; first smt()).
   exists (base + 8); split; first smt().
-  rewrite (: _buf + 8 - _at %% 8 = _buf + (8 - _at %% 8)) 1:/#.
   apply (addstate_spec4m_msubread _mem [_buf; _buf; _buf; _buf] [t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8)] base _st _at n 0 _st _ _at [_buf; _buf; _buf; _buf] n 0 (base + 8) (base + 8) [_buf + (8 - _at %% 8); _buf + (8 - _at %% 8); _buf + (8 - _at %% 8); _buf + (8 - _at %% 8)] (_upto - (base + 8)) 0) => //.
   + smt().
   + smt().
@@ -1346,8 +1345,9 @@ module MM = {
       (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
       ((4 * at) + 0) t256)));
       if ((8 <= len)) {
-        off <- (off + 8);
-        off <- (off - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        off <- (off + len);
         at <- (at + 8);
       } else {
         off <- off2;
@@ -1509,8 +1509,9 @@ module MM = {
       t64))));
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        off <- (off + 8);
-        off <- (off - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        off <- (off + len);
         at <- (at + 8);
       } else {
         off <- off2;
@@ -1695,8 +1696,9 @@ module MM = {
       (buf3, off2) <@ RW.MM.__a_rlen_write_upto8 (buf3, off, t64, len);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        off <- (off + 8);
-        off <- (off - (W64.to_uint at8));
+        len <- 8;
+        len <- (len - (W64.to_uint at8));
+        off <- (off + len);
         at <- (at + 8);
       } else {
         off <- off2;
@@ -1983,7 +1985,6 @@ split => Hc.
   move: M0 M1 M2 M3; rewrite Emin (: _at + (base + 8 - _at) = base + 8) 1:/# (: 0 + (base + 8 - _at) = 8 - _at %% 8) 1:/# (: n - (base + 8 - _at) = _upto - (base + 8)) 1:/# => M0 M1 M2 M3.
   do 2!(split; first smt()).
   exists (base + 8); split; first smt().
-  rewrite (: _off + 8 - _at %% 8 = _off + (8 - _at %% 8)) 1:/#.
   apply (addstate_spec4_asubread _buf0 _buf1 _buf2 _buf3 [t0 `<<<` 8 * (_at %% 8); t1 `<<<` 8 * (_at %% 8); t2 `<<<` 8 * (_at %% 8); t3 `<<<` 8 * (_at %% 8)] base _st _at _off n 0 _st _ _at 0 n 0 (base + 8) (base + 8) (8 - _at %% 8) (_upto - (base + 8)) 0) => //.
   + smt().
   + smt().
@@ -2098,7 +2099,6 @@ split => Hc.
   move: M0; rewrite Emin (: _at + (base + 8 - _at) = base + 8) 1:/# (: 0 + (base + 8 - _at) = 8 - _at %% 8) 1:/# (: n - (base + 8 - _at) = _upto - (base + 8)) 1:/# => M0.
   do 2!(split; first smt()).
   exists (base + 8); split; first smt().
-  rewrite (: _off + 8 - _at %% 8 = _off + (8 - _at %% 8)) 1:/#.
   apply (addstate_spec4_asubread _buf _buf _buf _buf [t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8); t0 `<<<` 8 * (_at %% 8)] base _st _at _off n 0 _st _ _at 0 n 0 (base + 8) (base + 8) (8 - _at %% 8) (_upto - (base + 8)) 0) => //.
   + smt().
   + smt().

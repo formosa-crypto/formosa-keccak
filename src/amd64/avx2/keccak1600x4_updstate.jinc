@@ -221,8 +221,9 @@ fn _add_m_bcast_updstate_avx2x4
     t256 ^= st.[:u256 4*at + 0];
     st.[:u256 4*at + 0] = t256;
     if (len >= 8) { // need to proccess more stwords...
-      buf += 8;
-      buf -= (64ui) at8; // buf += (8-at8)
+      len = 8;
+      len -= (64ui) at8; // bytes processed (8-at8): adding them in one step
+      buf += len;        // keeps every intermediate ui64 value in range
       at += 8;    // start of next stword
     } else { // this is the only affected stword
       buf = buf2; // 

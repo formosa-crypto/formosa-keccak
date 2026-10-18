@@ -54,8 +54,9 @@ fn _add_bcast_updstate_avx2x4
     t256 ^= st.[:u256 4*at + 0];
     st.[:u256 4*at + 0] = t256;
     if (len >= 8) { // need to proccess more stwords...
-      off += 8;
-      off -= (64ui) at8; // off += (8-at8)
+      len = 8;
+      len -= (64ui) at8; // bytes processed (8-at8): adding them in one step
+      off += len;        // keeps every intermediate ui64 value in range
       at += 8;    // start of next stword
     } else { // this is the only affected stword
       off = off2; // 
@@ -92,7 +93,7 @@ fn _add_bcast_updstate_avx2x4
 }
 
 #[safety =
-   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && is_arr_init(buf,0,len)
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && len <= 0xFFFFFFFFFFFFFF00 && is_arr_init(buf,0,len)
    , ensures = is_arr_init(st,0,808) }
  ]
 fn _absorb_bcast_updstate_avx2x4
@@ -174,8 +175,9 @@ fn _add_updstate_avx2x4
     st.[:u64 4*at + 24] ^= t64;
     len = len + (64ui)at8; // bytes from the start of word
     if (len >= 8) { // need to proccess more stwords...
-      off += 8;
-      off -= (64ui) at8; // off += (8-at8)
+      len = 8;
+      len -= (64ui) at8; // bytes processed (8-at8): adding them in one step
+      off += len;        // keeps every intermediate ui64 value in range
       at += 8;    // start of next stword
     } else { // this is the only affected stword
       off = off2; // 
@@ -220,7 +222,7 @@ fn _add_updstate_avx2x4
 }
 
 #[safety =
-   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && len <= 0xFFFFFFFFFFFFFF00
      && is_arr_init(buf0,0,len) && is_arr_init(buf1,0,len) && is_arr_init(buf2,0,len) && is_arr_init(buf3,0,len)
    , ensures = is_arr_init(st,0,808) }
  ]
@@ -307,8 +309,9 @@ fn _dump_updstate_avx2x4
     buf3, off2 = __a_rlen_write_upto8(buf3, off, t64, len);
     len += (64ui) at8; // bytes from the start of word
     if (len >= 8) {  // need to proccess more stwords...
-      off += 8;
-      off -= (64ui) at8;
+      len = 8;
+      len -= (64ui) at8; // bytes processed (8-at8): adding them in one step
+      off += len;        // keeps every intermediate ui64 value in range
       at += 8;       // start of next stword
     } else {         // this is the only affected stword
       off = off2;
@@ -353,7 +356,7 @@ fn _dump_updstate_avx2x4
 }
 
 #[safety =
-   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && len <= 0xFFFFFFFFFFFFFF00
    , res = { final_st, final_buf0, final_buf1, final_buf2, final_buf3 }
    , ensures = is_arr_init(final_st,0,808)
      && is_arr_init(final_buf0,0,len) && is_arr_init(final_buf1,0,len)
@@ -402,7 +405,7 @@ fn _squeeze_updstate_avx2x4
 }
 
 #[safety =
-   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && is_arr_init(buf,0,len)
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && len <= 0xFFFFFFFFFFFFFF00 && is_arr_init(buf,0,len)
    , ensures = is_arr_init(st,0,808) }
  ]
 export fn absorb_bcast_updstate_avx2x4
@@ -419,7 +422,7 @@ export fn absorb_bcast_updstate_avx2x4
 }
 
 #[safety =
-   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && len <= 0xFFFFFFFFFFFFFF00
      && is_arr_init(buf0,0,len) && is_arr_init(buf1,0,len) && is_arr_init(buf2,0,len) && is_arr_init(buf3,0,len)
    , ensures = is_arr_init(st,0,808) }
  ]
@@ -440,7 +443,7 @@ export fn absorb_updstate_avx2x4
 }
 
 #[safety =
-   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE
+   { requires = is_arr_init(st,0,808) && 0 <= len && len <= _ASIZE && len <= 0xFFFFFFFFFFFFFF00
    , res = { final_st, final_buf0, final_buf1, final_buf2, final_buf3 }
    , ensures = is_arr_init(final_st,0,808)
      && is_arr_init(final_buf0,0,len) && is_arr_init(final_buf1,0,len)

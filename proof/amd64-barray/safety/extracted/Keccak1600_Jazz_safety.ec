@@ -6132,16 +6132,18 @@ module M = {
       (trace__add_m_updstate ++ [(Assert, ((0 <= at) /\ ((at + 8) <= 200)))]);
       st <- (BArray200.set64d st at ((BArray200.get64d st at) `^` t64));
       if ((8 <= len)) {
-        trace__add_m_updstate <-
-        (trace__add_m_updstate ++
-        [(Assert, ((0 <= (buf + 8)) /\ ((buf + 8) <= 18446744073709551615)))]);
-        buf <- (buf + 8);
+        len <- 8;
         trace__add_m_updstate <-
         (trace__add_m_updstate ++
         [(Assert,
-         ((0 <= (buf - (W64.to_uint at8))) /\
-         ((buf - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        buf <- (buf - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__add_m_updstate <-
+        (trace__add_m_updstate ++
+        [(Assert,
+         ((0 <= (buf + len)) /\ ((buf + len) <= 18446744073709551615)))]);
+        buf <- (buf + len);
         trace__add_m_updstate <-
         (trace__add_m_updstate ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -6604,16 +6606,18 @@ module M = {
        ((len + (W64.to_uint at8)) <= 18446744073709551615)))]);
       len <- (len + (W64.to_uint at8));
       if ((8 <= len)) {
-        trace__dump_m_updstate <-
-        (trace__dump_m_updstate ++
-        [(Assert, ((0 <= (buf + 8)) /\ ((buf + 8) <= 18446744073709551615)))]);
-        buf <- (buf + 8);
+        len <- 8;
         trace__dump_m_updstate <-
         (trace__dump_m_updstate ++
         [(Assert,
-         ((0 <= (buf - (W64.to_uint at8))) /\
-         ((buf - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        buf <- (buf - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__dump_m_updstate <-
+        (trace__dump_m_updstate ++
+        [(Assert,
+         ((0 <= (buf + len)) /\ ((buf + len) <= 18446744073709551615)))]);
+        buf <- (buf + len);
         trace__dump_m_updstate <-
         (trace__dump_m_updstate ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
@@ -20033,16 +20037,18 @@ module M = {
       [(Assert, ((0 <= (4 * at)) /\ (((4 * at) + 32) <= 800)))]);
       st <- (BArray800.set256d st (4 * at) t256);
       if ((8 <= len)) {
-        trace__add_m_bcast_updstate_avx2x4 <-
-        (trace__add_m_bcast_updstate_avx2x4 ++
-        [(Assert, ((0 <= (buf + 8)) /\ ((buf + 8) <= 18446744073709551615)))]);
-        buf <- (buf + 8);
+        len <- 8;
         trace__add_m_bcast_updstate_avx2x4 <-
         (trace__add_m_bcast_updstate_avx2x4 ++
         [(Assert,
-         ((0 <= (buf - (W64.to_uint at8))) /\
-         ((buf - (W64.to_uint at8)) <= 18446744073709551615)))]);
-        buf <- (buf - (W64.to_uint at8));
+         ((0 <= (len - (W64.to_uint at8))) /\
+         ((len - (W64.to_uint at8)) <= 18446744073709551615)))]);
+        len <- (len - (W64.to_uint at8));
+        trace__add_m_bcast_updstate_avx2x4 <-
+        (trace__add_m_bcast_updstate_avx2x4 ++
+        [(Assert,
+         ((0 <= (buf + len)) /\ ((buf + len) <= 18446744073709551615)))]);
+        buf <- (buf + len);
         trace__add_m_bcast_updstate_avx2x4 <-
         (trace__add_m_bcast_updstate_avx2x4 ++
         [(Assert, ((0 <= (at + 8)) /\ ((at + 8) <= 18446744073709551615)))]);
