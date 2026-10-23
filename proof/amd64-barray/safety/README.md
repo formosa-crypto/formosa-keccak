@@ -36,7 +36,8 @@ four-buffer add-state and streaming steps take 20–60 s each (440 s of its
 
 The models are produced by `jasmin2ec -m safety`, which is only available on
 the `safety-assert2` branch of Jasmin (pinned in `shell.nix`). Its eclib also
-provides `JSafety.ec`.
+provides `JSafety.ec`. The full toolchain, and what the other proof trees
+need, is in the top-level `README.md` (*Toolchain*).
 
 ## Extraction: same strategy as the correctness proofs
 

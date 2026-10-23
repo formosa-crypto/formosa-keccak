@@ -127,8 +127,7 @@ make check                                    # re-extract all models, then chec
 ```
 
 CI runs the extraction check (the regenerated models must equal the
-committed ones, up to whitespace) and the four scenarios. The toolchain is
-pinned in `shell.nix`: Jasmin (a snapshot of the `safety-assert2` branch,
-whose `jasmin2ec` output matches the committed models) and EasyCrypt, with
-Z3 4.13 and CVC5 1.3 (`proof/easycrypt.project`). The specification comes
-from the `crypto-specs` submodule (`git submodule update --init`).
+committed ones, up to whitespace) and the four scenarios. The toolchain,
+pinned in `shell.nix`, is described in the top-level `README.md`
+(*Toolchain*). The specification comes from the `crypto-specs` submodule
+(`git submodule update --init`).

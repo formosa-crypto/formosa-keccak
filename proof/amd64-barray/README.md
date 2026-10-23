@@ -109,6 +109,8 @@ so with the pinned toolchain those files fail to load. CI therefore runs the
 extraction check of the models, the scenario `keccak_amd64barray_extracted`
 (which fails until the EasyCrypt patch is available), and the safety
 scenarios (which do not need it). The safety proofs need no `circuit`.
+The rest of the toolchain is described in the top-level `README.md`
+(*Toolchain*).
 
 EasyCrypt loads `require`d files with proof checking off, so a sanity check
 only needs the statements of its dependencies to elaborate.
